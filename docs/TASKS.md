@@ -1,0 +1,140 @@
+# Eazy Review Tasks
+
+## Current Repo Status
+
+As of this document setup:
+- Expo project exists.
+- Expo Router is installed.
+- The app still resembles a starter template.
+- NativeWind is not yet configured.
+- Eazy Review routes, components, mock products, and rating flow are not yet implemented.
+
+## First Implementation Task List
+
+Complete these in order:
+
+### Task 1: Create Expo Project With TypeScript
+
+Status: Done in starter app.
+
+Quality check:
+- `package.json` has Expo and TypeScript dependencies.
+
+### Task 2: Install And Configure Expo Router
+
+Status: Mostly done in starter app.
+
+Quality check:
+- `package.json` uses `expo-router/entry`.
+- Routes load through `app/_layout.tsx`.
+
+### Task 3: Install And Configure NativeWind
+
+Status: Pending.
+
+Scope:
+- Install NativeWind and required peer/config packages for Expo SDK 56.
+- Add Tailwind config.
+- Add Babel/Metro config if required by the current NativeWind docs.
+
+Out of scope:
+- Do not redesign UI while configuring styling.
+
+### Task 4: Create App Tabs
+
+Status: Pending.
+
+Create:
+- `app/(tabs)/feed.tsx`
+- `app/(tabs)/browse.tsx`
+- `app/(tabs)/account.tsx`
+
+Replace starter tab names with:
+- Feed.
+- Browse.
+- Account.
+
+### Task 5: Create Reusable UI Components
+
+Status: Pending.
+
+Create:
+- `Screen`
+- `Button`
+- `Input`
+- `Card`
+- `AppText`
+- `ScoreBadge`
+- `ProductCard`
+- `LoadingState`
+- `EmptyState`
+- `ErrorState`
+
+### Task 6: Create Mock Product Data
+
+Status: Pending.
+
+Create:
+- `src/types/product.ts`
+- `src/features/products/mockProducts.ts`
+
+### Task 7: Build Browse Screen With Mock Product List
+
+Status: Pending.
+
+Requirements:
+- Search input.
+- Product list.
+- Filter button placeholder.
+- Sort button placeholder.
+- Empty/loading/error states.
+- Product cards navigate to Product Detail.
+
+### Task 8: Build Product Detail Screen
+
+Status: Pending.
+
+Requirements:
+- Product image area.
+- Product title area.
+- Metadata.
+- Eazy Score.
+- Community Score.
+- Lowest price section.
+- Rating breakdown.
+- My Rating state.
+- Description.
+- CTA.
+
+### Task 9: Build Rating Form Screen With Fake Local State
+
+Status: Pending.
+
+Requirements:
+- Look, comfort, quality, outfit, value, overall.
+- Optional comment.
+- 1-10 validation.
+- Return to product detail after submit.
+
+### Task 10: Review UX Flow Before Supabase
+
+Status: Pending.
+
+Acceptance:
+- User can browse fake products.
+- User can open a product.
+- User can submit a fake rating.
+- UI flow is understandable.
+
+## Supabase Tasks
+
+Do not start until mock UX flow works:
+- Create Supabase project.
+- Add schema migrations.
+- Add RLS policies.
+- Seed products.
+- Add Supabase Auth.
+- Add product and rating queries.
+- Add TanStack Query.
+- Replace mock product browsing with Supabase data.
+- Replace fake rating flow with real rating mutations.

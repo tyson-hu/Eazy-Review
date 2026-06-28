@@ -1,0 +1,23 @@
+---
+description: Applies to Expo, Expo Router, React Native, and NativeWind work
+globs:
+  - "app/**/*.tsx"
+  - "components/**/*.tsx"
+  - "src/**/*.ts"
+  - "src/**/*.tsx"
+  - "app.json"
+  - "package.json"
+  - "babel.config.*"
+  - "metro.config.*"
+  - "tailwind.config.*"
+---
+
+Before writing Expo code, read the exact Expo SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+
+Rules:
+- Use Expo Router file-based navigation.
+- Keep bottom tabs named Feed, Browse, and Account.
+- Keep non-tab screens aligned with `docs/USER_FLOWS.md`.
+- Use TypeScript for product, rating, auth, and API code.
+- Use NativeWind once configured, following current version docs.
+- Do not assume older Expo or Expo Router behavior.
