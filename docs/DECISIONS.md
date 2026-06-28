@@ -47,3 +47,13 @@ Decision:
 
 Reason:
 - The project needs stronger UI guidance for Stitch, Cursor, and implementation so generated screens do not drift into generic sneaker ecommerce layouts.
+
+## 2026-06-28: Require Documentation Updates With Changes
+
+Decision:
+- Every meaningful code, configuration, workflow, design, schema, dependency, route, or product change must update affected docs before commit/PR handoff.
+- If no documentation update is needed, agents must state that explicitly with a short reason.
+- `docs/DOCUMENTATION_POLICY.md` is the source of truth for which docs to update.
+
+Reason:
+- Future agents rely on repo docs as source of truth. Keeping docs synchronized prevents stale plans, mismatched implementation order, and repeated rediscovery after commits.

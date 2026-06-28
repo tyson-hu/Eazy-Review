@@ -9,6 +9,8 @@
 5. Set up `.cursor/rules`.
 6. Set up Supabase local/dev project.
 
+All phases must keep source-of-truth docs current. Use `docs/DOCUMENTATION_POLICY.md` before committing or merging work in any phase.
+
 ## Phase 2: UI Shell
 
 1. App navigation.
@@ -68,6 +70,7 @@ Deliverables:
 Acceptance:
 - User can open Feed, Browse, and Account tabs.
 - App runs on iOS/Android simulator or physical device.
+- Docs and tasks reflect the completed app-shell state.
 
 ### Milestone 2: Mock Product Experience
 
@@ -83,6 +86,7 @@ Acceptance:
 - User can open a product.
 - User can submit a fake rating.
 - UI flow feels understandable.
+- Docs and tasks reflect any route/component/type decisions made during the mock flow.
 
 ### Milestone 3: Supabase Setup
 
@@ -95,6 +99,7 @@ Deliverables:
 Acceptance:
 - Products can be read publicly.
 - User ratings can only be changed by the owner.
+- Data model, API contracts, tasks, and decisions are current.
 
 ### Milestone 4: Auth
 

@@ -9,6 +9,15 @@ As of this document setup:
 - NativeWind is not yet configured.
 - Eazy Review routes, components, mock products, and rating flow are not yet implemented.
 
+## Definition Of Done
+
+Every task is not done until:
+- Relevant docs from `docs/DOCUMENTATION_POLICY.md` are updated.
+- `docs/TASKS.md` reflects completed work or newly discovered follow-up work.
+- `docs/DECISIONS.md` records meaningful product, architecture, data, workflow, design-system, dependency, or toolchain decisions.
+- `npm run check` passes when applicable, or skipped checks are explained.
+- The final response or PR body lists docs updated, or states `No documentation update needed` with a reason.
+
 ## First Implementation Task List
 
 Complete these in order:

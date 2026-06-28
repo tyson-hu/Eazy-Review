@@ -32,7 +32,7 @@ BLUEBOOK.md
 4. Save strong Stitch prompts/results in `docs/STITCH_PROMPTS.md`.
 5. Ask Cursor to implement one screen or feature.
 6. Use MCP only when external context/tooling is needed.
-7. Update docs after important decisions.
+7. Update affected docs before commit/PR handoff using `docs/DOCUMENTATION_POLICY.md`.
 
 Do not start with Cursor coding directly for large features. Start with documents, then design, then implementation.
 
@@ -92,6 +92,10 @@ Out of scope:
 Expected output:
 
 Quality check:
+
+Docs to update:
 ```
 
 Avoid asking Cursor or an agent to "build the whole app" in one request.
+
+Every task packet should include `Docs to update`. If no docs should change, the packet should say why.
