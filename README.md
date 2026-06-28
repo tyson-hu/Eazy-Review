@@ -8,7 +8,8 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 
 - `docs/BLUEBOOK.md`: master product and engineering plan.
 - `docs/DESIGN.md`: UI/UX source of truth.
-- `docs/DESIGN_PRINCIPLES.md`: design decision rules.
+- `docs/DESIGN_PRINCIPLES.md`: UI design brief and visual implementation guardrails.
+- `docs/DOCUMENTATION_POLICY.md`: required doc-update rules for future changes.
 - `docs/USER_FLOWS.md`: core user journeys and route expectations.
 - `docs/DATA_MODEL.md`: Supabase schema, RLS, triggers, and rating summary logic.
 - `docs/API_CONTRACTS.md`: frontend types, API functions, and query keys.
@@ -30,6 +31,10 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 - TanStack Query
 
 Before writing Expo code, read the exact SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+
+## Documentation Discipline
+
+Before committing or opening a PR, update the affected docs listed in `docs/DOCUMENTATION_POLICY.md`. If a change truly does not affect docs, note `No documentation update needed` with the reason in the final response or PR body.
 
 ## First Build Goal
 

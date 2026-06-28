@@ -3,7 +3,7 @@ description: Eazy Review product overview and source-of-truth hierarchy
 alwaysApply: true
 ---
 
-Read `docs/BLUEBOOK.md` before planning or implementing product work.
+Read `docs/BLUEBOOK.md` and `docs/DOCUMENTATION_POLICY.md` before planning or implementing product work.
 
 Rules:
 - Eazy Review is a mobile-first sneaker/product review and discovery app.
@@ -13,3 +13,4 @@ Rules:
 - Rating must require login.
 - Do not start with scraping, social features, comments, likes, push notifications, dark mode, admin dashboards, or advanced recommendations.
 - Product direction in `docs/BLUEBOOK.md` outranks tool suggestions.
+- Product or scope changes must update the relevant docs before commit/PR handoff.

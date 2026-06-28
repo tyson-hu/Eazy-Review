@@ -11,6 +11,7 @@ globs:
 Before database changes, read:
 - `docs/DATA_MODEL.md`
 - `docs/API_CONTRACTS.md`
+- `docs/DOCUMENTATION_POLICY.md`
 
 Rules:
 - Use relational Supabase tables.
@@ -21,3 +22,4 @@ Rules:
 - Trusted Community Score recalculation must happen with database trigger/function or server-side logic.
 - Never expose service-role keys in client code.
 - Do not implement scraping until the mock core app flow works.
+- Supabase, auth, RLS, schema, or API-contract changes must update affected docs before commit/PR handoff.

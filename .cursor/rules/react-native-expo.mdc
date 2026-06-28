@@ -13,6 +13,7 @@ globs:
 ---
 
 Before writing Expo code, read the exact Expo SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+Also read `docs/DOCUMENTATION_POLICY.md` before committing Expo, routing, dependency, or tooling changes.
 
 Rules:
 - Use Expo Router file-based navigation.
@@ -21,3 +22,4 @@ Rules:
 - Use TypeScript for product, rating, auth, and API code.
 - Use NativeWind once configured, following current version docs.
 - Do not assume older Expo or Expo Router behavior.
+- Expo, route, package-script, or dependency changes must update affected docs before commit/PR handoff.

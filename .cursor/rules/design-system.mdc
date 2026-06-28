@@ -11,6 +11,7 @@ Before changing UI, read:
 - `docs/DESIGN.md`
 - `docs/DESIGN_PRINCIPLES.md`
 - `docs/USER_FLOWS.md`
+- `docs/DOCUMENTATION_POLICY.md`
 
 Rules:
 - Build mobile-first.
@@ -24,3 +25,4 @@ Rules:
 - Include loading, empty, and error states for data screens.
 - Do not invent new rating categories.
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
+- UI, component, visual-token, or route-flow changes must update the affected design/user-flow docs before commit/PR handoff.

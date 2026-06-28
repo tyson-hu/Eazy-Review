@@ -7,6 +7,7 @@ This file is the durable operating guide for AI agents working in this repo. Pro
 Before any work:
 - Read `docs/BLUEBOOK.md`.
 - Read `docs/TASKS.md` to understand the current build order.
+- Read `docs/DOCUMENTATION_POLICY.md` to understand the documentation update gate.
 - Check `git status --short` and do not overwrite unrelated user changes.
 
 Before UI or navigation work:
@@ -42,6 +43,21 @@ Use this authority order when documents or tool suggestions conflict:
 
 If implementation needs to intentionally change product direction, update the relevant doc in the same task and add a short entry to `docs/DECISIONS.md`.
 
+Documentation workflow authority:
+- `docs/DOCUMENTATION_POLICY.md` controls when docs must be updated and which docs are affected.
+
+## Documentation Discipline
+
+Documentation updates are required for every meaningful change. Before staging, committing, pushing, opening a PR, or reporting completion:
+
+- Review the changed files and apply `docs/DOCUMENTATION_POLICY.md`.
+- Update affected docs in the same branch.
+- Update `docs/TASKS.md` when task status, order, or newly discovered work changes.
+- Add `docs/DECISIONS.md` entries for meaningful product, architecture, data, workflow, design-system, dependency, or toolchain decisions.
+- If no docs need changes, state `No documentation update needed` with a short reason in the final response or PR body.
+
+Do not leave docs stale for a future agent to infer from code.
+
 ## Non-Negotiable Product Rules
 
 - Do not start with scraping.
@@ -72,6 +88,7 @@ If implementation needs to intentionally change product direction, update the re
 ## Quality Checks
 
 Run the narrowest useful checks after changes:
+- `npm run check` for the default project check.
 - `npm run start` only when the user needs a running app.
 - TypeScript/lint commands if added to `package.json`.
 - Manual route-flow review for navigation changes.
