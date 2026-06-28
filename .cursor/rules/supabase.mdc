@@ -1,0 +1,23 @@
+---
+description: Applies to Supabase, database, auth, and rating data work
+globs:
+  - "supabase/**/*.sql"
+  - "supabase/**/*"
+  - "src/lib/supabase*"
+  - "src/features/**/*.ts"
+  - "src/features/**/*.tsx"
+---
+
+Before database changes, read:
+- `docs/DATA_MODEL.md`
+- `docs/API_CONTRACTS.md`
+
+Rules:
+- Use relational Supabase tables.
+- Do not create one giant product JSON object.
+- Do not change schema without updating `docs/DATA_MODEL.md`.
+- Products, images, offers, Eazy Scores, and rating summaries should be publicly readable.
+- Users can only insert/update/delete their own ratings.
+- Trusted Community Score recalculation must happen with database trigger/function or server-side logic.
+- Never expose service-role keys in client code.
+- Do not implement scraping until the mock core app flow works.

@@ -1,0 +1,16 @@
+---
+description: Applies to all implementation tasks
+alwaysApply: true
+---
+
+Before starting, read `docs/TASKS.md` and check current repo state.
+
+Rules:
+- Work one task at a time.
+- Keep changes scoped to the requested task.
+- Do not redesign product flows unless explicitly asked.
+- Do not add unrelated dependencies.
+- Update docs when a meaningful product, data, or architecture decision changes.
+- Add a short entry to `docs/DECISIONS.md` for important decisions.
+- Run the narrowest useful checks available in `package.json`.
+- If a check does not exist, say so instead of pretending it ran.
