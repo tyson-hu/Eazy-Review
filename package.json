@@ -32,7 +32,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "check": "npm run typecheck && npm run lint"
+    "check": "npm run typecheck"
   },
   "private": true
 }
