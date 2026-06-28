@@ -8,7 +8,7 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 
 - `docs/BLUEBOOK.md`: master product and engineering plan.
 - `docs/DESIGN.md`: UI/UX source of truth.
-- `docs/DESIGN_PRINCIPLES.md`: design decision rules.
+- `docs/DESIGN_PRINCIPLES.md`: UI design brief and visual implementation guardrails.
 - `docs/DOCUMENTATION_POLICY.md`: required doc-update rules for future changes.
 - `docs/USER_FLOWS.md`: core user journeys and route expectations.
 - `docs/DATA_MODEL.md`: Supabase schema, RLS, triggers, and rating summary logic.

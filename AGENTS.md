@@ -43,6 +43,9 @@ Use this authority order when documents or tool suggestions conflict:
 
 If implementation needs to intentionally change product direction, update the relevant doc in the same task and add a short entry to `docs/DECISIONS.md`.
 
+Documentation workflow authority:
+- `docs/DOCUMENTATION_POLICY.md` controls when docs must be updated and which docs are affected.
+
 ## Documentation Discipline
 
 Documentation updates are required for every meaningful change. Before staging, committing, pushing, opening a PR, or reporting completion:
