@@ -3,11 +3,11 @@
 ## Current Repo Status
 
 As of this document setup:
-- Expo project exists.
-- Expo Router is installed.
-- The app still resembles a starter template.
-- NativeWind is not yet configured.
-- Eazy Review routes, components, mock products, and rating flow are not yet implemented.
+- Expo project exists with Expo Router.
+- NativeWind v4 is configured with Tailwind, Babel, and Metro.
+- Bottom tabs are Feed, Browse, and Account with placeholder screens.
+- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState).
+- Mock products, Product Detail, and Rating Form are not yet implemented.
 
 ## Definition Of Done
 
@@ -39,19 +39,21 @@ Quality check:
 
 ### Task 3: Install And Configure NativeWind
 
-Status: Pending.
+Status: Done.
 
 Scope:
 - Install NativeWind and required peer/config packages for Expo SDK 56.
 - Add Tailwind config.
 - Add Babel/Metro config if required by the current NativeWind docs.
 
-Out of scope:
-- Do not redesign UI while configuring styling.
+Quality check:
+- `global.css` imported in root layout.
+- `tailwind.config.js`, `babel.config.js`, and `metro.config.js` exist.
+- `npm run check` passes.
 
 ### Task 4: Create App Tabs
 
-Status: Pending.
+Status: Done.
 
 Create:
 - `app/(tabs)/feed.tsx`
@@ -63,21 +65,29 @@ Replace starter tab names with:
 - Browse.
 - Account.
 
+Quality check:
+- Starter `index.tsx`, `two.tsx`, and modal route removed.
+- `app/index.tsx` redirects `/` to `/feed`.
+- Tab layout uses Eazy Review names and icons.
+
 ### Task 5: Create Reusable UI Components
 
-Status: Pending.
+Status: Partial.
 
-Create:
+Created in this milestone:
 - `Screen`
 - `Button`
-- `Input`
 - `Card`
 - `AppText`
 - `ScoreBadge`
-- `ProductCard`
 - `LoadingState`
 - `EmptyState`
 - `ErrorState`
+
+Still pending:
+- `Input`
+- `ProductCard`
+- `RatingRow`
 
 ### Task 6: Create Mock Product Data
 

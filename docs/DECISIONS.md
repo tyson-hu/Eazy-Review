@@ -57,3 +57,16 @@ Decision:
 
 Reason:
 - Future agents rely on repo docs as source of truth. Keeping docs synchronized prevents stale plans, mismatched implementation order, and repeated rediscovery after commits.
+
+## 2026-06-28: NativeWind v4 And src/ UI Structure
+
+Decision:
+- Use NativeWind v4 with Tailwind CSS v3, `global.css`, and Expo Metro/Babel integration.
+- Place new reusable UI components under `src/components/ui/` per `docs/API_CONTRACTS.md`.
+- Keep the existing `@/*` path alias mapped to the repo root; import new UI via `@/src/components/ui/...`.
+- Encode design tokens from `docs/DESIGN.md` in `tailwind.config.js` theme extensions.
+- Remove starter Expo tabs (`Tab One`, `Tab Two`) and the demo modal route.
+
+Reason:
+- The app shell needs a consistent styling foundation before Browse, Product Detail, and Rating work begin.
+- Keeping new feature code under `src/` matches the documented frontend contract without breaking legacy starter imports under root `components/`.
