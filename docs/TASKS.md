@@ -67,6 +67,7 @@ Replace starter tab names with:
 
 Quality check:
 - Starter `index.tsx`, `two.tsx`, and modal route removed.
+- `app/index.tsx` redirects `/` to `/feed`.
 - Tab layout uses Eazy Review names and icons.
 
 ### Task 5: Create Reusable UI Components
