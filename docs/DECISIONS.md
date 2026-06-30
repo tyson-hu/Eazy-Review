@@ -58,6 +58,15 @@ Decision:
 Reason:
 - Future agents rely on repo docs as source of truth. Keeping docs synchronized prevents stale plans, mismatched implementation order, and repeated rediscovery after commits.
 
+## 2026-06-30: Add Agent Security Rules
+
+Decision:
+- Add `.cursor/rules/security.mdc` as an always-applied Cursor rule for setup, shell execution, and secrets handling.
+- Mirror the rule summary in `AGENTS.md` so non-Cursor agents see the same constraints.
+
+Reason:
+- Agents routinely run install and shell commands. Explicit guardrails reduce supply-chain risk, unsafe remote execution, and accidental secret exposure.
+
 ## 2026-06-28: NativeWind v4 And src/ UI Structure
 
 Decision:
