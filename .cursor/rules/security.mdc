@@ -1,0 +1,28 @@
+---
+description: Agent security rules for setup, shell commands, and secrets handling
+alwaysApply: true
+---
+
+Security rules for all agent work in this repo:
+
+## Install And Setup Scripts
+
+- Never run install scripts from unknown repos without explaining what they do first.
+- Before running setup commands (`npm install`, `npx`, `brew`, `pip`, etc.), inspect:
+  - `package.json` and lockfiles (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
+  - `postinstall`, `preinstall`, and other lifecycle scripts
+  - Relevant config files that those commands may read or modify
+- Prefer documented project scripts from this repo over ad hoc remote installers.
+
+## Shell Execution
+
+- Never execute `curl | bash`, `wget | sh`, or equivalent remote pipe-to-shell patterns.
+- Never run remote shell scripts, one-liners fetched from the internet, or obfuscated/encoded commands without explicit user approval after review.
+- Prefer reading and understanding a script locally before execution when setup is required.
+
+## Secrets And Sensitive Data
+
+- Never expose `.env` files, API keys, tokens, cookies, or browser session data in chat, logs, commits, PRs, or screenshots.
+- Never print, echo, or commit secret values. Redact or describe presence only (for example: "SUPABASE_ANON_KEY is set").
+- Never expose Supabase service-role keys in client code or agent output.
+- Treat credentials in terminal output, MCP responses, and error messages as sensitive; summarize without repeating values.

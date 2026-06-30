@@ -74,6 +74,15 @@ Do not leave docs stale for a future agent to infer from code.
 - Keep the first user rating form short: look, comfort, quality, outfit, value, overall, optional comment.
 - Keep the app clean, boring, and consistent before making it fancy.
 
+## Security Rules
+
+Agent security behavior is enforced by `.cursor/rules/security.mdc`. Summary:
+
+- Never run install scripts from unknown repos without explaining them first.
+- Never execute `curl | bash`, remote shell scripts, or encoded commands.
+- Before running setup commands, inspect `package.json`, lockfiles, postinstall scripts, and config files.
+- Never expose `.env`, API keys, tokens, cookies, or browser session data.
+
 ## Development Rules
 
 - Work in small, isolated tasks.
