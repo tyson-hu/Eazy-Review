@@ -61,11 +61,14 @@ Reason:
 ## 2026-06-30: Add Agent Security Rules
 
 Decision:
-- Add `.cursor/rules/security.mdc` as an always-applied Cursor rule for setup, shell execution, and secrets handling.
+- Add `.cursor/rules/security.mdc` as an always-applied Cursor rule for setup, shell execution, destructive commands, and secrets handling.
+- Prefer reproducible installs with `npm ci` when `package-lock.json` exists.
+- Require explicit user approval before override install flags, destructive commands, `sudo`, remote shell scripts, or encoded commands.
 - Mirror the rule summary in `AGENTS.md` so non-Cursor agents see the same constraints.
+- Add an Agent Security Baseline to `docs/MCP_WORKFLOW.md` so MCP/tool workflows follow the same security expectations.
 
 Reason:
-- Agents routinely run install and shell commands. Explicit guardrails reduce supply-chain risk, unsafe remote execution, and accidental secret exposure.
+- Agents routinely run install, shell, and MCP commands. Explicit guardrails reduce supply-chain risk, unsafe remote execution, accidental destructive changes, and credential exposure.
 
 ## 2026-06-28: NativeWind v4 And src/ UI Structure
 
