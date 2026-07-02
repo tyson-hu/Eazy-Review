@@ -93,3 +93,12 @@ Decision:
 
 Reason:
 - SDK 57 is the latest stable Expo release and keeps the project on supported React Native 0.86 with minimal breaking changes from SDK 56.
+
+## 2026-07-01: Add Expo CI And Expand `npm run check`
+
+Decision:
+- Add `.github/workflows/expo-ci.yml` to run typecheck, lint, Expo doctor, dependency check, web export, and `git diff --check` on pull requests and `master` pushes.
+- Expand `npm run check` to include lint, `npx expo-doctor`, and `npx expo install --check` while keeping individual scripts available.
+
+Reason:
+- SDK upgrades need repeatable validation beyond TypeScript so dependency drift and Expo compatibility issues are caught before merge.

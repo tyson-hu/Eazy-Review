@@ -32,6 +32,13 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 
 Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 
+## Quality Checks
+
+- `npm run check` — typecheck, lint, Expo doctor, and Expo dependency alignment.
+- `npm run typecheck` — TypeScript only.
+- `npm run lint` — ESLint via Expo.
+- `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
+
 ## Documentation Discipline
 
 Before committing or opening a PR, update the affected docs listed in `docs/DOCUMENTATION_POLICY.md`. If a change truly does not affect docs, note `No documentation update needed` with the reason in the final response or PR body.
