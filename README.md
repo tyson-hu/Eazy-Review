@@ -22,7 +22,7 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 
 ## Stack Direction
 
-- Expo SDK 56
+- Expo SDK 57
 - Expo Router
 - React Native
 - TypeScript
@@ -30,7 +30,7 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 - Supabase
 - TanStack Query
 
-Before writing Expo code, read the exact SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 
 ## Documentation Discipline
 

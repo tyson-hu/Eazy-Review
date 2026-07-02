@@ -16,7 +16,7 @@ Before UI or navigation work:
 - Read `docs/USER_FLOWS.md`.
 
 Before Expo, Expo Router, or React Native code:
-- Read the exact Expo SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+- Read the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 - Use the installed SDK versions in `package.json`; do not assume older Expo behavior.
 
 Before database, Supabase, auth, or rating-summary work:

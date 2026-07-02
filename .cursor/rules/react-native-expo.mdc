@@ -12,7 +12,7 @@ globs:
   - "tailwind.config.*"
 ---
 
-Before writing Expo code, read the exact Expo SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+Before writing Expo code, read the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 Also read `docs/DOCUMENTATION_POLICY.md` before committing Expo, routing, dependency, or tooling changes.
 
 Rules:
