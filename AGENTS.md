@@ -97,7 +97,7 @@ Agent security behavior is enforced by `.cursor/rules/security.mdc`. See `docs/M
 ## Quality Checks
 
 Run the narrowest useful checks after changes:
-- `npm run check` for the default project check.
+- `npm run check` for the default project check (includes typed-route generation on clean checkouts).
 - `npm run start` only when the user needs a running app.
 - TypeScript/lint commands if added to `package.json`.
 - Manual route-flow review for navigation changes.

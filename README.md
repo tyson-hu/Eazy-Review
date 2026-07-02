@@ -34,7 +34,8 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 
 ## Quality Checks
 
-- `npm run check` — typecheck, lint, Expo doctor, and Expo dependency alignment.
+- `npm run check` — generate typed routes, typecheck, lint, Expo doctor, and Expo dependency alignment.
+- `npm run generate:routes` — generate Expo Router typed-route definitions in `.expo/types/` (required before typecheck on clean checkouts).
 - `npm run typecheck` — TypeScript only.
 - `npm run lint` — ESLint via Expo.
 - `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.

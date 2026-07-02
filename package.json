@@ -35,9 +35,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "generate:routes": "expo customize tsconfig.json",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "check": "npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
+    "check": "npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
   },
   "private": true
 }
