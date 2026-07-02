@@ -52,6 +52,18 @@ Add later only when needed:
 
 Treat each MCP server as a capability boundary, especially if it can write to a database, repo, or external service.
 
+## Agent Security Baseline
+
+Agents and MCP tools must follow `.cursor/rules/security.mdc` and the Security Rules summary in `AGENTS.md`.
+
+Baseline for setup, shell, and secrets work:
+- Inspect `package.json`, lockfiles, lifecycle scripts, and config before install or setup commands.
+- Prefer `npm ci` when `package-lock.json` exists; avoid `--force` and `--legacy-peer-deps` unless justified and user-approved.
+- Never run unknown install scripts, `curl | bash`, remote shell one-liners, or encoded commands without review.
+- Do not run destructive commands or `sudo` without explicit user approval.
+- Never expose `.env`, API keys, tokens, cookies, or session data in chat, logs, commits, or PRs.
+- If credentials appear in output or files, stop repeating them, redact drafts, warn the user, and recommend rotation when exposure may have occurred.
+
 ## Stitch Usage
 
 Use Stitch for visual exploration, not final authority.
