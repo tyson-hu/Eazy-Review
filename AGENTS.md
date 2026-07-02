@@ -76,7 +76,7 @@ Do not leave docs stale for a future agent to infer from code.
 
 ## Security Rules
 
-Agent security behavior is enforced by `.cursor/rules/security.mdc`. Summary:
+Agent security behavior is enforced by `.cursor/rules/security.mdc`. See `docs/MCP_WORKFLOW.md` for the agent security baseline in tool workflows. Summary:
 
 - Never run install scripts from unknown repos without explaining them first.
 - Never execute `curl | bash`, remote shell scripts, or encoded commands.
