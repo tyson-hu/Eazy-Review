@@ -16,7 +16,7 @@ Before UI or navigation work:
 - Read `docs/USER_FLOWS.md`.
 
 Before Expo, Expo Router, or React Native code:
-- Read the exact Expo SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+- Read the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 - Use the installed SDK versions in `package.json`; do not assume older Expo behavior.
 
 Before database, Supabase, auth, or rating-summary work:
@@ -97,7 +97,7 @@ Agent security behavior is enforced by `.cursor/rules/security.mdc`. See `docs/M
 ## Quality Checks
 
 Run the narrowest useful checks after changes:
-- `npm run check` for the default project check.
+- `npm run check` for the default project check (includes typed-route generation on clean checkouts).
 - `npm run start` only when the user needs a running app.
 - TypeScript/lint commands if added to `package.json`.
 - Manual route-flow review for navigation changes.

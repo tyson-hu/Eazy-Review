@@ -1,0 +1,45 @@
+name: Expo CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate typed routes
+        run: npm run generate:routes
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Expo doctor
+        run: npx expo-doctor
+
+      - name: Expo dependency check
+        run: npx expo install --check
+
+      - name: Export web bundle
+        run: CI=1 npx expo export --platform web
+
+      - name: Check whitespace errors
+        run: git diff --check

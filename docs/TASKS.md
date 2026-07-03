@@ -42,7 +42,7 @@ Quality check:
 Status: Done.
 
 Scope:
-- Install NativeWind and required peer/config packages for Expo SDK 56.
+- Install NativeWind and required peer/config packages for Expo SDK 57.
 - Add Tailwind config.
 - Add Babel/Metro config if required by the current NativeWind docs.
 

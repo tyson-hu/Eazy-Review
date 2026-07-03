@@ -22,7 +22,7 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 
 ## Stack Direction
 
-- Expo SDK 56
+- Expo SDK 57
 - Expo Router
 - React Native
 - TypeScript
@@ -30,7 +30,15 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 - Supabase
 - TanStack Query
 
-Before writing Expo code, read the exact SDK 56 docs at `https://docs.expo.dev/versions/v56.0.0/`.
+Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
+
+## Quality Checks
+
+- `npm run check` — generate typed routes, typecheck, lint, Expo doctor, and Expo dependency alignment.
+- `npm run generate:routes` — generate Expo Router typed-route definitions in `.expo/types/` (required before typecheck on clean checkouts).
+- `npm run typecheck` — TypeScript only.
+- `npm run lint` — ESLint via Expo.
+- `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
 
 ## Documentation Discipline
 
