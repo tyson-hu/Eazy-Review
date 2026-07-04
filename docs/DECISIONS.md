@@ -2,6 +2,26 @@
 
 Use this file for decisions that change product direction, architecture, naming, data model, or workflow.
 
+## Entry Template
+
+New entries use this format:
+
+```md
+## YYYY-MM-DD — Title
+
+What changed:
+Why:
+Effect:
+Safety-risk:
+Related files:
+```
+
+Writing rules:
+- Plain English a future reader can follow without session context.
+- One entry per decision. Do not bundle unrelated decisions.
+- Decisions only, no changelogs; commit history covers what files changed line by line.
+- Keep entries in chronological order. Do not rewrite old entries.
+
 ## 2026-06-28: Establish Document-Controlled Workflow
 
 Decision:
@@ -58,18 +78,6 @@ Decision:
 Reason:
 - Future agents rely on repo docs as source of truth. Keeping docs synchronized prevents stale plans, mismatched implementation order, and repeated rediscovery after commits.
 
-## 2026-06-30: Add Agent Security Rules
-
-Decision:
-- Add `.cursor/rules/security.mdc` as an always-applied Cursor rule for setup, shell execution, destructive commands, and secrets handling.
-- Prefer reproducible installs with `npm ci` when `package-lock.json` exists.
-- Require explicit user approval before override install flags, destructive commands, `sudo`, remote shell scripts, or encoded commands.
-- Mirror the rule summary in `AGENTS.md` so non-Cursor agents see the same constraints.
-- Add an Agent Security Baseline to `docs/MCP_WORKFLOW.md` so MCP/tool workflows follow the same security expectations.
-
-Reason:
-- Agents routinely run install, shell, and MCP commands. Explicit guardrails reduce supply-chain risk, unsafe remote execution, accidental destructive changes, and credential exposure.
-
 ## 2026-06-28: NativeWind v4 And src/ UI Structure
 
 Decision:
@@ -82,6 +90,18 @@ Decision:
 Reason:
 - The app shell needs a consistent styling foundation before Browse, Product Detail, and Rating work begin.
 - Keeping new feature code under `src/` matches the documented frontend contract without breaking legacy starter imports under root `components/`.
+
+## 2026-06-30: Add Agent Security Rules
+
+Decision:
+- Add `.cursor/rules/security.mdc` as an always-applied Cursor rule for setup, shell execution, destructive commands, and secrets handling.
+- Prefer reproducible installs with `npm ci` when `package-lock.json` exists.
+- Require explicit user approval before override install flags, destructive commands, `sudo`, remote shell scripts, or encoded commands.
+- Mirror the rule summary in `AGENTS.md` so non-Cursor agents see the same constraints.
+- Add an Agent Security Baseline to `docs/MCP_WORKFLOW.md` so MCP/tool workflows follow the same security expectations.
+
+Reason:
+- Agents routinely run install, shell, and MCP commands. Explicit guardrails reduce supply-chain risk, unsafe remote execution, accidental destructive changes, and credential exposure.
 
 ## 2026-07-01: Upgrade Expo SDK 56 To SDK 57
 
@@ -102,3 +122,27 @@ Decision:
 
 Reason:
 - SDK upgrades need repeatable validation beyond TypeScript so dependency drift and Expo compatibility issues are caught before merge.
+
+## 2026-07-03 — Consolidate Agent Docs Into Workflow, Loop, And Skill Layers
+
+What changed:
+- Added `docs/AGENT_WORKFLOW.md` (session flow, context map, definition of done, canonical handoff and PR summary formats, canonical-homes table) and `docs/LOOP_ENGINEERING.md` (loop anatomy, global stop conditions, max-2-retry policy, memory rule, loop index, disambiguation table).
+- Added eight repo-local skills in `skills/<name>/SKILL.md` (feature-slice-builder, ui-screen-builder, supabase-schema-change, product-data-modeling, bugfix-debug-loop, refactor-safety-loop, docs-sync-loop, test-and-validation-loop) as the concrete loop instances, plus thin discovery adapters in `.claude/skills/`.
+- Rewrote `AGENTS.md` to a ~60-line guide: product identity, non-negotiables, task discipline, compact context map, skill index, validation commands, and four pointers.
+- Merged `docs/DESIGN_PRINCIPLES.md` into `docs/DESIGN.md` and deleted it; updated all live references. `docs/STITCH_PROMPTS.md` keeps inline token values by design, and `docs/DESIGN.md` now notes that token changes must update it.
+- Slimmed the glob-scoped Cursor rules (`react-native-expo.mdc`, `supabase.mdc`, `design-system.mdc`) to operational bullets plus pointers, and deleted the `alwaysApply` rules `project-overview.mdc` and `task-discipline.mdc` whose content now lives in `AGENTS.md`. Domain guardrails (RLS defaults, server-side score recalculation, service-role keys, loading/empty/error states, route alignment) live only in the glob rules, referenced from `AGENTS.md` by a pointer line.
+- Replaced repeated doc-gate, security, and task-packet passages in `README.md`, `docs/TASKS.md`, `docs/ROADMAP.md`, `docs/MCP_WORKFLOW.md`, and `docs/DOCUMENTATION_POLICY.md` with one-line pointers to their canonical homes.
+- Rewrote `.github/pull_request_template.md` to the human-readable PR format and added this entry template to `docs/DECISIONS.md`.
+
+Why:
+- Instructions were duplicated across eight-plus files (Cursor injected `AGENTS.md` plus three `alwaysApply` rules restating it every session), so agents loaded redundant context and edits drifted. One canonical home per instruction, with pointers everywhere else, keeps the docs trustworthy and cheap to read per task.
+
+Effect:
+- Agents start every session the same way (git status -> `docs/TASKS.md` -> skill), read only the docs their task type needs, follow a written routine per task type, and end with the same handoff format. Humans get readable PR bodies instead of checkbox lists.
+
+Safety-risk:
+- Tools that read `AGENTS.md` but not `.cursor/rules/` see only a pointer for the domain guardrails; tools that read neither `skills/` nor `.claude/skills/` still get the loop index from `docs/LOOP_ENGINEERING.md`. No app code, schema, or dependency changes.
+- `.cursor/rules/security.mdc` stays the canonical security home; Claude-only sessions reach the security rules by pointer only.
+
+Related files:
+- `docs/AGENT_WORKFLOW.md`, `docs/LOOP_ENGINEERING.md`, `skills/*/SKILL.md`, `.claude/skills/*/SKILL.md`, `AGENTS.md`, `docs/DESIGN.md`, `docs/DESIGN_PRINCIPLES.md` (deleted), `.cursor/rules/react-native-expo.mdc`, `.cursor/rules/supabase.mdc`, `.cursor/rules/design-system.mdc`, `.cursor/rules/project-overview.mdc` (deleted), `.cursor/rules/task-discipline.mdc` (deleted), `README.md`, `docs/TASKS.md`, `docs/ROADMAP.md`, `docs/MCP_WORKFLOW.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/DECISIONS.md`, `.github/pull_request_template.md`

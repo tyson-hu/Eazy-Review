@@ -13,13 +13,10 @@ globs:
 ---
 
 Before writing Expo code, read the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
-Also read `docs/DOCUMENTATION_POLICY.md` before committing Expo, routing, dependency, or tooling changes.
 
 Rules:
 - Use Expo Router file-based navigation.
-- Keep bottom tabs named Feed, Browse, and Account.
-- Keep non-tab screens aligned with `docs/USER_FLOWS.md`.
-- Use TypeScript for product, rating, auth, and API code.
-- Use NativeWind once configured, following current version docs.
-- Do not assume older Expo or Expo Router behavior.
-- Expo, route, package-script, or dependency changes must update affected docs before commit/PR handoff.
+- Keep bottom tabs named Feed, Browse, and Account; keep all routes aligned with `docs/USER_FLOWS.md`.
+- Do not assume older Expo or Expo Router behavior; use the installed SDK versions in `package.json`.
+
+Feature work follows the routine in `skills/feature-slice-builder/SKILL.md`.

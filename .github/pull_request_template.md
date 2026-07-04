@@ -1,37 +1,26 @@
-## Summary
+<!-- Write for a reader who was not in the session. Plain English, no filler.
+Full template rules: docs/AGENT_WORKFLOW.md -> PR Summary Template. -->
 
--
+## What changed
 
 ## Why
 
--
+## User-product effect
+
+<!-- What a user, the product, or a developer sees, does, or maintains differently. -->
+
+## Safety
+
+<!-- What could break, and why it will not (or what to watch). -->
 
 ## Validation
 
-- [ ] `npm run check`
-- [ ] `git diff --check`
-- [ ] Other:
+<!-- Commands run with results, or each skipped command with the reason. -->
 
-## Documentation
+## Files changed
 
-Updated docs:
-- [ ] `docs/BLUEBOOK.md`
-- [ ] `docs/DESIGN.md`
-- [ ] `docs/DESIGN_PRINCIPLES.md`
-- [ ] `docs/USER_FLOWS.md`
-- [ ] `docs/DATA_MODEL.md`
-- [ ] `docs/API_CONTRACTS.md`
-- [ ] `docs/TASKS.md`
-- [ ] `docs/DECISIONS.md`
-- [ ] `docs/MCP_WORKFLOW.md`
-- [ ] `docs/RELEASE_CHECKLIST.md`
-- [ ] `README.md`
-- [ ] `.cursor/rules/*`
-- [ ] `AGENTS.md`
-- [ ] No documentation update needed. Reason:
+## Follow-ups
 
-## Scope Control
+<!-- Deferred work; each item must have a home in docs/TASKS.md. -->
 
-- [ ] This PR is limited to the requested task.
-- [ ] No unrelated dependencies were added.
-- [ ] No product flow was redesigned unless documented.
+Docs updated: <!-- list them, or write: No documentation update needed because ... -->

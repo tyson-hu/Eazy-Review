@@ -7,22 +7,12 @@ globs:
   - "src/features/**/*.tsx"
 ---
 
-Before changing UI, read:
-- `docs/DESIGN.md`
-- `docs/DESIGN_PRINCIPLES.md`
-- `docs/USER_FLOWS.md`
-- `docs/DOCUMENTATION_POLICY.md`
+Design tokens, principles, component rules, and screen-level rules live in `docs/DESIGN.md`.
 
 Rules:
-- Build mobile-first.
-- Keep the UI premium, sharp, trustworthy, data-rich, fashion-aware, and consistent.
-- Show the decision first, then the details.
-- Prefer existing reusable components before creating new ones.
-- Product cards show image, brand, name, SKU, Eazy Score, Community Score, and lowest price.
-- Product detail must clearly compare Eazy Score, Community Score, and My Rating.
-- Use the visual tokens in `docs/DESIGN_PRINCIPLES.md` unless the task explicitly changes the system.
-- Avoid generic ecommerce UI, childish sneaker-store styling, crowded dashboards, and screen-by-screen visual drift.
+- Reuse the primitives in `src/components/ui/*` before creating new components.
 - Include loading, empty, and error states for data screens.
-- Do not invent new rating categories.
-- Do not overbuild Feed before Browse, Product Detail, and Rating work.
-- UI, component, visual-token, or route-flow changes must update the affected design/user-flow docs before commit/PR handoff.
+- Product cards show image, brand, name, SKU, Eazy Score, Community Score, and lowest price.
+- Score badges display `No score yet` when the score is null.
+
+Screen UI work follows the routine in `skills/ui-screen-builder/SKILL.md`.

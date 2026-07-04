@@ -54,22 +54,14 @@ Treat each MCP server as a capability boundary, especially if it can write to a 
 
 ## Agent Security Baseline
 
-Agents and MCP tools must follow `.cursor/rules/security.mdc` and the Security Rules summary in `AGENTS.md`.
-
-Baseline for setup, shell, and secrets work:
-- Inspect `package.json`, lockfiles, lifecycle scripts, and config before install or setup commands.
-- Prefer `npm ci` when `package-lock.json` exists; avoid `--force` and `--legacy-peer-deps` unless justified and user-approved.
-- Never run unknown install scripts, `curl | bash`, remote shell one-liners, or encoded commands without review.
-- Do not run destructive commands or `sudo` without explicit user approval.
-- Never expose `.env`, API keys, tokens, cookies, or session data in chat, logs, commits, or PRs.
-- If credentials appear in output or files, stop repeating them, redact drafts, warn the user, and recommend rotation when exposure may have occurred.
+All agent and MCP tool work follows `.cursor/rules/security.mdc` (the canonical security rules for setup, shell, destructive commands, and secrets).
 
 ## Stitch Usage
 
 Use Stitch for visual exploration, not final authority.
 
 Good workflow:
-1. Read `docs/DESIGN_PRINCIPLES.md` and `docs/STITCH_PROMPTS.md`.
+1. Read `docs/DESIGN.md` and `docs/STITCH_PROMPTS.md`.
 2. Prompt with product context, exact screens, components, visual system, constraints, and platform.
 3. Generate 2-4 related screens at a time instead of the whole app.
 4. Ask for one or two targeted refinements per prompt.
@@ -88,26 +80,6 @@ Use specific UI terms in prompts:
 - bottom tab navigation
 - product image carousel
 
-## Cursor Task Packet Format
+## Cursor Task Format
 
-Use controlled task packets:
-
-```txt
-Task:
-
-Read:
-
-Scope:
-
-Out of scope:
-
-Expected output:
-
-Quality check:
-
-Docs to update:
-```
-
-Avoid asking Cursor or an agent to "build the whole app" in one request.
-
-Every task packet should include `Docs to update`. If no docs should change, the packet should say why.
+Scope agent requests to one task at a time using the skills in `skills/` (indexed in `docs/LOOP_ENGINEERING.md`). Each skill defines its inputs, routine, verification, and doc-update step. Avoid asking Cursor or an agent to "build the whole app" in one request.

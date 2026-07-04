@@ -30,8 +30,7 @@ Product scope, positioning, MVP boundaries, or success criteria:
 
 UI design, visual system, components, screen layouts, or Stitch direction:
 - `docs/DESIGN.md`
-- `docs/DESIGN_PRINCIPLES.md`
-- `docs/STITCH_PROMPTS.md`
+- `docs/STITCH_PROMPTS.md` (keeps copy-paste token values; update when tokens change)
 - `docs/USER_FLOWS.md`
 - `docs/DECISIONS.md`
 
@@ -64,6 +63,9 @@ Tooling, scripts, dependencies, quality checks, local setup, or developer workfl
 Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `AGENTS.md`
 - `.cursor/rules/*`
+- `docs/AGENT_WORKFLOW.md`
+- `docs/LOOP_ENGINEERING.md`
+- `skills/*/SKILL.md`
 - `docs/MCP_WORKFLOW.md`
 - `docs/DOCUMENTATION_POLICY.md`
 - `docs/DECISIONS.md`
@@ -78,17 +80,4 @@ Release readiness, QA criteria, security checks, or store-readiness work:
 
 Every commit should keep documents and implementation synchronized as much as practical. If a task needs multiple commits, docs may be updated in the final commit of that task, but they must be current before pushing or opening/merging a PR.
 
-Every PR body should include:
-- What changed.
-- Why it changed.
-- Validation run.
-- Docs updated, or `No documentation update needed` with a reason.
-
-## Task Completion Checklist
-
-Before final response:
-- Relevant docs are updated.
-- `docs/TASKS.md` reflects completed or newly discovered work.
-- `docs/DECISIONS.md` has entries for meaningful decisions.
-- `README.md` reflects setup/check changes when needed.
-- Validation commands were run, or skipped with a reason.
+PR bodies use the PR summary template in `docs/AGENT_WORKFLOW.md`, and every task ends against the Definition Of Done there.

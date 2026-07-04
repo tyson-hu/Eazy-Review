@@ -7,9 +7,10 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 ## Documentation Map
 
 - `docs/BLUEBOOK.md`: master product and engineering plan.
-- `docs/DESIGN.md`: UI/UX source of truth.
-- `docs/DESIGN_PRINCIPLES.md`: UI design brief and visual implementation guardrails.
+- `docs/DESIGN.md`: UI/UX source of truth (identity, principles, tokens, component and screen rules).
 - `docs/DOCUMENTATION_POLICY.md`: required doc-update rules for future changes.
+- `docs/AGENT_WORKFLOW.md`: agent session flow, context map, definition of done, handoff and PR formats.
+- `docs/LOOP_ENGINEERING.md`: loop anatomy, stop conditions, retry policy, and the loop-to-skill index.
 - `docs/USER_FLOWS.md`: core user journeys and route expectations.
 - `docs/DATA_MODEL.md`: Supabase schema, RLS, triggers, and rating summary logic.
 - `docs/API_CONTRACTS.md`: frontend types, API functions, and query keys.
@@ -34,15 +35,11 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 
 ## Quality Checks
 
-- `npm run check` — generate typed routes, typecheck, lint, Expo doctor, and Expo dependency alignment.
-- `npm run generate:routes` — generate Expo Router typed-route definitions in `.expo/types/` (required before typecheck on clean checkouts).
-- `npm run typecheck` — TypeScript only.
-- `npm run lint` — ESLint via Expo.
-- `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
+Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 
 ## Documentation Discipline
 
-Before committing or opening a PR, update the affected docs listed in `docs/DOCUMENTATION_POLICY.md`. If a change truly does not affect docs, note `No documentation update needed` with the reason in the final response or PR body.
+Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commit/PR handoff.
 
 ## First Build Goal
 

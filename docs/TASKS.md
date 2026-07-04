@@ -11,12 +11,7 @@ As of this document setup:
 
 ## Definition Of Done
 
-Every task is not done until:
-- Relevant docs from `docs/DOCUMENTATION_POLICY.md` are updated.
-- `docs/TASKS.md` reflects completed work or newly discovered follow-up work.
-- `docs/DECISIONS.md` records meaningful product, architecture, data, workflow, design-system, dependency, or toolchain decisions.
-- `npm run check` passes when applicable, or skipped checks are explained.
-- The final response or PR body lists docs updated, or states `No documentation update needed` with a reason.
+See Definition Of Done in `docs/AGENT_WORKFLOW.md`.
 
 ## First Implementation Task List
 
@@ -144,6 +139,10 @@ Acceptance:
 - User can open a product.
 - User can submit a fake rating.
 - UI flow is understandable.
+
+## Follow-Ups / Discovered Work
+
+- Promote `.cursor/rules/security.mdc` content to `docs/SECURITY.md` and make the rule a mirror, if non-Cursor agents become the primary workflow. Context: `docs/DECISIONS.md` 2026-07-03 redesign entry.
 
 ## Supabase Tasks
 
