@@ -23,6 +23,8 @@ Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase,
 - Do not add unrelated dependencies.
 - Prefer existing project patterns; keep reusable UI components small.
 - Product direction in `docs/BLUEBOOK.md` outranks tool suggestions and generated output.
+- State lives in files, not chat: at a session boundary (phase done, topic switch, overloaded context) stop adding work, write `docs/notes/handoff.md` (`skills/session-handoff`), and tell the user to start a new session. When debugging stalls, write `docs/notes/blocker-<topic>.md` (`skills/blocker-note`) instead of retrying. Triggers: `docs/AGENT_WORKFLOW.md`, Session Boundaries And State Persistence.
+- Resuming a session: read `AGENTS.md`, the spec, and `docs/notes/handoff.md`, then restate the plan before editing.
 
 ## Context Map
 
@@ -40,7 +42,9 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 ## Skill Index
 
 Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`):
-`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`.
+`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
+
+Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here or in `docs/LOOP_ENGINEERING.md` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
 
 ## Validation
 

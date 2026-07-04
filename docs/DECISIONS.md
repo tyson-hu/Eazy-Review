@@ -146,3 +146,67 @@ Safety-risk:
 
 Related files:
 - `docs/AGENT_WORKFLOW.md`, `docs/LOOP_ENGINEERING.md`, `skills/*/SKILL.md`, `.claude/skills/*/SKILL.md`, `AGENTS.md`, `docs/DESIGN.md`, `docs/DESIGN_PRINCIPLES.md` (deleted), `.cursor/rules/react-native-expo.mdc`, `.cursor/rules/supabase.mdc`, `.cursor/rules/design-system.mdc`, `.cursor/rules/project-overview.mdc` (deleted), `.cursor/rules/task-discipline.mdc` (deleted), `README.md`, `docs/TASKS.md`, `docs/ROADMAP.md`, `docs/MCP_WORKFLOW.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/DECISIONS.md`, `.github/pull_request_template.md`
+
+## 2026-07-03 — Add Session Handoff And Blocker Note Standards
+
+What changed:
+- Added two skills: `skills/session-handoff` (write `docs/notes/handoff.md` at a session boundary and recommend a fresh session) and `skills/blocker-note` (write `docs/notes/blocker-<topic>.md` when debugging stalls, then stop attempting fixes).
+- Added `docs/notes/` as the home for session working state, with a README distinguishing it from project documentation.
+- `docs/LOOP_ENGINEERING.md`: added Session boundary and Stalled debugging to the global stop conditions, pointed the retry policy's stop step at `skills/blocker-note`, and expanded the memory rule from two kinds to three (task status, decisions, session state in `docs/notes/`).
+- `docs/AGENT_WORKFLOW.md`: added the Session Boundaries And State Persistence section (boundary triggers, resume prompt, blocker-note triggers), a resume step in Session Flow, a context-map row for resuming, and canonical-home rows for the new note formats.
+- `AGENTS.md`: added the state-persistence and resume rules to Task Discipline and the two skills to the skill index.
+
+Why:
+- Long tasks, stalled debugging, and cross-day work were losing state that lived only in chat: overloaded sessions repeat failed attempts, re-ask answered questions, and nobody can say what was already tried. External state files (`handoff.md`, `blocker-*.md`) let a fresh session continue from files instead of transcripts.
+
+Effect:
+- Agents stop adding work at session boundaries (feature phase complete, bug fixed with unrelated next task, backend done before UI, exploration done before implementation) and hand the user a resume prompt. Stalled debugging produces a durable note with attempts, ruled-out causes, and verbatim evidence instead of more same-session retries.
+
+Safety-risk:
+- The memory rule now permits notes files, but only inside `docs/notes/` and only via the two skills; scratch files elsewhere remain forbidden. No app code, schema, or dependency changes.
+
+Related files:
+- `skills/session-handoff/SKILL.md`, `skills/blocker-note/SKILL.md`, `.claude/skills/session-handoff/SKILL.md`, `.claude/skills/blocker-note/SKILL.md`, `docs/notes/README.md`, `docs/LOOP_ENGINEERING.md`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `docs/DECISIONS.md`
+
+## 2026-07-03 — Add Skill-Creation Standard (skill-creator)
+
+What changed:
+- Added `skills/skill-creator/SKILL.md` (plus `.claude/skills/skill-creator/SKILL.md` stub): the canonical routine for turning a repeated task pattern into a new skill and for iterating or maintaining existing skills.
+- The standard sets: a creation threshold (same pattern explained 3+ times), the repo's two-file skill structure (canonical `skills/<name>/SKILL.md` with the standard section set, thin `.claude` stub, optional `templates/` and `scripts/`), quality rules (concrete trigger, numbered steps, exact paths and commands, acceptance criteria, executable length), an iteration rule (skipped step, misunderstood convention, or new edge case updates the skill after each use), and library maintenance (periodic review; flag stale and overlapping skills; a curated ten beats a mediocre hundred).
+- Skill lifecycle uses a hybrid approval gate: the agent proposes, the human approves, the agent implements after approval. Agents may proactively propose after the 3+ threshold, but must not create, delete, merge, or substantially modify skill files — or change triggers, boundaries, scripts/templates, or the skill indexes in `AGENTS.md` / `docs/LOOP_ENGINEERING.md` — without explicit approval. Proposals use a fixed format: name, trigger, why it deserves a skill, expected inputs, workflow summary, overlap check, files to be created or modified. Overlap decisions (merge, split, replace, or keep as chat-only guidance) are always human decisions.
+- Wired into `docs/LOOP_ENGINEERING.md` (loop index and disambiguation rows), `AGENTS.md` (skill index plus the hybrid-rule summary), and the canonical-homes table in `docs/AGENT_WORKFLOW.md`.
+
+Why:
+- Project conventions were being restated in chat every time a recurring task type came up. Capturing stabilized patterns as skills makes them durable and cheap to reuse, while the threshold, overlap check, and maintenance rules prevent the failure modes: 1,000-line skills that bury the point, overlapping triggers the agent cannot choose between, hard-coded one-off details, stale paths that mislead, and a library too large to select from.
+- Skills become long-term project behavior, so a bad skill is worse than a bad prompt — future agents keep following it. The human keeps control over whether a workflow is common enough, whether it overlaps, whether the trigger is too broad, whether it adds too much context, and whether it belongs in a skill versus `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, or just the current task.
+
+Effect:
+- Agents detect and propose skills autonomously after the third repetition, then wait: no skill files, stubs, scripts, templates, or index edits until the proposal is explicitly approved. After approval the agent implements exactly the files listed in the proposal. Skill updates after use go through the same propose-then-apply gate.
+
+Safety-risk:
+- Docs and skills only; no app code, schema, or dependency changes. The approval gate means no future skill can enter the library, change its trigger, or disappear without a human decision.
+
+Related files:
+- `skills/skill-creator/SKILL.md`, `.claude/skills/skill-creator/SKILL.md`, `docs/LOOP_ENGINEERING.md`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `docs/DECISIONS.md`
+
+## 2026-07-03 — Note-Skill Standardization, Blocker Resolution Ownership, Notes Commit Policy, Gitignore Hardening
+
+What changed:
+- `skills/session-handoff` and `skills/blocker-note` gained standard `## Memory step` sections; all 11 skills now share the same section set.
+- The three debugging principles (hypothesis before editing, no guess-and-fix, re-read layer docs after repeated failures) moved to a new Debugging Principles section in `docs/LOOP_ENGINEERING.md`; `skills/blocker-note` and `skills/bugfix-debug-loop` point at it. The external superpowers `systematic-debugging` plugin reference is gone.
+- Blocker-note resolution is owned by `skills/bugfix-debug-loop`'s memory step: delete the note and remove the `docs/TASKS.md` pointer, or mark the note resolved if the record is still useful.
+- `docs/notes/README.md` gained a Commit Policy: `handoff.md` is transient and gitignored; `blocker-*.md` is durable and committed when referenced from `docs/TASKS.md`.
+- Pointer references corrected to the exact heading "Session Boundaries And State Persistence".
+- `.gitignore` redesigned: all `.env` variants except `.env.example`, Supabase local CLI state, coverage, logs, native build and signing artifacts, `.idea/`, `.claude/settings.local.json`, and `docs/notes/handoff.md` are ignored.
+
+Why:
+- The two newest skills violated the section standard `skills/skill-creator` enforces; blocker notes had no resolution owner and would accumulate stale; the notes commit behavior was an accident rather than a decision; and plain `.env` was not gitignored despite the security rules forbidding committed secrets.
+
+Effect:
+- Every skill audits cleanly against the skill-creator standard; a fixed bug closes its blocker note as part of the fix's memory step; the next session knows which note files travel via git and which stay local; secret-bearing env files cannot be committed by accident.
+
+Safety-risk:
+- Docs, skills, and `.gitignore` only — no app code, schema, or dependency changes. Verified no currently tracked file became ignored by the new `.gitignore`.
+
+Related files:
+- `skills/session-handoff/SKILL.md`, `skills/blocker-note/SKILL.md`, `skills/bugfix-debug-loop/SKILL.md`, `docs/LOOP_ENGINEERING.md`, `docs/notes/README.md`, `AGENTS.md`, `.gitignore`, `docs/DECISIONS.md`

@@ -12,6 +12,29 @@ Every working session follows the same three steps:
 
 If no skill matches, work directly but still apply the context map, definition of done, and handoff format below.
 
+When continuing work from a previous session: read `AGENTS.md`, the spec, and `docs/notes/handoff.md` (plus any linked `docs/notes/blocker-*.md`), then restate the plan before editing anything.
+
+## Session Boundaries And State Persistence
+
+Chat is the workbench; files are the hard drive. For long tasks, loops, and cross-day collaboration, state must never live only in chat — `docs/notes/handoff.md`, `docs/notes/blocker-*.md`, `docs/TASKS.md`, issue boards, and PR checklists are the external state the next session reads, not old transcripts.
+
+Tell the user it is time to switch to a new session when:
+
+- A feature phase is complete.
+- A bug is fixed and the next task is unrelated.
+- Backend work is done and the next work is UI.
+- Exploration is done and implementation is next.
+- The session is overloaded: context is noisy, answered questions get re-asked, or corrected mistakes come back.
+
+At a boundary, stop adding work. Whether the user asks for a handoff or the agent proposes one, run `skills/session-handoff` to write `docs/notes/handoff.md`, then hand the user this resume prompt for the new session:
+
+```txt
+Read AGENTS.md, the spec, and docs/notes/handoff.md.
+Continue from the previous session, but restate the plan before editing.
+```
+
+When debugging stalls instead (2+ failures on the same problem, 20–30+ minutes without progress, or plan A → B → A looping), run `skills/blocker-note` to write `docs/notes/blocker-<topic>.md` and stop attempting fixes in that session.
+
 ## Context Map
 
 Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any work" — read it only when product scope or direction is actually in question.
@@ -30,6 +53,7 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 | Stitch, MCP, or external-tool workflow | `docs/MCP_WORKFLOW.md`, `docs/STITCH_PROMPTS.md` | `docs/DATA_MODEL.md` |
 | Expo / Expo Router / React Native specifics | Installed versions in `package.json`, plus the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/` | Older Expo SDK docs |
 | Release preparation | `docs/RELEASE_CHECKLIST.md` | — |
+| Resuming a previous session | `AGENTS.md`, the spec, `docs/notes/handoff.md`, linked `docs/notes/blocker-*.md` | Old chat transcripts |
 
 Example: building the Browse screen needs the Browse flow in `docs/USER_FLOWS.md` and the product card rules in `docs/DESIGN.md` — not `docs/BLUEBOOK.md`, not `docs/DATA_MODEL.md`.
 
@@ -133,6 +157,10 @@ One home per instruction; everywhere else points, never restates.
 | Doc-update gate and Document Update Map | `docs/DOCUMENTATION_POLICY.md` |
 | Security rules | `.cursor/rules/security.mdc` |
 | Session flow, context map, definition of done, validation commands, handoff and PR formats | `docs/AGENT_WORKFLOW.md` (this file) |
+| Session boundary triggers, state-persistence principle, resume prompt | `docs/AGENT_WORKFLOW.md` (this file) |
+| Handoff note routine and `docs/notes/handoff.md` template | `skills/session-handoff/SKILL.md` |
+| Blocker note routine and `docs/notes/blocker-<topic>.md` template | `skills/blocker-note/SKILL.md` |
+| Skill creation threshold, structure, quality rules, iteration and library maintenance | `skills/skill-creator/SKILL.md` |
 | Loop anatomy, global stop conditions, retry policy, loop index | `docs/LOOP_ENGINEERING.md` |
 | Concrete loop routines | `skills/<name>/SKILL.md` |
 | Task status and build order | `docs/TASKS.md` |

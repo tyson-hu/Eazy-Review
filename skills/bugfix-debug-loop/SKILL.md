@@ -25,7 +25,7 @@ Goal: fix one reported bug with the smallest change that makes the reproduction 
 ## Routine
 
 1. Reproduce first. Record the exact steps or command (route taps like Browse -> `/product/[id]`, or `npm run typecheck` output). No reproduction, no fix.
-2. Write the hypothesis down before editing: one sentence naming the suspected cause.
+2. Write the hypothesis down before editing: one sentence naming the suspected cause (first debugging principle in `docs/LOOP_ENGINEERING.md`).
 3. Apply the minimal fix for that hypothesis only. Do not clean up, rename, or restructure while fixing.
 4. Re-run the reproduction; confirm the wrong behavior is gone.
 5. Regression-check the adjacent flow: walk Browse -> Product Detail -> Rating Form and back.
@@ -45,6 +45,7 @@ Goal: fix one reported bug with the smallest change that makes the reproduction 
 ## Memory step
 
 - Update `docs/TASKS.md`: mark the bug task done, and record any different pre-existing issues discovered along the way as new items (do not fix them now).
+- If this bug has a related `docs/notes/blocker-*.md`, delete it and remove the `docs/TASKS.md` pointer after the blocker is resolved, or mark the note as resolved if the record is still useful.
 - Add a `docs/DECISIONS.md` entry only if the fix changed a contract or documented behavior.
 
 ## Common mistakes
