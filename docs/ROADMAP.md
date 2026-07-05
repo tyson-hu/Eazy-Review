@@ -9,7 +9,7 @@
 5. Set up `.cursor/rules`.
 6. Set up Supabase local/dev project.
 
-All phases must keep source-of-truth docs current. Use `docs/DOCUMENTATION_POLICY.md` before committing or merging work in any phase.
+All phases follow the doc-update gate in `docs/DOCUMENTATION_POLICY.md`.
 
 ## Phase 2: UI Shell
 

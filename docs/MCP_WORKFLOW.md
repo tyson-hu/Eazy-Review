@@ -5,14 +5,14 @@
 ```txt
 BLUEBOOK.md = master product/engineering plan
 DESIGN.md = design principles and UI/UX source of truth
-AGENTS.md = how AI agents should work in the repo
-.cursor/rules = Cursor-specific scoped rules
-MCP = external tools Cursor can call
+AGENTS.md = how AI agents should work in the repo (all tools)
+.cursor/rules = Cursor-attached mirrors of docs/ rules and guardrails
+MCP = external tools a coding agent can call
 Stitch = fast UI exploration tool
-Cursor = implementation workspace
+Coding agent (Cursor, Codex, Claude Code, ...) = implementation workspace
 ```
 
-Main rule: documents control tools, not the other way around. Stitch and Cursor should follow the docs, not randomly decide product direction.
+Main rule: documents control tools, not the other way around. Stitch and coding agents should follow the docs, not randomly decide product direction.
 
 ## Document Hierarchy
 
@@ -21,7 +21,7 @@ BLUEBOOK.md
   -> DESIGN.md + DATA_MODEL.md + USER_FLOWS.md
   -> STITCH_PROMPTS.md
   -> AGENTS.md + .cursor/rules/*
-  -> Cursor implementation tasks
+  -> agent implementation tasks
 ```
 
 ## Recommended Workflow
@@ -30,15 +30,19 @@ BLUEBOOK.md
 2. Define design principles in `docs/DESIGN.md`.
 3. Generate visual ideas in Stitch when useful.
 4. Save strong Stitch prompts/results in `docs/STITCH_PROMPTS.md`.
-5. Ask Cursor to implement one screen or feature.
+5. Ask the coding agent to implement one screen or feature.
 6. Use MCP only when external context/tooling is needed.
 7. Update affected docs before commit/PR handoff using `docs/DOCUMENTATION_POLICY.md`.
 
-Do not start with Cursor coding directly for large features. Start with documents, then design, then implementation.
+Do not start an agent coding directly on large features. Start with documents, then design, then implementation.
 
 ## MCP Setup Philosophy
 
-Keep `.cursor/mcp.json` small. Add tools based on real workflow needs.
+Keep MCP configs small; add tools based on real workflow needs. Each agent reads its own config, so a server the project relies on must be added to every config in use:
+
+- Cursor: `.cursor/mcp.json`
+- Claude Code: `.mcp.json` at the repo root
+- Codex: its global `config.toml` (not a repo file)
 
 Recommended starting tools:
 - Stitch MCP: visual exploration.
@@ -54,28 +58,20 @@ Treat each MCP server as a capability boundary, especially if it can write to a 
 
 ## Agent Security Baseline
 
-Agents and MCP tools must follow `.cursor/rules/security.mdc` and the Security Rules summary in `AGENTS.md`.
-
-Baseline for setup, shell, and secrets work:
-- Inspect `package.json`, lockfiles, lifecycle scripts, and config before install or setup commands.
-- Prefer `npm ci` when `package-lock.json` exists; avoid `--force` and `--legacy-peer-deps` unless justified and user-approved.
-- Never run unknown install scripts, `curl | bash`, remote shell one-liners, or encoded commands without review.
-- Do not run destructive commands or `sudo` without explicit user approval.
-- Never expose `.env`, API keys, tokens, cookies, or session data in chat, logs, commits, or PRs.
-- If credentials appear in output or files, stop repeating them, redact drafts, warn the user, and recommend rotation when exposure may have occurred.
+All agent and MCP tool work follows `docs/SECURITY.md` (the canonical security rules for setup, shell, destructive commands, and secrets).
 
 ## Stitch Usage
 
 Use Stitch for visual exploration, not final authority.
 
 Good workflow:
-1. Read `docs/DESIGN_PRINCIPLES.md` and `docs/STITCH_PROMPTS.md`.
+1. Read `docs/DESIGN.md` and `docs/STITCH_PROMPTS.md`.
 2. Prompt with product context, exact screens, components, visual system, constraints, and platform.
 3. Generate 2-4 related screens at a time instead of the whole app.
 4. Ask for one or two targeted refinements per prompt.
 5. Apply one final consistency prompt across selected screens.
 6. Save the chosen direction in `docs/DESIGN.md` or `docs/STITCH_PROMPTS.md`.
-7. Ask Cursor to implement the selected direction.
+7. Ask the coding agent to implement the selected direction.
 
 Use specific UI terms in prompts:
 - score badge
@@ -88,26 +84,6 @@ Use specific UI terms in prompts:
 - bottom tab navigation
 - product image carousel
 
-## Cursor Task Packet Format
+## Agent Task Format
 
-Use controlled task packets:
-
-```txt
-Task:
-
-Read:
-
-Scope:
-
-Out of scope:
-
-Expected output:
-
-Quality check:
-
-Docs to update:
-```
-
-Avoid asking Cursor or an agent to "build the whole app" in one request.
-
-Every task packet should include `Docs to update`. If no docs should change, the packet should say why.
+Scope agent requests to one task at a time using the skills in `skills/` (indexed in `docs/LOOP_ENGINEERING.md`). Each skill defines its inputs, routine, verification, and doc-update step. Avoid asking any agent to "build the whole app" in one request.

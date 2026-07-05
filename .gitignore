@@ -9,33 +9,56 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# generated native folders
+/ios
+/android
+
+# native signing & credentials
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
+*.pem
+
+# native build artifacts
+*.ipa
+*.apk
+*.aab
+
+# environment files & secrets — never commit (see docs/SECURITY.md)
+.env
+.env.*
+!.env.example
+
+# Supabase local dev state (migrations, functions, seed stay committed)
+supabase/.temp/
+supabase/.branches/
 
 # Metro
 .metro-health-check*
 
-# debug
+# debug & logs
 npm-debug.*
 yarn-debug.*
 yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
+*.log
 
 # typescript
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# test coverage
+coverage/
+
+# editor & tool local state (.vscode and .claude/settings.json stay committed)
+.idea/
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# transient session state (blocker notes stay committed)
+docs/notes/handoff.md

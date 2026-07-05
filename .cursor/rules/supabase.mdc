@@ -8,18 +8,12 @@ globs:
   - "src/features/**/*.tsx"
 ---
 
-Before database changes, read:
-- `docs/DATA_MODEL.md`
-- `docs/API_CONTRACTS.md`
-- `docs/DOCUMENTATION_POLICY.md`
+Schema, RLS, and triggers are defined in `docs/DATA_MODEL.md`; do not change schema without updating it.
 
 Rules:
-- Use relational Supabase tables.
-- Do not create one giant product JSON object.
-- Do not change schema without updating `docs/DATA_MODEL.md`.
-- Products, images, offers, Eazy Scores, and rating summaries should be publicly readable.
-- Users can only insert/update/delete their own ratings.
-- Trusted Community Score recalculation must happen with database trigger/function or server-side logic.
+- Use relational Supabase tables; do not create one giant product JSON object.
+- RLS defaults: products, images, offers, Eazy Scores, and rating summaries are publicly readable; users can only insert/update/delete their own `user_ratings` rows.
+- Trusted Community Score recalculation happens in a database trigger/function or server-side logic, never only on the client.
 - Never expose service-role keys in client code.
-- Do not implement scraping until the mock core app flow works.
-- Supabase, auth, RLS, schema, or API-contract changes must update affected docs before commit/PR handoff.
+
+Schema, RLS, migration, and contract work follows the routine in `skills/supabase-schema-change/SKILL.md`.

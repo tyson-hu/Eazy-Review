@@ -2,6 +2,26 @@
 
 Use this file for decisions that change product direction, architecture, naming, data model, or workflow.
 
+## Entry Template
+
+New entries use this format:
+
+```md
+## YYYY-MM-DD — Title
+
+What changed:
+Why:
+Effect:
+Safety-risk:
+Related files:
+```
+
+Writing rules:
+- Plain English a future reader can follow without session context.
+- One entry per decision. Do not bundle unrelated decisions.
+- Decisions only, no changelogs; commit history covers what files changed line by line.
+- Keep entries in chronological order. Do not rewrite old entries.
+
 ## 2026-06-28: Establish Document-Controlled Workflow
 
 Decision:
@@ -58,18 +78,6 @@ Decision:
 Reason:
 - Future agents rely on repo docs as source of truth. Keeping docs synchronized prevents stale plans, mismatched implementation order, and repeated rediscovery after commits.
 
-## 2026-06-30: Add Agent Security Rules
-
-Decision:
-- Add `.cursor/rules/security.mdc` as an always-applied Cursor rule for setup, shell execution, destructive commands, and secrets handling.
-- Prefer reproducible installs with `npm ci` when `package-lock.json` exists.
-- Require explicit user approval before override install flags, destructive commands, `sudo`, remote shell scripts, or encoded commands.
-- Mirror the rule summary in `AGENTS.md` so non-Cursor agents see the same constraints.
-- Add an Agent Security Baseline to `docs/MCP_WORKFLOW.md` so MCP/tool workflows follow the same security expectations.
-
-Reason:
-- Agents routinely run install, shell, and MCP commands. Explicit guardrails reduce supply-chain risk, unsafe remote execution, accidental destructive changes, and credential exposure.
-
 ## 2026-06-28: NativeWind v4 And src/ UI Structure
 
 Decision:
@@ -82,6 +90,18 @@ Decision:
 Reason:
 - The app shell needs a consistent styling foundation before Browse, Product Detail, and Rating work begin.
 - Keeping new feature code under `src/` matches the documented frontend contract without breaking legacy starter imports under root `components/`.
+
+## 2026-06-30: Add Agent Security Rules
+
+Decision:
+- Add `.cursor/rules/security.mdc` as an always-applied Cursor rule for setup, shell execution, destructive commands, and secrets handling.
+- Prefer reproducible installs with `npm ci` when `package-lock.json` exists.
+- Require explicit user approval before override install flags, destructive commands, `sudo`, remote shell scripts, or encoded commands.
+- Mirror the rule summary in `AGENTS.md` so non-Cursor agents see the same constraints.
+- Add an Agent Security Baseline to `docs/MCP_WORKFLOW.md` so MCP/tool workflows follow the same security expectations.
+
+Reason:
+- Agents routinely run install, shell, and MCP commands. Explicit guardrails reduce supply-chain risk, unsafe remote execution, accidental destructive changes, and credential exposure.
 
 ## 2026-07-01: Upgrade Expo SDK 56 To SDK 57
 
@@ -102,3 +122,149 @@ Decision:
 
 Reason:
 - SDK upgrades need repeatable validation beyond TypeScript so dependency drift and Expo compatibility issues are caught before merge.
+
+## 2026-07-03 — Consolidate Agent Docs Into Workflow, Loop, And Skill Layers
+
+What changed:
+- Added `docs/AGENT_WORKFLOW.md` (session flow, context map, definition of done, canonical handoff and PR summary formats, canonical-homes table) and `docs/LOOP_ENGINEERING.md` (loop anatomy, global stop conditions, max-2-retry policy, memory rule, loop index, disambiguation table).
+- Added eight repo-local skills in `skills/<name>/SKILL.md` (feature-slice-builder, ui-screen-builder, supabase-schema-change, product-data-modeling, bugfix-debug-loop, refactor-safety-loop, docs-sync-loop, test-and-validation-loop) as the concrete loop instances, plus thin discovery adapters in `.claude/skills/`.
+- Rewrote `AGENTS.md` to a ~60-line guide: product identity, non-negotiables, task discipline, compact context map, skill index, validation commands, and four pointers.
+- Merged `docs/DESIGN_PRINCIPLES.md` into `docs/DESIGN.md` and deleted it; updated all live references. `docs/STITCH_PROMPTS.md` keeps inline token values by design, and `docs/DESIGN.md` now notes that token changes must update it.
+- Slimmed the glob-scoped Cursor rules (`react-native-expo.mdc`, `supabase.mdc`, `design-system.mdc`) to operational bullets plus pointers, and deleted the `alwaysApply` rules `project-overview.mdc` and `task-discipline.mdc` whose content now lives in `AGENTS.md`. Domain guardrails (RLS defaults, server-side score recalculation, service-role keys, loading/empty/error states, route alignment) live only in the glob rules, referenced from `AGENTS.md` by a pointer line.
+- Replaced repeated doc-gate, security, and task-packet passages in `README.md`, `docs/TASKS.md`, `docs/ROADMAP.md`, `docs/MCP_WORKFLOW.md`, and `docs/DOCUMENTATION_POLICY.md` with one-line pointers to their canonical homes.
+- Rewrote `.github/pull_request_template.md` to the human-readable PR format and added this entry template to `docs/DECISIONS.md`.
+
+Why:
+- Instructions were duplicated across eight-plus files (Cursor injected `AGENTS.md` plus three `alwaysApply` rules restating it every session), so agents loaded redundant context and edits drifted. One canonical home per instruction, with pointers everywhere else, keeps the docs trustworthy and cheap to read per task.
+
+Effect:
+- Agents start every session the same way (git status -> `docs/TASKS.md` -> skill), read only the docs their task type needs, follow a written routine per task type, and end with the same handoff format. Humans get readable PR bodies instead of checkbox lists.
+
+Safety-risk:
+- Tools that read `AGENTS.md` but not `.cursor/rules/` see only a pointer for the domain guardrails; tools that read neither `skills/` nor `.claude/skills/` still get the loop index from `docs/LOOP_ENGINEERING.md`. No app code, schema, or dependency changes.
+- `.cursor/rules/security.mdc` stays the canonical security home; Claude-only sessions reach the security rules by pointer only.
+
+Related files:
+- `docs/AGENT_WORKFLOW.md`, `docs/LOOP_ENGINEERING.md`, `skills/*/SKILL.md`, `.claude/skills/*/SKILL.md`, `AGENTS.md`, `docs/DESIGN.md`, `docs/DESIGN_PRINCIPLES.md` (deleted), `.cursor/rules/react-native-expo.mdc`, `.cursor/rules/supabase.mdc`, `.cursor/rules/design-system.mdc`, `.cursor/rules/project-overview.mdc` (deleted), `.cursor/rules/task-discipline.mdc` (deleted), `README.md`, `docs/TASKS.md`, `docs/ROADMAP.md`, `docs/MCP_WORKFLOW.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/DECISIONS.md`, `.github/pull_request_template.md`
+
+## 2026-07-03 — Add Session Handoff And Blocker Note Standards
+
+What changed:
+- Added two skills: `skills/session-handoff` (write `docs/notes/handoff.md` at a session boundary and recommend a fresh session) and `skills/blocker-note` (write `docs/notes/blocker-<topic>.md` when debugging stalls, then stop attempting fixes).
+- Added `docs/notes/` as the home for session working state, with a README distinguishing it from project documentation.
+- `docs/LOOP_ENGINEERING.md`: added Session boundary and Stalled debugging to the global stop conditions, pointed the retry policy's stop step at `skills/blocker-note`, and expanded the memory rule from two kinds to three (task status, decisions, session state in `docs/notes/`).
+- `docs/AGENT_WORKFLOW.md`: added the Session Boundaries And State Persistence section (boundary triggers, resume prompt, blocker-note triggers), a resume step in Session Flow, a context-map row for resuming, and canonical-home rows for the new note formats.
+- `AGENTS.md`: added the state-persistence and resume rules to Task Discipline and the two skills to the skill index.
+
+Why:
+- Long tasks, stalled debugging, and cross-day work were losing state that lived only in chat: overloaded sessions repeat failed attempts, re-ask answered questions, and nobody can say what was already tried. External state files (`handoff.md`, `blocker-*.md`) let a fresh session continue from files instead of transcripts.
+
+Effect:
+- Agents stop adding work at session boundaries (feature phase complete, bug fixed with unrelated next task, backend done before UI, exploration done before implementation) and hand the user a resume prompt. Stalled debugging produces a durable note with attempts, ruled-out causes, and verbatim evidence instead of more same-session retries.
+
+Safety-risk:
+- The memory rule now permits notes files, but only inside `docs/notes/` and only via the two skills; scratch files elsewhere remain forbidden. No app code, schema, or dependency changes.
+
+Related files:
+- `skills/session-handoff/SKILL.md`, `skills/blocker-note/SKILL.md`, `.claude/skills/session-handoff/SKILL.md`, `.claude/skills/blocker-note/SKILL.md`, `docs/notes/README.md`, `docs/LOOP_ENGINEERING.md`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `docs/DECISIONS.md`
+
+## 2026-07-03 — Add Skill-Creation Standard (skill-creator)
+
+What changed:
+- Added `skills/skill-creator/SKILL.md` (plus `.claude/skills/skill-creator/SKILL.md` stub): the canonical routine for turning a repeated task pattern into a new skill and for iterating or maintaining existing skills.
+- The standard sets: a creation threshold (same pattern explained 3+ times), the repo's two-file skill structure (canonical `skills/<name>/SKILL.md` with the standard section set, thin `.claude` stub, optional `templates/` and `scripts/`), quality rules (concrete trigger, numbered steps, exact paths and commands, acceptance criteria, executable length), an iteration rule (skipped step, misunderstood convention, or new edge case updates the skill after each use), and library maintenance (periodic review; flag stale and overlapping skills; a curated ten beats a mediocre hundred).
+- Skill lifecycle uses a hybrid approval gate: the agent proposes, the human approves, the agent implements after approval. Agents may proactively propose after the 3+ threshold, but must not create, delete, merge, or substantially modify skill files — or change triggers, boundaries, scripts/templates, or the skill indexes in `AGENTS.md` / `docs/LOOP_ENGINEERING.md` — without explicit approval. Proposals use a fixed format: name, trigger, why it deserves a skill, expected inputs, workflow summary, overlap check, files to be created or modified. Overlap decisions (merge, split, replace, or keep as chat-only guidance) are always human decisions.
+- Wired into `docs/LOOP_ENGINEERING.md` (loop index and disambiguation rows), `AGENTS.md` (skill index plus the hybrid-rule summary), and the canonical-homes table in `docs/AGENT_WORKFLOW.md`.
+
+Why:
+- Project conventions were being restated in chat every time a recurring task type came up. Capturing stabilized patterns as skills makes them durable and cheap to reuse, while the threshold, overlap check, and maintenance rules prevent the failure modes: 1,000-line skills that bury the point, overlapping triggers the agent cannot choose between, hard-coded one-off details, stale paths that mislead, and a library too large to select from.
+- Skills become long-term project behavior, so a bad skill is worse than a bad prompt — future agents keep following it. The human keeps control over whether a workflow is common enough, whether it overlaps, whether the trigger is too broad, whether it adds too much context, and whether it belongs in a skill versus `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, or just the current task.
+
+Effect:
+- Agents detect and propose skills autonomously after the third repetition, then wait: no skill files, stubs, scripts, templates, or index edits until the proposal is explicitly approved. After approval the agent implements exactly the files listed in the proposal. Skill updates after use go through the same propose-then-apply gate.
+
+Safety-risk:
+- Docs and skills only; no app code, schema, or dependency changes. The approval gate means no future skill can enter the library, change its trigger, or disappear without a human decision.
+
+Related files:
+- `skills/skill-creator/SKILL.md`, `.claude/skills/skill-creator/SKILL.md`, `docs/LOOP_ENGINEERING.md`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `docs/DECISIONS.md`
+
+## 2026-07-03 — Note-Skill Standardization, Blocker Resolution Ownership, Notes Commit Policy, Gitignore Hardening
+
+What changed:
+- `skills/session-handoff` and `skills/blocker-note` gained standard `## Memory step` sections; all 11 skills now share the same section set.
+- The three debugging principles (hypothesis before editing, no guess-and-fix, re-read layer docs after repeated failures) moved to a new Debugging Principles section in `docs/LOOP_ENGINEERING.md`; `skills/blocker-note` and `skills/bugfix-debug-loop` point at it. The external superpowers `systematic-debugging` plugin reference is gone.
+- Blocker-note resolution is owned by `skills/bugfix-debug-loop`'s memory step: delete the note and remove the `docs/TASKS.md` pointer, or mark the note resolved if the record is still useful.
+- `docs/notes/README.md` gained a Commit Policy: `handoff.md` is transient and gitignored; `blocker-*.md` is durable and committed when referenced from `docs/TASKS.md`.
+- Pointer references corrected to the exact heading "Session Boundaries And State Persistence".
+- `.gitignore` redesigned: all `.env` variants except `.env.example`, Supabase local CLI state, coverage, logs, native build and signing artifacts, `.idea/`, `.claude/settings.local.json`, and `docs/notes/handoff.md` are ignored.
+
+Why:
+- The two newest skills violated the section standard `skills/skill-creator` enforces; blocker notes had no resolution owner and would accumulate stale; the notes commit behavior was an accident rather than a decision; and plain `.env` was not gitignored despite the security rules forbidding committed secrets.
+
+Effect:
+- Every skill audits cleanly against the skill-creator standard; a fixed bug closes its blocker note as part of the fix's memory step; the next session knows which note files travel via git and which stay local; secret-bearing env files cannot be committed by accident.
+
+Safety-risk:
+- Docs, skills, and `.gitignore` only — no app code, schema, or dependency changes. Verified no currently tracked file became ignored by the new `.gitignore`.
+
+Related files:
+- `skills/session-handoff/SKILL.md`, `skills/blocker-note/SKILL.md`, `skills/bugfix-debug-loop/SKILL.md`, `docs/LOOP_ENGINEERING.md`, `docs/notes/README.md`, `AGENTS.md`, `.gitignore`, `docs/DECISIONS.md`
+
+## 2026-07-04 — Cross-Agent Skill Discovery Via .agents/skills
+
+What changed:
+- Added `.agents/skills/<name>/SKILL.md` discovery stubs for all 11 skills, identical to the `.claude/skills/` stubs (frontmatter plus a pointer to the canonical `skills/<name>/SKILL.md`).
+- `skills/skill-creator` now defines the three-file structure (canonical routine + two identical stubs), requires both stubs on creation, and verifies them with `diff -r .claude/skills .agents/skills`.
+
+Why:
+- The repo is worked on by multiple agents (Cursor, Codex, Claude Code), but skill discovery only existed at `.claude/skills/`, which Claude Code and Cursor read while Codex does not. Codex and most other tools discover repo skills at `.agents/skills/` (the Agent Skills open standard path); Claude Code, as of 2026-07, reads only `.claude/skills/` and not the standard path. Two stub locations cover every agent; `.claude/` remains for Claude-only surfaces (its discovery path and `settings.json`).
+
+Effect:
+- Codex sessions now discover the 11 skills by trigger instead of relying solely on the `AGENTS.md` skill index. Cursor may list both stub sets; they are identical, so selection behavior is unchanged. Canonical routines still have one home in `skills/`.
+
+Safety-risk:
+- Stubs and docs only; no app code, schema, or dependency changes. Risk of stub drift between the two locations is covered by the diff check in skill-creator's verification.
+
+Related files:
+- `.agents/skills/*/SKILL.md`, `skills/skill-creator/SKILL.md`, `docs/DECISIONS.md`
+
+## 2026-07-04 — Make Security Rules And Guardrails Agent-Agnostic
+
+What changed:
+- Promoted the full security rules from `.cursor/rules/security.mdc` to `docs/SECURITY.md` as the canonical home; the Cursor rule is now a thin always-apply mirror (hard lines plus a pointer). All references (`AGENTS.md`, `docs/AGENT_WORKFLOW.md` canonical homes, `docs/LOOP_ENGINEERING.md` destructive-commands stop, `docs/MCP_WORKFLOW.md`, `.gitignore`) now point at `docs/SECURITY.md`.
+- Reworded the domain-guardrails line in `AGENTS.md`: instead of describing Cursor's glob mechanism, it instructs agents whose tools do not auto-attach glob rules to read the matching `.cursor/rules/*.mdc` file before touching Expo/routing, Supabase/data, or UI code.
+- `docs/DOCUMENTATION_POLICY.md` agent-behavior bucket now lists `docs/SECURITY.md` (with the mirror-sync reminder) and the skill discovery stubs in `.claude/skills/*` and `.agents/skills/*` so doc-gated changes keep them in sync.
+- Added `docs/SECURITY.md` to the README documentation map and closed the `docs/TASKS.md` follow-up that tracked this promotion.
+
+Why:
+- The repo is explicitly multi-agent (Cursor, Codex, Claude Code, and subagents on other models), but the most security-sensitive rules lived only under `.cursor/rules/`, where only Cursor auto-applies them — non-Cursor sessions saw a bare pointer into another tool's config directory. The `docs/TASKS.md` follow-up condition ("if non-Cursor agents become the primary workflow") is now met. The guardrail and doc-map fixes close the same class of gap: instructions that assumed Cursor's attachment mechanics instead of stating what any agent should do.
+
+Effect:
+- Every agent reaches identical security rules through `AGENTS.md` -> `docs/SECURITY.md`; Cursor additionally gets the always-apply mirror. Agents without glob-rule support know to read the domain guardrail files themselves. Documentation-gated changes are reminded to keep the security mirror and the two stub trees in sync.
+
+Safety-risk:
+- Docs, one Cursor rule, and a `.gitignore` comment only — no app code, schema, or dependency changes. Risk of the mirror drifting from `docs/SECURITY.md` is covered by the mirror-sync line in the documentation policy. Old `docs/DECISIONS.md` entries referencing the old path were left unchanged per the no-rewrite rule.
+
+Related files:
+- `docs/SECURITY.md`, `.cursor/rules/security.mdc`, `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, `docs/LOOP_ENGINEERING.md`, `docs/MCP_WORKFLOW.md`, `docs/DOCUMENTATION_POLICY.md`, `README.md`, `docs/TASKS.md`, `.gitignore`, `docs/DECISIONS.md`
+
+## 2026-07-04 — De-Cursor MCP Workflow Wording And Add Gemini Entry Pointer
+
+What changed:
+- Reworded `docs/MCP_WORKFLOW.md` to be agent-agnostic: the tool-roles block, document hierarchy, recommended workflow, and Stitch usage now say "coding agent" (Cursor, Codex, Claude Code, ...) instead of assuming Cursor is the implementation workspace, and "Cursor Task Format" is now "Agent Task Format".
+- The MCP Setup Philosophy section now names each tool's config home (Cursor `.cursor/mcp.json`, Claude Code root `.mcp.json`, Codex global `config.toml`) and states that a project-relied-on MCP server must be added to every config in use.
+- Added `GEMINI.md` as a one-line `@AGENTS.md` pointer, mirroring `CLAUDE.md`, so Gemini CLI sessions load the same agent guide by default.
+- Updated the `README.md` documentation-map line for `docs/MCP_WORKFLOW.md` to match.
+
+Why:
+- `docs/MCP_WORKFLOW.md` still read as if Cursor were the only implementation agent, which contradicts the repo's multi-agent direction; and no MCP servers are configured yet, so fixing the config guidance now prevents a Cursor-only setup later. The Gemini pointer is added preemptively so a future Gemini CLI session is covered without anyone remembering this gap.
+
+Effect:
+- The MCP/workflow doc gives the same instructions to any coding agent, names where each tool's MCP config lives before any server is added, and Gemini CLI joins Cursor, Codex, and Claude Code in loading `AGENTS.md` automatically.
+
+Safety-risk:
+- Docs and one pointer file only; no app code, schema, dependency, or rule-content changes. `GEMINI.md` is inert for tools that do not read it.
+
+Related files:
+- `docs/MCP_WORKFLOW.md`, `GEMINI.md`, `README.md`, `docs/DECISIONS.md`

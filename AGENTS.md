@@ -1,110 +1,62 @@
 # Eazy Review - Agent Guide
 
-This file is the durable operating guide for AI agents working in this repo. Product, design, data, and roadmap details live in `docs/`; agents should read the relevant source files before changing code.
-
-## Required Reading
-
-Before any work:
-- Read `docs/BLUEBOOK.md`.
-- Read `docs/TASKS.md` to understand the current build order.
-- Read `docs/DOCUMENTATION_POLICY.md` to understand the documentation update gate.
-- Check `git status --short` and do not overwrite unrelated user changes.
-
-Before UI or navigation work:
-- Read `docs/DESIGN.md`.
-- Read `docs/DESIGN_PRINCIPLES.md`.
-- Read `docs/USER_FLOWS.md`.
-
-Before Expo, Expo Router, or React Native code:
-- Read the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
-- Use the installed SDK versions in `package.json`; do not assume older Expo behavior.
-
-Before database, Supabase, auth, or rating-summary work:
-- Read `docs/DATA_MODEL.md`.
-- Read `docs/API_CONTRACTS.md`.
-- Do not change schema without updating `docs/DATA_MODEL.md`.
-
-Before MCP, Stitch, or external-tool workflow changes:
-- Read `docs/MCP_WORKFLOW.md`.
-- Keep `.cursor/mcp.json` minimal and do not add write-capable tools without a real workflow need.
-
-## Source Of Truth Order
-
-Use this authority order when documents or tool suggestions conflict:
-
-1. `docs/BLUEBOOK.md`
-2. `docs/DESIGN.md`
-3. `docs/DATA_MODEL.md`
-4. `docs/USER_FLOWS.md`
-5. `AGENTS.md`
-6. `.cursor/rules/*`
-7. Stitch output
-8. Cursor or agent suggestions
-
-If implementation needs to intentionally change product direction, update the relevant doc in the same task and add a short entry to `docs/DECISIONS.md`.
-
-Documentation workflow authority:
-- `docs/DOCUMENTATION_POLICY.md` controls when docs must be updated and which docs are affected.
-
-## Documentation Discipline
-
-Documentation updates are required for every meaningful change. Before staging, committing, pushing, opening a PR, or reporting completion:
-
-- Review the changed files and apply `docs/DOCUMENTATION_POLICY.md`.
-- Update affected docs in the same branch.
-- Update `docs/TASKS.md` when task status, order, or newly discovered work changes.
-- Add `docs/DECISIONS.md` entries for meaningful product, architecture, data, workflow, design-system, dependency, or toolchain decisions.
-- If no docs need changes, state `No documentation update needed` with a short reason in the final response or PR body.
-
-Do not leave docs stale for a future agent to infer from code.
+Eazy Review is a mobile-first sneaker/product review and discovery app.
+Core flow: Browse -> Product Detail -> Eazy Score / Community Score -> My Rating.
+Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase, TanStack Query.
 
 ## Non-Negotiable Product Rules
 
-- Do not start with scraping.
-- Do not create a giant NoSQL-style product object.
-- Use relational Supabase tables for products, images, offers, Eazy Score ratings, user ratings, summaries, and profiles.
+- Do not start with scraping, social features, comments, likes, push notifications, dark mode, admin dashboards, advanced recommendations, complex animations, or multi-language support (full list: `docs/BLUEBOOK.md`, MVP Scope).
 - Build the mock product UI flow before connecting Supabase.
-- Keep reusable UI components small.
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
-- Do not require login for browsing.
-- Require login for rating.
-- Do not calculate trusted Community Score averages only on the client.
-- Use a database trigger/function or server-side logic for rating summary recalculation.
-- Use the UI names `Eazy Score`, `Community Score`, and `My Rating`.
-- Keep the first user rating form short: look, comfort, quality, outfit, value, overall, optional comment.
+- Browsing must not require login; rating must require login.
+- Use the UI names `Eazy Score`, `Community Score`, and `My Rating` exactly.
+- Keep the first rating form short: look, comfort, quality, outfit, value, overall, optional comment (all scores 1-10).
 - Keep the app clean, boring, and consistent before making it fancy.
+- Domain guardrails (Expo routing, relational tables/RLS/score recalculation, UI component rules) live in `.cursor/rules/react-native-expo.mdc`, `supabase.mdc`, and `design-system.mdc`. Cursor attaches them by glob; if your tool does not, read the matching rule file before touching Expo/routing, Supabase/data, or UI code.
 
-## Security Rules
+## Task Discipline
 
-Agent security behavior is enforced by `.cursor/rules/security.mdc`. See `docs/MCP_WORKFLOW.md` for the agent security baseline in tool workflows. Summary:
+- Work one task at a time; keep changes scoped to the requested task.
+- Start each session: `git status --short` -> current task in `docs/TASKS.md` -> pick a skill.
+- Do not redesign product flows unless explicitly asked.
+- Do not add unrelated dependencies.
+- Prefer existing project patterns; keep reusable UI components small.
+- Product direction in `docs/BLUEBOOK.md` outranks tool suggestions and generated output.
+- State lives in files, not chat: at a session boundary (phase done, topic switch, overloaded context) stop adding work, write `docs/notes/handoff.md` (`skills/session-handoff`), and tell the user to start a new session. When debugging stalls, write `docs/notes/blocker-<topic>.md` (`skills/blocker-note`) instead of retrying. Triggers: `docs/AGENT_WORKFLOW.md`, Session Boundaries And State Persistence.
+- Resuming a session: read `AGENTS.md`, the spec, and `docs/notes/handoff.md`, then restate the plan before editing.
 
-- Never run install scripts from unknown repos without explaining them first.
-- Never execute `curl | bash`, remote shell scripts, or encoded commands.
-- Before running setup commands, inspect `package.json`, lockfiles, postinstall scripts, and config files.
-- Never expose `.env`, API keys, tokens, cookies, or browser session data.
+## Context Map
 
-## Development Rules
+Read only what the task needs (full map with sections and exclusions: `docs/AGENT_WORKFLOW.md`):
 
-- Work in small, isolated tasks.
-- Prefer existing project patterns and components before creating new ones.
-- Keep route names aligned with `docs/USER_FLOWS.md`.
-- Use mock data first for Browse, Product Detail, Rating Form, Feed, and Account placeholders.
-- Add loading, empty, and error states for user-facing data screens.
-- Keep mobile-first layout as the default.
-- Do not introduce dark mode, social features, push notifications, scraping, admin dashboards, or complex animation in the MVP unless explicitly requested.
-- Never expose Supabase service-role keys in client code.
+| Task type | Read |
+| --- | --- |
+| Screen UI | `docs/DESIGN.md`, `docs/USER_FLOWS.md` |
+| Feature slice | `docs/TASKS.md` task, `docs/USER_FLOWS.md`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md` |
+| Schema / Supabase / RLS | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` |
+| Frontend types / mock data | `docs/API_CONTRACTS.md` |
+| Product scope change | `docs/BLUEBOOK.md`, `docs/ROADMAP.md` |
+| Expo / React Native | Installed versions in `package.json` + the exact Expo SDK 57 docs (URL in the full map) |
 
-## Quality Checks
+## Skill Index
 
-Run the narrowest useful checks after changes:
-- `npm run check` for the default project check (includes typed-route generation on clean checkouts).
-- `npm run start` only when the user needs a running app.
-- TypeScript/lint commands if added to `package.json`.
-- Manual route-flow review for navigation changes.
-- Database migration review for Supabase changes.
+Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`):
+`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
-If a requested check cannot run because the project does not define it yet, say that clearly in the final response.
+Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here or in `docs/LOOP_ENGINEERING.md` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
 
-## Current Project State
+## Validation
 
-This repo currently contains an Expo Router starter app. The infrastructure docs now define the target product direction, but the app implementation still needs to be brought into alignment with the Eazy Review routes and UI.
+- `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
+- `npm run check` (routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency changes or before handoff.
+- If a requested check does not exist in `package.json`, say so instead of pretending it ran.
+
+## Pointers
+
+- Docs are part of the change: apply the gate in `docs/DOCUMENTATION_POLICY.md` before commit, PR handoff, or reporting completion.
+- Security rules: `docs/SECURITY.md`
+- Session flow, definition of done, handoff and PR formats: `docs/AGENT_WORKFLOW.md`
+- Loop anatomy, stop conditions, retry policy: `docs/LOOP_ENGINEERING.md`
+
+Current state: see `docs/TASKS.md`.
