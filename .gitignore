@@ -29,7 +29,7 @@ expo-env.d.ts
 *.apk
 *.aab
 
-# environment files & secrets — never commit (see .cursor/rules/security.mdc)
+# environment files & secrets — never commit (see docs/SECURITY.md)
 .env
 .env.*
 !.env.example

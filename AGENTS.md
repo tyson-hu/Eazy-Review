@@ -13,7 +13,7 @@ Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase,
 - Use the UI names `Eazy Score`, `Community Score`, and `My Rating` exactly.
 - Keep the first rating form short: look, comfort, quality, outfit, value, overall, optional comment (all scores 1-10).
 - Keep the app clean, boring, and consistent before making it fancy.
-- Domain guardrails (Expo routing, relational tables/RLS/score recalculation, UI component rules) load by glob from `.cursor/rules/react-native-expo.mdc`, `supabase.mdc`, and `design-system.mdc`.
+- Domain guardrails (Expo routing, relational tables/RLS/score recalculation, UI component rules) live in `.cursor/rules/react-native-expo.mdc`, `supabase.mdc`, and `design-system.mdc`. Cursor attaches them by glob; if your tool does not, read the matching rule file before touching Expo/routing, Supabase/data, or UI code.
 
 ## Task Discipline
 
@@ -55,7 +55,7 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 ## Pointers
 
 - Docs are part of the change: apply the gate in `docs/DOCUMENTATION_POLICY.md` before commit, PR handoff, or reporting completion.
-- Security rules: `.cursor/rules/security.mdc`
+- Security rules: `docs/SECURITY.md`
 - Session flow, definition of done, handoff and PR formats: `docs/AGENT_WORKFLOW.md`
 - Loop anatomy, stop conditions, retry policy: `docs/LOOP_ENGINEERING.md`
 

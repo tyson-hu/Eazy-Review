@@ -155,7 +155,7 @@ One home per instruction; everywhere else points, never restates.
 | Frontend types, API functions, query keys, folder structure | `docs/API_CONTRACTS.md` |
 | Routes, user journeys, auth gates | `docs/USER_FLOWS.md` |
 | Doc-update gate and Document Update Map | `docs/DOCUMENTATION_POLICY.md` |
-| Security rules | `.cursor/rules/security.mdc` |
+| Security rules | `docs/SECURITY.md` (mirrored by `.cursor/rules/security.mdc`) |
 | Session flow, context map, definition of done, validation commands, handoff and PR formats | `docs/AGENT_WORKFLOW.md` (this file) |
 | Session boundary triggers, state-persistence principle, resume prompt | `docs/AGENT_WORKFLOW.md` (this file) |
 | Handoff note routine and `docs/notes/handoff.md` template | `skills/session-handoff/SKILL.md` |

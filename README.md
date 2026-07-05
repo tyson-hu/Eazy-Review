@@ -9,6 +9,7 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 - `docs/BLUEBOOK.md`: master product and engineering plan.
 - `docs/DESIGN.md`: UI/UX source of truth (identity, principles, tokens, component and screen rules).
 - `docs/DOCUMENTATION_POLICY.md`: required doc-update rules for future changes.
+- `docs/SECURITY.md`: security rules for install, shell, and secrets handling (all agents and humans).
 - `docs/AGENT_WORKFLOW.md`: agent session flow, context map, definition of done, handoff and PR formats.
 - `docs/LOOP_ENGINEERING.md`: loop anatomy, stop conditions, retry policy, and the loop-to-skill index.
 - `docs/USER_FLOWS.md`: core user journeys and route expectations.
@@ -16,7 +17,7 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 - `docs/API_CONTRACTS.md`: frontend types, API functions, and query keys.
 - `docs/ROADMAP.md`: milestone plan.
 - `docs/TASKS.md`: current implementation task order.
-- `docs/MCP_WORKFLOW.md`: Cursor, Stitch, and MCP workflow rules.
+- `docs/MCP_WORKFLOW.md`: coding-agent, Stitch, and MCP workflow rules.
 - `docs/STITCH_PROMPTS.md`: reusable UI exploration prompts.
 - `docs/DECISIONS.md`: project decision log.
 - `docs/RELEASE_CHECKLIST.md`: release-readiness checklist.

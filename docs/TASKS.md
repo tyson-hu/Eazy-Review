@@ -142,7 +142,7 @@ Acceptance:
 
 ## Follow-Ups / Discovered Work
 
-- Promote `.cursor/rules/security.mdc` content to `docs/SECURITY.md` and make the rule a mirror, if non-Cursor agents become the primary workflow. Context: `docs/DECISIONS.md` 2026-07-03 redesign entry.
+- Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Context: `docs/DECISIONS.md` 2026-07-04 cross-agent portability entry.
 
 ## Supabase Tasks
 

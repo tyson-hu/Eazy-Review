@@ -23,7 +23,7 @@ Stop the loop, report, and wait for a human decision when any of these occur:
 - **Two failed fix attempts** — see the retry policy below.
 - **Conflict with `docs/BLUEBOOK.md` or `docs/DATA_MODEL.md`** — the change would contradict product direction or the documented schema.
 - **Missing credentials** — the loop needs a key, token, or environment value that is not available. Never invent or hardcode one.
-- **Destructive commands** — the next step would require `rm -rf`, `git reset --hard`, a database drop, mass deletes, or anything on the destructive list in `.cursor/rules/security.mdc`.
+- **Destructive commands** — the next step would require `rm -rf`, `git reset --hard`, a database drop, mass deletes, or anything on the destructive list in `docs/SECURITY.md`.
 - **New design tokens** — the change needs a color, radius, or spacing value not in `docs/DESIGN.md`. Token changes are a design-system decision, not a side effect.
 - **Session boundary** — a feature phase is complete, a bug is fixed and the next task is unrelated, backend work is done and UI is next, or exploration is done and implementation is next. Stop adding work; run `skills/session-handoff` and recommend a fresh session (boundary details in `docs/AGENT_WORKFLOW.md`, Session Boundaries And State Persistence).
 - **Stalled debugging** — the blocker-note triggers fire (2+ failures on the same problem, 20–30+ minutes without progress, messy context, or plan A → B → A looping). Run `skills/blocker-note` instead of attempting another fix.

@@ -210,3 +210,61 @@ Safety-risk:
 
 Related files:
 - `skills/session-handoff/SKILL.md`, `skills/blocker-note/SKILL.md`, `skills/bugfix-debug-loop/SKILL.md`, `docs/LOOP_ENGINEERING.md`, `docs/notes/README.md`, `AGENTS.md`, `.gitignore`, `docs/DECISIONS.md`
+
+## 2026-07-04 — Cross-Agent Skill Discovery Via .agents/skills
+
+What changed:
+- Added `.agents/skills/<name>/SKILL.md` discovery stubs for all 11 skills, identical to the `.claude/skills/` stubs (frontmatter plus a pointer to the canonical `skills/<name>/SKILL.md`).
+- `skills/skill-creator` now defines the three-file structure (canonical routine + two identical stubs), requires both stubs on creation, and verifies them with `diff -r .claude/skills .agents/skills`.
+
+Why:
+- The repo is worked on by multiple agents (Cursor, Codex, Claude Code), but skill discovery only existed at `.claude/skills/`, which Claude Code and Cursor read while Codex does not. Codex and most other tools discover repo skills at `.agents/skills/` (the Agent Skills open standard path); Claude Code, as of 2026-07, reads only `.claude/skills/` and not the standard path. Two stub locations cover every agent; `.claude/` remains for Claude-only surfaces (its discovery path and `settings.json`).
+
+Effect:
+- Codex sessions now discover the 11 skills by trigger instead of relying solely on the `AGENTS.md` skill index. Cursor may list both stub sets; they are identical, so selection behavior is unchanged. Canonical routines still have one home in `skills/`.
+
+Safety-risk:
+- Stubs and docs only; no app code, schema, or dependency changes. Risk of stub drift between the two locations is covered by the diff check in skill-creator's verification.
+
+Related files:
+- `.agents/skills/*/SKILL.md`, `skills/skill-creator/SKILL.md`, `docs/DECISIONS.md`
+
+## 2026-07-04 — Make Security Rules And Guardrails Agent-Agnostic
+
+What changed:
+- Promoted the full security rules from `.cursor/rules/security.mdc` to `docs/SECURITY.md` as the canonical home; the Cursor rule is now a thin always-apply mirror (hard lines plus a pointer). All references (`AGENTS.md`, `docs/AGENT_WORKFLOW.md` canonical homes, `docs/LOOP_ENGINEERING.md` destructive-commands stop, `docs/MCP_WORKFLOW.md`, `.gitignore`) now point at `docs/SECURITY.md`.
+- Reworded the domain-guardrails line in `AGENTS.md`: instead of describing Cursor's glob mechanism, it instructs agents whose tools do not auto-attach glob rules to read the matching `.cursor/rules/*.mdc` file before touching Expo/routing, Supabase/data, or UI code.
+- `docs/DOCUMENTATION_POLICY.md` agent-behavior bucket now lists `docs/SECURITY.md` (with the mirror-sync reminder) and the skill discovery stubs in `.claude/skills/*` and `.agents/skills/*` so doc-gated changes keep them in sync.
+- Added `docs/SECURITY.md` to the README documentation map and closed the `docs/TASKS.md` follow-up that tracked this promotion.
+
+Why:
+- The repo is explicitly multi-agent (Cursor, Codex, Claude Code, and subagents on other models), but the most security-sensitive rules lived only under `.cursor/rules/`, where only Cursor auto-applies them — non-Cursor sessions saw a bare pointer into another tool's config directory. The `docs/TASKS.md` follow-up condition ("if non-Cursor agents become the primary workflow") is now met. The guardrail and doc-map fixes close the same class of gap: instructions that assumed Cursor's attachment mechanics instead of stating what any agent should do.
+
+Effect:
+- Every agent reaches identical security rules through `AGENTS.md` -> `docs/SECURITY.md`; Cursor additionally gets the always-apply mirror. Agents without glob-rule support know to read the domain guardrail files themselves. Documentation-gated changes are reminded to keep the security mirror and the two stub trees in sync.
+
+Safety-risk:
+- Docs, one Cursor rule, and a `.gitignore` comment only — no app code, schema, or dependency changes. Risk of the mirror drifting from `docs/SECURITY.md` is covered by the mirror-sync line in the documentation policy. Old `docs/DECISIONS.md` entries referencing the old path were left unchanged per the no-rewrite rule.
+
+Related files:
+- `docs/SECURITY.md`, `.cursor/rules/security.mdc`, `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, `docs/LOOP_ENGINEERING.md`, `docs/MCP_WORKFLOW.md`, `docs/DOCUMENTATION_POLICY.md`, `README.md`, `docs/TASKS.md`, `.gitignore`, `docs/DECISIONS.md`
+
+## 2026-07-04 — De-Cursor MCP Workflow Wording And Add Gemini Entry Pointer
+
+What changed:
+- Reworded `docs/MCP_WORKFLOW.md` to be agent-agnostic: the tool-roles block, document hierarchy, recommended workflow, and Stitch usage now say "coding agent" (Cursor, Codex, Claude Code, ...) instead of assuming Cursor is the implementation workspace, and "Cursor Task Format" is now "Agent Task Format".
+- The MCP Setup Philosophy section now names each tool's config home (Cursor `.cursor/mcp.json`, Claude Code root `.mcp.json`, Codex global `config.toml`) and states that a project-relied-on MCP server must be added to every config in use.
+- Added `GEMINI.md` as a one-line `@AGENTS.md` pointer, mirroring `CLAUDE.md`, so Gemini CLI sessions load the same agent guide by default.
+- Updated the `README.md` documentation-map line for `docs/MCP_WORKFLOW.md` to match.
+
+Why:
+- `docs/MCP_WORKFLOW.md` still read as if Cursor were the only implementation agent, which contradicts the repo's multi-agent direction; and no MCP servers are configured yet, so fixing the config guidance now prevents a Cursor-only setup later. The Gemini pointer is added preemptively so a future Gemini CLI session is covered without anyone remembering this gap.
+
+Effect:
+- The MCP/workflow doc gives the same instructions to any coding agent, names where each tool's MCP config lives before any server is added, and Gemini CLI joins Cursor, Codex, and Claude Code in loading `AGENTS.md` automatically.
+
+Safety-risk:
+- Docs and one pointer file only; no app code, schema, dependency, or rule-content changes. `GEMINI.md` is inert for tools that do not read it.
+
+Related files:
+- `docs/MCP_WORKFLOW.md`, `GEMINI.md`, `README.md`, `docs/DECISIONS.md`

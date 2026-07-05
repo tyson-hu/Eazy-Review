@@ -63,9 +63,10 @@ Tooling, scripts, dependencies, quality checks, local setup, or developer workfl
 Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `AGENTS.md`
 - `.cursor/rules/*`
+- `docs/SECURITY.md` when security rules change (keep `.cursor/rules/security.mdc` mirrored)
 - `docs/AGENT_WORKFLOW.md`
 - `docs/LOOP_ENGINEERING.md`
-- `skills/*/SKILL.md`
+- `skills/*/SKILL.md` (and the discovery stubs in `.claude/skills/*` and `.agents/skills/*`, kept identical)
 - `docs/MCP_WORKFLOW.md`
 - `docs/DOCUMENTATION_POLICY.md`
 - `docs/DECISIONS.md`

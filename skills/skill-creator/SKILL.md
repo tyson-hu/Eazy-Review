@@ -40,7 +40,7 @@ Typical patterns worth capturing: add an API endpoint, create a database migrati
 
 ## Repo skill structure
 
-Every skill in this repo is two files, plus optional support folders:
+Every skill in this repo is three files — one canonical routine plus two identical discovery stubs — plus optional support folders:
 
 ```
 skills/<name>/
@@ -49,12 +49,15 @@ skills/<name>/
 └── scripts/            # optional: commands the routine runs
 
 .claude/skills/<name>/
-└── SKILL.md            # thin discovery stub with frontmatter
+└── SKILL.md            # discovery stub — Claude Code reads only this path
+
+.agents/skills/<name>/
+└── SKILL.md            # same stub — Agent Skills standard path (Codex, Cursor, others)
 ```
 
 The canonical `SKILL.md` uses this repo's section set: Goal, When to use, When not to use, Inputs expected, Read first, Routine, Verification, Stop conditions, Memory step, Common mistakes, Human-readable handoff.
 
-The `.claude` stub is only:
+Both stubs have identical content and are only:
 
 ```md
 ---
@@ -80,7 +83,7 @@ Follow the canonical workflow in `skills/<name>/SKILL.md`. Do not improvise a di
    - overlap check against existing skills,
    - files that would be created or modified (including any index rows in `AGENTS.md` and `docs/LOOP_ENGINEERING.md`).
 6. Wait for explicit approval. Expect one or two iterations on the draft. No skill files, stubs, scripts, templates, or index edits before approval.
-7. Only after approval: write the canonical `skills/<name>/SKILL.md` and the `.claude/skills/<name>/SKILL.md` stub, add the trigger row to the loop index in `docs/LOOP_ENGINEERING.md` (and the disambiguation table if the new trigger borders an existing one), add the name to the skill index in `AGENTS.md`, then run the memory step. Writing rules for the skill body:
+7. Only after approval: write the canonical `skills/<name>/SKILL.md` and the identical discovery stubs `.claude/skills/<name>/SKILL.md` and `.agents/skills/<name>/SKILL.md`, add the trigger row to the loop index in `docs/LOOP_ENGINEERING.md` (and the disambiguation table if the new trigger borders an existing one), add the name to the skill index in `AGENTS.md`, then run the memory step. Writing rules for the skill body:
    - The trigger (When to use / stub description) must be concrete enough that this skill and no other is selected.
    - Numbered steps, each one actionable.
    - Exact local paths and exact commands, not descriptions of them.
@@ -95,7 +98,7 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 ## Verification
 
 - The structured proposal (name, trigger, why, inputs, workflow summary, overlap check, files) was shown and explicitly approved before any files were created or modified.
-- Both files exist and the stub's description states the trigger in one sentence.
+- All three files exist, the two stubs are identical (`diff -r .claude/skills .agents/skills` is clean), and the stub description states the trigger in one sentence.
 - The loop index in `docs/LOOP_ENGINEERING.md` and the skill index in `AGENTS.md` list the new skill, and no two index rows can fire on the same task.
 - Every path and command in the skill was checked against the current repo, not written from memory.
 
