@@ -79,22 +79,24 @@ Created in this milestone:
 - `EmptyState`
 - `ErrorState`
 
-Still pending:
+Added with Task 7:
 - `Input`
 - `ProductCard`
+
+Still pending:
 - `RatingRow`
 
 ### Task 6: Create Mock Product Data
 
-Status: Pending.
+Status: Done.
 
-Create:
-- `src/types/product.ts`
-- `src/features/products/mockProducts.ts`
+Created:
+- `src/types/product.ts` (Product, ProductCardData, RatingBreakdown, ProductRatingSummary, ProductOffer per `docs/API_CONTRACTS.md`)
+- `src/features/products/mockProducts.ts` (8 mock products, including null-score and zero-rating entries for empty-state coverage)
 
 ### Task 7: Build Browse Screen With Mock Product List
 
-Status: Pending.
+Status: Done.
 
 Requirements:
 - Search input.
@@ -103,6 +105,8 @@ Requirements:
 - Sort button placeholder.
 - Empty/loading/error states.
 - Product cards navigate to Product Detail.
+
+Delivered: local search over brand/name/SKU, disabled Filter/Sort placeholders, loading/empty/error states with an end-of-list scroll placeholder, and card navigation to `/product/[id]` via a minimal placeholder detail route (full screen is Task 8).
 
 ### Task 8: Build Product Detail Screen
 
@@ -144,9 +148,20 @@ Acceptance:
 
 - Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Context: `docs/DECISIONS.md` 2026-07-04 cross-agent portability entry.
 - Added 2026-07-12: phased delegation system (policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy). Four approved roles; only `reviewer` and `verifier` are instantiated in `.cursor/agents/`. Rollout status:
-  - Pilot `reviewer` and `verifier` during Tasks 6-7, then evaluate: are findings materially useful, are failure classifications reliable, do handoffs create excess rework, does the context boundary save more than it costs?
-  - Create `implementer.md` only if the pilot proves delegated implementation is beneficial.
+  - Done 2026-07-12: piloted `reviewer` and `verifier` during Tasks 6-7 (results below).
+  - Create `implementer.md` only if delegated implementation proves beneficial in further use; the pilot validated review/verify delegation only.
   - Create `debugger.md` when a real multi-attempt or context-heavy debugging case justifies isolated diagnosis; until then the parent runs `skills/bugfix-debug-loop` directly.
+- Discovered 2026-07-12 (pre-existing, found by `npm run check` during Task 7 validation): expo-doctor reports patch mismatches — expected `expo ~57.0.4` (found 57.0.2), `expo-linking ~57.0.2` (found 57.0.1), `expo-router ~57.0.4` (found 57.0.3). Not caused by Tasks 6-7 (no dependency changes). Fix later via `npx expo install --check` as its own task.
+
+## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
+
+Flow used per task: parent implements -> `reviewer` spec review -> parent applies accepted findings once -> `verifier` runs narrowest checks.
+
+- **Did the reviewer catch meaningful issues rather than repeat existing instructions?** Partially meaningful. Task 6: two real doc-sync findings (stale import path in the `docs/API_CONTRACTS.md` mock snippet; task status not updated) — useful but small. Task 7: three findings, one substantive (missing infinite-scroll placeholder required by `docs/USER_FLOWS.md` — a genuine spec omission the parent missed), one doc-sync, one real code-quality catch (uncleaned duplicate retry timer). No finding merely restated a rule.
+- **Did the verifier classify failures accurately?** Yes. Task 6: clean pass, correct skip reasoning. Task 7: caught a real `react-hooks/set-state-in-effect` lint error and classified it caused-by-change with correct evidence; correctly declined to run an interactive flow walk as out of read-only scope. The expo-doctor patch-mismatch failure surfaced on the parent's re-run and was classified pre-existing by the parent.
+- **Did delegation reduce parent-context noise without causing excessive handoff work?** Yes for verification (full lint/check output stayed out of parent context; reports were compact). Mildly for review — delegation prompts were long because every context path must be restated, but shorter than reading review context into the parent twice.
+- **Did either subagent trigger at inappropriate times?** No. Both ran only when explicitly delegated at the pilot's defined points.
+- **Fix-cycle note:** the reviewer-fix-verify sequence surfaced one avoidable loop — the reviewer's accepted retry-timer fix introduced the lint error the verifier then caught. One extra parent fix pass resolved it; within the one-review-fix-pass budget, but worth watching.
 
 ## Supabase Tasks
 
