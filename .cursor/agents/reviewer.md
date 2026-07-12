@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Independent read-only code reviewer. Use proactively after any meaningful code change is complete, and whenever the user asks to improve, clean up, simplify, or refactor existing code (deletion-first review). Do not use for docs-only or trivial edits.
-model: inherit
+model: claude-fable-5[effort=high]
 readonly: true
 ---
 
