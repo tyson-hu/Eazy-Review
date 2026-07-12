@@ -106,7 +106,7 @@ Requirements:
 - Empty/loading/error states.
 - Product cards navigate to Product Detail.
 
-Delivered: local search over brand/name/SKU, disabled Filter/Sort placeholders, loading/empty/error states with an end-of-list scroll placeholder, and card navigation to `/product/[id]` via a minimal placeholder detail route (full screen is Task 8).
+Delivered: local search over brand/name/SKU, disabled Filter/Sort placeholders, loading/empty/error states with an end-of-list scroll placeholder, and card navigation to `/product/[id]` via a minimal placeholder detail route (full screen is Task 8). Searching `__error__` is the deterministic mock path that enters the error state until a real data source can fail.
 
 ### Task 8: Build Product Detail Screen
 
@@ -151,7 +151,7 @@ Acceptance:
   - Done 2026-07-12: piloted `reviewer` and `verifier` during Tasks 6-7 (results below).
   - Create `implementer.md` only if delegated implementation proves beneficial in further use; the pilot validated review/verify delegation only.
   - Create `debugger.md` when a real multi-attempt or context-heavy debugging case justifies isolated diagnosis; until then the parent runs `skills/bugfix-debug-loop` directly.
-- Discovered 2026-07-12 (pre-existing, found by `npm run check` during Task 7 validation): expo-doctor reports patch mismatches — expected `expo ~57.0.4` (found 57.0.2), `expo-linking ~57.0.2` (found 57.0.1), `expo-router ~57.0.4` (found 57.0.3). Not caused by Tasks 6-7 (no dependency changes). Fix later via `npx expo install --check` as its own task.
+- Discovered 2026-07-12 (pre-existing, found by `npm run check` during Task 7 validation): expo-doctor reports patch mismatches — expected `expo ~57.0.4` (found 57.0.2), `expo-linking ~57.0.2` (found 57.0.1), `expo-router ~57.0.4` (found 57.0.3). Not caused by Tasks 6-7 (no dependency changes). Track as a dependency-alignment task: update the packages to the SDK 57 patch versions (use `npx expo install expo@~57.0.4 expo-linking@~57.0.2 expo-router@~57.0.4` or equivalent), then confirm with `npx expo install --check` / `npm run check`. Prefer a small dedicated PR from `master` rather than bundling into the pilot PR.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
 

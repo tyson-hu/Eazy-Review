@@ -13,6 +13,9 @@ import { Screen } from '@/src/components/ui/Screen';
 import { mockProducts } from '@/src/features/products/mockProducts';
 import type { Product, ProductCardData } from '@/src/types/product';
 
+/** Deterministic mock-load failure trigger until the real data source can fail. */
+const FORCE_LOAD_ERROR_QUERY = '__error__';
+
 function toCardData(product: Product): ProductCardData {
   return {
     id: product.id,
@@ -45,7 +48,6 @@ export default function BrowseScreen() {
   // Mimics the async load Supabase will introduce so loading/error UI is
   // exercised now and the TanStack Query swap (Task 10+) is a drop-in.
   const [isLoading, setIsLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export default function BrowseScreen() {
     return () => clearTimeout(timer);
   }, [loadAttempt]);
 
+  const forceLoadError = query.trim().toLowerCase() === FORCE_LOAD_ERROR_QUERY;
   const results = mockProducts.filter((product) => matchesQuery(product, query));
 
   return (
@@ -78,11 +81,12 @@ export default function BrowseScreen() {
 
       {isLoading ? (
         <LoadingState message="Loading products..." />
-      ) : loadFailed ? (
+      ) : forceLoadError ? (
         <ErrorState
           title="Could not load products"
+          message="Mock load failed. Clear the search or tap Try again to recover."
           onRetry={() => {
-            setLoadFailed(false);
+            setQuery('');
             setIsLoading(true);
             setLoadAttempt((attempt) => attempt + 1);
           }}
