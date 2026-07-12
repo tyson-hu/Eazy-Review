@@ -151,7 +151,7 @@ Acceptance:
   - Done 2026-07-12: piloted `reviewer` and `verifier` during Tasks 6-7 (results below).
   - Create `implementer.md` only if delegated implementation proves beneficial in further use; the pilot validated review/verify delegation only.
   - Create `debugger.md` when a real multi-attempt or context-heavy debugging case justifies isolated diagnosis; until then the parent runs `skills/bugfix-debug-loop` directly.
-- Discovered 2026-07-12 (pre-existing, found by `npm run check` during Task 7 validation): expo-doctor reports patch mismatches — expected `expo ~57.0.4` (found 57.0.2), `expo-linking ~57.0.2` (found 57.0.1), `expo-router ~57.0.4` (found 57.0.3). Not caused by Tasks 6-7 (no dependency changes). Track as a dependency-alignment task: update the packages to the SDK 57 patch versions (use `npx expo install expo@~57.0.4 expo-linking@~57.0.2 expo-router@~57.0.4` or equivalent), then confirm with `npx expo install --check` / `npm run check`. Prefer a small dedicated PR from `master` rather than bundling into the pilot PR.
+- Done 2026-07-12: Expo SDK 57 patch dependency alignment (`expo`, `expo-linking`, `expo-router`) landed in PR #8 and was merged to `master`. The pilot branch was rebased onto that fix; `npx expo-doctor` and `npx expo install --check` pass.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
 
