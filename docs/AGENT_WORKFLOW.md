@@ -65,7 +65,7 @@ Subagents are isolated helpers the parent agent can launch for context isolation
 
 - Delegate when a task benefits from context isolation (bulk file reads, independent review), parallel work, or verification independent of the implementing context.
 - Never delegate trivial edits; the delegation overhead costs more than it saves.
-- Subagents start with a clean context and cannot see the parent conversation. Every delegation prompt must contain the task spec, the exact file and doc paths to read (per the Context Map above), and the skill to follow.
+- Subagents start with a clean context and cannot see the parent conversation. Every delegation prompt must contain the task spec, the exact file and doc paths to read (per the Context Map above), and the matching skill when one exists. When no skill matches, state that explicitly and instruct the subagent to follow its own definition.
 
 ### Model Routing Tiers
 
@@ -125,10 +125,10 @@ Cleanup before completion:
 
 ### Agent Execution Summary
 
-When a PR or major session used delegation, append this block to the handoff — once per PR or major session, not per small task. No token estimates; no committed telemetry files (cost telemetry is not a project-memory category, per `docs/LOOP_ENGINEERING.md`).
+When a PR or major session used delegation, add this block as a subsection under the handoff's `## Validation` section — once per PR or major session, not per small task. The handoff keeps its exact five top-level sections. No token estimates; no committed telemetry files (cost telemetry is not a project-memory category, per `docs/LOOP_ENGINEERING.md`).
 
 ```md
-## Agent execution summary
+### Agent execution summary
 
 - Agents invoked:
 - Models requested:

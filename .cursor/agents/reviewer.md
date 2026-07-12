@@ -16,6 +16,7 @@ Read only task-dependent context — never a blanket read of product docs:
 - Data or type change: `docs/API_CONTRACTS.md`; `docs/DATA_MODEL.md` only if a database contract is involved.
 - Refactor: the affected contracts in `docs/API_CONTRACTS.md`, not product-direction docs.
 - Product-scope question: `docs/BLUEBOOK.md`.
+- Security or authentication change: `docs/SECURITY.md`, the relevant flow in `docs/USER_FLOWS.md`, and the affected contract in `docs/API_CONTRACTS.md` or `docs/DATA_MODEL.md`.
 
 ## Mode 1 — Spec review (after a completed change)
 
@@ -47,7 +48,7 @@ Prefer deletion, reuse, and flattening over introducing new architecture.
 For each finding:
 
 - **Evidence** — file, line range, what you observed.
-- **Proposal** — the deletion or simplification, smallest first.
+- **Proposal** — in spec-review mode, the smallest corrective action (which may require new code, e.g. a missing loading state or wrong navigation behavior); in deletion-first mode, the smallest deletion, reuse, flattening, or simplification — never new architecture.
 - **Behavior that must remain unchanged.**
 - **Regression test needed** — or "none" with a reason.
 

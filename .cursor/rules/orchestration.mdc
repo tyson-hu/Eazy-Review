@@ -8,7 +8,7 @@ The canonical delegation policy lives in `docs/AGENT_WORKFLOW.md`, Delegation An
 Operational reminders:
 
 - Do not delegate trivial edits; delegation overhead costs more than it saves.
-- Subagents start with a clean context and cannot see this conversation. Every delegation prompt must include the task spec, the exact file and doc paths to read (per the Context Map), and the skill to follow.
+- Subagents start with a clean context and cannot see this conversation. Every delegation prompt must include the task spec, the exact file and doc paths to read (per the Context Map), and the matching skill when one exists; when none matches, say so and instruct the subagent to follow its own definition.
 - The parent agent owns scope, decomposition, escalation, and final acceptance. Subagents never accept their own work.
 - Never escalate model tiers automatically — state why the cheaper tier is insufficient first.
 - Subagents stop after two failed fix attempts and return a structured report to the parent (`docs/LOOP_ENGINEERING.md`, Subagent Escalation Boundary).
