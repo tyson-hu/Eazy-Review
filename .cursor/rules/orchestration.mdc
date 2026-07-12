@@ -1,0 +1,15 @@
+---
+description: Delegation and subagent orchestration policy
+alwaysApply: true
+---
+
+The canonical delegation policy lives in `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy. Read it before launching or defining any subagent.
+
+Operational reminders:
+
+- Do not delegate trivial edits; delegation overhead costs more than it saves.
+- Subagents start with a clean context and cannot see this conversation. Every delegation prompt must include the task spec, the exact file and doc paths to read (per the Context Map), and the skill to follow.
+- The parent agent owns scope, decomposition, escalation, and final acceptance. Subagents never accept their own work.
+- Never escalate model tiers automatically — state why the cheaper tier is insufficient first.
+- Subagents stop after two failed fix attempts and return a structured report to the parent (`docs/LOOP_ENGINEERING.md`, Subagent Escalation Boundary).
+- Active project subagents: `reviewer` (independent read-only review) and `verifier` (read-only checks), in `.cursor/agents/`. Planned roles and rollout status are tracked in `docs/TASKS.md`.

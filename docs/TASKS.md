@@ -143,6 +143,10 @@ Acceptance:
 ## Follow-Ups / Discovered Work
 
 - Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Context: `docs/DECISIONS.md` 2026-07-04 cross-agent portability entry.
+- Added 2026-07-12: phased delegation system (policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy). Four approved roles; only `reviewer` and `verifier` are instantiated in `.cursor/agents/`. Rollout status:
+  - Pilot `reviewer` and `verifier` during Tasks 6-7, then evaluate: are findings materially useful, are failure classifications reliable, do handoffs create excess rework, does the context boundary save more than it costs?
+  - Create `implementer.md` only if the pilot proves delegated implementation is beneficial.
+  - Create `debugger.md` when a real multi-attempt or context-heavy debugging case justifies isolated diagnosis; until then the parent runs `skills/bugfix-debug-loop` directly.
 
 ## Supabase Tasks
 

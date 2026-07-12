@@ -38,6 +38,10 @@ Maximum two fix attempts for any single failure.
 2. Second failure: one more hypothesis and minimal fix, re-verify.
 3. Still failing: stop. Report both hypotheses, both attempts, and the current error verbatim. Do not try a third variation, widen the change, or disable the failing check. If the problem will be picked up again (by a fresh session or a human), persist the state with `skills/blocker-note`.
 
+## Subagent Escalation Boundary
+
+Subagents inherit the retry policy above: maximum two fix attempts, then stop. On any stop condition, a subagent does not write handoff or blocker notes itself — it returns a structured report to the parent agent (what was tried, both hypotheses where relevant, the current error verbatim, and the decision needed). The parent decides: retry with more context, escalate to a stronger model tier with a stated justification, or stop and involve the human. The parent — not the subagent — runs `skills/session-handoff` or `skills/blocker-note` when warranted. Delegation mechanics and routing tiers live in `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy. Cost telemetry is not a memory category; the Memory Rule below is unchanged.
+
 ## Debugging Principles
 
 These apply to debugging in any loop, from the first failure through a blocker note:

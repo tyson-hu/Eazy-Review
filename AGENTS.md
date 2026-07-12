@@ -55,6 +55,7 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 ## Pointers
 
 - Docs are part of the change: apply the gate in `docs/DOCUMENTATION_POLICY.md` before commit, PR handoff, or reporting completion.
+- Delegation policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy. Active project subagents live in `.cursor/agents/`; planned roles and rollout status are tracked in `docs/TASKS.md`.
 - Security rules: `docs/SECURITY.md`
 - Session flow, definition of done, handoff and PR formats: `docs/AGENT_WORKFLOW.md`
 - Loop anatomy, stop conditions, retry policy: `docs/LOOP_ENGINEERING.md`

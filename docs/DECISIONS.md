@@ -268,3 +268,24 @@ Safety-risk:
 
 Related files:
 - `docs/MCP_WORKFLOW.md`, `GEMINI.md`, `README.md`, `docs/DECISIONS.md`
+
+## 2026-07-12 — Phased Delegation System With Reviewer And Verifier Subagents
+
+What changed:
+- Added a Delegation And Subagent Policy section to `docs/AGENT_WORKFLOW.md` as the canonical home for when to delegate, model routing tiers (fast / inherit-medium / verified strong / parent, with no automatic escalation), the seven-step completion sequence (scope check, self-cleanup, independent read-only review, one review-fix pass, final verification, documentation gate, repository check and handoff), the conditional teach-back policy, the abstraction and cleanup checklist, and the optional agent execution summary block.
+- Added a Subagent Escalation Boundary to `docs/LOOP_ENGINEERING.md`: subagents inherit the two-attempt retry rule and return a structured report to the parent instead of writing handoff or blocker notes; the parent decides retry, escalate, or stop. The Memory Rule is unchanged — cost telemetry is not a memory category and no token estimates are recorded anywhere.
+- Added an MCP Tool Policy to `docs/MCP_WORKFLOW.md` classifying every MCP action as READ (no approval), REVERSIBLE WRITE (state target and change first), or HIGH IMPACT (explicit approval), with standing principles (read before write, narrowest tool, no silent dev-to-production switch, no credential exposure).
+- Created two thin always-apply Cursor mirrors, `.cursor/rules/orchestration.mdc` and `.cursor/rules/mcp-policy.mdc`, following the `security.mdc` -> `docs/SECURITY.md` pattern.
+- Instantiated two subagents in `.cursor/agents/`: `reviewer` (read-only; spec review and deletion-first review modes, task-dependent context reads per the context map) and `verifier` (fast model, read-only; runs the narrowest checks and classifies failures as caused-by-change, pre-existing, environmental, or uncertain; never edits).
+
+Why:
+- The delegation architecture defines four roles: implementer, debugger, reviewer, and verifier. V1 instantiates only reviewer and verifier because independent checking is the highest-value benefit and transferring write authority to another context is not yet proven. Creating unused agent files early would place them in description-based automatic routing before their output contracts are validated, which violates the same no-speculative-abstraction rule the system enforces. The existing skills already cover implementation and debugging for the parent to run directly.
+
+Effect:
+- During Tasks 6-7 the flow is: parent implements -> reviewer inspects -> parent applies accepted findings -> verifier runs final checks. Implementer is added after the pilot demonstrates reliable handoffs and useful independent checks; debugger is added when an actual context-heavy or repeated-failure case demonstrates the need. Rollout status lives in `docs/TASKS.md`. Model IDs live only in agent frontmatter, so model renames touch one file, not the docs.
+
+Safety-risk:
+- Docs, two thin rules, and two read-only subagent definitions — no app code, schema, or dependency changes. Both active subagents are `readonly: true`, so neither can edit files or run state-changing commands; the verifier explicitly reports rather than fixes. Risk of the mirrors drifting from their canonical sections is covered by the documentation policy's agent-behavior bucket, which now also lists `.cursor/agents/*`.
+
+Related files:
+- `docs/AGENT_WORKFLOW.md`, `docs/LOOP_ENGINEERING.md`, `docs/MCP_WORKFLOW.md`, `.cursor/rules/orchestration.mdc`, `.cursor/rules/mcp-policy.mdc`, `.cursor/agents/reviewer.md`, `.cursor/agents/verifier.md`, `docs/DOCUMENTATION_POLICY.md`, `AGENTS.md`, `docs/TASKS.md`, `docs/DECISIONS.md`
