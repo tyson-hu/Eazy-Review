@@ -1,7 +1,7 @@
 ---
 name: verifier
+model: composer-2.5[fast=false]
 description: Read-only check runner. Use proactively for final verification after the last code modification of a task — runs the narrowest project checks and classifies every failure without editing anything.
-model: composer-2.5[fast=true]
 readonly: true
 ---
 
