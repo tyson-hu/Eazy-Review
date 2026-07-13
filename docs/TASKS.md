@@ -122,7 +122,15 @@ Requirements:
 - Rating breakdown.
 - My Rating state.
 - Description.
-- CTA.
+- CTA. Destination decided: a minimal `/product/[id]/rate` placeholder route so the CTA navigates successfully (Task 9 replaces the placeholder); the placeholder must be explicitly named in its packet's edit scope.
+
+Packet decomposition (run via the `implementer` per the Task Packet Format; sequential — later packets depend on the contract and share the screen file):
+
+1. Packet 1 — Detail data contract and fixtures. Confirm the data needed for metadata, offers, rating breakdown, and My Rating; extend `src/types/product.ts` only where necessary; update affected `docs/API_CONTRACTS.md` sections. Do not overload `Product`: compose distinct concerns, targeting a shape along the lines of `ProductDetailData = { product; offers; ratingSummary; myRating | null }` (exact shape decided in the packet). My Rating is user-specific state and must not become a global catalog-product property. Fixture placement is the packet's decision within this boundary: catalog-card data stays in `mockProducts.ts` (extend only for genuine product metadata); offers, rating summaries, and user-specific mock ratings go in a dedicated detail fixture (e.g. `mockProductDetails.ts`) when embedding them would create duplicate or mixed-responsibility data. Any new fixture file must be explicitly listed in the packet's edit scope. This packet is also the implementer's positive-path boundary test (see rollout status).
+2. Packet 2 — Product header and commerce summary. Lookup and missing-product state; image; brand, name, SKU, metadata; Eazy Score and Community Score; lowest-price section.
+3. Packet 3 — Ratings content. Rating breakdown; zero/null-rating behavior; My Rating state; a `RatingRow` component only if justified by repeated usage or meaningful complexity (abstraction checklist applies).
+4. Packet 4 — Description and action. Description; Rate/Edit CTA; correct navigation to the `/product/[id]/rate` placeholder named in the packet's edit scope.
+5. Integrated completion — parent-owned, not an implementer packet. Whole-screen reviewer pass; the parent evaluates the integrated findings and normally delegates the accepted ones as one bounded integrated-fix implementer packet (the parent may apply a trivial correction directly when delegation overhead would exceed the work, but must still run verification afterward); verifier; `npm run check`; human simulator walk; parent acceptance.
 
 ### Task 9: Build Rating Form Screen With Fake Local State
 
@@ -147,10 +155,11 @@ Acceptance:
 ## Follow-Ups / Discovered Work
 
 - Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Context: `docs/DECISIONS.md` 2026-07-04 cross-agent portability entry.
-- Added 2026-07-12: phased delegation system (policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy). Four approved roles; only `reviewer` and `verifier` are instantiated in `.cursor/agents/`. Rollout status:
+- Added 2026-07-12: phased delegation system (policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy). Four approved roles, all instantiated in `.cursor/agents/`. Rollout status:
   - Done 2026-07-12: piloted `reviewer` and `verifier` during Tasks 6-7 (results below).
-  - Create `implementer.md` only if delegated implementation proves beneficial in further use; the pilot validated review/verify delegation only.
-  - Create `debugger.md` when a real multi-attempt or context-heavy debugging case justifies isolated diagnosis; until then the parent runs `skills/bugfix-debug-loop` directly.
+  - Done 2026-07-12: created `implementer.md` — Active, first-use validation pending. Its first Task 8 packet is the positive-path boundary test (capture status before delegation, the allowed edit scope, status after, every changed path vs. scope, validation results, served model); any out-of-bound edit fails the pilot and returns control to the parent. Update the status in `docs/AGENT_WORKFLOW.md` to plain Active after it passes.
+  - Done 2026-07-12: created `debugger.md` — Available, conditional escalation only, explicit parent invocation required. Remains unvalidated until its first legitimate escalation case; evaluate it then.
+  - Follow-up: evaluate the implementer after Task 8 (delegation prompt quality, boundary adherence, rework, context savings vs. handoff cost).
 - Done 2026-07-12: Expo SDK 57 patch dependency alignment (`expo`, `expo-linking`, `expo-router`) landed in PR #8 and was merged to `master`. The pilot branch was rebased onto that fix; `npx expo-doctor` and `npx expo install --check` pass.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)

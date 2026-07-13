@@ -84,12 +84,49 @@ The delegation architecture defines four roles. Rollout is phased; current statu
 
 | Role | Purpose | Status |
 | --- | --- | --- |
-| `reviewer` | Independent read-only review: spec review and deletion-first review | Active (pilot) |
-| `verifier` | Read-only check runs and failure classification | Active (pilot) |
-| `implementer` | One scoped implementation task, selecting the matching skill | Planned — create after the pilot proves reliable handoffs and useful independent checks |
-| `debugger` | Isolated diagnosis via `skills/bugfix-debug-loop` | Planned — create when a real multi-attempt or context-heavy debugging case appears |
+| `reviewer` | Independent read-only review: spec review and deletion-first review | Active |
+| `verifier` | Read-only check runs and failure classification | Active |
+| `implementer` | One scoped implementation task packet, following the packet's named skill | Active — first-use validation pending until its first packet stays within boundary and passes validation |
+| `debugger` | Isolated diagnosis of an escalated caused-by-change failure via `skills/bugfix-debug-loop` | Available — conditional escalation only; unvalidated until its first legitimate escalation case |
 
-Until `implementer` and `debugger` exist, the parent runs the implementation and debugging skills directly. Nothing is blocked by their absence.
+The debugger is not part of the normal execution path. The parent must explicitly name and invoke `debugger`; description-based routing alone is insufficient authorization. It is entered only when a caused-by-change failure survives the implementer's repair attempts, or when the parent explicitly determines diagnosis requires isolated context.
+
+### Task Packet Format
+
+Every implementation delegation is one bounded task packet containing all eleven fields. The implementer returns `blocked` on any missing field.
+
+1. **Task** — one clear outcome.
+2. **Acceptance criteria** — testable statements the parent will check.
+3. **Non-goals** — behavior explicitly excluded from this packet.
+4. **Starting state** — expected branch/base and prerequisite packets.
+5. **Read** — the exact documents to read, per the Context Map.
+6. **Skill** — mandatory: a skill path, or the explicit value "None — follow the implementer definition and the canonical workflow". An absent field is invalid.
+7. **Allowed edit scope** — the exact files that may be modified. Reading more is allowed; editing is not. Documentation is editable only when explicitly listed. New files only when named here.
+8. **Validation** — the commands to run, per Validation Commands below.
+9. **User flow** — the flow to exercise, when applicable.
+10. **Stop and escalation conditions** — conditions requiring the agent to stop and return control to the parent.
+11. **Return format** — what the report must contain.
+
+Packet sizing: one clear outcome, explicit acceptance criteria, a narrow file set, its own verification method, minimal overlap with other active packets. Never packets of tiny edits ("add one import", "change one label") — the never-delegate-trivial-edits rule applies. Packets may run in parallel only when they share no files; otherwise run them sequentially. A new packet starts only after the current one is accepted.
+
+### Retry Budgets And Failure Routing
+
+Budgets are separate per phase, never cumulative, and never reset automatically. One attempt means one evidence-backed modification followed by the relevant check — not every command invocation.
+
+- **Initial implementation**: maximum two self-validation repair attempts.
+- **Review correction**: one reviewer pass → the parent evaluates the findings and selects the accepted ones → one implementer fix pass on accepted findings only → the implementer revalidates. If the reviewer approves or the parent accepts no findings, the packet goes straight to the verifier — no empty fix-pass delegation.
+- **Verifier repair**: a directly evidenced caused-by-change failure → at most two evidence-based implementer repair attempts; the verifier reruns after every modification.
+- **Debugger**: entered only per the invocation rule above; two hypotheses maximum; one minimal edit per hypothesis; the verifier reruns after it returns. Post-debugger boundary: pass → parent acceptance; the original failure remains → blocked, no re-invocation; a materially different failure → parent classification, budgets do not reset.
+- After any budget is exhausted: return control to the parent. Global stop after debugger exhaustion: blocked report to the parent/human; no automatic decomposition, restart, or re-invocation.
+
+Verifier verdict routing — only a directly evidenced caused-by-change failure enters the implementer repair path:
+
+- `pre-existing only` — the parent records a separate `docs/TASKS.md` entry and decides whether the current packet may still be accepted. Pre-existing failures are never fixed opportunistically.
+- `environmental` — the verifier's one permitted retry; escalate to the parent if unresolved.
+- `uncertain` — the parent gathers missing evidence or performs the clean-base comparison; never routed automatically to the debugger.
+- `blocked` — the parent supplies the missing prerequisite or stops.
+
+Review economy: per-packet independent review is required for meaningful code or contract changes; the parent may skip it for trivial follow-up packets; one final integrated review always runs across the whole task. A materially behavior-changing verifier fix may require another reviewer pass, but only when the parent explicitly authorizes it — typo and lint fixes do not.
 
 ### Completion Sequence
 

@@ -12,4 +12,4 @@ Operational reminders:
 - The parent agent owns scope, decomposition, escalation, and final acceptance. Subagents never accept their own work.
 - Never escalate model tiers automatically — state why the cheaper tier is insufficient first.
 - Subagents stop after two failed fix attempts and return a structured report to the parent (`docs/LOOP_ENGINEERING.md`, Subagent Escalation Boundary).
-- Active project subagents: `reviewer` (independent read-only review) and `verifier` (read-only checks), in `.cursor/agents/`. Planned roles and rollout status are tracked in `docs/TASKS.md`.
+- Active and conditionally available project subagents live in `.cursor/agents/`; role status, invocation boundaries, and the execution sequence live in `docs/AGENT_WORKFLOW.md`.

@@ -289,3 +289,24 @@ Safety-risk:
 
 Related files:
 - `docs/AGENT_WORKFLOW.md`, `docs/LOOP_ENGINEERING.md`, `docs/MCP_WORKFLOW.md`, `.cursor/rules/orchestration.mdc`, `.cursor/rules/mcp-policy.mdc`, `.cursor/agents/reviewer.md`, `.cursor/agents/verifier.md`, `docs/DOCUMENTATION_POLICY.md`, `AGENTS.md`, `docs/TASKS.md`, `docs/DECISIONS.md`
+
+## 2026-07-12 — Activate Implementer And Provision Conditional Debugger
+
+What changed:
+- Instantiated `implementer` in `.cursor/agents/`: write-enabled, accepts exactly one bounded task packet per delegation, returns `blocked` on any missing packet field (the `Skill` field is mandatory even when its value is "None"), edits only files inside the packet's allowed edit scope, and never accepts its own work. Status: Active — first-use validation pending until its first packet stays within boundary and passes validation.
+- Instantiated `debugger` in `.cursor/agents/`: write-enabled but conditional-escalation-only. The parent must explicitly name and invoke it — description-based routing alone is insufficient authorization — and its required-inputs contract (explicit escalation statement plus exhausted-attempt evidence or the parent's stated reason) enforces that from the other side. Two hypotheses maximum, one minimal edit per hypothesis, then blocked.
+- Extended the Delegation And Subagent Policy in `docs/AGENT_WORKFLOW.md` with a Task Packet Format (eleven mandatory fields including non-goals, starting state, allowed edit scope, and stop conditions), per-phase Retry Budgets that never reset automatically, explicit routing for every verifier verdict, a post-debugger boundary, and a review-economy rule.
+- Both write-enabled agents carry an absolute high-risk restriction: schema, migration, authentication, security-sensitive, production infrastructure, and destructive data changes always return to the parent for strong-tier handling, regardless of the packet's file list. Dependency changes require explicit packet-level authorization for the implementer and are always report-only for the debugger.
+- Thinned the `.cursor/rules/orchestration.mdc` and `AGENTS.md` pointers so role status lives only in `docs/AGENT_WORKFLOW.md`.
+
+Why:
+- The Tasks 6-7 pilot validated independent review and verification. The intended parent-led packet workflow (parent decomposes a feature into independently testable packets, delegates implementation, arbitrates review findings, and accepts each packet) creates an immediate need for a scoped implementer, so the implementer gate is satisfied. A debugger definition is provisioned for explicit conditional escalation, but it remains unvalidated on a real difficult failure and is not part of the normal execution path.
+
+Effect:
+- The normal loop per packet is: implementer builds and self-validates -> reviewer reviews once -> parent selects accepted findings (or none) -> at most one implementer fix pass -> verifier runs and classifies -> parent accepts. The debugger enters only after the implementer's verifier-repair budget is exhausted or by explicit parent decision, and the verifier always reruns after it. The implementer uses a medium implementation tier; the debugger uses a strong reasoning tier. Concrete model identifiers remain in agent frontmatter.
+
+Safety-risk:
+- Two write-enabled agent definitions plus documentation — no app code, schema, or dependency changes. Write risk is bounded by the packet edit scope, the shared hard limits (no commits/pushes, no dependency or lockfile changes without explicit authorization, no high-risk domains, no new files unless permitted), and premerge blocked-input smoke tests proving both agents refuse incomplete assignments without editing. The implementer's first real packet doubles as its positive-path boundary test; any out-of-bound edit fails the pilot and returns control to the parent.
+
+Related files:
+- `.cursor/agents/implementer.md`, `.cursor/agents/debugger.md`, `docs/AGENT_WORKFLOW.md`, `.cursor/rules/orchestration.mdc`, `AGENTS.md`, `docs/TASKS.md`, `docs/DECISIONS.md`
