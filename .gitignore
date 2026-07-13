@@ -62,3 +62,6 @@ coverage/
 
 # transient session state (blocker notes stay committed)
 docs/notes/handoff.md
+
+# Cursor local plan files (never commit)
+.cursor/plans/
