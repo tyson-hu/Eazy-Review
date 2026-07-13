@@ -86,7 +86,7 @@ The delegation architecture defines four roles. Rollout is phased; current statu
 | --- | --- | --- |
 | `reviewer` | Independent read-only review: spec review and deletion-first review | Active |
 | `verifier` | Read-only check runs and failure classification | Active |
-| `implementer` | One scoped implementation task packet, following the packet's named skill | Active — first-use validation pending until its first packet stays within boundary and passes validation |
+| `implementer` | One scoped implementation task packet, following the packet's named skill | Active |
 | `debugger` | Isolated diagnosis of an escalated caused-by-change failure via `skills/bugfix-debug-loop` | Available — conditional escalation only; unvalidated until its first legitimate escalation case |
 
 The debugger is not part of the normal execution path. The parent must explicitly name and invoke `debugger`; description-based routing alone is insufficient authorization. It is entered only when a caused-by-change failure survives the implementer's repair attempts, or when the parent explicitly determines diagnosis requires isolated context.

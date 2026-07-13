@@ -57,3 +57,11 @@ export type ProductOffer = {
   currency: string;
   price: number | null;
 };
+
+/** Composed Product Detail payload. My Rating is user-specific, not a catalog Product field. */
+export type ProductDetailData = {
+  product: Product;
+  offers: ProductOffer[];
+  ratingSummary: ProductRatingSummary;
+  myRating: RatingBreakdown | null;
+};
