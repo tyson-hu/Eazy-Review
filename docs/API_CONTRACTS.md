@@ -206,7 +206,7 @@ MVP sort options:
 Before Supabase, create `src/features/products/mockProducts.ts`:
 
 ```ts
-import type { Product } from '@/types/product';
+import type { Product } from '@/src/types/product';
 
 export const mockProducts: Product[] = [
   {

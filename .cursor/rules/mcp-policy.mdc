@@ -1,0 +1,12 @@
+---
+description: MCP tool action classification and approval policy
+alwaysApply: true
+---
+
+The canonical MCP policy lives in `docs/MCP_WORKFLOW.md`, MCP Tool Policy. Classify every MCP action before calling it:
+
+- **READ** — may run without approval (inspect schema, search files, read PRs).
+- **REVERSIBLE WRITE** — state the target and intended change before executing (create a branch, update a draft, modify a development record).
+- **HIGH IMPACT** — explicit user approval required (deploy, delete, production database write, credential change, force push, destructive migration, mass update).
+
+Standing principles: read before write; use the narrowest tool available, never a broader one when a narrower exists; never silently switch from a development target to a production target; never expose credential values (`docs/SECURITY.md`).

@@ -63,6 +63,7 @@ Tooling, scripts, dependencies, quality checks, local setup, or developer workfl
 Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `AGENTS.md`
 - `.cursor/rules/*`
+- `.cursor/agents/*` (subagent definitions; keep aligned with the Delegation And Subagent Policy in `docs/AGENT_WORKFLOW.md` and the rollout status in `docs/TASKS.md`)
 - `docs/SECURITY.md` when security rules change (keep `.cursor/rules/security.mdc` mirrored)
 - `docs/AGENT_WORKFLOW.md`
 - `docs/LOOP_ENGINEERING.md`

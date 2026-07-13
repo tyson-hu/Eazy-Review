@@ -56,6 +56,21 @@ Add later only when needed:
 
 Treat each MCP server as a capability boundary, especially if it can write to a database, repo, or external service.
 
+## MCP Tool Policy
+
+Classify every MCP action before calling it, and behave per its level. `.cursor/rules/mcp-policy.mdc` mirrors this section for Cursor's always-apply mechanism; this section is the home, the rule is the mirror.
+
+- **READ** — may run without approval. Examples: inspect schema, search files, read PRs.
+- **REVERSIBLE WRITE** — state the target and intended change before executing. Examples: create a branch, update a draft, modify a development record.
+- **HIGH IMPACT** — explicit user approval required. Examples: deploy, delete, production database write, credential change, force push, destructive migration, mass update.
+
+Standing principles at every level:
+
+- Read before write.
+- Use the narrowest tool available; never substitute a broader tool when a narrower one exists.
+- Never silently switch from a development target to a production target.
+- Never expose credential values (`docs/SECURITY.md`).
+
 ## Agent Security Baseline
 
 All agent and MCP tool work follows `docs/SECURITY.md` (the canonical security rules for setup, shell, destructive commands, and secrets).
