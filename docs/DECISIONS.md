@@ -382,4 +382,4 @@ Safety-risk:
 - Mock Detail UI and contract docs only; no schema change.
 
 Related files:
-- `app/product/[id].tsx`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`, `docs/TASKS.md`
+- `app/product/[id]/index.tsx`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`, `docs/TASKS.md`
