@@ -4,10 +4,11 @@ import { Image, View } from 'react-native';
 import { AppText } from '@/src/components/ui/AppText';
 import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/ui/EmptyState';
+import { RatingRow } from '@/src/components/ui/RatingRow';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import { Screen } from '@/src/components/ui/Screen';
 import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
-import type { ProductOffer } from '@/src/types/product';
+import type { ProductOffer, ProductRatingSummary } from '@/src/types/product';
 import { formatPrice } from '@/src/utils/formatPrice';
 
 function formatSizeLabel(offer: ProductOffer): string | null {
@@ -41,6 +42,20 @@ function resolveLowestPrice(
   return null;
 }
 
+function hasMeaningfulCommunityCategories(summary: ProductRatingSummary): boolean {
+  if (summary.ratingCount <= 0) {
+    return false;
+  }
+  return [
+    summary.lookAvg,
+    summary.comfortAvg,
+    summary.qualityAvg,
+    summary.outfitAvg,
+    summary.valueAvg,
+    summary.overallAvg,
+  ].some((avg) => avg != null);
+}
+
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const detail = typeof id === 'string' ? getMockProductDetailById(id) : null;
@@ -54,7 +69,7 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const { product, offers, ratingSummary } = detail;
+  const { product, offers, ratingSummary, myRating } = detail;
   const pricedOffers = offers.filter(
     (offer): offer is ProductOffer & { price: number } => offer.price != null,
   );
@@ -64,6 +79,24 @@ export default function ProductDetailScreen() {
     product.releaseDate,
     product.sizeType,
   ].filter((part): part is string => Boolean(part));
+  const showCommunityBreakdown = hasMeaningfulCommunityCategories(ratingSummary);
+  const communityCategoryRows = [
+    { label: 'Look', value: ratingSummary.lookAvg },
+    { label: 'Comfort', value: ratingSummary.comfortAvg },
+    { label: 'Quality', value: ratingSummary.qualityAvg },
+    { label: 'Outfit', value: ratingSummary.outfitAvg },
+    { label: 'Value', value: ratingSummary.valueAvg },
+    { label: 'Overall', value: ratingSummary.overallAvg },
+  ];
+  const myRatingCategoryRows = myRating
+    ? [
+        { label: 'Look', value: myRating.look },
+        { label: 'Comfort', value: myRating.comfort },
+        { label: 'Quality', value: myRating.quality },
+        { label: 'Outfit', value: myRating.outfit },
+        { label: 'Value', value: myRating.value },
+      ]
+    : [];
 
   return (
     <Screen scroll>
@@ -108,6 +141,21 @@ export default function ProductDetailScreen() {
           {ratingSummary.ratingCount === 1 ? 'community rating' : 'community ratings'}
         </AppText>
       ) : null}
+
+      <Card className="mt-4">
+        <AppText variant="label">Community ratings</AppText>
+        {showCommunityBreakdown ? (
+          <View className="mt-3 gap-3">
+            {communityCategoryRows.map((row) => (
+              <RatingRow key={row.label} label={row.label} value={row.value} />
+            ))}
+          </View>
+        ) : (
+          <AppText variant="body" className="mt-2">
+            No community ratings yet
+          </AppText>
+        )}
+      </Card>
 
       <Card className="mt-4">
         <AppText variant="label">Purchase</AppText>
@@ -158,6 +206,34 @@ export default function ProductDetailScreen() {
           <AppText variant="body" className="mt-2">
             Purchase unavailable
           </AppText>
+        )}
+      </Card>
+
+      <Card className="mt-4 border-accent">
+        <AppText variant="label">My Rating</AppText>
+        {myRating == null ? (
+          <AppText variant="body" className="mt-2">
+            Not rated yet
+          </AppText>
+        ) : (
+          <>
+            <View className="mt-2 flex-row items-end justify-between">
+              <AppText variant="caption">Overall</AppText>
+              <AppText className="text-2xl font-bold text-primary">
+                {myRating.overall}/10
+              </AppText>
+            </View>
+            <View className="mt-4 gap-3">
+              {myRatingCategoryRows.map((row) => (
+                <RatingRow key={row.label} label={row.label} value={row.value} />
+              ))}
+            </View>
+            {myRating.comment ? (
+              <AppText variant="body" className="mt-4">
+                {myRating.comment}
+              </AppText>
+            ) : null}
+          </>
         )}
       </Card>
     </Screen>
