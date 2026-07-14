@@ -310,3 +310,76 @@ Safety-risk:
 
 Related files:
 - `.cursor/agents/implementer.md`, `.cursor/agents/debugger.md`, `docs/AGENT_WORKFLOW.md`, `.cursor/rules/orchestration.mdc`, `AGENTS.md`, `docs/TASKS.md`, `docs/DECISIONS.md`
+
+## 2026-07-12 — Compose ProductDetailData Instead Of Extending Product
+
+What changed:
+- Product Detail uses a composed frontend type `ProductDetailData = { product: Product; offers: ProductOffer[]; ratingSummary: ProductRatingSummary; myRating: RatingBreakdown | null }`.
+- My Rating stays user-specific on the composed payload (`myRating | null`) and is not added as a field on catalog `Product`.
+- Catalog/list fixtures remain in `mockProducts.ts`; offers, rating summaries, and mock My Ratings live in `mockProductDetails.ts` with `getMockProductDetailById`.
+
+Why:
+- Product Detail needs offers, aggregate rating breakdown, and the viewer's own rating together, but those concerns are not catalog-card properties. Nesting My Rating onto `Product` would mix shared product data with per-user state and force every Browse consumer to carry detail-only fields.
+
+Effect:
+- Detail screens compose from the contract; Browse continues to consume flat `Product` / `ProductCardData` without My Rating. Mock lookup returns `null` for unknown ids and covers rated, unrated, zero-rating, and null-score catalog edge cases.
+
+Safety-risk:
+- Frontend types and mock fixtures only; no schema, API modules, or UI changes in this decision.
+
+Related files:
+- `src/types/product.ts`, `src/features/products/mockProductDetails.ts`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`, `docs/DECISIONS.md`
+
+## 2026-07-12 — Implementer First-Use Validation Passed
+
+What changed:
+- Task 8 Packet 1 stayed inside its allowed edit scope and passed `npm run typecheck` and `npm run lint`.
+- Implementer role status in `docs/AGENT_WORKFLOW.md` moved from Active — first-use validation pending to Active.
+- Debugger remains Available — conditional escalation only and unvalidated until a genuine qualifying failure.
+
+Why:
+- The positive-path boundary test required a real scoped packet (not a premerge smoke refusal) before promoting the implementer.
+
+Effect:
+- Normal Task 8 packets may continue through the implementer. Debugger is still not on the normal path and still needs explicit parent invocation.
+
+Safety-risk:
+- Status and docs only beyond the already-reviewed Packet 1 contract/fixture change. No debugger activation.
+
+Related files:
+- `docs/AGENT_WORKFLOW.md`, `docs/TASKS.md`, `docs/DECISIONS.md`
+
+## 2026-07-14 — ProductRatingSummary.communityScore Maps From DB score
+
+What changed:
+- Frontend `ProductRatingSummary` renames `score` to `communityScore` so UI and types use the same Community Score name.
+- Database / `docs/DATA_MODEL.md` keep the column name `score` on rating summaries; the frontend field is a presentation mapping, not a schema rename.
+
+Why:
+- Product Detail must bind Community Score from the rating summary without colliding with catalog `product.communityScore`, and the UI label is already `Community Score`.
+
+Effect:
+- Detail consumers read `detail.ratingSummary.communityScore`. Mapping from DB `score` → frontend `communityScore` happens at the API/adapter boundary when Supabase is wired.
+
+Safety-risk:
+- Frontend type and fixture rename only; no migration or DATA_MODEL change in this packet.
+
+Related files:
+- `src/types/product.ts`, `src/features/products/mockProductDetails.ts`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`
+
+## 2026-07-14 — Canonical Product Detail Score And Price Sources
+
+What changed:
+- Documented and implemented fixed Detail sources: Eazy Score from `product.eazyScore`; Community Score and rating count from `ratingSummary`; purchase rows from `offers`; lowest price from offer mins with optional `product.lowestPrice` catalog fallback.
+
+Why:
+- Catalog card fields (`product.communityScore`, `product.ratingCount`, `product.lowestPrice`) can diverge from detail aggregates and offers; binding Detail UI to the wrong source causes silent drift.
+
+Effect:
+- Product Detail must not use `product.communityScore` / `product.ratingCount` for the score overview. Purchase section prefers derived offer prices over the catalog lowest-price convenience field.
+
+Safety-risk:
+- Mock Detail UI and contract docs only; no schema change.
+
+Related files:
+- `app/product/[id]/index.tsx`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`, `docs/TASKS.md`

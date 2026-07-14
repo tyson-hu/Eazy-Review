@@ -6,8 +6,8 @@ As of this document setup:
 - Expo project exists with Expo Router.
 - NativeWind v4 is configured with Tailwind, Babel, and Metro.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
-- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState).
-- Mock products, Product Detail, and Rating Form are not yet implemented.
+- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow).
+- Mock products and Product Detail are implemented; Rating Form is still a Task 9 placeholder route.
 
 ## Definition Of Done
 
@@ -83,7 +83,7 @@ Added with Task 7:
 - `Input`
 - `ProductCard`
 
-Still pending:
+Added with Task 8 Packet 3:
 - `RatingRow`
 
 ### Task 6: Create Mock Product Data
@@ -110,7 +110,7 @@ Delivered: local search over brand/name/SKU, disabled Filter/Sort placeholders, 
 
 ### Task 8: Build Product Detail Screen
 
-Status: Pending.
+Status: Done.
 
 Requirements:
 - Product image area.
@@ -118,7 +118,7 @@ Requirements:
 - Metadata.
 - Eazy Score.
 - Community Score.
-- Lowest price section.
+- Price/purchase section (lowest price emphasized plus price-by-size offers).
 - Rating breakdown.
 - My Rating state.
 - Description.
@@ -127,10 +127,15 @@ Requirements:
 Packet decomposition (run via the `implementer` per the Task Packet Format; sequential — later packets depend on the contract and share the screen file):
 
 1. Packet 1 — Detail data contract and fixtures. Confirm the data needed for metadata, offers, rating breakdown, and My Rating; extend `src/types/product.ts` only where necessary; update affected `docs/API_CONTRACTS.md` sections. Do not overload `Product`: compose distinct concerns, targeting a shape along the lines of `ProductDetailData = { product; offers; ratingSummary; myRating | null }` (exact shape decided in the packet). My Rating is user-specific state and must not become a global catalog-product property. Fixture placement is the packet's decision within this boundary: catalog-card data stays in `mockProducts.ts` (extend only for genuine product metadata); offers, rating summaries, and user-specific mock ratings go in a dedicated detail fixture (e.g. `mockProductDetails.ts`) when embedding them would create duplicate or mixed-responsibility data. Any new fixture file must be explicitly listed in the packet's edit scope. This packet is also the implementer's positive-path boundary test (see rollout status).
-2. Packet 2 — Product header and commerce summary. Lookup and missing-product state; image; brand, name, SKU, metadata; Eazy Score and Community Score; lowest-price section.
-3. Packet 3 — Ratings content. Rating breakdown; zero/null-rating behavior; My Rating state; a `RatingRow` component only if justified by repeated usage or meaningful complexity (abstraction checklist applies).
-4. Packet 4 — Description and action. Description; Rate/Edit CTA; correct navigation to the `/product/[id]/rate` placeholder named in the packet's edit scope.
-5. Integrated completion — parent-owned, not an implementer packet. Whole-screen reviewer pass; the parent evaluates the integrated findings and normally delegates the accepted ones as one bounded integrated-fix implementer packet (the parent may apply a trivial correction directly when delegation overhead would exceed the work, but must still run verification afterward); verifier; `npm run check`; human simulator walk; parent acceptance.
+   - Progress: Accepted. `ProductDetailData` in `src/types/product.ts`; detail fixtures + `getMockProductDetailById` in `src/features/products/mockProductDetails.ts` (catalog stays in `mockProducts.ts`). Docs updated. Implementer promoted to Active after in-scope positive-path validation.
+2. Packet 2 — Product header and commerce summary (revised after Packet 1 acceptance). Switch lookup to `getMockProductDetailById(id)`. Header: image (null → deliberate placeholder), brand, name, SKU/metadata (omit missing SKU or release date gracefully). Scores use canonical Detail sources: Eazy Score from `detail.product.eazyScore`; Community Score from `detail.ratingSummary.communityScore` (rename `ProductRatingSummary.score` → `communityScore` in this packet before UI consumers); review count from `detail.ratingSummary.ratingCount` when shown. Purchase section owns the full price/purchase experience for Task 8: emphasize lowest price (derive from non-null `detail.offers` prices; use `product.lowestPrice` only as optional catalog fallback), list available offer rows or price-size pills with size, size region, seller/source, and currency-aware price display; graceful purchase-unavailable state when no usable offer prices exist. Do not use `product.communityScore` / `product.ratingCount` as Detail Community Score sources. Edge cases in acceptance: unknown id → Product not found; id `6` → zero ratings / no Community Score; id `8` → no Eazy Score; null image; missing SKU/release date; empty offers. Reuse `ScoreBadge`. New purchase-row component or `formatPrice` utility only if justified / missing. Packets 3–4 still own rating breakdown, My Rating, description, and CTA.
+   - Progress: Accepted. Header, canonical score sources, purchase/price-by-size section, edge states, and `formatPrice` delivered. Reviewer finding on decimal-price formatting fixed; verifier passed.
+3. Packet 3 — Ratings content. Canonical sources only: community category values and count from `detail.ratingSummary` (look/comfort/quality/outfit/value/overall averages are 0–10 — do not derive rows from `communityScore`, which is a 0–100 aggregate); My Rating from `detail.myRating`. Community breakdown shows those six categories as values out of 10; when count and averages are null/zero (product `6`), show one clear empty state such as "No community ratings yet" instead of six empty bars. My Rating: `null` → "Not rated yet" (no Rate CTA — Packet 4); non-null → overall emphasized, five supporting categories, optional comment only when present, visually distinct from Community Score. Add presentation-only `RatingRow` (`label`, `value: number | null`, optional `max`) used by both sections; screen maps data — the row must not know about `ProductRatingSummary` / `RatingBreakdown` or community-vs-personal. Edge cases: id `1` breakdown + My Rating with comment; id `2` breakdown + `myRating: null`; id `6` no community ratings and no My Rating; id `8` community ratings still render with null Eazy Score. Description, CTA, and rate route stay out of this packet.
+   - Progress: Accepted. `RatingRow` presentation primitive; Community ratings from `detail.ratingSummary` category avgs (empty state when count 0 / all null); My Rating from `detail.myRating` (null → Not rated yet; non-null → overall + five categories + optional comment). Section order fixed to Community → Purchase → My Rating per `docs/DESIGN.md`. Verifier passed. No description/CTA.
+4. Packet 4 — Description and action. Add a Description section after My Rating: non-null `product.description` renders the text; null (e.g. product `8`) keeps the section with a deliberate fallback such as "No product description available yet." Rate/Edit CTA uses existing `Button` and mock viewer state only: `myRating ? 'Edit my rating' : 'Rate this product'` — do **not** implement `Sign in to rate` (auth not connected; signed-out CTA deferred until authentication exists). Navigate to `/product/<id>/rate`. Create minimal `app/product/[id]/rate.tsx` placeholder (explicitly in edit scope): read route id, confirm product exists, show minimal product context, state that the rating form arrives in Task 9, unknown id → Product not found; no rating fields, local form state, or submit. Back navigation returns to Product Detail. Do not mark Task 8 Done — integrated completion follows.
+   - Progress: Accepted. Description section after My Rating (null → "No product description available yet."); mock-viewer CTA via `Button` (`Edit my rating` / `Rate this product`); Expo Router path converted `app/product/[id].tsx` → `app/product/[id]/index.tsx` so nested `app/product/[id]/rate.tsx` placeholder can exist; CTA navigates to `/product/<id>/rate`. Signed-out `Sign in to rate` CTA deferred until authentication exists. Verifier passed. Task 8 remains Pending — integrated completion still open.
+5. Integrated completion — parent-owned, not an implementer packet. Whole-screen reviewer pass; the parent evaluates the integrated findings and normally delegates the accepted ones as one bounded integrated-fix implementer packet (the parent may apply a trivial correction directly when delegation overhead would exceed the work, but must still run verification afterward); verifier; `npm run check`; human simulator walk; parent acceptance. Then mark Task 8 Done.
+   - Progress: Accepted. Whole-screen review approved (nits only); parent applied USER_FLOWS route-path sync, Purchase catalog-fallback caption dedupe, single priced-offer filter, and USD catalog-fallback documentation. `npm run check` passed; human simulator walk confirmed good. Task 8 Done.
 
 ### Task 9: Build Rating Form Screen With Fake Local State
 
@@ -157,10 +162,12 @@ Acceptance:
 - Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Context: `docs/DECISIONS.md` 2026-07-04 cross-agent portability entry.
 - Added 2026-07-12: phased delegation system (policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy). Four approved roles, all instantiated in `.cursor/agents/`. Rollout status:
   - Done 2026-07-12: piloted `reviewer` and `verifier` during Tasks 6-7 (results below).
-  - Done 2026-07-12: created `implementer.md` — Active, first-use validation pending. Its first Task 8 packet is the positive-path boundary test (capture status before delegation, the allowed edit scope, status after, every changed path vs. scope, validation results, served model); any out-of-bound edit fails the pilot and returns control to the parent. Update the status in `docs/AGENT_WORKFLOW.md` to plain Active after it passes.
+  - Done 2026-07-12: created `implementer.md` — Active. First-use positive-path validation passed on Task 8 Packet 1 (all changed paths inside allowed edit scope; typecheck + lint pass; served model recorded as Cursor Grok 4.5 / frontmatter `grok-4.5[effort=high,fast=false]`). Status in `docs/AGENT_WORKFLOW.md` is plain Active.
   - Done 2026-07-12: created `debugger.md` — Available, conditional escalation only, explicit parent invocation required. Remains unvalidated until its first legitimate escalation case; evaluate it then.
   - Follow-up: evaluate the implementer after Task 8 (delegation prompt quality, boundary adherence, rework, context savings vs. handoff cost).
 - Done 2026-07-12: Expo SDK 57 patch dependency alignment (`expo`, `expo-linking`, `expo-router`) landed in PR #8 and was merged to `master`. The pilot branch was rebased onto that fix; `npx expo-doctor` and `npx expo install --check` pass.
+- Done 2026-07-14: skill path sync after Task 8 route restructure — `app/product/[id].tsx` → `app/product/[id]/index.tsx` in `skills/ui-screen-builder`, `skills/feature-slice-builder`, and `skills/session-handoff` (approved skill-maintenance change; Task 8 remains Done).
+- Added 2026-07-14: before wiring real multi-marketplace offers, define Product Detail lowest-price behavior for mixed currencies—enforce one currency per payload, group prices by currency, or introduce an explicit conversion source. Current mock/MVP catalog fallback assumes USD.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
 

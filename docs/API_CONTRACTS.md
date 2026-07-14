@@ -39,7 +39,8 @@ export type ProductRatingSummary = {
   outfitAvg: number | null;
   valueAvg: number | null;
   overallAvg: number | null;
-  score: number | null;
+  /** Community aggregate; maps from DB rating_summaries.score. */
+  communityScore: number | null;
 };
 
 export type ProductOffer = {
@@ -52,7 +53,29 @@ export type ProductOffer = {
   currency: string;
   price: number | null;
 };
+
+/** Composed Product Detail payload. My Rating is user-specific, not a catalog Product field. */
+export type ProductDetailData = {
+  product: Product;
+  offers: ProductOffer[];
+  ratingSummary: ProductRatingSummary;
+  myRating: RatingBreakdown | null;
+};
 ```
+
+### Canonical Product Detail field sources
+
+Product Detail must not mix catalog card fields with detail aggregates. Use these sources only:
+
+| UI field | Canonical source |
+| --- | --- |
+| Eazy Score | `detail.product.eazyScore` |
+| Community Score | `detail.ratingSummary.communityScore` |
+| Review / rating count | `detail.ratingSummary.ratingCount` |
+| Purchase / price-by-size rows | `detail.offers` |
+| Lowest price | Min of non-null `detail.offers[].price` (use that offer's `currency`); if none, optional fallback to `detail.product.lowestPrice` treated as USD in mock/MVP catalog data (`Product.lowestPrice` has no currency field) |
+
+Do **not** bind Detail Community Score or review count to `product.communityScore` / `product.ratingCount` (those remain Browse/card convenience fields and can drift from the summary).
 
 ## Recommended Frontend Folder Structure
 
@@ -79,6 +102,7 @@ src/
       mutations.ts
       types.ts
       mockProducts.ts
+      mockProductDetails.ts
 
     ratings/
       api.ts
@@ -203,7 +227,10 @@ MVP sort options:
 
 ## Mock Data Contract
 
-Before Supabase, create `src/features/products/mockProducts.ts`:
+Before Supabase:
+
+- Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
+- Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers, `ProductRatingSummary`, and user-specific `myRating` per catalog id, composed via `getMockProductDetailById(productId): ProductDetailData | null`.
 
 ```ts
 import type { Product } from '@/src/types/product';
@@ -240,42 +267,85 @@ export const mockProducts: Product[] = [
 ];
 ```
 
+Detail fixture coverage (aligned to the catalog in `mockProducts.ts`):
+
+- Lookup returns `ProductDetailData` for every catalog id `1`–`8`, or `null` for unknown ids.
+- At least one product has offers + rating summary + non-null `myRating` (id `1`).
+- At least one product has `myRating: null` (e.g. id `2`).
+- Edge products stay consistent with catalog: id `6` has `ratingCount: 0` / null Community Score summary; id `8` has null Eazy Score on `product` with a present community summary.
+- Empty / unusable offers: id `5` has no offers (catalog `lowestPrice` fallback); id `7` has offers with null prices (same fallback path).
+
+```ts
+import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
+
+const detail = getMockProductDetailById('1');
+// detail.product — from mockProducts
+// detail.offers — ProductOffer[]
+// detail.ratingSummary — ProductRatingSummary
+// detail.myRating — RatingBreakdown | null
+```
+
 ## Current Product Example
 
 ```ts
-const product = {
-  id: '1',
-  brand: 'Adidas',
-  name: 'Adidas Stan Smith Gore-Tex Orange Limited (Kids)',
-  sku: 'UH6907-612',
-  sizeType: 'big kids',
-  releaseDate: null,
-  description: null,
-  imageUrl: null,
-  eazyScore: 77,
-  communityScore: 78,
-  ratingCount: 0,
-  lowestPrice: 120,
-};
+import type { ProductDetailData } from '@/src/types/product';
 
-const offers = [
-  {
-    productId: '1',
-    websiteName: 'StockX',
-    websiteLink: 'https://stockx.com/e53ccfe7-1cd7-494c-b',
-    size: 3.5,
-    sizeRegion: 'US',
-    currency: 'USD',
-    price: 248,
+const detail: ProductDetailData = {
+  product: {
+    id: '1',
+    brand: 'Adidas',
+    name: 'Adidas Stan Smith Gore-Tex Orange Limited (Kids)',
+    sku: 'UH6907-612',
+    sizeType: 'big kids',
+    releaseDate: '2024-01-01',
+    description: 'A limited kids version of the Adidas Stan Smith Gore-Tex with orange details.',
+    imageUrl: null,
+    eazyScore: 77,
+    communityScore: 78,
+    ratingCount: 24,
+    lowestPrice: 120,
   },
-  {
+  offers: [
+    {
+      id: 'offer-1-a',
+      productId: '1',
+      websiteName: 'StockX',
+      websiteLink: 'https://stockx.com/e53ccfe7-1cd7-494c-b',
+      size: 3.5,
+      sizeRegion: 'US',
+      currency: 'USD',
+      price: 248,
+    },
+    {
+      id: 'offer-1-b',
+      productId: '1',
+      websiteName: 'StockX',
+      websiteLink: 'https://stockx.com/e53ccfe7-1cd7-494c-b',
+      size: 4,
+      sizeRegion: 'US',
+      currency: 'USD',
+      price: 120,
+    },
+  ],
+  ratingSummary: {
     productId: '1',
-    websiteName: 'StockX',
-    websiteLink: 'https://stockx.com/e53ccfe7-1cd7-494c-b',
-    size: 4,
-    sizeRegion: 'US',
-    currency: 'USD',
-    price: 175,
+    ratingCount: 24,
+    lookAvg: 7.8,
+    comfortAvg: 7.5,
+    qualityAvg: 8.0,
+    outfitAvg: 7.6,
+    valueAvg: 7.4,
+    overallAvg: 7.8,
+    communityScore: 78,
   },
-];
+  myRating: {
+    look: 8,
+    comfort: 7,
+    quality: 8,
+    outfit: 7,
+    value: 7,
+    overall: 8,
+    comment: 'Great kids colorway; Gore-Tex is a plus.',
+  },
+};
 ```

@@ -44,7 +44,8 @@ export type ProductRatingSummary = {
   outfitAvg: number | null;
   valueAvg: number | null;
   overallAvg: number | null;
-  score: number | null;
+  /** Community aggregate; maps from DB rating_summaries.score. */
+  communityScore: number | null;
 };
 
 export type ProductOffer = {
@@ -56,4 +57,12 @@ export type ProductOffer = {
   sizeRegion: string;
   currency: string;
   price: number | null;
+};
+
+/** Composed Product Detail payload. My Rating is user-specific, not a catalog Product field. */
+export type ProductDetailData = {
+  product: Product;
+  offers: ProductOffer[];
+  ratingSummary: ProductRatingSummary;
+  myRating: RatingBreakdown | null;
 };
