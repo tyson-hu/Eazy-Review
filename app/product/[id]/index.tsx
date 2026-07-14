@@ -1,7 +1,8 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
+import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/ui/EmptyState';
 import { RatingRow } from '@/src/components/ui/RatingRow';
@@ -18,16 +19,15 @@ function formatSizeLabel(offer: ProductOffer): string | null {
   return `${offer.sizeRegion} ${offer.size}`.trim();
 }
 
-/** Prefer min of non-null offer prices; fall back to catalog lowestPrice when needed. */
+type PricedOffer = ProductOffer & { price: number };
+
+/** Prefer min of priced offers; fall back to catalog lowestPrice (mock/MVP: USD) when needed. */
 function resolveLowestPrice(
-  offers: ProductOffer[],
+  pricedOffers: PricedOffer[],
   catalogLowest: number | null | undefined,
 ): { amount: number; currency: string; fromOffers: boolean } | null {
-  const priced = offers.filter(
-    (offer): offer is ProductOffer & { price: number } => offer.price != null,
-  );
-  if (priced.length > 0) {
-    const cheapest = priced.reduce((min, offer) =>
+  if (pricedOffers.length > 0) {
+    const cheapest = pricedOffers.reduce((min, offer) =>
       offer.price < min.price ? offer : min,
     );
     return {
@@ -36,6 +36,7 @@ function resolveLowestPrice(
       fromOffers: true,
     };
   }
+  // Catalog `lowestPrice` has no currency field; mock/MVP catalog amounts are USD.
   if (catalogLowest != null) {
     return { amount: catalogLowest, currency: 'USD', fromOffers: false };
   }
@@ -57,6 +58,7 @@ function hasMeaningfulCommunityCategories(summary: ProductRatingSummary): boolea
 }
 
 export default function ProductDetailScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const detail = typeof id === 'string' ? getMockProductDetailById(id) : null;
 
@@ -71,9 +73,9 @@ export default function ProductDetailScreen() {
 
   const { product, offers, ratingSummary, myRating } = detail;
   const pricedOffers = offers.filter(
-    (offer): offer is ProductOffer & { price: number } => offer.price != null,
+    (offer): offer is PricedOffer => offer.price != null,
   );
-  const lowest = resolveLowestPrice(offers, product.lowestPrice);
+  const lowest = resolveLowestPrice(pricedOffers, product.lowestPrice);
   const metadataParts = [
     product.sku,
     product.releaseDate,
@@ -97,6 +99,7 @@ export default function ProductDetailScreen() {
         { label: 'Value', value: myRating.value },
       ]
     : [];
+  const ctaLabel = myRating ? 'Edit my rating' : 'Rate this product';
 
   return (
     <Screen scroll>
@@ -167,12 +170,7 @@ export default function ProductDetailScreen() {
                 {formatPrice(lowest.amount, lowest.currency)}
               </AppText>
             </View>
-            {!lowest.fromOffers ? (
-              <AppText variant="caption" className="mt-1">
-                Catalog estimate — no live size offers
-              </AppText>
-            ) : null}
-            {pricedOffers.length > 0 ? (
+            {lowest.fromOffers ? (
               <View className="mt-4 gap-3">
                 <AppText variant="label">Price by size</AppText>
                 {pricedOffers.map((offer) => {
@@ -197,8 +195,8 @@ export default function ProductDetailScreen() {
                 })}
               </View>
             ) : (
-              <AppText variant="caption" className="mt-3">
-                No size offers available right now.
+              <AppText variant="caption" className="mt-1">
+                Catalog estimate — no live size offers
               </AppText>
             )}
           </>
@@ -236,6 +234,19 @@ export default function ProductDetailScreen() {
           </>
         )}
       </Card>
+
+      <Card className="mt-4">
+        <AppText variant="label">Description</AppText>
+        <AppText variant="body" className="mt-2">
+          {product.description ?? 'No product description available yet.'}
+        </AppText>
+      </Card>
+
+      <Button
+        className="mt-4"
+        label={ctaLabel}
+        onPress={() => router.push(`/product/${product.id}/rate`)}
+      />
     </Screen>
   );
 }

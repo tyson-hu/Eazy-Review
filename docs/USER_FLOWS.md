@@ -15,8 +15,8 @@ app/
     account.tsx
 
   product/
-    [id].tsx
     [id]/
+      index.tsx
       rate.tsx
 
   auth/
@@ -126,7 +126,7 @@ Product card tap should navigate to `/product/[id]`.
 
 ## Product Detail Requirements
 
-Route: `app/product/[id].tsx`
+Route: `app/product/[id]/index.tsx`
 
 Sections:
 - Product image area.

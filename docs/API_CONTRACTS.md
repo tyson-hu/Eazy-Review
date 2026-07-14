@@ -73,7 +73,7 @@ Product Detail must not mix catalog card fields with detail aggregates. Use thes
 | Community Score | `detail.ratingSummary.communityScore` |
 | Review / rating count | `detail.ratingSummary.ratingCount` |
 | Purchase / price-by-size rows | `detail.offers` |
-| Lowest price | Min of non-null `detail.offers[].price`; if none, optional fallback to `detail.product.lowestPrice` |
+| Lowest price | Min of non-null `detail.offers[].price` (use that offer's `currency`); if none, optional fallback to `detail.product.lowestPrice` treated as USD in mock/MVP catalog data (`Product.lowestPrice` has no currency field) |
 
 Do **not** bind Detail Community Score or review count to `product.communityScore` / `product.ratingCount` (those remain Browse/card convenience fields and can drift from the summary).
 
