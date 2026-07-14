@@ -348,3 +348,38 @@ Safety-risk:
 
 Related files:
 - `docs/AGENT_WORKFLOW.md`, `docs/TASKS.md`, `docs/DECISIONS.md`
+
+## 2026-07-14 — ProductRatingSummary.communityScore Maps From DB score
+
+What changed:
+- Frontend `ProductRatingSummary` renames `score` to `communityScore` so UI and types use the same Community Score name.
+- Database / `docs/DATA_MODEL.md` keep the column name `score` on rating summaries; the frontend field is a presentation mapping, not a schema rename.
+
+Why:
+- Product Detail must bind Community Score from the rating summary without colliding with catalog `product.communityScore`, and the UI label is already `Community Score`.
+
+Effect:
+- Detail consumers read `detail.ratingSummary.communityScore`. Mapping from DB `score` → frontend `communityScore` happens at the API/adapter boundary when Supabase is wired.
+
+Safety-risk:
+- Frontend type and fixture rename only; no migration or DATA_MODEL change in this packet.
+
+Related files:
+- `src/types/product.ts`, `src/features/products/mockProductDetails.ts`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`
+
+## 2026-07-14 — Canonical Product Detail Score And Price Sources
+
+What changed:
+- Documented and implemented fixed Detail sources: Eazy Score from `product.eazyScore`; Community Score and rating count from `ratingSummary`; purchase rows from `offers`; lowest price from offer mins with optional `product.lowestPrice` catalog fallback.
+
+Why:
+- Catalog card fields (`product.communityScore`, `product.ratingCount`, `product.lowestPrice`) can diverge from detail aggregates and offers; binding Detail UI to the wrong source causes silent drift.
+
+Effect:
+- Product Detail must not use `product.communityScore` / `product.ratingCount` for the score overview. Purchase section prefers derived offer prices over the catalog lowest-price convenience field.
+
+Safety-risk:
+- Mock Detail UI and contract docs only; no schema change.
+
+Related files:
+- `app/product/[id].tsx`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`, `docs/TASKS.md`

@@ -65,18 +65,8 @@ const mockOffersByProductId: Record<string, ProductOffer[]> = {
       price: 150,
     },
   ],
-  '5': [
-    {
-      id: 'offer-5-a',
-      productId: '5',
-      websiteName: 'Nike',
-      websiteLink: 'https://www.nike.com/t/air-force-1-07-mens-shoes',
-      size: 11,
-      sizeRegion: 'US',
-      currency: 'USD',
-      price: 110,
-    },
-  ],
+  // Empty offers — Detail uses catalog `lowestPrice` fallback when present.
+  '5': [],
   '6': [
     {
       id: 'offer-6-a',
@@ -89,6 +79,7 @@ const mockOffersByProductId: Record<string, ProductOffer[]> = {
       price: 200,
     },
   ],
+  // Offers present but no usable prices — same catalog-fallback path as empty offers.
   '7': [
     {
       id: 'offer-7-a',
@@ -98,7 +89,7 @@ const mockOffersByProductId: Record<string, ProductOffer[]> = {
       size: 8.5,
       sizeRegion: 'US',
       currency: 'USD',
-      price: 100,
+      price: null,
     },
   ],
   '8': [
@@ -126,7 +117,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: 7.6,
     valueAvg: 7.4,
     overallAvg: 7.8,
-    score: 78,
+    communityScore: 78,
   },
   '2': {
     productId: '2',
@@ -137,7 +128,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: 8.0,
     valueAvg: 7.8,
     overallAvg: 8.1,
-    score: 81,
+    communityScore: 81,
   },
   '3': {
     productId: '3',
@@ -148,7 +139,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: 8.2,
     valueAvg: 8.0,
     overallAvg: 8.6,
-    score: 86,
+    communityScore: 86,
   },
   '4': {
     productId: '4',
@@ -159,7 +150,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: 8.1,
     valueAvg: 8.0,
     overallAvg: 8.4,
-    score: 84,
+    communityScore: 84,
   },
   '5': {
     productId: '5',
@@ -170,7 +161,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: 7.4,
     valueAvg: 7.6,
     overallAvg: 7.4,
-    score: 74,
+    communityScore: 74,
   },
   // Zero ratings / null Community Score (catalog id 6).
   '6': {
@@ -182,7 +173,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: null,
     valueAvg: null,
     overallAvg: null,
-    score: null,
+    communityScore: null,
   },
   '7': {
     productId: '7',
@@ -193,7 +184,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: 8.5,
     valueAvg: 8.4,
     overallAvg: 8.3,
-    score: 83,
+    communityScore: 83,
   },
   // Null Eazy Score on catalog product; community summary still present (catalog id 8).
   '8': {
@@ -205,7 +196,7 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
     outfitAvg: 7.3,
     valueAvg: 7.5,
     overallAvg: 7.2,
-    score: 72,
+    communityScore: 72,
   },
 };
 

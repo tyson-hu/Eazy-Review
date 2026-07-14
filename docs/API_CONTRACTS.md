@@ -39,7 +39,8 @@ export type ProductRatingSummary = {
   outfitAvg: number | null;
   valueAvg: number | null;
   overallAvg: number | null;
-  score: number | null;
+  /** Community aggregate; maps from DB rating_summaries.score. */
+  communityScore: number | null;
 };
 
 export type ProductOffer = {
@@ -61,6 +62,20 @@ export type ProductDetailData = {
   myRating: RatingBreakdown | null;
 };
 ```
+
+### Canonical Product Detail field sources
+
+Product Detail must not mix catalog card fields with detail aggregates. Use these sources only:
+
+| UI field | Canonical source |
+| --- | --- |
+| Eazy Score | `detail.product.eazyScore` |
+| Community Score | `detail.ratingSummary.communityScore` |
+| Review / rating count | `detail.ratingSummary.ratingCount` |
+| Purchase / price-by-size rows | `detail.offers` |
+| Lowest price | Min of non-null `detail.offers[].price`; if none, optional fallback to `detail.product.lowestPrice` |
+
+Do **not** bind Detail Community Score or review count to `product.communityScore` / `product.ratingCount` (those remain Browse/card convenience fields and can drift from the summary).
 
 ## Recommended Frontend Folder Structure
 
@@ -258,6 +273,7 @@ Detail fixture coverage (aligned to the catalog in `mockProducts.ts`):
 - At least one product has offers + rating summary + non-null `myRating` (id `1`).
 - At least one product has `myRating: null` (e.g. id `2`).
 - Edge products stay consistent with catalog: id `6` has `ratingCount: 0` / null Community Score summary; id `8` has null Eazy Score on `product` with a present community summary.
+- Empty / unusable offers: id `5` has no offers (catalog `lowestPrice` fallback); id `7` has offers with null prices (same fallback path).
 
 ```ts
 import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
@@ -320,7 +336,7 @@ const detail: ProductDetailData = {
     outfitAvg: 7.6,
     valueAvg: 7.4,
     overallAvg: 7.8,
-    score: 78,
+    communityScore: 78,
   },
   myRating: {
     look: 8,
