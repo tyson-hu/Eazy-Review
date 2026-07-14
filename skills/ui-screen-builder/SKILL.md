@@ -4,7 +4,7 @@ Goal: build or redesign one Expo / React Native screen's UI following the Eazy R
 
 ## When to use
 
-- One screen's visuals, layout, or component composition: `app/(tabs)/feed.tsx`, `app/(tabs)/browse.tsx`, `app/(tabs)/account.tsx`, `app/product/[id].tsx`, `app/product/[id]/rate.tsx`, or the auth/account stack screens.
+- One screen's visuals, layout, or component composition: `app/(tabs)/feed.tsx`, `app/(tabs)/browse.tsx`, `app/(tabs)/account.tsx`, `app/product/[id]/index.tsx`, `app/product/[id]/rate.tsx`, or the auth/account stack screens.
 - Visual improvements to an existing screen without changing what data it uses.
 
 ## When not to use

@@ -83,7 +83,7 @@ The next session reads `AGENTS.md`, the spec, and `docs/notes/handoff.md`, then 
 ## Common mistakes
 
 - Writing the handoff from memory instead of from `git status` and real command output.
-- Vague next steps ("continue the feature") instead of one concrete action ("wire `useProductRatings` into `app/product/[id].tsx`").
+- Vague next steps ("continue the feature") instead of one concrete action ("wire `useProductRatings` into `app/product/[id]/index.tsx`").
 - Leaving key diagnosis in chat prose instead of the note — if it took effort to figure out, it goes in the file.
 - Continuing to add work after the boundary because the session "still works".
 

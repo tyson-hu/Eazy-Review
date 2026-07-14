@@ -21,7 +21,7 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 ## Read first
 
 - The task's own section in `docs/TASKS.md`.
-- The matching flow and route requirements in `docs/USER_FLOWS.md` (for example Browse is `app/(tabs)/browse.tsx`; Product Detail is `app/product/[id].tsx`; Rating Form is `app/product/[id]/rate.tsx`).
+- The matching flow and route requirements in `docs/USER_FLOWS.md` (for example Browse is `app/(tabs)/browse.tsx`; Product Detail is `app/product/[id]/index.tsx`; Rating Form is `app/product/[id]/rate.tsx`).
 - The matching types, API functions, and query keys in `docs/API_CONTRACTS.md` (`Product`, `ProductCardData`, `src/types/product.ts`, `src/features/products/mockProducts.ts`).
 - The component rules for the task's screens in `docs/DESIGN.md`.
 
