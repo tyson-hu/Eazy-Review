@@ -6,8 +6,8 @@ As of this document setup:
 - Expo project exists with Expo Router.
 - NativeWind v4 is configured with Tailwind, Babel, and Metro.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
-- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow).
-- Mock products and Product Detail are implemented; Rating Form is still a Task 9 placeholder route.
+- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow, RatingInputRow).
+- Mock products, Product Detail, and Rating Form (Task 9) are implemented with session-only fake local rating state.
 
 ## Definition Of Done
 
@@ -86,6 +86,9 @@ Added with Task 7:
 Added with Task 8 Packet 3:
 - `RatingRow`
 
+Added with Task 9:
+- `RatingInputRow`
+
 ### Task 6: Create Mock Product Data
 
 Status: Done.
@@ -139,13 +142,22 @@ Packet decomposition (run via the `implementer` per the Task Packet Format; sequ
 
 ### Task 9: Build Rating Form Screen With Fake Local State
 
-Status: Pending.
+Status: Done.
 
 Requirements:
 - Look, comfort, quality, outfit, value, overall.
 - Optional comment.
 - 1-10 validation.
 - Return to product detail after submit.
+
+Packet decomposition (run via the `implementer` per the Task Packet Format; sequential):
+
+1. Packet 1 — Rating form and validation. Replace the Task 8 rate-route placeholder with a usable mock form: product context, Rate vs Edit header from `detail.myRating`, string draft fields, prefill when My Rating exists, whole-number 1–10 field-level validation on submit, optional comment, single primary submit/save action. Valid submit does not mutate fixtures, navigate, or claim a save (Packet 2 owns success UX). Presentation-only `RatingInputRow` only if six score rows justify it.
+   - Progress: Accepted. Form, string drafts, prefill, whole-number 1–10 field-level validation, presentation-only `RatingInputRow`. Valid submit clears errors only (no mutate / navigate / saved message). Parent review fixes: `Screen` `keyboardShouldPersistTaps="handled"`; simplified decimal check. Stale field errors while retyping deferred to Packet 2. Verifier passed (`typecheck`, `lint`, `git diff --check`).
+2. Packet 2 — Mock submission, session persist, navigation. Controlled `saveMockMyRating` mutates private session fixtures; valid submit shows session-only success feedback then `router.replace` to Product Detail; docs clarify mock vs real invalidation.
+   - Progress: Accepted. `saveMockMyRating` copies into private map; form validates then saves; honest session-only Alert then `router.replace(/product/${id})`; field error clears on retype; USER_FLOWS / API_CONTRACTS / DECISIONS updated. Community fixtures untouched. Verifier passed.
+3. Integrated completion — parent-owned. Whole-screen reviewer pass; Detail `useFocusEffect` refresh so session My Rating re-reads on focus; web success path uses `window.alert` then navigate because RN `Alert` onPress is unreliable on web; submit uses `router.dismissTo` (not `replace`) so Detail → Rate does not leave a duplicate Detail on the stack; `npm run check`; human simulator walk; Task 9 Done.
+   - Progress: Accepted. Verifier `npm run check` passed; source-contract smoke + focus composition confirmed. Mock persistence: session fixture map only; community summaries unchanged; reload resets. Post-acceptance review cleanup: comment empty→null only in `saveMockMyRating`; removed unreachable form save-failure Alert (form only mounts for known products); dropped redundant `typeof window` guards on web. Interactive mobile-preview walk: **simulator passed; physical device not tested**. PR follow-up: submit navigation switched from `replace` to `dismissTo` to unwind to the existing Detail route.
 
 ### Task 10: Review UX Flow Before Supabase
 

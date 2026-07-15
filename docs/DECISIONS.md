@@ -383,3 +383,23 @@ Safety-risk:
 
 Related files:
 - `app/product/[id]/index.tsx`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`, `docs/TASKS.md`
+
+## 2026-07-14 — Controlled Session Fixture Mutation For Mock My Rating
+
+What changed:
+- Task 9 mock submit writes through `saveMockMyRating`, which mutates a private in-module `mockMyRatingsByProductId` map. The map stays unexported; screens never touch fixtures directly.
+
+Why:
+- A controlled mutation of the same session fixtures is enough for honest mock persist without a global store, Context, or TanStack Query.
+- Keeping the write behind one API makes session-only semantics explicit and prevents accidental community-summary edits.
+- Product Detail uses `useFocusEffect` to bump local state so `getMockProductDetailById` re-runs on focus when returning from the rate screen (including via `dismissTo`).
+- Successful submit navigates with `router.dismissTo(`/product/${id}`)` so the normal Detail → Rate stack unwinds to the existing Detail (Back returns to Browse). When Detail is not in history (direct deep link to rate), Expo Router replaces the current screen with Detail.
+
+Effect:
+- Successful submit updates My Rating for the current JS session; Community Score and category averages stay unchanged; reload resets fixtures. Success copy must not claim a server write. Detail My Rating reflects the session write when the screen is focused.
+
+Safety-risk:
+- Mock/session UX only; no persistence, auth, or Supabase.
+
+Related files:
+- `src/features/products/mockProductDetails.ts`, `app/product/[id]/rate.tsx`, `app/product/[id]/index.tsx`, `docs/API_CONTRACTS.md`, `docs/USER_FLOWS.md`, `docs/TASKS.md`

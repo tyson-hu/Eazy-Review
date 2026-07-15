@@ -152,6 +152,17 @@ Fields:
 - Overall: 1-10.
 - Comment: optional.
 
+### Task 9 mock behavior
+
+During the fake-local-state phase:
+
+- Authentication is not enforced.
+- Ratings persist only in the current JavaScript session.
+- Product Detail reflects the updated My Rating after submission.
+- Community Score and community category averages do not change.
+- App reload resets the mock rating fixtures.
+- The real query invalidation behavior below applies after Supabase integration.
+
 After successful real submission:
 - Invalidate `['product', productId]`.
 - Invalidate `['products']`.

@@ -91,6 +91,7 @@ src/
       ScoreBadge.tsx
       ProductCard.tsx
       RatingRow.tsx
+      RatingInputRow.tsx
       LoadingState.tsx
       EmptyState.tsx
       ErrorState.tsx
@@ -231,6 +232,15 @@ Before Supabase:
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
 - Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers, `ProductRatingSummary`, and user-specific `myRating` per catalog id, composed via `getMockProductDetailById(productId): ProductDetailData | null`.
+- Mock My Rating write: `saveMockMyRating(productId: string, rating: RatingBreakdown): boolean` in the same file — the frontend mock-data write API for Task 9.
+
+`saveMockMyRating` semantics (session-only; not a backend write):
+
+- Confirms the product/detail fixture exists with the same rules as `getMockProductDetailById`; returns `false` if not.
+- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment is stored as `null`.
+- Returns `true` on success.
+- Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
+- Screens must call this API only — never import or mutate the private map.
 
 ```ts
 import type { Product } from '@/src/types/product';
@@ -276,13 +286,30 @@ Detail fixture coverage (aligned to the catalog in `mockProducts.ts`):
 - Empty / unusable offers: id `5` has no offers (catalog `lowestPrice` fallback); id `7` has offers with null prices (same fallback path).
 
 ```ts
-import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
+import {
+  getMockProductDetailById,
+  saveMockMyRating,
+} from '@/src/features/products/mockProductDetails';
+import type { RatingBreakdown } from '@/src/types/product';
 
 const detail = getMockProductDetailById('1');
 // detail.product — from mockProducts
 // detail.offers — ProductOffer[]
 // detail.ratingSummary — ProductRatingSummary
 // detail.myRating — RatingBreakdown | null
+
+const rating: RatingBreakdown = {
+  look: 8,
+  comfort: 7,
+  quality: 8,
+  outfit: 7,
+  value: 7,
+  overall: 8,
+  comment: null,
+};
+const ok = saveMockMyRating('2', rating);
+// true → getMockProductDetailById('2').myRating reflects the copy this session
+// false → unknown / unavailable product; community fixtures unchanged either way
 ```
 
 ## Current Product Example
