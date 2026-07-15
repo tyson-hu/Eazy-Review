@@ -261,3 +261,39 @@ export function getMockProductDetailById(
     myRating: mockMyRatingsByProductId[productId] ?? null,
   };
 }
+
+/**
+ * Session-only mock write for My Rating. Mutates the private fixture map;
+ * does not touch community score / rating summary fixtures or persist across reload.
+ * Returns false when the product/detail fixture does not exist (same rules as get).
+ */
+export function saveMockMyRating(
+  productId: string,
+  rating: RatingBreakdown,
+): boolean {
+  const product = mockProducts.find((entry) => entry.id === productId);
+  if (!product) {
+    return false;
+  }
+
+  if (!mockRatingSummariesByProductId[productId]) {
+    return false;
+  }
+
+  const trimmedComment =
+    rating.comment == null || String(rating.comment).trim() === ''
+      ? null
+      : String(rating.comment).trim();
+
+  mockMyRatingsByProductId[productId] = {
+    look: rating.look,
+    comfort: rating.comfort,
+    quality: rating.quality,
+    outfit: rating.outfit,
+    value: rating.value,
+    overall: rating.overall,
+    comment: trimmedComment,
+  };
+
+  return true;
+}

@@ -1,4 +1,5 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
@@ -60,6 +61,14 @@ function hasMeaningfulCommunityCategories(summary: ProductRatingSummary): boolea
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  // Re-read session fixtures when this screen focuses (e.g. after rate submit or
+  // when a pre-submit Detail instance in the back stack becomes visible again).
+  const [, setFocusTick] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      setFocusTick((tick) => tick + 1);
+    }, []),
+  );
   const detail = typeof id === 'string' ? getMockProductDetailById(id) : null;
 
   if (!detail) {

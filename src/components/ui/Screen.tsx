@@ -21,6 +21,7 @@ export function Screen({
         <ScrollView
           className="flex-1"
           contentContainerClassName={`px-4 pb-6 ${contentClassName ?? ''}`}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           {children}
         </ScrollView>
