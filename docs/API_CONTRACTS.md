@@ -91,6 +91,7 @@ src/
       ScoreBadge.tsx
       ProductCard.tsx
       RatingRow.tsx
+      RatingInputRow.tsx
       LoadingState.tsx
       EmptyState.tsx
       ErrorState.tsx

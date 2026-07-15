@@ -6,7 +6,7 @@ As of this document setup:
 - Expo project exists with Expo Router.
 - NativeWind v4 is configured with Tailwind, Babel, and Metro.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
-- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow).
+- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow, RatingInputRow).
 - Mock products, Product Detail, and Rating Form (Task 9) are implemented with session-only fake local rating state.
 
 ## Definition Of Done
@@ -86,6 +86,9 @@ Added with Task 7:
 Added with Task 8 Packet 3:
 - `RatingRow`
 
+Added with Task 9:
+- `RatingInputRow`
+
 ### Task 6: Create Mock Product Data
 
 Status: Done.
@@ -154,7 +157,7 @@ Packet decomposition (run via the `implementer` per the Task Packet Format; sequ
 2. Packet 2 — Mock submission, session persist, navigation. Controlled `saveMockMyRating` mutates private session fixtures; valid submit shows session-only success feedback then `router.replace` to Product Detail; docs clarify mock vs real invalidation.
    - Progress: Accepted. `saveMockMyRating` copies into private map; form validates then saves; honest session-only Alert then `router.replace(/product/${id})`; field error clears on retype; USER_FLOWS / API_CONTRACTS / DECISIONS updated. Community fixtures untouched. Verifier passed.
 3. Integrated completion — parent-owned. Whole-screen reviewer pass; Detail `useFocusEffect` refresh so session My Rating re-reads on focus (including back-stack instances); web success path uses `window.alert` then `replace` because RN `Alert` onPress is unreliable on web; `npm run check`; human simulator walk; Task 9 Done.
-   - Progress: Accepted. Verifier `npm run check` passed; source-contract smoke + focus composition confirmed. Mock persistence: session fixture map only; community summaries unchanged; reload resets. Post-acceptance review cleanup: comment empty→null only in `saveMockMyRating`; removed unreachable form save-failure Alert (form only mounts for known products); dropped redundant `typeof window` guards on web.
+   - Progress: Accepted. Verifier `npm run check` passed; source-contract smoke + focus composition confirmed. Mock persistence: session fixture map only; community summaries unchanged; reload resets. Post-acceptance review cleanup: comment empty→null only in `saveMockMyRating`; removed unreachable form save-failure Alert (form only mounts for known products); dropped redundant `typeof window` guards on web. Interactive mobile-preview walk: **simulator passed; physical device not tested**.
 
 ### Task 10: Review UX Flow Before Supabase
 

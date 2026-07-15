@@ -295,6 +295,7 @@ Initial reusable UI components:
 - `ScoreBadge`
 - `ProductCard`
 - `RatingRow`
+- `RatingInputRow`
 - `LoadingState`
 - `EmptyState`
 - `ErrorState`
