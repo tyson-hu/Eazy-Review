@@ -160,11 +160,11 @@ function RateProductForm({ detail }: RateProductFormProps) {
     const successBody =
       'Your My Rating was updated in this app session only. It is not saved to a server and will reset if you reload the app.';
     const goToDetail = () => {
-      router.replace(`/product/${product.id}`);
+      router.dismissTo(`/product/${product.id}`);
     };
 
     if (Platform.OS === 'web') {
-      // RN Alert onPress does not run on web; alert then navigate so replace stays deterministic.
+      // RN Alert onPress does not run on web; alert then navigate so Detail is restored.
       window.alert(`${successTitle}\n\n${successBody}`);
       goToDetail();
       return;

@@ -392,7 +392,8 @@ What changed:
 Why:
 - A controlled mutation of the same session fixtures is enough for honest mock persist without a global store, Context, or TanStack Query.
 - Keeping the write behind one API makes session-only semantics explicit and prevents accidental community-summary edits.
-- Product Detail uses `useFocusEffect` to bump local state so `getMockProductDetailById` re-runs on focus — covering both the post-`replace` screen and any pre-submit Detail instance left in the back stack.
+- Product Detail uses `useFocusEffect` to bump local state so `getMockProductDetailById` re-runs on focus when returning from the rate screen (including via `dismissTo`).
+- Successful submit navigates with `router.dismissTo(`/product/${id}`)` so the normal Detail → Rate stack unwinds to the existing Detail (Back returns to Browse). When Detail is not in history (direct deep link to rate), Expo Router replaces the current screen with Detail.
 
 Effect:
 - Successful submit updates My Rating for the current JS session; Community Score and category averages stay unchanged; reload resets fixtures. Success copy must not claim a server write. Detail My Rating reflects the session write when the screen is focused.
