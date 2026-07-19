@@ -4,6 +4,8 @@ Durable **verification artifacts** for interactive preview walks and UX screensh
 
 Procedure: `skills/interactive-preview-loop` → `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`.
 
+GitHub upload selection (what to commit vs keep local): `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`.
+
 ## Layout
 
 ```txt
@@ -39,5 +41,7 @@ docs/evidence/product-detail-preview/
 | Physical device | `tested-pass` \| `tested-fail` \| `not-tested` |
 
 ## Commit policy
+
+Canonical rules: `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` (representative proof on GitHub; full non-sensitive raw captures local; never delete earlier valid evidence).
 
 Commit evidence when referenced from `docs/TASKS.md` or included in an audit/fix PR. Evidence is verification output, not product documentation — do not treat it as a substitute for `docs/DESIGN.md` or `docs/USER_FLOWS.md` updates.

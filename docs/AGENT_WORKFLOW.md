@@ -51,7 +51,7 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 | Validation / check run | Validation Commands section below in this file | Product docs |
 | Interactive mobile simulator walk or iOS screenshot evidence | `skills/interactive-preview-loop`, `docs/MOBILE_SIMULATOR_SOP.md`, `docs/evidence/README.md` | Installing ad-hoc browser automation deps; writing evidence under `docs/notes/` |
 | Interactive Expo web mobile preview or Playwright MCP journey | `skills/interactive-preview-loop`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/MCP_WORKFLOW.md` (tool policy) | Treating web-only as full iOS acceptance |
-| UX screenshot audit / readiness gate (baseline → findings → triage) | `skills/interactive-preview-loop`, `docs/UX_SCREENSHOT_AUDIT_SOP.md` | Feature implementation packets before triage; product edits during the audit |
+| UX screenshot audit / readiness gate (baseline → findings → triage) | `skills/interactive-preview-loop`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` | Feature implementation packets before triage; product edits during the audit |
 | Product scope or direction change | `docs/BLUEBOOK.md`, `docs/ROADMAP.md` | — |
 | Stitch, MCP, or external-tool workflow | `docs/MCP_WORKFLOW.md`, `docs/STITCH_PROMPTS.md` | `docs/DATA_MODEL.md` |
 | Expo / Expo Router / React Native specifics | Installed versions in `package.json`, plus the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/` | Older Expo SDK docs |
@@ -301,6 +301,7 @@ One home per instruction; everywhere else points, never restates.
 | Expo web mobile preview via Playwright MCP | `docs/WEB_MOBILE_PREVIEW_SOP.md` (entry: `skills/interactive-preview-loop`) |
 | UX screenshot audit phases, finding template, GO gate | `docs/UX_SCREENSHOT_AUDIT_SOP.md` (entry: `skills/interactive-preview-loop`) |
 | Interactive preview / audit verification artifacts | `docs/evidence/README.md` |
+| Evidence GitHub upload selection (proof set vs local raw captures) | `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` |
 | Handoff note routine and `docs/notes/handoff.md` template | `skills/session-handoff/SKILL.md` |
 | Blocker note routine and `docs/notes/blocker-<topic>.md` template | `skills/blocker-note/SKILL.md` |
 | Skill creation threshold, structure, quality rules, iteration and library maintenance | `skills/skill-creator/SKILL.md` |

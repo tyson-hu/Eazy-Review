@@ -212,7 +212,7 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
 - Done: Phase 4 integrated re-audit — F1–F8 **Resolved**; iOS Simulator `pass`, mobile web @ 393×852 `pass`, physical device `not-tested` this run. Evidence: `docs/evidence/task-10-reaudit/RESULT.md` and the representative committed screenshots listed there.
 - Done: Supabase readiness decision — **GO**. No unresolved P0, P1, or core-flow P2. The hard web deep-link Back → Feed behavior remains a documented P3 limitation outside the canonical Browse journey.
 - Audit result / GO decision: **GO** (2026-07-18).
-- Evidence retention (GitHub): the complete raw capture set remains **local-only** and was not deleted. GitHub hosts a **representative proof set** of **12 committed PNGs** total (1 F4 + 11 re-audit). All **33 baseline PNGs** and the other **31 re-audit PNGs** stay on the working machine; filenames cited in the audit reports for those omitted captures are **local capture IDs**, not repository-hosted files. Ignore rules: `.gitignore` (Task 10 evidence block).
+- Evidence retention (GitHub): the complete raw capture set remains **local-only** and was not deleted. GitHub hosts a **representative proof set** of **12 committed PNGs** total (1 F4 + 11 re-audit). All **33 baseline PNGs** and the other **31 re-audit PNGs** stay on the working machine; filenames cited in the audit reports for those omitted captures are **local capture IDs**, not repository-hosted files. Canonical rules: `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` (ignore rules in `.gitignore`).
 
 ## Follow-Ups / Discovered Work
 

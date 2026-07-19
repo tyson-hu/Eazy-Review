@@ -512,3 +512,26 @@ Safety-risk:
 
 Related files:
 - `docs/evidence/task-10-reaudit/RESULT.md`, `docs/evidence/task-10-reaudit/screenshots/`, `docs/TASKS.md`, `docs/notes/handoff.md`, `docs/DECISIONS.md`
+
+## 2026-07-19 — Evidence GitHub Upload SOP
+
+What changed:
+- Added `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` as the canonical rule for which `docs/evidence/` files go to GitHub versus stay local.
+- Pointed `docs/evidence/README.md`, Context Map / Canonical Homes, documentation policy, and `skills/interactive-preview-loop` at that SOP.
+- Codified Task 10’s reduced proof set (12 PNGs) and the selection / report / pre-upload verification rules used on `cursor/task-10-ux-review`.
+
+Why:
+- Agents need a durable upload policy so future audits do not commit full raw screenshot sets or delete earlier evidence directories.
+
+Effect:
+- New evidence runs keep complete non-sensitive captures locally, commit reports plus the smallest representative PNG proof set, and label omitted filenames as local capture IDs.
+- Diagnostic-only debug captures remain local, while sanitized decisive before/after or resolved-finding proof may be selected for GitHub.
+- Every run report records the intended and final GitHub-versus-local disposition.
+
+Safety-risk:
+- Docs/process only; does not change product behavior. Task-specific ignore allowlists must still be updated with each new audit’s proof set.
+- Sensitive captures are never valid retained evidence; accidental captures follow `docs/SECURITY.md` exposure handling.
+- Pre-upload verification checks both worktree and staged changes, and Task 10's fixed PNG count is scoped to Task 10 directories so future proof sets do not invalidate it.
+
+Related files:
+- `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`, `docs/evidence/README.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `skills/interactive-preview-loop/SKILL.md`, `.gitignore`

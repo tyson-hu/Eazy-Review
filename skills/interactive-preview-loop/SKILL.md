@@ -32,6 +32,7 @@ This is an **evidence and verification loop**. Do not edit product code, apply v
 | `web-preview` | `docs/WEB_MOBILE_PREVIEW_SOP.md` | Expo web, Playwright MCP (`user-playwright`), reference mobile-web viewport (default **393×852** from `docs/DESIGN.md`) |
 | `screenshot-audit` | `docs/UX_SCREENSHOT_AUDIT_SOP.md` (plus mobile and/or web SOPs when capturing) | Existing evidence under `docs/evidence/…`, or one of the live capture environments above |
 | All modes | `docs/evidence/README.md` | Evidence layout, naming, status vocabulary |
+| Committing evidence | `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` | Representative GitHub proof set vs local-only raw captures |
 
 Also read the current task in `docs/TASKS.md` when the run advances a listed task.
 
@@ -58,6 +59,7 @@ Also read the current task in `docs/TASKS.md` when the run advances a listed tas
 - Step-by-step pass/fail
 - Evidence directory
 - Evidence filenames
+- GitHub disposition (selected proof versus local-only raw captures)
 - Findings and severity
 - Known limitations
 - Automated checks run separately
@@ -71,6 +73,7 @@ Also read the current task in `docs/TASKS.md` when the run advances a listed tas
 - Each required environment has exactly one status from the vocabulary above.
 - Physical device is never implied tested when it was not.
 - Findings (if any) cite screenshot ids or observed steps.
+- The report distinguishes the proof selected for GitHub from local-only raw captures.
 - Required next decision is explicit (e.g. parent triage, accept findings, re-run after fixes).
 - Automated npm checks were either run via `test-and-validation-loop` separately or listed as not part of this run.
 

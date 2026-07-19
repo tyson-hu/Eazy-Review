@@ -38,7 +38,7 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 | Frontend types / mock data | `docs/API_CONTRACTS.md` |
 | Product scope change | `docs/BLUEBOOK.md`, `docs/ROADMAP.md` |
 | Expo / React Native | Installed versions in `package.json` + the exact Expo SDK 57 docs (URL in the full map) |
-| Mobile simulator / web mobile preview / UX screenshot audit | `skills/interactive-preview-loop` → `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/evidence/README.md` |
+| Mobile simulator / web mobile preview / UX screenshot audit | `skills/interactive-preview-loop` → `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/evidence/README.md`, `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` |
 
 ## Skill Index
 
