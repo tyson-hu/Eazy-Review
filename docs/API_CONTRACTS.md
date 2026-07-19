@@ -231,6 +231,7 @@ MVP sort options:
 Before Supabase:
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
+- Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
 - Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers, `ProductRatingSummary`, and user-specific `myRating` per catalog id, composed via `getMockProductDetailById(productId): ProductDetailData | null`.
 - Mock My Rating write: `saveMockMyRating(productId: string, rating: RatingBreakdown): boolean` in the same file — the frontend mock-data write API for Task 9.
 
@@ -254,7 +255,7 @@ export const mockProducts: Product[] = [
     sizeType: 'big kids',
     releaseDate: '2024-01-01',
     description: 'A limited kids version of the Adidas Stan Smith Gore-Tex with orange details.',
-    imageUrl: null,
+    imageUrl: 'mock-product://catalog/1',
     eazyScore: 77,
     communityScore: 78,
     ratingCount: 24,
@@ -268,7 +269,7 @@ export const mockProducts: Product[] = [
     sizeType: 'men',
     releaseDate: '2021-01-14',
     description: 'A classic black and white Nike Dunk Low colorway.',
-    imageUrl: null,
+    imageUrl: 'mock-product://catalog/2',
     eazyScore: 84,
     communityScore: 81,
     ratingCount: 142,
@@ -326,7 +327,7 @@ const detail: ProductDetailData = {
     sizeType: 'big kids',
     releaseDate: '2024-01-01',
     description: 'A limited kids version of the Adidas Stan Smith Gore-Tex with orange details.',
-    imageUrl: null,
+    imageUrl: 'mock-product://catalog/1',
     eazyScore: 77,
     communityScore: 78,
     ratingCount: 24,

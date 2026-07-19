@@ -7,7 +7,8 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 ## Documentation Map
 
 - `docs/BLUEBOOK.md`: master product and engineering plan.
-- `docs/DESIGN.md`: UI/UX source of truth (identity, principles, tokens, component and screen rules).
+- `docs/DESIGN.md`: product UI/UX (identity, principles, component and screen rules; app Visual System).
+- `docs/UI_STYLE.md`: visual style language (full token prose, typography, elevation).
 - `docs/DOCUMENTATION_POLICY.md`: required doc-update rules for future changes.
 - `docs/SECURITY.md`: security rules for install, shell, and secrets handling (all agents and humans).
 - `docs/AGENT_WORKFLOW.md`: agent session flow, context map, definition of done, handoff and PR formats.

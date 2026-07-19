@@ -29,7 +29,8 @@ Product scope, positioning, MVP boundaries, or success criteria:
 - `docs/DECISIONS.md`
 
 UI design, visual system, components, screen layouts, or Stitch direction:
-- `docs/DESIGN.md`
+- `docs/DESIGN.md` (product UI/UX and app-canonical Visual System)
+- `docs/UI_STYLE.md` (visual style language)
 - `docs/STITCH_PROMPTS.md` (keeps copy-paste token values; update when tokens change)
 - `docs/USER_FLOWS.md`
 - `docs/DECISIONS.md`

@@ -21,9 +21,9 @@ export function ScoreBadge({ label, score, className }: ScoreBadgeProps) {
   const scoreLabel = getScoreLabel(score);
 
   return (
-    <View className={`rounded-button border border-border bg-card px-3 py-2 ${className ?? ''}`}>
+    <View className={`rounded-card border border-border bg-card px-3 py-2 ${className ?? ''}`}>
       <AppText variant="label">{label}</AppText>
-      <AppText className={`mt-1 text-xl font-bold ${toneClasses[tone]}`}>
+      <AppText className={`mt-1 text-xl font-semibold ${toneClasses[tone]}`}>
         {score == null ? '—' : score}
       </AppText>
       <AppText variant="caption" className="mt-0.5">

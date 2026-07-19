@@ -572,3 +572,69 @@ Safety-risk:
 
 Related files:
 - `src/components/ui/HeaderBackButton.tsx`, `docs/DESIGN.md`, `docs/TASKS.md`
+
+## 2026-07-19 — Split UI Style From Product UX; Adopt Apple-Derived Tokens
+
+What changed:
+- Moved the root Apple style guide to `docs/UI_STYLE.md` (visual style language).
+- Kept `docs/DESIGN.md` as product UI/UX (identity, principles, component/screen rules).
+- Adopted Apple-derived colors as the app Visual System: background `#f5f5f7`, ink `#1d1d1f`, secondary `#7a7a7a`, border `#e0e0e0`, accent `#0066cc`.
+- Kept product-only score semantics: positive `#10B981`, warning `#F59E0B`, negative `#EF4444`.
+- Synced `tailwind.config.js`, Stitch prompt token blocks, and hardcoded UI hexes.
+
+Why:
+- Root and `docs/DESIGN.md` shared a name and mixed style language with product UX requirements.
+- Choosing one visual language avoids agents and NativeWind drifting between two palettes.
+
+Effect:
+- Screen UI work reads both docs; app-canonical tokens live only in `docs/DESIGN.md` Visual System (adapted from `docs/UI_STYLE.md`).
+
+Safety-risk:
+- Low. Existing screens get a color swap only; no layout redesign in this change.
+
+Related files:
+- `docs/UI_STYLE.md`, `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `tailwind.config.js`, `app/(tabs)/_layout.tsx`, `src/components/ui/*`, `README.md`, `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/MCP_WORKFLOW.md`, `.cursor/rules/design-system.mdc`
+
+## 2026-07-19 — Adopt UI Style Chrome Grammar (Layout / Shape / Type)
+
+What changed:
+- Aligned app Visual System layout with `docs/UI_STYLE.md` chrome grammar: pill primary CTAs and action inputs (`9999px`), card padding 24px, card gaps 20–24px.
+- Banned shadows on cards, buttons, and text; product-image shadow only.
+- Set `AppText` body to ~17px / 400 and headlines/strong to 600 (no weight 500).
+- Added primary press feedback `scale(0.95)` on `Button` and `ProductCard`.
+- Kept ScoreBadge on card radius (18px), not pill — score chrome is a utility card, not a CTA.
+- Explicitly did **not** adopt Apple full-bleed marketing tiles, black global nav, or 80px marketing section pads.
+
+Why:
+- Color adoption alone left shape/type/elevation drifting from the style language (14px buttons, 16px body, soft card shadows).
+- Chrome grammar must match UI style while product jobs in `docs/DESIGN.md` still outrank marketing-tile layout.
+
+Effect:
+- Primitives and tokens now encode the layout pass; Feed/Browse screen redesign remains a separate follow-up if needed.
+
+Safety-risk:
+- Low. Scoped to Visual System + shared primitives; no product-flow or screen redesign.
+
+Related files:
+- `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `docs/TASKS.md`, `tailwind.config.js`, `src/components/ui/Button.tsx`, `Input.tsx`, `Card.tsx`, `AppText.tsx`, `ProductCard.tsx`, `ScoreBadge.tsx`
+
+## 2026-07-19 — Close Screen-Level UI Audit Gaps
+
+What changed:
+- Replaced the app secondary and score-semantic colors with contrast-safe tones on both white cards and the parchment background: secondary `#6b6b6b`, positive `#047857`, warning `#b45309`, negative `#b91c1c`.
+- Bundled eight generated, logo-free studio product images behind mock-only `mock-product://catalog/<id>` URLs; future HTTP(S) product URLs continue through the same resolver.
+- Added a community-derived Detail decision summary (highest and lowest non-overall category average) before the complete breakdown.
+- Put Overall first in the Rating form and kept it visually separated from the five supporting categories.
+- Standardized screen-level 20px card spacing, weight-600 score/price emphasis, weight-400 button labels, shared not-found Button use, and explicit tab accessibility labels.
+
+Why:
+- The primitives had the right chrome grammar, but the assembled screens still missed contrast, photography-first identity, decision-first layering, rating hierarchy, accessible tab names, and final spacing/type consistency.
+
+Effect:
+- Browse, Product Detail, and Rating now match the approved UI audit without changing routes, mock persistence semantics, score names, or backend scope.
+
+Safety-risk:
+- Low. Product images are local mock assets, the decision summary is derived presentation only, and no catalog, community, or My Rating values are mutated.
+
+Related files:
+- `assets/images/products/*`, `src/features/products/mockProductImages.ts`, `src/features/products/mockProducts.ts`, `app/(tabs)/*`, `app/product/[id]/*`, `src/components/ui/*`, `tailwind.config.js`, `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`

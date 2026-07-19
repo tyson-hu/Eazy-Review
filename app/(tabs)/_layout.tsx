@@ -1,21 +1,22 @@
-import { SymbolView } from 'expo-symbols';
 import { Tabs } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#2563EB',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: '#0066cc',
+        tabBarInactiveTintColor: '#6b6b6b',
         headerShown: true,
-        headerStyle: { backgroundColor: '#F7F8FA' },
-        headerTitleStyle: { color: '#111827', fontWeight: '600' },
-        tabBarStyle: { backgroundColor: '#FFFFFF', borderTopColor: '#E5E7EB' },
+        headerStyle: { backgroundColor: '#f5f5f7' },
+        headerTitleStyle: { color: '#1d1d1f', fontWeight: '600' },
+        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#e0e0e0' },
       }}>
       <Tabs.Screen
         name="feed"
         options={{
           title: 'Feed',
+          tabBarAccessibilityLabel: 'Feed tab',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
@@ -33,6 +34,7 @@ export default function TabLayout() {
         name="browse"
         options={{
           title: 'Browse',
+          tabBarAccessibilityLabel: 'Browse tab',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
@@ -50,6 +52,7 @@ export default function TabLayout() {
         name="account"
         options={{
           title: 'Account',
+          tabBarAccessibilityLabel: 'Account tab',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{

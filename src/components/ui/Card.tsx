@@ -9,7 +9,7 @@ type CardProps = ViewProps & {
 export function Card({ children, className, ...props }: CardProps) {
   return (
     <View
-      className={`rounded-card border border-border bg-card p-4 ${className ?? ''}`}
+      className={`rounded-card border border-border bg-card p-6 ${className ?? ''}`}
       {...props}>
       {children}
     </View>

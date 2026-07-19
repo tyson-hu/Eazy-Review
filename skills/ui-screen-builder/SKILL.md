@@ -20,6 +20,7 @@ Goal: build or redesign one Expo / React Native screen's UI following the Eazy R
 ## Read first
 
 - `docs/DESIGN.md`: Visual System (tokens), Component Rules, and the target screen's section under Screen-Level Rules.
+- `docs/UI_STYLE.md`: visual style language detail when applying typography, elevation, or photography-first treatment.
 - The target screen's requirements in `docs/USER_FLOWS.md`.
 
 ## Routine

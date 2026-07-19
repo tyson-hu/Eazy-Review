@@ -16,7 +16,7 @@ const FEED_SECTIONS = [
 export default function FeedScreen() {
   return (
     <Screen scroll>
-      <View className="gap-3 pt-4">
+      <View className="gap-5 pt-4">
         {FEED_SECTIONS.map((section) => (
           <Card key={section}>
             <AppText variant="subtitle">{section}</AppText>

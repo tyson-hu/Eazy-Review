@@ -32,7 +32,7 @@ export function HeaderBackButton({ canGoBack = true }: HeaderBackButtonProps) {
           android: 'arrow_back',
           web: 'arrow_back',
         }}
-        tintColor="#111827"
+        tintColor="#1d1d1f"
         size={22}
       />
     </Pressable>

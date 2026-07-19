@@ -104,7 +104,7 @@ export default function BrowseScreen() {
           />
         </View>
       ) : (
-        <View className="mt-4 gap-3">
+        <View className="mt-5 gap-5">
           {results.map((product) => (
             <ProductCard
               key={product.id}

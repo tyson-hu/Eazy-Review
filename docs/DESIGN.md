@@ -1,6 +1,8 @@
 # Eazy Review Design System
 
-This file is the single UI/UX source of truth: product identity, design principles, visual tokens, component rules, screen-level rules, AI-prompt guardrails, and the design quality checklist. Use it before generating screens in Stitch, implementing React Native UI, or reviewing visual output.
+Product UI/UX source of truth: identity, design principles, component rules, screen-level rules, AI-prompt guardrails, and the design quality checklist. Visual style language (full token prose, typography ladder, elevation) lives in `docs/UI_STYLE.md`. The Visual System section below is the app-canonical token subset adapted from that style for NativeWind and UI implementation.
+
+Use this file before generating screens in Stitch, implementing React Native UI, or reviewing visual output; read `docs/UI_STYLE.md` when applying visual language detail.
 
 ## Product Identity
 
@@ -186,41 +188,48 @@ Secondary actions can exist, but they should not visually overpower the main act
 
 ## Visual System
 
-These tokens are the canonical values. Token changes must also update `docs/STITCH_PROMPTS.md`, which keeps copy-paste values inline by design.
+App-canonical values adapted from `docs/UI_STYLE.md`. Token changes must also update `docs/STITCH_PROMPTS.md` (copy-paste values inline by design) and `tailwind.config.js`.
 
 Colors:
 
 ```txt
-Background: #F7F8FA
-Card: #FFFFFF
-Primary Text: #111827
-Secondary Text: #6B7280
-Border: #E5E7EB
-Primary Accent: #2563EB
-Positive Score: #10B981
-Warning / Markup: #F59E0B
-Negative / Risky: #EF4444
+Background: #f5f5f7
+Card: #ffffff
+Primary Text: #1d1d1f
+Secondary Text: #6b6b6b
+Border: #e0e0e0
+Primary Accent: #0066cc
+Accent Focus: #0071e3
+Accent On Dark: #2997ff
+Positive Score: #047857
+Warning / Markup: #b45309
+Negative / Risky: #b91c1c
 ```
+
+Score semantics (positive / warning / negative) are product-only; they are not part of the Apple style palette in `docs/UI_STYLE.md`.
 
 Layout:
 
 ```txt
 Reference mobile width: 393px
 Screen padding: 16px
-Card gap: 12px
+Card gap: 20–24px
 Card radius: 18px
-Button radius: 14px
+Card padding: 24px
+Button / action-input radius: 9999px (pill)
 Bottom tab height: standard iOS style
 Safe-area aware layout
 ```
 
 - Content under a navigator header should start ~16px below the header — not an extra status-bar inset. `Screen` defaults to no top safe-area (`safeTop` opt-in only for headerless surfaces); bottom safe-area still applies when `footer` is set.
 - Custom stack `headerLeft` hit targets must stay square (no trailing margin). On iOS 26+, liquid-glass shared backgrounds follow the custom-view bounds; a non-square frame becomes an oval.
+- Do **not** adopt Apple homepage full-bleed marketing tiles, black global nav, or 80px marketing section pads on app product surfaces.
 
 Typography:
-- Use a clean system-style font direction: SF Pro, Inter, or a modern sans-serif.
-- Use large bold numbers for scores and prices.
-- Use medium-weight product names, readable over decorative typography.
+- Prefer SF Pro / system stack (`system-ui`, `-apple-system`); align with `docs/UI_STYLE.md`. Inter is an acceptable off-platform substitute.
+- Body ~17px at weight 400; headlines and strong emphasis at weight 600. Do not use weight 500 — the ladder is 400 + 600 (weight 300 only where UI style explicitly calls for airy display).
+- Use large weight-600 numbers for scores and prices.
+- Use weight-600 product names, readable over decorative typography.
 - Use small quiet metadata and clear, concise section and rating labels.
 - Avoid marketing copy in core app surfaces.
 - Avoid decorative fonts and overly playful typography.
@@ -228,11 +237,14 @@ Typography:
 
 Card style:
 - White background.
-- Subtle border.
-- Soft shadow only when needed.
-- Rounded but not childish.
-- Clear internal spacing.
+- Subtle 1px border.
+- No shadow on cards, buttons, or text. The only allowed drop-shadow is on product imagery resting on a surface (`rgba(0, 0, 0, 0.22) 3px 5px 30px`; RN `shadowRadius` ≈ half the CSS blur).
+- Rounded at 18px (utility card), not childish.
+- Internal padding ~24px; clear spacing between stacked content.
 - Consistent image area.
+
+Interaction:
+- All button press feedback: `scale(0.95)` (also applied to tappable product cards). Action inputs do not use press scale.
 
 Layout rules:
 - Design mobile-first.
@@ -340,7 +352,8 @@ CTA logic:
 
 - Job: make it easy and satisfying to rate a product.
 - Focal point: rating input.
-- Show: product preview, overall rating emphasized, category rating rows, optional comment, submit button, progress feedback.
+- Show: product preview, overall rating emphasized first, supporting category rating rows, optional comment, submit button, progress feedback.
+- Keep single-line score inputs pill-shaped; use the 18px utility-card radius for the multiline Comment field so its taller shape does not become an oversized capsule.
 - Avoid: long intimidating forms, too many required fields, confusing category names, no save/progress feedback.
 
 Form fields (keep the first rating form short):

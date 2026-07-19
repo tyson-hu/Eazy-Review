@@ -4,7 +4,8 @@
 
 ```txt
 BLUEBOOK.md = master product/engineering plan
-DESIGN.md = design principles and UI/UX source of truth
+DESIGN.md = product UI/UX (identity, principles, component/screen rules, app Visual System)
+UI_STYLE.md = visual style language (full token prose, typography, elevation)
 AGENTS.md = how AI agents should work in the repo (all tools)
 .cursor/rules = Cursor-attached mirrors of docs/ rules and guardrails
 MCP = external tools a coding agent can call
@@ -18,7 +19,7 @@ Main rule: documents control tools, not the other way around. Stitch and coding 
 
 ```txt
 BLUEBOOK.md
-  -> DESIGN.md + DATA_MODEL.md + USER_FLOWS.md
+  -> DESIGN.md + UI_STYLE.md + DATA_MODEL.md + USER_FLOWS.md
   -> STITCH_PROMPTS.md
   -> AGENTS.md + .cursor/rules/*
   -> agent implementation tasks
@@ -27,7 +28,7 @@ BLUEBOOK.md
 ## Recommended Workflow
 
 1. Define product direction in `docs/BLUEBOOK.md`.
-2. Define design principles in `docs/DESIGN.md`.
+2. Define product UI/UX in `docs/DESIGN.md`; visual style language in `docs/UI_STYLE.md`.
 3. Generate visual ideas in Stitch when useful.
 4. Save strong Stitch prompts/results in `docs/STITCH_PROMPTS.md`.
 5. Ask the coding agent to implement one screen or feature.
@@ -81,12 +82,12 @@ All agent and MCP tool work follows `docs/SECURITY.md` (the canonical security r
 Use Stitch for visual exploration, not final authority.
 
 Good workflow:
-1. Read `docs/DESIGN.md` and `docs/STITCH_PROMPTS.md`.
+1. Read `docs/DESIGN.md`, `docs/UI_STYLE.md`, and `docs/STITCH_PROMPTS.md`.
 2. Prompt with product context, exact screens, components, visual system, constraints, and platform.
 3. Generate 2-4 related screens at a time instead of the whole app.
 4. Ask for one or two targeted refinements per prompt.
 5. Apply one final consistency prompt across selected screens.
-6. Save the chosen direction in `docs/DESIGN.md` or `docs/STITCH_PROMPTS.md`.
+6. Save the chosen direction in `docs/DESIGN.md`, `docs/UI_STYLE.md`, or `docs/STITCH_PROMPTS.md`.
 7. Ask the coding agent to implement the selected direction.
 
 Use specific UI terms in prompts:

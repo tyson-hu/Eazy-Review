@@ -17,6 +17,7 @@ export function Input({
   describedBy,
   errorMessage,
   accessibilityLabel,
+  multiline = false,
   ...props
 }: InputProps) {
   // Native RN has no aria-invalid / aria-describedby. Fold the error into the
@@ -36,9 +37,10 @@ export function Input({
 
   return (
     <TextInput
-      className={`min-h-12 rounded-button border border-border bg-card px-4 text-base text-primary ${className ?? ''}`}
-      placeholderTextColor="#6B7280"
+      className={`min-h-12 ${multiline ? 'rounded-card' : 'rounded-button'} border border-border bg-card px-5 text-[17px] font-normal text-primary ${className ?? ''}`}
+      placeholderTextColor="#6b6b6b"
       accessibilityLabel={nativeAccessibilityLabel}
+      multiline={multiline}
       {...webA11y}
       {...props}
     />

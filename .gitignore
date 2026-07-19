@@ -81,3 +81,11 @@ docs/evidence/task-10-reaudit/screenshots/*
 !docs/evidence/task-10-reaudit/screenshots/web-18-zero-community-detail.png
 !docs/evidence/task-10-reaudit/screenshots/web-19-null-eazy-detail.png
 !docs/evidence/task-10-reaudit/screenshots/web-23-invalid-association-proof.png
+
+# 2026-07-19 UI audit remediation: keep diagnostic/raw captures local; upload three proof PNGs.
+docs/evidence/ui-audit-remediation-20260719-attempt1/screenshots/
+docs/evidence/ui-audit-remediation-20260719-attempt2/screenshots/
+docs/evidence/ui-audit-remediation-20260719/screenshots/*
+!docs/evidence/ui-audit-remediation-20260719/screenshots/web-01-browse.png
+!docs/evidence/ui-audit-remediation-20260719/screenshots/web-02-detail-top.png
+!docs/evidence/ui-audit-remediation-20260719/screenshots/web-04-rate-top.png

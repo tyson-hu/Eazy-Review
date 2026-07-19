@@ -1,6 +1,6 @@
 # Stitch Prompts
 
-Use these prompts for visual exploration. Stitch output is not a source of truth; selected directions must be captured in `docs/DESIGN.md` before implementation.
+Use these prompts for visual exploration. Stitch output is not a source of truth; selected directions must be captured in `docs/DESIGN.md` (and visual language in `docs/UI_STYLE.md` when style tokens change) before implementation.
 
 ## Prompting Rules
 
@@ -37,24 +37,25 @@ Platform:
 iOS mobile app, 393px width, safe-area aware, React Native + Expo style, bottom tab navigation.
 
 Design language:
-- Background: #F7F8FA
-- Card: #FFFFFF
-- Primary text: #111827
-- Secondary text: #6B7280
-- Border: #E5E7EB
-- Primary accent: #2563EB
-- Positive score: #10B981
-- Warning / markup: #F59E0B
-- Negative / risky: #EF4444
-- Typography: SF Pro or Inter-like modern sans-serif
-- Score and price numbers: large, bold, high contrast
-- Card radius: 18px
-- Button radius: 14px
+- Background: #f5f5f7
+- Card: #ffffff
+- Primary text: #1d1d1f
+- Secondary text: #6b6b6b
+- Border: #e0e0e0
+- Primary accent: #0066cc
+- Positive score: #047857
+- Warning / markup: #b45309
+- Negative / risky: #b91c1c
+- Typography: SF Pro / system stack (Inter ok off-platform); body ~17px / 400; headlines 600 (no weight 500)
+- Score and price numbers: large, high contrast (weight 600)
+- Card radius: 18px; card padding: 24px; card gap: 20–24px
+- Button / action-input radius: 9999px (pill)
 - Screen padding: 16px
-- Card gap: 12px
-- Shadows: subtle only
+- Shadows: none on cards/buttons/text; product-image shadow only (rgba(0,0,0,0.22) 3px 5px 30px)
+- Press: primary CTA scale(0.95)
 - Icons: thin, modern, consistent
 - Product images: premium studio sneaker photography on clean white/gray backgrounds
+- Do not use Apple full-bleed marketing tiles, black global nav, or 80px marketing section pads in the app
 ```
 
 ## Product Detail Page Prompt
@@ -177,14 +178,17 @@ Refine the selected Eazy Review screens to look more premium and production-read
 Make the UI less generic and less childish. Increase white space, improve typography hierarchy, make cards more editorial, and make product images feel like high-end sneaker studio photography.
 
 Apply this consistent system:
-- Background: #F7F8FA
-- Cards: #FFFFFF, 18px radius, subtle shadow only when useful, 1px #E5E7EB border
-- Primary CTA: #2563EB background, white text, 14px radius
-- Score numbers: large, bold, high-contrast
+- Background: #f5f5f7
+- Cards: #ffffff, 18px radius, 24px padding, 1px #e0e0e0 border, no card shadow
+- Primary CTA: #0066cc background, white text, 9999px pill radius, press scale(0.95)
+- Action inputs: pill radius, ~17px body text
+- Score numbers: large, high-contrast, weight 600
 - Category rating rows: compact, clean, data-dashboard style
-- Bottom navigation: consistent tabs, thin line icons, active tab in #2563EB
+- Bottom navigation: consistent tabs, thin line icons, active tab in #0066cc
 - Screen padding: 16px
-- Card gap: 12px
+- Card gap: 20–24px
+- Typography: body ~17px / 400; headlines 600; no weight 500
+- Elevation: product-image shadow only
 
-Make all screens feel like one app, not separate mockups. Preserve the difference between Eazy Score, Community Score, and My Rating.
+Make all screens feel like one app, not separate mockups. Preserve the difference between Eazy Score, Community Score, and My Rating. Do not introduce Apple homepage full-bleed marketing tiles, black global nav, or 80px marketing section pads.
 ```

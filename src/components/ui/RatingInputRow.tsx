@@ -9,7 +9,7 @@ type RatingInputRowProps = {
   value: string;
   onChangeText: (value: string) => void;
   error?: string;
-  /** Slightly stronger visual weight (e.g. Overall). */
+  /** Stronger first-row treatment for the primary score (e.g. Overall). */
   emphasized?: boolean;
   className?: string;
 };
@@ -27,7 +27,7 @@ export function RatingInputRow({
 
   return (
     <View
-      className={`${emphasized ? 'border-t border-border pt-4' : ''} ${className ?? ''}`}>
+      className={`${emphasized ? 'border-b border-border pb-5' : ''} ${className ?? ''}`}>
       <AppText
         variant="label"
         className={emphasized ? 'text-sm font-semibold normal-case tracking-normal text-primary' : undefined}>

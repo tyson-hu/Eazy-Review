@@ -17,12 +17,12 @@ import {
 import type { RatingBreakdown } from '@/src/types/product';
 
 const SCORE_FIELDS = [
+  { key: 'overall', label: 'Overall' },
   { key: 'look', label: 'Look' },
   { key: 'comfort', label: 'Comfort' },
   { key: 'quality', label: 'Quality' },
   { key: 'outfit', label: 'Outfit' },
   { key: 'value', label: 'Value' },
-  { key: 'overall', label: 'Overall' },
 ] as const;
 
 type ScoreFieldKey = (typeof SCORE_FIELDS)[number]['key'];
@@ -200,7 +200,7 @@ function RateProductForm({ detail }: RateProductFormProps) {
         </AppText>
       </View>
 
-      <Card className="mt-4 gap-4">
+      <Card className="mt-5 gap-5">
         {SCORE_FIELDS.map(({ key, label }) => (
           <RatingInputRow
             key={key}

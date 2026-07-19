@@ -41,7 +41,7 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 
 | Task type | Read | Do not read |
 | --- | --- | --- |
-| Build or redesign one screen's UI | `docs/DESIGN.md` (Visual System, Component Rules, and that screen's section in Screen-Level Rules), `docs/USER_FLOWS.md` (that screen's flow) | `docs/BLUEBOOK.md`, `docs/DATA_MODEL.md` |
+| Build or redesign one screen's UI | `docs/DESIGN.md` (Visual System, Component Rules, and that screen's section in Screen-Level Rules), `docs/UI_STYLE.md` (visual language), `docs/USER_FLOWS.md` (that screen's flow) | `docs/BLUEBOOK.md`, `docs/DATA_MODEL.md` |
 | Feature slice spanning data + UI (a `docs/TASKS.md` task) | The task in `docs/TASKS.md`, `docs/USER_FLOWS.md` (relevant flow), `docs/API_CONTRACTS.md` (types and functions), `docs/DESIGN.md` (component rules for its screens) | `docs/BLUEBOOK.md`, `docs/MCP_WORKFLOW.md` |
 | Schema, Supabase, RLS, migrations, rating summaries | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` (affected contracts) | `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md` |
 | Frontend data shape, types, mock data, folder structure | `docs/API_CONTRACTS.md`; `docs/DATA_MODEL.md` only if a database contract changes | `docs/DESIGN.md` screen sections, `docs/BLUEBOOK.md` |
@@ -287,7 +287,8 @@ One home per instruction; everywhere else points, never restates.
 | --- | --- |
 | Product direction, MVP scope, success criteria | `docs/BLUEBOOK.md` |
 | Non-negotiable operating rules, task discipline, skill index | `AGENTS.md` |
-| UI tokens, design principles, component and screen rules | `docs/DESIGN.md` |
+| Visual style language (full token prose, typography, elevation) | `docs/UI_STYLE.md` |
+| Product UI/UX, design principles, component and screen rules, app Visual System | `docs/DESIGN.md` |
 | Schema, RLS, triggers, rating summary logic | `docs/DATA_MODEL.md` |
 | Frontend types, API functions, query keys, folder structure | `docs/API_CONTRACTS.md` |
 | Routes, user journeys, auth gates | `docs/USER_FLOWS.md` |
