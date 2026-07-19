@@ -16,14 +16,7 @@ const FEED_SECTIONS = [
 export default function FeedScreen() {
   return (
     <Screen scroll>
-      <View className="pt-4">
-        <AppText variant="title">Feed</AppText>
-        <AppText variant="caption" className="mt-1">
-          Daily discovery sections will appear here.
-        </AppText>
-      </View>
-
-      <View className="mt-6 gap-3">
+      <View className="gap-3 pt-4">
         {FEED_SECTIONS.map((section) => (
           <Card key={section}>
             <AppText variant="subtitle">{section}</AppText>

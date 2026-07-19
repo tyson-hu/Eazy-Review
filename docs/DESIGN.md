@@ -214,6 +214,9 @@ Bottom tab height: standard iOS style
 Safe-area aware layout
 ```
 
+- Content under a navigator header should start ~16px below the header — not an extra status-bar inset. `Screen` defaults to no top safe-area (`safeTop` opt-in only for headerless surfaces); bottom safe-area still applies when `footer` is set.
+- Custom stack `headerLeft` hit targets must stay square (no trailing margin). On iOS 26+, liquid-glass shared backgrounds follow the custom-view bounds; a non-square frame becomes an oval.
+
 Typography:
 - Use a clean system-style font direction: SF Pro, Inter, or a modern sans-serif.
 - Use large bold numbers for scores and prices.
@@ -288,6 +291,7 @@ Do not add description, long metadata, comments, likes, or social UI to MVP prod
 
 Initial reusable UI components:
 - `Screen`
+- `HeaderBackButton`
 - `Button`
 - `Input`
 - `Card`

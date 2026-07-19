@@ -535,3 +535,40 @@ Safety-risk:
 
 Related files:
 - `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`, `docs/evidence/README.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `skills/interactive-preview-loop/SKILL.md`, `.gitignore`
+
+## 2026-07-19 — Screen Defaults To No Top Safe-Area
+
+What changed:
+- `Screen` no longer applies top safe-area inset by default.
+- Callers that need top inset on a headerless surface opt in with `safeTop`.
+- Bottom safe-area still applies when `footer` is set.
+
+Why:
+- Tab and stack navigator headers already clear the status bar. Always including `top` in `SafeAreaView` edges stacked a second inset under the header (~status-bar-sized dead band plus intentional `mt-4`/`pt-4`).
+
+Effect:
+- Feed, Browse, Account, Product Detail, and Rate content start ~16px below the navigator header via existing screen spacing.
+- Headerless surfaces must pass `safeTop` explicitly.
+
+Safety-risk:
+- A future headerless screen that forgets `safeTop` can draw under the status bar; mitigate by setting the prop when `headerShown` is false.
+
+Related files:
+- `src/components/ui/Screen.tsx`, `app/(tabs)/feed.tsx`, `docs/DESIGN.md`, `docs/TASKS.md`
+
+## 2026-07-19 — HeaderBackButton Square Hit Target For Liquid Glass
+
+What changed:
+- Removed trailing `mr-2` from `HeaderBackButton` so the pressable stays a square `h-10 w-10` (40×40).
+
+Why:
+- On iOS 26+, native-stack wraps `headerLeft` in a `UIBarButtonItem` with a liquid-glass shared background that follows the custom-view bounds. The previous `mr-2` made the measured frame ~48×40, so glass rendered as a horizontal oval with empty space after `chevron.left`.
+
+Effect:
+- Back control glass reads as a circle with a centered chevron; F4 a11y behavior (`button` / `accessibilityLabel="Back"` / `router.back()`) is unchanged.
+
+Safety-risk:
+- Low. Do not reintroduce non-square margins on custom `headerLeft` views when liquid glass is present.
+
+Related files:
+- `src/components/ui/HeaderBackButton.tsx`, `docs/DESIGN.md`, `docs/TASKS.md`

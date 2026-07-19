@@ -25,7 +25,7 @@ export function HeaderBackButton({ canGoBack = true }: HeaderBackButtonProps) {
       accessibilityRole="button"
       accessibilityLabel="Back"
       hitSlop={8}
-      className="mr-2 h-10 w-10 items-center justify-center">
+      className="h-10 w-10 items-center justify-center">
       <SymbolView
         name={{
           ios: 'chevron.left',

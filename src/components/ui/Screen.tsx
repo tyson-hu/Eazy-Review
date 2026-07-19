@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 type ScreenProps = {
   children: ReactNode;
@@ -9,6 +9,11 @@ type ScreenProps = {
   footer?: ReactNode;
   /** Horizontal content padding. Default true. */
   padded?: boolean;
+  /**
+   * Apply top safe-area inset. Default false — navigator headers already
+   * clear the status bar. Opt in for headerless surfaces.
+   */
+  safeTop?: boolean;
   className?: string;
   contentClassName?: string;
 };
@@ -18,15 +23,22 @@ export function Screen({
   scroll = false,
   footer,
   padded = true,
+  safeTop = false,
   className,
   contentClassName,
 }: ScreenProps) {
   const horizontalPad = padded ? 'px-4' : '';
-  const edges = footer ? (['top', 'bottom'] as const) : (['top'] as const);
+  const edges: Edge[] = [];
+  if (safeTop) {
+    edges.push('top');
+  }
+  if (footer) {
+    edges.push('bottom');
+  }
 
   if (scroll || footer) {
     return (
-      <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={[...edges]}>
+      <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={edges}>
         <ScrollView
           className="flex-1"
           contentContainerClassName={`${horizontalPad} pb-6 ${contentClassName ?? ''}`}
@@ -40,7 +52,7 @@ export function Screen({
   }
 
   return (
-    <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={['top']}>
+    <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={edges}>
       <View className={`flex-1 ${horizontalPad} ${contentClassName ?? ''}`}>{children}</View>
     </SafeAreaView>
   );
