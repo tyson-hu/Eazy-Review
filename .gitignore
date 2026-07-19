@@ -65,3 +65,19 @@ docs/notes/handoff.md
 
 # Cursor local plan files (never commit)
 .cursor/plans/
+
+# Task 10 evidence: raw capture sets stay local; GitHub keeps a representative proof set
+# (1 F4 PNG + 11 re-audit PNGs). See docs/TASKS.md Task 10 and the evidence reports.
+docs/evidence/task-10-baseline-ux/screenshots/
+docs/evidence/task-10-reaudit/screenshots/*
+!docs/evidence/task-10-reaudit/screenshots/ios-01-browse-default.png
+!docs/evidence/task-10-reaudit/screenshots/ios-02-empty-search-clear-action.png
+!docs/evidence/task-10-reaudit/screenshots/ios-04-unrated-detail-sticky-cta.png
+!docs/evidence/task-10-reaudit/screenshots/ios-06-invalid-rating-errors.png
+!docs/evidence/task-10-reaudit/screenshots/ios-08-submit-reachable-after-keyboard-scroll.png
+!docs/evidence/task-10-reaudit/screenshots/ios-09-session-save-alert.png
+!docs/evidence/task-10-reaudit/screenshots/ios-10-post-submit-my-rating.png
+!docs/evidence/task-10-reaudit/screenshots/web-13-edit-rating-prefill.png
+!docs/evidence/task-10-reaudit/screenshots/web-18-zero-community-detail.png
+!docs/evidence/task-10-reaudit/screenshots/web-19-null-eazy-detail.png
+!docs/evidence/task-10-reaudit/screenshots/web-23-invalid-association-proof.png

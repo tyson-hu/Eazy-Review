@@ -6,6 +6,7 @@ import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/ui/EmptyState';
+import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { RatingRow } from '@/src/components/ui/RatingRow';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import { Screen } from '@/src/components/ui/Screen';
@@ -74,7 +75,12 @@ export default function ProductDetailScreen() {
   if (!detail) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Product' }} />
+        <Stack.Screen
+          options={{
+            title: 'Product',
+            headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
+          }}
+        />
         <EmptyState title="Product not found" message="This product is not in the catalog." />
       </Screen>
     );
@@ -111,8 +117,22 @@ export default function ProductDetailScreen() {
   const ctaLabel = myRating ? 'Edit my rating' : 'Rate this product';
 
   return (
-    <Screen scroll>
-      <Stack.Screen options={{ title: product.name }} />
+    <Screen
+      scroll
+      footer={
+        <View className="border-t border-border bg-background px-4 py-3">
+          <Button
+            label={ctaLabel}
+            onPress={() => router.push(`/product/${product.id}/rate`)}
+          />
+        </View>
+      }>
+      <Stack.Screen
+        options={{
+          title: product.name,
+          headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
+        }}
+      />
 
       <View className="mt-4 h-56 items-center justify-center overflow-hidden rounded-card bg-card">
         {product.imageUrl ? (
@@ -250,12 +270,6 @@ export default function ProductDetailScreen() {
           {product.description ?? 'No product description available yet.'}
         </AppText>
       </Card>
-
-      <Button
-        className="mt-4"
-        label={ctaLabel}
-        onPress={() => router.push(`/product/${product.id}/rate`)}
-      />
     </Screen>
   );
 }

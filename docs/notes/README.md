@@ -7,6 +7,8 @@ Working state for cross-session continuity — the next session reads these file
 
 These are working state, not project documentation. Durable task status belongs in `docs/TASKS.md`; durable decisions belong in `docs/DECISIONS.md`.
 
+Interactive preview and UX audit **evidence** (screenshots, findings) belongs in `docs/evidence/` — see `docs/evidence/README.md` and `skills/interactive-preview-loop`. Do not store verification artifacts here.
+
 ## Commit Policy
 
 - `handoff.md` is transient session state: do not commit it (ignored via `.gitignore`).

@@ -5,6 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 type ScreenProps = {
   children: ReactNode;
   scroll?: boolean;
+  /** When set, rendered below scroll/body with bottom safe-area inset. */
+  footer?: ReactNode;
+  /** Horizontal content padding. Default true. */
+  padded?: boolean;
   className?: string;
   contentClassName?: string;
 };
@@ -12,26 +16,32 @@ type ScreenProps = {
 export function Screen({
   children,
   scroll = false,
+  footer,
+  padded = true,
   className,
   contentClassName,
 }: ScreenProps) {
-  if (scroll) {
+  const horizontalPad = padded ? 'px-4' : '';
+  const edges = footer ? (['top', 'bottom'] as const) : (['top'] as const);
+
+  if (scroll || footer) {
     return (
-      <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={['top']}>
+      <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={[...edges]}>
         <ScrollView
           className="flex-1"
-          contentContainerClassName={`px-4 pb-6 ${contentClassName ?? ''}`}
+          contentContainerClassName={`${horizontalPad} pb-6 ${contentClassName ?? ''}`}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           {children}
         </ScrollView>
+        {footer}
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={['top']}>
-      <View className={`flex-1 px-4 ${contentClassName ?? ''}`}>{children}</View>
+      <View className={`flex-1 ${horizontalPad} ${contentClassName ?? ''}`}>{children}</View>
     </SafeAreaView>
   );
 }

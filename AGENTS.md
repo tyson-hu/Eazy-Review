@@ -38,11 +38,12 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 | Frontend types / mock data | `docs/API_CONTRACTS.md` |
 | Product scope change | `docs/BLUEBOOK.md`, `docs/ROADMAP.md` |
 | Expo / React Native | Installed versions in `package.json` + the exact Expo SDK 57 docs (URL in the full map) |
+| Mobile simulator / web mobile preview / UX screenshot audit | `skills/interactive-preview-loop` → `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/evidence/README.md` |
 
 ## Skill Index
 
 Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`):
-`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
+`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
 Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here or in `docs/LOOP_ENGINEERING.md` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
 
@@ -51,6 +52,7 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 - `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
 - `npm run check` (routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency changes or before handoff.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
+- `expo-doctor` / `expo install --check` (and thus the Expo tail of `npm run check`) must run **outside the agent sandbox** — sandboxed runs can false-pass doctor or `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation Commands → Expo doctor and dependency checks — agent sandbox.
 
 ## Pointers
 
@@ -59,5 +61,6 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 - Security rules: `docs/SECURITY.md`
 - Session flow, definition of done, handoff and PR formats: `docs/AGENT_WORKFLOW.md`
 - Loop anatomy, stop conditions, retry policy: `docs/LOOP_ENGINEERING.md`
+- Interactive mobile/web preview and UX screenshot audits: `skills/interactive-preview-loop` (SOPs + `docs/evidence/`)
 
 Current state: see `docs/TASKS.md`.

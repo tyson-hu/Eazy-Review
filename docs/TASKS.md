@@ -161,13 +161,58 @@ Packet decomposition (run via the `implementer` per the Task Packet Format; sequ
 
 ### Task 10: Review UX Flow Before Supabase
 
-Status: Pending.
+Status: Done — Phase 4 integrated re-audit passed; Supabase readiness **GO**.
 
-Acceptance:
-- User can browse fake products.
-- User can open a product.
-- User can submit a fake rating.
-- UI flow is understandable.
+Canonical journey: Browse → Product Detail → Rating Form (new-rating and edit-rating paths). Branch: `cursor/task-10-ux-review` (from merge `15109ec`).
+
+Do not expand into Feed, Account, authentication, Supabase, social features, or marketplace purchasing. Session-only mock behavior must stay honest (no backend persistence or community-score recalculation claims).
+
+#### Acceptance — Core journey
+
+- User can locate Browse from the tab bar.
+- Default Browse state communicates what products are available.
+- Search works for brand, product name, and SKU.
+- Search empty and deterministic error states are understandable and recoverable.
+- Product cards clearly communicate identity, scores, and price.
+- Tapping a card opens the correct Product Detail.
+- Product Detail clearly distinguishes Eazy Score, Community Score, My Rating, purchase data, and review count.
+- An unrated product clearly offers **Rate this product**.
+- A rated product clearly offers **Edit my rating**.
+- Invalid rating submission remains on the form and clearly identifies every invalid field.
+- Valid new and edited ratings return to Detail and update My Rating for the current mock session.
+- Back navigation returns to the prior meaningful screen without duplicate routes.
+- Session-only persistence and reset limitations are understandable.
+
+#### Acceptance — Quality gate
+
+- No unresolved P0, P1, or core-flow P2 findings.
+- Each screen has one obvious primary action.
+- Keyboard-open scrolling allows the user to reach and activate Submit.
+- Important empty, null, loading, error, and unknown-ID states remain usable.
+- No misleading claim suggests backend persistence or community-score recalculation.
+- Final integrated flow passes in an interactive mobile viewport.
+- `npm run check`, `git diff --check`, and repository-status checks pass after the last code change.
+
+#### Audit phases
+
+1. Baseline screenshot audit (no code edits) — required capture set steps 1–18; findings reference numbered screenshots/observed steps. Procedure: `skills/interactive-preview-loop` → `docs/UX_SCREENSHOT_AUDIT_SOP.md` (mobile: `docs/MOBILE_SIMULATOR_SOP.md`; web: `docs/WEB_MOBILE_PREVIEW_SOP.md`). Evidence: `docs/evidence/`.
+2. Findings report and parent triage (P0–P3); accept / reject / defer before any fix packets.
+3. Bounded fix packets only from accepted findings (Browse / Detail / Rating groupings as needed).
+4. Integrated re-audit after accepted fixes (same skill/SOPs).
+5. Supabase readiness decision: **GO** / **CONDITIONAL GO** / **NO-GO**.
+
+#### Progress
+
+- Done: repository on `master` @ `15109ec`; branch `cursor/task-10-ux-review`; acceptance criteria tightened (this section).
+- Done: Phase 1 baseline screenshot audit (iOS Simulator iPhone 16 + mobile web 393×852). Physical device: **tested-pass** (parent-reported 2026-07-18). Evidence report: `docs/evidence/task-10-baseline-ux/FINDINGS.md`.
+- Done: Phase 2 findings + parent triage: `docs/evidence/task-10-baseline-ux/FINDINGS.md` — **F1–F8 all Accepted** (F4 confirmed via DevTools: `aria-label="(tabs), back"` / wrong `href`).
+- Done: Phase 3 fix packets (Browse A, Detail B, Rating C, F4 header back, docs F8).
+- Done: F4 verification — **Resolved** on web (`pass`), iOS Simulator (`pass`), and physical device (`tested-pass`). Evidence: `docs/evidence/task-10-f4-check/RESULT.md` + committed proof `screenshots/web-01-detail-back-button.png`. Not Phase 4.
+- Done: agent infrastructure — preview SOPs + `skills/interactive-preview-loop`; evidence root `docs/evidence/`.
+- Done: Phase 4 integrated re-audit — F1–F8 **Resolved**; iOS Simulator `pass`, mobile web @ 393×852 `pass`, physical device `not-tested` this run. Evidence: `docs/evidence/task-10-reaudit/RESULT.md` and the representative committed screenshots listed there.
+- Done: Supabase readiness decision — **GO**. No unresolved P0, P1, or core-flow P2. The hard web deep-link Back → Feed behavior remains a documented P3 limitation outside the canonical Browse journey.
+- Audit result / GO decision: **GO** (2026-07-18).
+- Evidence retention (GitHub): the complete raw capture set remains **local-only** and was not deleted. GitHub hosts a **representative proof set** of **12 committed PNGs** total (1 F4 + 11 re-audit). All **33 baseline PNGs** and the other **31 re-audit PNGs** stay on the working machine; filenames cited in the audit reports for those omitted captures are **local capture IDs**, not repository-hosted files. Ignore rules: `.gitignore` (Task 10 evidence block).
 
 ## Follow-Ups / Discovered Work
 

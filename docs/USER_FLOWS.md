@@ -69,6 +69,8 @@ Users should be allowed to browse without logging in.
 
 ## Flow 2: Rate Product
 
+Target backend path (after auth + Supabase):
+
 ```txt
 User opens Product Detail
 -> User taps Rate this product
@@ -81,7 +83,22 @@ User opens Product Detail
 -> Product page shows My Rating
 ```
 
+Current mock path (Task 9 session-only; see Task 9 mock behavior below):
+
+```txt
+User opens Product Detail
+-> User taps Rate this product
+-> Rating Form opens (no login gate)
+-> User submits rating
+-> My Rating updates for this app session only
+-> Community Score does not change
+-> User returns to Product Detail
+-> Honest alert: not saved to a server; resets on reload
+```
+
 ## Flow 3: Edit Own Rating
+
+Target backend path (after auth + Supabase):
 
 ```txt
 User opens Product Detail
@@ -90,6 +107,16 @@ User opens Product Detail
 -> User edits rating
 -> Rating is updated
 -> Community Score is recalculated
+```
+
+Current mock path (Task 9 session-only):
+
+```txt
+User opens Product Detail
+-> Button says Edit my rating when a session My Rating exists
+-> User edits and saves
+-> My Rating updates for this session only
+-> Community Score does not change
 ```
 
 ## Flow 4: View Rated Products

@@ -49,6 +49,9 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 | Refactor (no behavior change) | `docs/API_CONTRACTS.md` (folder structure and contracts covering the moved code) | Product and design docs |
 | Docs sync after code drift | `docs/DOCUMENTATION_POLICY.md` (Document Update Map) | Docs the change does not affect |
 | Validation / check run | Validation Commands section below in this file | Product docs |
+| Interactive mobile simulator walk or iOS screenshot evidence | `skills/interactive-preview-loop`, `docs/MOBILE_SIMULATOR_SOP.md`, `docs/evidence/README.md` | Installing ad-hoc browser automation deps; writing evidence under `docs/notes/` |
+| Interactive Expo web mobile preview or Playwright MCP journey | `skills/interactive-preview-loop`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/MCP_WORKFLOW.md` (tool policy) | Treating web-only as full iOS acceptance |
+| UX screenshot audit / readiness gate (baseline → findings → triage) | `skills/interactive-preview-loop`, `docs/UX_SCREENSHOT_AUDIT_SOP.md` | Feature implementation packets before triage; product edits during the audit |
 | Product scope or direction change | `docs/BLUEBOOK.md`, `docs/ROADMAP.md` | — |
 | Stitch, MCP, or external-tool workflow | `docs/MCP_WORKFLOW.md`, `docs/STITCH_PROMPTS.md` | `docs/DATA_MODEL.md` |
 | Expo / Expo Router / React Native specifics | Installed versions in `package.json`, plus the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/` | Older Expo SDK docs |
@@ -197,7 +200,22 @@ Pick the narrowest command that covers the change:
 - `npm run check` — typed-route generation, typecheck, lint, Expo doctor, and Expo dependency alignment. Use for route changes, dependency changes, or before handing off a finished task.
 - `npm run generate:routes` — regenerates typed routes; required before typecheck on clean checkouts.
 - `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
+- Interactive UX / simulator / mobile-web walks — `skills/interactive-preview-loop` (SOPs under `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`; evidence under `docs/evidence/`). These do not replace the npm commands above.
 - Docs-only changes need no command; say so in Validation.
+
+### Expo doctor and dependency checks — agent sandbox
+
+`npx expo-doctor` and `npx expo install --check` (also the tail of `npm run check`) read and write under the host `~/.expo` cache. Cursor’s default command sandbox often blocks that path.
+
+Observed failure modes (recurring — do not treat sandboxed output as authoritative):
+
+| Sandboxed symptom | What it usually means |
+| --- | --- |
+| `expo-doctor` reports **20/20** / “No issues detected” | False clean. Outside the sandbox the same tree may still fail “packages match versions required by installed Expo SDK”. |
+| `expo install --check` exits with **`EPERM`** opening `~/.expo/native-modules-cache/…` | Environment/permission noise, not a real dependency verdict. |
+| `npm run check` “passes” or “fails” only in the Expo doctor / install-check steps under sandbox | Re-run those steps (or the full `npm run check`) **outside the sandbox** (`required_permissions: ["all"]` or equivalent unrestricted host shell) before claiming alignment or opening a version-fix packet. |
+
+Rule for agents: after any Expo dependency edit, or when doctor/install-check results will gate handoff or a fix, run `npx expo-doctor` and `npx expo install --check` with unrestricted host access. If sandboxed and unrestricted results disagree, trust the unrestricted run. Same class of issue as Simulator/`simctl` needing host access (`docs/MOBILE_SIMULATOR_SOP.md`).
 
 ## Human-Readable Handoff
 
@@ -279,6 +297,10 @@ One home per instruction; everywhere else points, never restates.
 | Session boundary triggers, state-persistence principle, resume prompt | `docs/AGENT_WORKFLOW.md` (this file) |
 | Delegation and subagent policy, model routing tiers, completion sequence, teach-back policy | `docs/AGENT_WORKFLOW.md` (this file, mirrored by `.cursor/rules/orchestration.mdc`) |
 | MCP tool policy (action classification and approval levels) | `docs/MCP_WORKFLOW.md` (mirrored by `.cursor/rules/mcp-policy.mdc`) |
+| iOS Simulator interactive preview and screenshot capture | `docs/MOBILE_SIMULATOR_SOP.md` (entry: `skills/interactive-preview-loop`) |
+| Expo web mobile preview via Playwright MCP | `docs/WEB_MOBILE_PREVIEW_SOP.md` (entry: `skills/interactive-preview-loop`) |
+| UX screenshot audit phases, finding template, GO gate | `docs/UX_SCREENSHOT_AUDIT_SOP.md` (entry: `skills/interactive-preview-loop`) |
+| Interactive preview / audit verification artifacts | `docs/evidence/README.md` |
 | Handoff note routine and `docs/notes/handoff.md` template | `skills/session-handoff/SKILL.md` |
 | Blocker note routine and `docs/notes/blocker-<topic>.md` template | `skills/blocker-note/SKILL.md` |
 | Skill creation threshold, structure, quality rules, iteration and library maintenance | `skills/skill-creator/SKILL.md` |

@@ -72,6 +72,7 @@ Outside `docs/notes/`, no scratch files, no notes docs, no status comments in co
 | Restructure code without changing behavior | `skills/refactor-safety-loop` |
 | Bring drifted docs back in sync with code | `skills/docs-sync-loop` |
 | Run and interpret project checks for a finished change | `skills/test-and-validation-loop` |
+| Evidence-backed simulator / mobile-web journey verification or UX screenshot audit | `skills/interactive-preview-loop` |
 | Session boundary reached or session overloaded — persist state, recommend fresh session | `skills/session-handoff` |
 | Debugging stalled (2+ failures, 20–30+ min, or looping) — persist state, stop attempts | `skills/blocker-note` |
 | Same task pattern explained 3+ times — turn it into a skill, or iterate/maintain an existing one | `skills/skill-creator` |
@@ -87,6 +88,11 @@ When two loops seem to apply, use these precedence rules. Each pair is also cros
 | Any change needing SQL, a migration, or RLS (includes syncing frontend types) | `supabase-schema-change` | `product-data-modeling` |
 | Frontend-only shape, type, mock, or display change | `product-data-modeling` | `supabase-schema-change` |
 | Validation failure caused by the current change | Fix inside `test-and-validation-loop` (max 2 tries) | `bugfix-debug-loop` |
+| Run TypeScript, lint, Expo Doctor, dependency, or route checks | `test-and-validation-loop` | `interactive-preview-loop` |
+| Verify a user journey in a running simulator or mobile web preview and capture evidence | `interactive-preview-loop` | `test-and-validation-loop` |
+| Change screen layout, styling, hierarchy, or components | `ui-screen-builder` | `interactive-preview-loop` |
+| Investigate and fix a known behavior defect | `bugfix-debug-loop` | `interactive-preview-loop` |
+| Finish a user-facing feature requiring both kinds of validation | `test-and-validation-loop`, then `interactive-preview-loop` | Treating either loop as replacing the other |
 | Pre-existing bug found during validation | Record in `docs/TASKS.md`; fix later via `bugfix-debug-loop` | Fixing it inside the current loop |
 | Doc updates for the change you just made | The skill's own memory step | `docs-sync-loop` |
 | Standalone, after-the-fact doc drift | `docs-sync-loop` | Per-skill memory steps |

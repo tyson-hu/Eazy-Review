@@ -51,8 +51,9 @@ Recommended starting tools:
 
 Add later only when needed:
 - Figma MCP.
-- Browser/Playwright MCP.
 - Docs/Drive/Notion MCP.
+
+**Browser / Playwright MCP** — use for Expo web mobile preview and scripted UX evidence when available. Follow `skills/interactive-preview-loop` and `docs/WEB_MOBILE_PREVIEW_SOP.md` (reference mobile-web viewport default 393×852, dialog/session rules, screenshot naming under `docs/evidence/`). Do not add Playwright as a repo dependency for ad-hoc audits. Classify actions per MCP Tool Policy below; prefer built-in navigate/click/type/screenshot/snapshot over `browser_run_code_unsafe`.
 
 Treat each MCP server as a capability boundary, especially if it can write to a database, repo, or external service.
 

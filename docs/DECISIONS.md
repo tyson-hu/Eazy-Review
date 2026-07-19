@@ -403,3 +403,112 @@ Safety-risk:
 
 Related files:
 - `src/features/products/mockProductDetails.ts`, `app/product/[id]/rate.tsx`, `app/product/[id]/index.tsx`, `docs/API_CONTRACTS.md`, `docs/USER_FLOWS.md`, `docs/TASKS.md`
+
+## 2026-07-18 — Mobile And Web Preview SOPs For Agent Infrastructure
+
+What changed:
+- Codified Task 10-style interactive preview into three agent SOPs: iOS Simulator (`docs/MOBILE_SIMULATOR_SOP.md`), Expo web reference viewport via Playwright MCP (`docs/WEB_MOBILE_PREVIEW_SOP.md`), and parent UX screenshot audits (`docs/UX_SCREENSHOT_AUDIT_SOP.md`).
+- Verification artifacts live under `docs/evidence/` (not `docs/notes/`).
+
+Why:
+- Simulator deep links, Playwright dialogs, session-mock resets, and evidence naming were rediscovered during Task 10; agents need a durable procedure instead of chat-only memory.
+
+Effect:
+- Future simulator walks, web journeys, and screenshot audits follow the same capture and reporting rules.
+
+Safety-risk:
+- Docs/process only; no app behavior change.
+
+Related files:
+- `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/evidence/README.md`
+
+## 2026-07-18 — Skill `interactive-preview-loop`
+
+What changed:
+- Added `skills/interactive-preview-loop` (canonical + identical `.claude` / `.agents` stubs) as the read-only evidence/verification loop for simulator walks, mobile-web preview, and UX screenshot audits.
+- Indexed in `AGENTS.md` and `docs/LOOP_ENGINEERING.md` with disambiguation against `test-and-validation-loop`, `ui-screen-builder`, and `bugfix-debug-loop`.
+- Migrated Task 10 baseline evidence to `docs/evidence/task-10-baseline-ux/`.
+
+Why:
+- Task 8/9/10 repeated interactive preview and audit workflows; SOPs alone lacked a skill trigger so agents selected the wrong loop or invented tooling.
+
+Effect:
+- Agents must capture and report evidence under `docs/evidence/`, stay read-only during the loop, and stop for triage before any fix packets.
+
+Safety-risk:
+- Process only; does not change product behavior. Mis-selection risk mitigated by When not to use and LOOP_ENGINEERING disambiguation rows.
+
+Related files:
+- `skills/interactive-preview-loop/SKILL.md`, `.claude/skills/interactive-preview-loop/SKILL.md`, `.agents/skills/interactive-preview-loop/SKILL.md`, `AGENTS.md`, `docs/LOOP_ENGINEERING.md`, `docs/evidence/`
+
+## 2026-07-18 — Task 10 Accept All Baseline Findings F1–F8
+
+What changed:
+- Parent accepted every Phase 1 finding (F1–F8), including F4 after DevTools confirmation of web header back `aria-label="(tabs), back"` and incorrect `href`.
+- Phase 3 shipped: sticky Detail Rate/Edit CTA; Browse Filter/Sort unavailable caption; empty-search Clear; remove duplicate Browse title; rating field a11y (web ARIA + native label includes error); Overall emphasis; custom `HeaderBackButton`; Flow 2–3 mock vs backend framing in `USER_FLOWS.md`.
+
+Why:
+- Clear triage unlocks bounded fix packets and Phase 4 re-audit before the Supabase readiness gate.
+
+Effect:
+- Task 10 moves from triage to re-audit; no finding left Rejected or Deferred.
+
+Safety-risk:
+- UI/a11y/docs only; mock session behavior unchanged.
+
+Related files:
+- `docs/evidence/task-10-baseline-ux/FINDINGS.md`, `app/(tabs)/browse.tsx`, `app/product/[id]/index.tsx`, `app/product/[id]/rate.tsx`, `src/components/ui/RatingInputRow.tsx`, `src/components/ui/HeaderBackButton.tsx`, `docs/USER_FLOWS.md`, `docs/TASKS.md`
+
+## 2026-07-18 — Align Expo SDK 57 Patch Dependencies
+
+What changed:
+- Updated Expo SDK 57 packages to versions required by `expo-doctor` / `expo install --check`: `expo` and `expo-router` to `~57.0.7`, plus matching patches for `expo-constants`, `expo-font`, `expo-linking`, `expo-splash-screen`, `expo-status-bar`, `expo-symbols`, and `expo-web-browser`.
+
+Why:
+- `npx expo-doctor` failed on patch-version mismatches (9 packages behind expected SDK 57 ranges), blocking `npm run check`.
+
+Effect:
+- `expo-doctor` 20/20 and `expo install --check` report dependencies up to date.
+
+Safety-risk:
+- Patch-only within SDK 57; restart Metro / Expo CLI after install. No product-behavior intent.
+
+Related files:
+- `package.json`, `package-lock.json`
+
+## 2026-07-18 — Document Expo Doctor Sandbox False Results
+
+What changed:
+- Recorded that Cursor’s default command sandbox makes `npx expo-doctor` / `npx expo install --check` (and the Expo tail of `npm run check`) unreliable: doctor can false-pass 20/20; install-check can fail with `EPERM` on `~/.expo/native-modules-cache`.
+- Canonical guidance lives under Validation Commands in `docs/AGENT_WORKFLOW.md`; compact pointer in `AGENTS.md`; routine/common-mistake notes in `skills/test-and-validation-loop`.
+
+Why:
+- The mismatch recurred across sessions (including Task 10 dependency alignment): agents trusted sandboxed “clean” doctor output while unrestricted runs still showed SDK patch mismatches.
+
+Effect:
+- Agents must re-run Expo doctor / dependency checks outside the sandbox before claiming pass or opening version-fix work.
+
+Safety-risk:
+- Docs/process only; no app behavior change. Unrestricted shell is required only for these Expo host-cache checks (same pattern as Simulator SOPs).
+
+Related files:
+- `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `skills/test-and-validation-loop/SKILL.md` (and identical `.claude` / `.agents` stubs)
+
+## 2026-07-18 — Task 10 Supabase Readiness GO
+
+What changed:
+- Task 10 Phase 4 revalidated the accepted F1–F8 fixes across mobile web at 393×852 and an iPhone 16 iOS 26.0 Simulator.
+- The integrated new-rating, edit-rating, direct-route, Back-navigation, edge-state, and reload-reset journeys passed; Task 10 receives a Supabase readiness **GO**.
+
+Why:
+- The gate requires no unresolved P0, P1, or core-flow P2, an interactive mobile pass, and clean project checks after the last code change. Those conditions now have durable screenshot and accessibility evidence.
+
+Effect:
+- Work may proceed to the next explicitly scoped Supabase task in a new session. This decision does not itself add auth, persistence, schema changes, or Community Score recalculation.
+
+Safety-risk:
+- A hard web deep link to Product Detail can still return Back to the tabs initial route (`/feed`); it remains P3 because the canonical Browse → Detail → Rate path returns correctly.
+- Physical-device testing was not repeated in Phase 4 (`not-tested`); prior baseline/F4 evidence remains `tested-pass`.
+
+Related files:
+- `docs/evidence/task-10-reaudit/RESULT.md`, `docs/evidence/task-10-reaudit/screenshots/`, `docs/TASKS.md`, `docs/notes/handoff.md`, `docs/DECISIONS.md`
