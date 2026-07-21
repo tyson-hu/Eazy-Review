@@ -9,10 +9,10 @@ type AppTextProps = TextProps & {
 
 const variantClasses: Record<AppTextVariant, string> = {
   title: 'text-2xl font-semibold text-primary',
-  subtitle: 'text-lg font-medium text-primary',
-  body: 'text-base text-primary',
-  caption: 'text-sm text-secondary',
-  label: 'text-xs font-medium uppercase tracking-wide text-secondary',
+  subtitle: 'text-lg font-semibold text-primary',
+  body: 'text-[17px] font-normal text-primary',
+  caption: 'text-sm font-normal text-secondary',
+  label: 'text-xs font-normal uppercase tracking-wide text-secondary',
 };
 
 export function AppText({ variant = 'body', className, ...props }: AppTextProps) {

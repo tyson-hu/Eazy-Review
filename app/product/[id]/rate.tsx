@@ -6,6 +6,7 @@ import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/ui/EmptyState';
+import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { Input } from '@/src/components/ui/Input';
 import { RatingInputRow } from '@/src/components/ui/RatingInputRow';
 import { Screen } from '@/src/components/ui/Screen';
@@ -16,12 +17,12 @@ import {
 import type { RatingBreakdown } from '@/src/types/product';
 
 const SCORE_FIELDS = [
+  { key: 'overall', label: 'Overall' },
   { key: 'look', label: 'Look' },
   { key: 'comfort', label: 'Comfort' },
   { key: 'quality', label: 'Quality' },
   { key: 'outfit', label: 'Outfit' },
   { key: 'value', label: 'Value' },
-  { key: 'overall', label: 'Overall' },
 ] as const;
 
 type ScoreFieldKey = (typeof SCORE_FIELDS)[number]['key'];
@@ -108,7 +109,12 @@ export default function RateProductScreen() {
   if (!detail) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Rate' }} />
+        <Stack.Screen
+          options={{
+            title: 'Rate',
+            headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
+          }}
+        />
         <EmptyState title="Product not found" message="This product is not in the catalog." />
       </Screen>
     );
@@ -180,7 +186,12 @@ function RateProductForm({ detail }: RateProductFormProps) {
 
   return (
     <Screen scroll contentClassName="pb-24">
-      <Stack.Screen options={{ title: isEditing ? 'Edit rating' : 'Rate' }} />
+      <Stack.Screen
+        options={{
+          title: isEditing ? 'Edit rating' : 'Rate',
+          headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
+        }}
+      />
 
       <View className="mt-4">
         <AppText variant="label">{product.brand}</AppText>
@@ -189,7 +200,7 @@ function RateProductForm({ detail }: RateProductFormProps) {
         </AppText>
       </View>
 
-      <Card className="mt-4 gap-4">
+      <Card className="mt-5 gap-5">
         {SCORE_FIELDS.map(({ key, label }) => (
           <RatingInputRow
             key={key}
@@ -197,6 +208,7 @@ function RateProductForm({ detail }: RateProductFormProps) {
             value={scores[key]}
             onChangeText={(value) => updateScore(key, value)}
             error={errors[key]}
+            emphasized={key === 'overall'}
           />
         ))}
 

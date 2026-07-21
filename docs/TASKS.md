@@ -161,16 +161,68 @@ Packet decomposition (run via the `implementer` per the Task Packet Format; sequ
 
 ### Task 10: Review UX Flow Before Supabase
 
-Status: Pending.
+Status: Done — Phase 4 integrated re-audit passed; Supabase readiness **GO**.
 
-Acceptance:
-- User can browse fake products.
-- User can open a product.
-- User can submit a fake rating.
-- UI flow is understandable.
+Canonical journey: Browse → Product Detail → Rating Form (new-rating and edit-rating paths). Branch: `cursor/task-10-ux-review` (from merge `15109ec`).
+
+Do not expand into Feed, Account, authentication, Supabase, social features, or marketplace purchasing. Session-only mock behavior must stay honest (no backend persistence or community-score recalculation claims).
+
+#### Acceptance — Core journey
+
+- User can locate Browse from the tab bar.
+- Default Browse state communicates what products are available.
+- Search works for brand, product name, and SKU.
+- Search empty and deterministic error states are understandable and recoverable.
+- Product cards clearly communicate identity, scores, and price.
+- Tapping a card opens the correct Product Detail.
+- Product Detail clearly distinguishes Eazy Score, Community Score, My Rating, purchase data, and review count.
+- An unrated product clearly offers **Rate this product**.
+- A rated product clearly offers **Edit my rating**.
+- Invalid rating submission remains on the form and clearly identifies every invalid field.
+- Valid new and edited ratings return to Detail and update My Rating for the current mock session.
+- Back navigation returns to the prior meaningful screen without duplicate routes.
+- Session-only persistence and reset limitations are understandable.
+
+#### Acceptance — Quality gate
+
+- No unresolved P0, P1, or core-flow P2 findings.
+- Each screen has one obvious primary action.
+- Keyboard-open scrolling allows the user to reach and activate Submit.
+- Important empty, null, loading, error, and unknown-ID states remain usable.
+- No misleading claim suggests backend persistence or community-score recalculation.
+- Final integrated flow passes in an interactive mobile viewport.
+- `npm run check`, `git diff --check`, and repository-status checks pass after the last code change.
+
+#### Audit phases
+
+1. Baseline screenshot audit (no code edits) — required capture set steps 1–18; findings reference numbered screenshots/observed steps. Procedure: `skills/interactive-preview-loop` → `docs/UX_SCREENSHOT_AUDIT_SOP.md` (mobile: `docs/MOBILE_SIMULATOR_SOP.md`; web: `docs/WEB_MOBILE_PREVIEW_SOP.md`). Evidence: `docs/evidence/`.
+2. Findings report and parent triage (P0–P3); accept / reject / defer before any fix packets.
+3. Bounded fix packets only from accepted findings (Browse / Detail / Rating groupings as needed).
+4. Integrated re-audit after accepted fixes (same skill/SOPs).
+5. Supabase readiness decision: **GO** / **CONDITIONAL GO** / **NO-GO**.
+
+#### Progress
+
+- Done: repository on `master` @ `15109ec`; branch `cursor/task-10-ux-review`; acceptance criteria tightened (this section).
+- Done: Phase 1 baseline screenshot audit (iOS Simulator iPhone 16 + mobile web 393×852). Physical device: **tested-pass** (parent-reported 2026-07-18). Evidence report: `docs/evidence/task-10-baseline-ux/FINDINGS.md`.
+- Done: Phase 2 findings + parent triage: `docs/evidence/task-10-baseline-ux/FINDINGS.md` — **F1–F8 all Accepted** (F4 confirmed via DevTools: `aria-label="(tabs), back"` / wrong `href`).
+- Done: Phase 3 fix packets (Browse A, Detail B, Rating C, F4 header back, docs F8).
+- Done: F4 verification — **Resolved** on web (`pass`), iOS Simulator (`pass`), and physical device (`tested-pass`). Evidence: `docs/evidence/task-10-f4-check/RESULT.md` + committed proof `screenshots/web-01-detail-back-button.png`. Not Phase 4.
+- Done: agent infrastructure — preview SOPs + `skills/interactive-preview-loop`; evidence root `docs/evidence/`.
+- Done: Phase 4 integrated re-audit — F1–F8 **Resolved**; iOS Simulator `pass`, mobile web @ 393×852 `pass`, physical device `not-tested` this run. Evidence: `docs/evidence/task-10-reaudit/RESULT.md` and the representative committed screenshots listed there.
+- Done: Supabase readiness decision — **GO**. No unresolved P0, P1, or core-flow P2. The hard web deep-link Back → Feed behavior remains a documented P3 limitation outside the canonical Browse journey.
+- Audit result / GO decision: **GO** (2026-07-18).
+- Evidence retention (GitHub): the complete raw capture set remains **local-only** and was not deleted. GitHub hosts a **representative proof set** of **12 committed PNGs** total (1 F4 + 11 re-audit). All **33 baseline PNGs** and the other **31 re-audit PNGs** stay on the working machine; filenames cited in the audit reports for those omitted captures are **local capture IDs**, not repository-hosted files. Canonical rules: `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` (ignore rules in `.gitignore`).
 
 ## Follow-Ups / Discovered Work
 
+- Done 2026-07-19: **UI style layout/shape/type pass** — Visual System + primitives aligned to `docs/UI_STYLE.md` chrome grammar: pill CTAs/inputs, card padding 24px / gaps 20–24px, no card/button/text shadows (product-image shadow only), `AppText` body ~17px / weights 400+600, press `scale(0.95)`. Did not adopt Apple full-bleed marketing tiles, black global nav, or 80px section pads. Spec: `docs/UI_STYLE.md` + `docs/DESIGN.md` Visual System; decision: `docs/DECISIONS.md` 2026-07-19 layout entry.
+- Done 2026-07-19: **Screen-level chrome alignment** — stacked screen cards now use 20px spacing, Detail score/price emphasis uses weight 600, primary Button labels use weight 400, and `app/+not-found.tsx` reuses `Button`. Feed and Account product jobs were not redesigned.
+- Done 2026-07-19: **Approved UI audit remediation** — contrast-safe secondary/score tones; eight bundled mock catalog images; Detail decision summary before the complete community breakdown; Overall first on Rating; explicit web tab accessibility labels. Mobile web 393×852 `pass`; iOS Simulator `not-run`; physical device `tested-pass` on iPhone 17 Pro Max / iOS 27.0. Evidence: `docs/evidence/ui-audit-remediation-20260719/RESULT.md` (three representative web PNGs selected; physical journey observed live through iPhone Mirroring; raw diagnostics local-only).
+- Done 2026-07-19: **UI remediation follow-up** — ProductCard uses CSS `boxShadow` on web and native shadow/elevation props elsewhere, removing the React Native Web `shadow*` deprecation warning; multiline Comment uses the 18px card radius while single-line score inputs remain pills.
+- Done 2026-07-19: **Physical-device completion for the UI audit remediation** — after two LAN attempts stalled before app load, an explicitly approved temporary Expo tunnel loaded the app on iPhone 17 Pro Max / iOS 27.0. The physical Browse → Detail → Rate/Edit journey passed, including brand/name/SKU search, empty-state recovery, invalid validation, session-only save feedback, updated `My Rating`, both rating branches, and meaningful Back navigation. The tunnel was stopped after the run.
+- Done 2026-07-21: **PR #11 review polish** — shared Detail community-category field list; Decision summary hides Top strength / Weakest when averages tie at one-decimal display precision; unmapped `mock-product://` URIs use the "Image coming soon" placeholder; mock catalog PNGs resized/compressed to 800×533 (~3.1MB total). Decision: `docs/DECISIONS.md` 2026-07-21 entry; contract note: `docs/API_CONTRACTS.md`.
+- Done 2026-07-19: **Packet — Header chrome polish** — (1) `Screen` defaults to no top safe-area (`safeTop` opt-in); bottom inset still when `footer` is set; Feed duplicate in-page title removed so section cards start with `pt-4` under the tab header. (2) `HeaderBackButton` keeps a square 40×40 hit target (removed trailing `mr-2`) so iOS 26 liquid-glass shared background stays circular, not an oval with empty space after the chevron.
 - Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Context: `docs/DECISIONS.md` 2026-07-04 cross-agent portability entry.
 - Added 2026-07-12: phased delegation system (policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy). Four approved roles, all instantiated in `.cursor/agents/`. Rollout status:
   - Done 2026-07-12: piloted `reviewer` and `verifier` during Tasks 6-7 (results below).

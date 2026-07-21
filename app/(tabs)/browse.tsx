@@ -60,10 +60,6 @@ export default function BrowseScreen() {
 
   return (
     <Screen scroll>
-      <View className="pt-4">
-        <AppText variant="title">Browse</AppText>
-      </View>
-
       <Input
         className="mt-4"
         placeholder="Search brand, name, or SKU"
@@ -78,6 +74,9 @@ export default function BrowseScreen() {
         <Button label="Filter" variant="secondary" disabled className="flex-1" />
         <Button label="Sort" variant="secondary" disabled className="flex-1" />
       </View>
+      <AppText variant="caption" className="mt-2">
+        Filter and Sort are not available yet.
+      </AppText>
 
       {isLoading ? (
         <LoadingState message="Loading products..." />
@@ -92,12 +91,20 @@ export default function BrowseScreen() {
           }}
         />
       ) : results.length === 0 ? (
-        <EmptyState
-          title="No products found"
-          message="Try a different brand, name, or SKU."
-        />
+        <View className="mt-4">
+          <EmptyState
+            title="No products found"
+            message="Try a different brand, name, or SKU."
+          />
+          <Button
+            className="mt-4"
+            label="Clear search"
+            variant="secondary"
+            onPress={() => setQuery('')}
+          />
+        </View>
       ) : (
-        <View className="mt-4 gap-3">
+        <View className="mt-5 gap-5">
           {results.map((product) => (
             <ProductCard
               key={product.id}

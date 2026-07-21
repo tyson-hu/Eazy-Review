@@ -7,7 +7,7 @@ globs:
   - "src/features/**/*.tsx"
 ---
 
-Design tokens, principles, component rules, and screen-level rules live in `docs/DESIGN.md`.
+Design tokens (app Visual System), principles, component rules, and screen-level rules live in `docs/DESIGN.md`. Visual style language detail lives in `docs/UI_STYLE.md`.
 
 Rules:
 - Reuse the primitives in `src/components/ui/*` before creating new components.

@@ -403,3 +403,257 @@ Safety-risk:
 
 Related files:
 - `src/features/products/mockProductDetails.ts`, `app/product/[id]/rate.tsx`, `app/product/[id]/index.tsx`, `docs/API_CONTRACTS.md`, `docs/USER_FLOWS.md`, `docs/TASKS.md`
+
+## 2026-07-18 — Mobile And Web Preview SOPs For Agent Infrastructure
+
+What changed:
+- Codified Task 10-style interactive preview into three agent SOPs: iOS Simulator (`docs/MOBILE_SIMULATOR_SOP.md`), Expo web reference viewport via Playwright MCP (`docs/WEB_MOBILE_PREVIEW_SOP.md`), and parent UX screenshot audits (`docs/UX_SCREENSHOT_AUDIT_SOP.md`).
+- Verification artifacts live under `docs/evidence/` (not `docs/notes/`).
+
+Why:
+- Simulator deep links, Playwright dialogs, session-mock resets, and evidence naming were rediscovered during Task 10; agents need a durable procedure instead of chat-only memory.
+
+Effect:
+- Future simulator walks, web journeys, and screenshot audits follow the same capture and reporting rules.
+
+Safety-risk:
+- Docs/process only; no app behavior change.
+
+Related files:
+- `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/evidence/README.md`
+
+## 2026-07-18 — Skill `interactive-preview-loop`
+
+What changed:
+- Added `skills/interactive-preview-loop` (canonical + identical `.claude` / `.agents` stubs) as the read-only evidence/verification loop for simulator walks, mobile-web preview, and UX screenshot audits.
+- Indexed in `AGENTS.md` and `docs/LOOP_ENGINEERING.md` with disambiguation against `test-and-validation-loop`, `ui-screen-builder`, and `bugfix-debug-loop`.
+- Migrated Task 10 baseline evidence to `docs/evidence/task-10-baseline-ux/`.
+
+Why:
+- Task 8/9/10 repeated interactive preview and audit workflows; SOPs alone lacked a skill trigger so agents selected the wrong loop or invented tooling.
+
+Effect:
+- Agents must capture and report evidence under `docs/evidence/`, stay read-only during the loop, and stop for triage before any fix packets.
+
+Safety-risk:
+- Process only; does not change product behavior. Mis-selection risk mitigated by When not to use and LOOP_ENGINEERING disambiguation rows.
+
+Related files:
+- `skills/interactive-preview-loop/SKILL.md`, `.claude/skills/interactive-preview-loop/SKILL.md`, `.agents/skills/interactive-preview-loop/SKILL.md`, `AGENTS.md`, `docs/LOOP_ENGINEERING.md`, `docs/evidence/`
+
+## 2026-07-18 — Task 10 Accept All Baseline Findings F1–F8
+
+What changed:
+- Parent accepted every Phase 1 finding (F1–F8), including F4 after DevTools confirmation of web header back `aria-label="(tabs), back"` and incorrect `href`.
+- Phase 3 shipped: sticky Detail Rate/Edit CTA; Browse Filter/Sort unavailable caption; empty-search Clear; remove duplicate Browse title; rating field a11y (web ARIA + native label includes error); Overall emphasis; custom `HeaderBackButton`; Flow 2–3 mock vs backend framing in `USER_FLOWS.md`.
+
+Why:
+- Clear triage unlocks bounded fix packets and Phase 4 re-audit before the Supabase readiness gate.
+
+Effect:
+- Task 10 moves from triage to re-audit; no finding left Rejected or Deferred.
+
+Safety-risk:
+- UI/a11y/docs only; mock session behavior unchanged.
+
+Related files:
+- `docs/evidence/task-10-baseline-ux/FINDINGS.md`, `app/(tabs)/browse.tsx`, `app/product/[id]/index.tsx`, `app/product/[id]/rate.tsx`, `src/components/ui/RatingInputRow.tsx`, `src/components/ui/HeaderBackButton.tsx`, `docs/USER_FLOWS.md`, `docs/TASKS.md`
+
+## 2026-07-18 — Align Expo SDK 57 Patch Dependencies
+
+What changed:
+- Updated Expo SDK 57 packages to versions required by `expo-doctor` / `expo install --check`: `expo` and `expo-router` to `~57.0.7`, plus matching patches for `expo-constants`, `expo-font`, `expo-linking`, `expo-splash-screen`, `expo-status-bar`, `expo-symbols`, and `expo-web-browser`.
+
+Why:
+- `npx expo-doctor` failed on patch-version mismatches (9 packages behind expected SDK 57 ranges), blocking `npm run check`.
+
+Effect:
+- `expo-doctor` 20/20 and `expo install --check` report dependencies up to date.
+
+Safety-risk:
+- Patch-only within SDK 57; restart Metro / Expo CLI after install. No product-behavior intent.
+
+Related files:
+- `package.json`, `package-lock.json`
+
+## 2026-07-18 — Document Expo Doctor Sandbox False Results
+
+What changed:
+- Recorded that Cursor’s default command sandbox makes `npx expo-doctor` / `npx expo install --check` (and the Expo tail of `npm run check`) unreliable: doctor can false-pass 20/20; install-check can fail with `EPERM` on `~/.expo/native-modules-cache`.
+- Canonical guidance lives under Validation Commands in `docs/AGENT_WORKFLOW.md`; compact pointer in `AGENTS.md`; routine/common-mistake notes in `skills/test-and-validation-loop`.
+
+Why:
+- The mismatch recurred across sessions (including Task 10 dependency alignment): agents trusted sandboxed “clean” doctor output while unrestricted runs still showed SDK patch mismatches.
+
+Effect:
+- Agents must re-run Expo doctor / dependency checks outside the sandbox before claiming pass or opening version-fix work.
+
+Safety-risk:
+- Docs/process only; no app behavior change. Unrestricted shell is required only for these Expo host-cache checks (same pattern as Simulator SOPs).
+
+Related files:
+- `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `skills/test-and-validation-loop/SKILL.md` (and identical `.claude` / `.agents` stubs)
+
+## 2026-07-18 — Task 10 Supabase Readiness GO
+
+What changed:
+- Task 10 Phase 4 revalidated the accepted F1–F8 fixes across mobile web at 393×852 and an iPhone 16 iOS 26.0 Simulator.
+- The integrated new-rating, edit-rating, direct-route, Back-navigation, edge-state, and reload-reset journeys passed; Task 10 receives a Supabase readiness **GO**.
+
+Why:
+- The gate requires no unresolved P0, P1, or core-flow P2, an interactive mobile pass, and clean project checks after the last code change. Those conditions now have durable screenshot and accessibility evidence.
+
+Effect:
+- Work may proceed to the next explicitly scoped Supabase task in a new session. This decision does not itself add auth, persistence, schema changes, or Community Score recalculation.
+
+Safety-risk:
+- A hard web deep link to Product Detail can still return Back to the tabs initial route (`/feed`); it remains P3 because the canonical Browse → Detail → Rate path returns correctly.
+- Physical-device testing was not repeated in Phase 4 (`not-tested`); prior baseline/F4 evidence remains `tested-pass`.
+
+Related files:
+- `docs/evidence/task-10-reaudit/RESULT.md`, `docs/evidence/task-10-reaudit/screenshots/`, `docs/TASKS.md`, `docs/notes/handoff.md`, `docs/DECISIONS.md`
+
+## 2026-07-19 — Evidence GitHub Upload SOP
+
+What changed:
+- Added `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` as the canonical rule for which `docs/evidence/` files go to GitHub versus stay local.
+- Pointed `docs/evidence/README.md`, Context Map / Canonical Homes, documentation policy, and `skills/interactive-preview-loop` at that SOP.
+- Codified Task 10’s reduced proof set (12 PNGs) and the selection / report / pre-upload verification rules used on `cursor/task-10-ux-review`.
+
+Why:
+- Agents need a durable upload policy so future audits do not commit full raw screenshot sets or delete earlier evidence directories.
+
+Effect:
+- New evidence runs keep complete non-sensitive captures locally, commit reports plus the smallest representative PNG proof set, and label omitted filenames as local capture IDs.
+- Diagnostic-only debug captures remain local, while sanitized decisive before/after or resolved-finding proof may be selected for GitHub.
+- Every run report records the intended and final GitHub-versus-local disposition.
+
+Safety-risk:
+- Docs/process only; does not change product behavior. Task-specific ignore allowlists must still be updated with each new audit’s proof set.
+- Sensitive captures are never valid retained evidence; accidental captures follow `docs/SECURITY.md` exposure handling.
+- Pre-upload verification checks both worktree and staged changes, and Task 10's fixed PNG count is scoped to Task 10 directories so future proof sets do not invalidate it.
+
+Related files:
+- `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`, `docs/evidence/README.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `skills/interactive-preview-loop/SKILL.md`, `.gitignore`
+
+## 2026-07-19 — Screen Defaults To No Top Safe-Area
+
+What changed:
+- `Screen` no longer applies top safe-area inset by default.
+- Callers that need top inset on a headerless surface opt in with `safeTop`.
+- Bottom safe-area still applies when `footer` is set.
+
+Why:
+- Tab and stack navigator headers already clear the status bar. Always including `top` in `SafeAreaView` edges stacked a second inset under the header (~status-bar-sized dead band plus intentional `mt-4`/`pt-4`).
+
+Effect:
+- Feed, Browse, Account, Product Detail, and Rate content start ~16px below the navigator header via existing screen spacing.
+- Headerless surfaces must pass `safeTop` explicitly.
+
+Safety-risk:
+- A future headerless screen that forgets `safeTop` can draw under the status bar; mitigate by setting the prop when `headerShown` is false.
+
+Related files:
+- `src/components/ui/Screen.tsx`, `app/(tabs)/feed.tsx`, `docs/DESIGN.md`, `docs/TASKS.md`
+
+## 2026-07-19 — HeaderBackButton Square Hit Target For Liquid Glass
+
+What changed:
+- Removed trailing `mr-2` from `HeaderBackButton` so the pressable stays a square `h-10 w-10` (40×40).
+
+Why:
+- On iOS 26+, native-stack wraps `headerLeft` in a `UIBarButtonItem` with a liquid-glass shared background that follows the custom-view bounds. The previous `mr-2` made the measured frame ~48×40, so glass rendered as a horizontal oval with empty space after `chevron.left`.
+
+Effect:
+- Back control glass reads as a circle with a centered chevron; F4 a11y behavior (`button` / `accessibilityLabel="Back"` / `router.back()`) is unchanged.
+
+Safety-risk:
+- Low. Do not reintroduce non-square margins on custom `headerLeft` views when liquid glass is present.
+
+Related files:
+- `src/components/ui/HeaderBackButton.tsx`, `docs/DESIGN.md`, `docs/TASKS.md`
+
+## 2026-07-19 — Split UI Style From Product UX; Adopt Apple-Derived Tokens
+
+What changed:
+- Moved the root Apple style guide to `docs/UI_STYLE.md` (visual style language).
+- Kept `docs/DESIGN.md` as product UI/UX (identity, principles, component/screen rules).
+- Adopted Apple-derived colors as the app Visual System: background `#f5f5f7`, ink `#1d1d1f`, secondary `#7a7a7a`, border `#e0e0e0`, accent `#0066cc`.
+- Kept product-only score semantics: positive `#10B981`, warning `#F59E0B`, negative `#EF4444`.
+- Synced `tailwind.config.js`, Stitch prompt token blocks, and hardcoded UI hexes.
+
+Why:
+- Root and `docs/DESIGN.md` shared a name and mixed style language with product UX requirements.
+- Choosing one visual language avoids agents and NativeWind drifting between two palettes.
+
+Effect:
+- Screen UI work reads both docs; app-canonical tokens live only in `docs/DESIGN.md` Visual System (adapted from `docs/UI_STYLE.md`).
+
+Safety-risk:
+- Low. Existing screens get a color swap only; no layout redesign in this change.
+
+Related files:
+- `docs/UI_STYLE.md`, `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `tailwind.config.js`, `app/(tabs)/_layout.tsx`, `src/components/ui/*`, `README.md`, `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/MCP_WORKFLOW.md`, `.cursor/rules/design-system.mdc`
+
+## 2026-07-19 — Adopt UI Style Chrome Grammar (Layout / Shape / Type)
+
+What changed:
+- Aligned app Visual System layout with `docs/UI_STYLE.md` chrome grammar: pill primary CTAs and action inputs (`9999px`), card padding 24px, card gaps 20–24px.
+- Banned shadows on cards, buttons, and text; product-image shadow only.
+- Set `AppText` body to ~17px / 400 and headlines/strong to 600 (no weight 500).
+- Added primary press feedback `scale(0.95)` on `Button` and `ProductCard`.
+- Kept ScoreBadge on card radius (18px), not pill — score chrome is a utility card, not a CTA.
+- Explicitly did **not** adopt Apple full-bleed marketing tiles, black global nav, or 80px marketing section pads.
+
+Why:
+- Color adoption alone left shape/type/elevation drifting from the style language (14px buttons, 16px body, soft card shadows).
+- Chrome grammar must match UI style while product jobs in `docs/DESIGN.md` still outrank marketing-tile layout.
+
+Effect:
+- Primitives and tokens now encode the layout pass; Feed/Browse screen redesign remains a separate follow-up if needed.
+
+Safety-risk:
+- Low. Scoped to Visual System + shared primitives; no product-flow or screen redesign.
+
+Related files:
+- `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `docs/TASKS.md`, `tailwind.config.js`, `src/components/ui/Button.tsx`, `Input.tsx`, `Card.tsx`, `AppText.tsx`, `ProductCard.tsx`, `ScoreBadge.tsx`
+
+## 2026-07-19 — Close Screen-Level UI Audit Gaps
+
+What changed:
+- Replaced the app secondary and score-semantic colors with contrast-safe tones on both white cards and the parchment background: secondary `#6b6b6b`, positive `#047857`, warning `#b45309`, negative `#b91c1c`.
+- Bundled eight generated, logo-free studio product images behind mock-only `mock-product://catalog/<id>` URLs; future HTTP(S) product URLs continue through the same resolver.
+- Added a community-derived Detail decision summary (highest and lowest non-overall category average) before the complete breakdown.
+- Put Overall first in the Rating form and kept it visually separated from the five supporting categories.
+- Standardized screen-level 20px card spacing, weight-600 score/price emphasis, weight-400 button labels, shared not-found Button use, and explicit tab accessibility labels.
+
+Why:
+- The primitives had the right chrome grammar, but the assembled screens still missed contrast, photography-first identity, decision-first layering, rating hierarchy, accessible tab names, and final spacing/type consistency.
+
+Effect:
+- Browse, Product Detail, and Rating now match the approved UI audit without changing routes, mock persistence semantics, score names, or backend scope.
+
+Safety-risk:
+- Low. Product images are local mock assets, the decision summary is derived presentation only, and no catalog, community, or My Rating values are mutated.
+
+Related files:
+- `assets/images/products/*`, `src/features/products/mockProductImages.ts`, `src/features/products/mockProducts.ts`, `app/(tabs)/*`, `app/product/[id]/*`, `src/components/ui/*`, `tailwind.config.js`, `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`
+
+## 2026-07-21 — Task 10 Review Polish
+
+What changed:
+- Deduplicated Detail community category field definitions and hide Top strength / Weakest category when scored categories are tied at one-decimal display precision.
+- Unmapped `mock-product://` image URIs now resolve to no source (placeholder) instead of a broken remote URI; HTTP(S) URLs unchanged.
+- Compressed mock catalog PNGs from 1200×800 (~7.6MB) to 800×533 (~3.4MB) for mobile-first sharpness without changing the mock URI scheme.
+
+Why:
+- Close non-blocking PR #11 review findings before merge.
+
+Effect:
+- Decision summary no longer claims opposing strengths when averages are equal; missing mock assets show "Image coming soon"; catalog payload is smaller.
+
+Safety-risk:
+- Low. Presentation and asset size only; catalog IDs, contracts, and rating semantics unchanged.
+
+Related files:
+- `app/product/[id]/index.tsx`, `app/product/[id]/rate.tsx`, `src/features/products/mockProductImages.ts`, `assets/images/products/*`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md`, `docs/USER_FLOWS.md`, `docs/TASKS.md`

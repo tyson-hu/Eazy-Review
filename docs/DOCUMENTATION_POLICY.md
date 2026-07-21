@@ -29,7 +29,8 @@ Product scope, positioning, MVP boundaries, or success criteria:
 - `docs/DECISIONS.md`
 
 UI design, visual system, components, screen layouts, or Stitch direction:
-- `docs/DESIGN.md`
+- `docs/DESIGN.md` (product UI/UX and app-canonical Visual System)
+- `docs/UI_STYLE.md` (visual style language)
 - `docs/STITCH_PROMPTS.md` (keeps copy-paste token values; update when tokens change)
 - `docs/USER_FLOWS.md`
 - `docs/DECISIONS.md`
@@ -67,6 +68,7 @@ Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `docs/SECURITY.md` when security rules change (keep `.cursor/rules/security.mdc` mirrored)
 - `docs/AGENT_WORKFLOW.md`
 - `docs/LOOP_ENGINEERING.md`
+- `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`, `docs/evidence/README.md`, and `skills/interactive-preview-loop` when interactive preview, UX audit, or evidence upload procedure changes
 - `skills/*/SKILL.md` (and the discovery stubs in `.claude/skills/*` and `.agents/skills/*`, kept identical)
 - `docs/MCP_WORKFLOW.md`
 - `docs/DOCUMENTATION_POLICY.md`

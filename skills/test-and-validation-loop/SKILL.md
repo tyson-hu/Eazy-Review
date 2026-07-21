@@ -23,7 +23,7 @@ Goal: run the narrowest project checks for a finished change, fix only failures 
 ## Routine
 
 1. Pick the narrowest command first: `npm run typecheck` -> add `npm run lint` -> `npm run check` (adds typed-route generation, `npx expo-doctor`, `npx expo install --check`). On a clean checkout run `npm run generate:routes` before typecheck.
-2. Run it. If everything passes, run the memory step and finish.
+2. Run it. For `expo-doctor`, `expo install --check`, or full `npm run check`, use an unrestricted host shell (not the default Cursor sandbox) — sandboxed doctor can false-pass, and install-check can `EPERM` on `~/.expo` (see `docs/AGENT_WORKFLOW.md`, Validation Commands). If everything passes, run the memory step and finish.
 3. For each failure, classify: caused by the current change, or pre-existing? Verify by checking whether the failing file/line is in the current diff, or by stashing the change and re-running if fast.
 4. Fix only caused-by-change failures, smallest fix first. Maximum 2 retries per failure, then stop and report (the global retry policy in `docs/LOOP_ENGINEERING.md`).
 5. Record each pre-existing failure in `docs/TASKS.md` as discovered work. Do not fix it now, even if it looks quick.
@@ -47,6 +47,7 @@ Goal: run the narrowest project checks for a finished change, fix only failures 
 ## Common mistakes
 
 - Running `npm run check` for a two-line type edit when `npm run typecheck` answers in seconds.
+- Trusting sandboxed `expo-doctor` / `expo install --check` output (false 20/20 or `EPERM` on `~/.expo`) instead of re-running unrestricted per `docs/AGENT_WORKFLOW.md`.
 - Fixing a tempting pre-existing failure and turning validation into an unscoped bugfix.
 - Retrying a third variation after two failed fixes instead of stopping.
 - Reporting "checks pass" without naming which commands actually ran.

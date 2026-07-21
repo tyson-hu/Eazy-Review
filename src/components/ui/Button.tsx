@@ -30,6 +30,7 @@ export function Button({
   loading = false,
   disabled,
   className,
+  style,
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
@@ -38,14 +39,18 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       disabled={isDisabled}
-      className={`min-h-12 items-center justify-center rounded-button px-4 ${variantClasses[variant]} ${
+      className={`min-h-12 items-center justify-center rounded-button px-5 ${variantClasses[variant]} ${
         isDisabled ? 'opacity-50' : ''
       } ${className ?? ''}`}
+      style={(state) => [
+        { transform: [{ scale: state.pressed && !isDisabled ? 0.95 : 1 }] },
+        typeof style === 'function' ? style(state) : style,
+      ]}
       {...props}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#2563EB'} />
+        <ActivityIndicator color={variant === 'primary' ? '#ffffff' : '#0066cc'} />
       ) : (
-        <AppText className={`font-semibold ${labelClasses[variant]}`}>{label}</AppText>
+        <AppText className={`font-normal ${labelClasses[variant]}`}>{label}</AppText>
       )}
     </Pressable>
   );

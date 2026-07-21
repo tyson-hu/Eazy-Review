@@ -6,10 +6,12 @@ import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/ui/EmptyState';
+import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { RatingRow } from '@/src/components/ui/RatingRow';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import { Screen } from '@/src/components/ui/Screen';
 import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
+import { resolveProductImageSource } from '@/src/features/products/mockProductImages';
 import type { ProductOffer, ProductRatingSummary } from '@/src/types/product';
 import { formatPrice } from '@/src/utils/formatPrice';
 
@@ -44,18 +46,71 @@ function resolveLowestPrice(
   return null;
 }
 
+type CommunityCategoryAvg = { label: string; value: number | null };
+
+type CommunityHighlight = { label: string; value: number };
+
+const COMMUNITY_CATEGORY_FIELDS: {
+  label: string;
+  avgKey: keyof Pick<
+    ProductRatingSummary,
+    'lookAvg' | 'comfortAvg' | 'qualityAvg' | 'outfitAvg' | 'valueAvg'
+  >;
+  ratingKey: 'look' | 'comfort' | 'quality' | 'outfit' | 'value';
+}[] = [
+  { label: 'Look', avgKey: 'lookAvg', ratingKey: 'look' },
+  { label: 'Comfort', avgKey: 'comfortAvg', ratingKey: 'comfort' },
+  { label: 'Quality', avgKey: 'qualityAvg', ratingKey: 'quality' },
+  { label: 'Outfit', avgKey: 'outfitAvg', ratingKey: 'outfit' },
+  { label: 'Value', avgKey: 'valueAvg', ratingKey: 'value' },
+];
+
+function getCommunityCategoryAvgs(summary: ProductRatingSummary): CommunityCategoryAvg[] {
+  return COMMUNITY_CATEGORY_FIELDS.map(({ label, avgKey }) => ({
+    label,
+    value: summary[avgKey],
+  }));
+}
+
+function getCommunityCategoryRows(summary: ProductRatingSummary): CommunityCategoryAvg[] {
+  return [
+    { label: 'Overall', value: summary.overallAvg },
+    ...getCommunityCategoryAvgs(summary),
+  ];
+}
+
 function hasMeaningfulCommunityCategories(summary: ProductRatingSummary): boolean {
   if (summary.ratingCount <= 0) {
     return false;
   }
-  return [
-    summary.lookAvg,
-    summary.comfortAvg,
-    summary.qualityAvg,
-    summary.outfitAvg,
-    summary.valueAvg,
-    summary.overallAvg,
-  ].some((avg) => avg != null);
+  return getCommunityCategoryRows(summary).some((row) => row.value != null);
+}
+
+function getCommunityHighlights(
+  summary: ProductRatingSummary,
+): { strongest: CommunityHighlight; weakest: CommunityHighlight } | null {
+  if (summary.ratingCount <= 0) {
+    return null;
+  }
+
+  const categories = getCommunityCategoryAvgs(summary).filter(
+    (category): category is CommunityHighlight => category.value != null,
+  );
+
+  if (categories.length < 2) {
+    return null;
+  }
+
+  const ranked = [...categories].sort((a, b) => b.value - a.value);
+  const strongest = ranked[0];
+  const weakest = ranked[ranked.length - 1];
+
+  // Hide the pair when averages are equal at display precision (one decimal).
+  if (strongest.value.toFixed(1) === weakest.value.toFixed(1)) {
+    return null;
+  }
+
+  return { strongest, weakest };
 }
 
 export default function ProductDetailScreen() {
@@ -74,7 +129,12 @@ export default function ProductDetailScreen() {
   if (!detail) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Product' }} />
+        <Stack.Screen
+          options={{
+            title: 'Product',
+            headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
+          }}
+        />
         <EmptyState title="Product not found" message="This product is not in the catalog." />
       </Screen>
     );
@@ -91,35 +151,42 @@ export default function ProductDetailScreen() {
     product.sizeType,
   ].filter((part): part is string => Boolean(part));
   const showCommunityBreakdown = hasMeaningfulCommunityCategories(ratingSummary);
-  const communityCategoryRows = [
-    { label: 'Look', value: ratingSummary.lookAvg },
-    { label: 'Comfort', value: ratingSummary.comfortAvg },
-    { label: 'Quality', value: ratingSummary.qualityAvg },
-    { label: 'Outfit', value: ratingSummary.outfitAvg },
-    { label: 'Value', value: ratingSummary.valueAvg },
-    { label: 'Overall', value: ratingSummary.overallAvg },
-  ];
+  const communityHighlights = getCommunityHighlights(ratingSummary);
+  const communityCategoryRows = getCommunityCategoryRows(ratingSummary);
   const myRatingCategoryRows = myRating
-    ? [
-        { label: 'Look', value: myRating.look },
-        { label: 'Comfort', value: myRating.comfort },
-        { label: 'Quality', value: myRating.quality },
-        { label: 'Outfit', value: myRating.outfit },
-        { label: 'Value', value: myRating.value },
-      ]
+    ? COMMUNITY_CATEGORY_FIELDS.map(({ label, ratingKey }) => ({
+        label,
+        value: myRating[ratingKey],
+      }))
     : [];
   const ctaLabel = myRating ? 'Edit my rating' : 'Rate this product';
+  const productImageSource = resolveProductImageSource(product.imageUrl);
 
   return (
-    <Screen scroll>
-      <Stack.Screen options={{ title: product.name }} />
+    <Screen
+      scroll
+      footer={
+        <View className="border-t border-border bg-background px-4 py-3">
+          <Button
+            label={ctaLabel}
+            onPress={() => router.push(`/product/${product.id}/rate`)}
+          />
+        </View>
+      }>
+      <Stack.Screen
+        options={{
+          title: product.name,
+          headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
+        }}
+      />
 
       <View className="mt-4 h-56 items-center justify-center overflow-hidden rounded-card bg-card">
-        {product.imageUrl ? (
+        {productImageSource ? (
           <Image
-            source={{ uri: product.imageUrl }}
-            className="h-full w-full"
-            resizeMode="cover"
+            source={productImageSource}
+            resizeMode="contain"
+            style={{ width: '100%', height: '100%' }}
+            accessibilityLabel={`${product.brand} ${product.name}`}
             accessibilityIgnoresInvertColors
           />
         ) : (
@@ -139,7 +206,7 @@ export default function ProductDetailScreen() {
         ) : null}
       </View>
 
-      <View className="mt-4 flex-row gap-3">
+      <View className="mt-5 flex-row gap-5">
         <ScoreBadge label="Eazy Score" score={product.eazyScore} className="flex-1" />
         <ScoreBadge
           label="Community Score"
@@ -154,7 +221,36 @@ export default function ProductDetailScreen() {
         </AppText>
       ) : null}
 
-      <Card className="mt-4">
+      <Card className="mt-5">
+        <AppText variant="label">Decision summary</AppText>
+        {communityHighlights ? (
+          <View className="mt-4 gap-4">
+            <View>
+              <AppText variant="caption">Top strength</AppText>
+              <AppText variant="subtitle" className="mt-1">
+                {communityHighlights.strongest.label} ·{' '}
+                {communityHighlights.strongest.value.toFixed(1)}/10
+              </AppText>
+            </View>
+            <View>
+              <AppText variant="caption">Weakest category</AppText>
+              <AppText variant="subtitle" className="mt-1">
+                {communityHighlights.weakest.label} ·{' '}
+                {communityHighlights.weakest.value.toFixed(1)}/10
+              </AppText>
+            </View>
+            <AppText variant="caption">Based on community category averages.</AppText>
+          </View>
+        ) : (
+          <AppText variant="body" className="mt-2">
+            {ratingSummary.ratingCount > 0
+              ? 'No clear category strengths or weaknesses yet.'
+              : 'Not enough community ratings for strengths and weaknesses yet.'}
+          </AppText>
+        )}
+      </Card>
+
+      <Card className="mt-5">
         <AppText variant="label">Community ratings</AppText>
         {showCommunityBreakdown ? (
           <View className="mt-3 gap-3">
@@ -169,13 +265,13 @@ export default function ProductDetailScreen() {
         )}
       </Card>
 
-      <Card className="mt-4">
+      <Card className="mt-5">
         <AppText variant="label">Purchase</AppText>
         {lowest ? (
           <>
             <View className="mt-2 flex-row items-end justify-between">
               <AppText variant="caption">Lowest price</AppText>
-              <AppText className="text-2xl font-bold text-primary">
+              <AppText className="text-2xl font-semibold text-primary">
                 {formatPrice(lowest.amount, lowest.currency)}
               </AppText>
             </View>
@@ -196,7 +292,7 @@ export default function ProductDetailScreen() {
                           {offer.websiteName}
                         </AppText>
                       </View>
-                      <AppText className="text-lg font-bold text-primary">
+                      <AppText className="text-lg font-semibold text-primary">
                         {formatPrice(offer.price, offer.currency)}
                       </AppText>
                     </View>
@@ -216,7 +312,7 @@ export default function ProductDetailScreen() {
         )}
       </Card>
 
-      <Card className="mt-4 border-accent">
+      <Card className="mt-5 border-accent">
         <AppText variant="label">My Rating</AppText>
         {myRating == null ? (
           <AppText variant="body" className="mt-2">
@@ -226,7 +322,7 @@ export default function ProductDetailScreen() {
           <>
             <View className="mt-2 flex-row items-end justify-between">
               <AppText variant="caption">Overall</AppText>
-              <AppText className="text-2xl font-bold text-primary">
+              <AppText className="text-2xl font-semibold text-primary">
                 {myRating.overall}/10
               </AppText>
             </View>
@@ -244,18 +340,12 @@ export default function ProductDetailScreen() {
         )}
       </Card>
 
-      <Card className="mt-4">
+      <Card className="mt-5">
         <AppText variant="label">Description</AppText>
         <AppText variant="body" className="mt-2">
           {product.description ?? 'No product description available yet.'}
         </AppText>
       </Card>
-
-      <Button
-        className="mt-4"
-        label={ctaLabel}
-        onPress={() => router.push(`/product/${product.id}/rate`)}
-      />
     </Screen>
   );
 }
