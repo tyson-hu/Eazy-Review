@@ -657,3 +657,20 @@ Safety-risk:
 
 Related files:
 - `app/product/[id]/index.tsx`, `app/product/[id]/rate.tsx`, `src/features/products/mockProductImages.ts`, `assets/images/products/*`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md`, `docs/USER_FLOWS.md`, `docs/TASKS.md`
+
+## 2026-07-21 — Restore Validation Skill Discovery Stubs
+
+What changed:
+- Restored `.agents/skills/test-and-validation-loop/SKILL.md` and `.claude/skills/test-and-validation-loop/SKILL.md` to thin discovery stubs with YAML `name` / `description` front matter that point at the canonical `skills/test-and-validation-loop/SKILL.md`.
+
+Why:
+- Task 10 accidentally replaced both stubs with a full Markdown copy of the routine (heading only, no front matter). Skill discovery for `.agents/skills/*` and `.claude/skills/*` depends on that front matter, so `test-and-validation-loop` dropped out of discoverable triggers even though `AGENTS.md` still indexed it.
+
+Effect:
+- Agents asked to run project checks can discover and select `test-and-validation-loop` again. Canonical routine content is unchanged under `skills/`.
+
+Safety-risk:
+- Docs/process only; no app behavior change.
+
+Related files:
+- `.agents/skills/test-and-validation-loop/SKILL.md`, `.claude/skills/test-and-validation-loop/SKILL.md`, `docs/DECISIONS.md`
