@@ -46,21 +46,45 @@ function resolveLowestPrice(
   return null;
 }
 
+type CommunityCategoryAvg = { label: string; value: number | null };
+
+type CommunityHighlight = { label: string; value: number };
+
+const COMMUNITY_CATEGORY_FIELDS: {
+  label: string;
+  avgKey: keyof Pick<
+    ProductRatingSummary,
+    'lookAvg' | 'comfortAvg' | 'qualityAvg' | 'outfitAvg' | 'valueAvg'
+  >;
+  ratingKey: 'look' | 'comfort' | 'quality' | 'outfit' | 'value';
+}[] = [
+  { label: 'Look', avgKey: 'lookAvg', ratingKey: 'look' },
+  { label: 'Comfort', avgKey: 'comfortAvg', ratingKey: 'comfort' },
+  { label: 'Quality', avgKey: 'qualityAvg', ratingKey: 'quality' },
+  { label: 'Outfit', avgKey: 'outfitAvg', ratingKey: 'outfit' },
+  { label: 'Value', avgKey: 'valueAvg', ratingKey: 'value' },
+];
+
+function getCommunityCategoryAvgs(summary: ProductRatingSummary): CommunityCategoryAvg[] {
+  return COMMUNITY_CATEGORY_FIELDS.map(({ label, avgKey }) => ({
+    label,
+    value: summary[avgKey],
+  }));
+}
+
+function getCommunityCategoryRows(summary: ProductRatingSummary): CommunityCategoryAvg[] {
+  return [
+    { label: 'Overall', value: summary.overallAvg },
+    ...getCommunityCategoryAvgs(summary),
+  ];
+}
+
 function hasMeaningfulCommunityCategories(summary: ProductRatingSummary): boolean {
   if (summary.ratingCount <= 0) {
     return false;
   }
-  return [
-    summary.lookAvg,
-    summary.comfortAvg,
-    summary.qualityAvg,
-    summary.outfitAvg,
-    summary.valueAvg,
-    summary.overallAvg,
-  ].some((avg) => avg != null);
+  return getCommunityCategoryRows(summary).some((row) => row.value != null);
 }
-
-type CommunityHighlight = { label: string; value: number };
 
 function getCommunityHighlights(
   summary: ProductRatingSummary,
@@ -69,20 +93,24 @@ function getCommunityHighlights(
     return null;
   }
 
-  const categories = [
-    { label: 'Look', value: summary.lookAvg },
-    { label: 'Comfort', value: summary.comfortAvg },
-    { label: 'Quality', value: summary.qualityAvg },
-    { label: 'Outfit', value: summary.outfitAvg },
-    { label: 'Value', value: summary.valueAvg },
-  ].filter((category): category is CommunityHighlight => category.value != null);
+  const categories = getCommunityCategoryAvgs(summary).filter(
+    (category): category is CommunityHighlight => category.value != null,
+  );
 
   if (categories.length < 2) {
     return null;
   }
 
   const ranked = [...categories].sort((a, b) => b.value - a.value);
-  return { strongest: ranked[0], weakest: ranked[ranked.length - 1] };
+  const strongest = ranked[0];
+  const weakest = ranked[ranked.length - 1];
+
+  // Hide the pair when averages are equal at display precision (one decimal).
+  if (strongest.value.toFixed(1) === weakest.value.toFixed(1)) {
+    return null;
+  }
+
+  return { strongest, weakest };
 }
 
 export default function ProductDetailScreen() {
@@ -124,22 +152,12 @@ export default function ProductDetailScreen() {
   ].filter((part): part is string => Boolean(part));
   const showCommunityBreakdown = hasMeaningfulCommunityCategories(ratingSummary);
   const communityHighlights = getCommunityHighlights(ratingSummary);
-  const communityCategoryRows = [
-    { label: 'Overall', value: ratingSummary.overallAvg },
-    { label: 'Look', value: ratingSummary.lookAvg },
-    { label: 'Comfort', value: ratingSummary.comfortAvg },
-    { label: 'Quality', value: ratingSummary.qualityAvg },
-    { label: 'Outfit', value: ratingSummary.outfitAvg },
-    { label: 'Value', value: ratingSummary.valueAvg },
-  ];
+  const communityCategoryRows = getCommunityCategoryRows(ratingSummary);
   const myRatingCategoryRows = myRating
-    ? [
-        { label: 'Look', value: myRating.look },
-        { label: 'Comfort', value: myRating.comfort },
-        { label: 'Quality', value: myRating.quality },
-        { label: 'Outfit', value: myRating.outfit },
-        { label: 'Value', value: myRating.value },
-      ]
+    ? COMMUNITY_CATEGORY_FIELDS.map(({ label, ratingKey }) => ({
+        label,
+        value: myRating[ratingKey],
+      }))
     : [];
   const ctaLabel = myRating ? 'Edit my rating' : 'Rate this product';
   const productImageSource = resolveProductImageSource(product.imageUrl);
@@ -225,7 +243,9 @@ export default function ProductDetailScreen() {
           </View>
         ) : (
           <AppText variant="body" className="mt-2">
-            Not enough community ratings for strengths and weaknesses yet.
+            {ratingSummary.ratingCount > 0
+              ? 'No clear category strengths or weaknesses yet.'
+              : 'Not enough community ratings for strengths and weaknesses yet.'}
           </AppText>
         )}
       </Card>

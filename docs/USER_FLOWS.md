@@ -160,6 +160,7 @@ Sections:
 - Product title area.
 - Product metadata.
 - Score overview.
+- Decision summary (Top strength / Weakest category from community averages; calm empty copy when ratings are missing or fully tied at display precision).
 - Price/purchase section.
 - Rating breakdown.
 - My Rating section.

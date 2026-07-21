@@ -340,7 +340,8 @@ Keep these components small. Add abstractions only when they remove real duplica
 
 - Job: help users decide whether this product is worth buying.
 - Focal point: sneaker image plus score summary.
-- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses, rating breakdown, price/purchase section (price by size), review previews, My Rating section, description, Rate/Edit CTA.
+- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), rating breakdown, price/purchase section (price by size), review previews, My Rating section, description, Rate/Edit CTA.
+- Image empty state: missing or unmapped mock `mock-product://` assets show "Image coming soon"; HTTP(S) product URLs still load normally.
 - Avoid: showing all data at the same visual weight, too many badges, crowded charts, marketplace-first layout.
 
 CTA logic:

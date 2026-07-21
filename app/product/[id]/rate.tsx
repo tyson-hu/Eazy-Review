@@ -11,8 +11,8 @@ import { Input } from '@/src/components/ui/Input';
 import { RatingInputRow } from '@/src/components/ui/RatingInputRow';
 import { Screen } from '@/src/components/ui/Screen';
 import {
-    getMockProductDetailById,
-    saveMockMyRating,
+  getMockProductDetailById,
+  saveMockMyRating,
 } from '@/src/features/products/mockProductDetails';
 import type { RatingBreakdown } from '@/src/types/product';
 

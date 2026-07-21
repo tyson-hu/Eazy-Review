@@ -638,3 +638,22 @@ Safety-risk:
 
 Related files:
 - `assets/images/products/*`, `src/features/products/mockProductImages.ts`, `src/features/products/mockProducts.ts`, `app/(tabs)/*`, `app/product/[id]/*`, `src/components/ui/*`, `tailwind.config.js`, `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`
+
+## 2026-07-21 — Task 10 Review Polish
+
+What changed:
+- Deduplicated Detail community category field definitions and hide Top strength / Weakest category when scored categories are tied at one-decimal display precision.
+- Unmapped `mock-product://` image URIs now resolve to no source (placeholder) instead of a broken remote URI; HTTP(S) URLs unchanged.
+- Compressed mock catalog PNGs from 1200×800 (~7.6MB) to 800×533 (~3.4MB) for mobile-first sharpness without changing the mock URI scheme.
+
+Why:
+- Close non-blocking PR #11 review findings before merge.
+
+Effect:
+- Decision summary no longer claims opposing strengths when averages are equal; missing mock assets show "Image coming soon"; catalog payload is smaller.
+
+Safety-risk:
+- Low. Presentation and asset size only; catalog IDs, contracts, and rating semantics unchanged.
+
+Related files:
+- `app/product/[id]/index.tsx`, `app/product/[id]/rate.tsx`, `src/features/products/mockProductImages.ts`, `assets/images/products/*`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md`, `docs/USER_FLOWS.md`, `docs/TASKS.md`

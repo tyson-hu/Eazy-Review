@@ -19,5 +19,16 @@ export function resolveProductImageSource(
     return undefined;
   }
 
-  return mockProductImageSources[imageUrl] ?? { uri: imageUrl };
+  const mockSource = mockProductImageSources[imageUrl];
+  if (mockSource) {
+    return mockSource;
+  }
+
+  // Unmapped mock-product URIs have no bundled asset — fall through to the
+  // "Image coming soon" placeholder instead of a broken remote URI.
+  if (imageUrl.startsWith('mock-product://')) {
+    return undefined;
+  }
+
+  return { uri: imageUrl };
 }
