@@ -674,3 +674,20 @@ Safety-risk:
 
 Related files:
 - `.agents/skills/test-and-validation-loop/SKILL.md`, `.claude/skills/test-and-validation-loop/SKILL.md`, `docs/DECISIONS.md`, `docs/TASKS.md`
+
+## 2026-07-23 — Align Expo SDK 57 Patch Dependencies Again
+
+What changed:
+- Updated Expo SDK 57 packages required by `expo-doctor` / `expo install --check`: `expo` and `expo-router` to `~57.0.8`, plus matching bumps for `expo-linking`, `expo-splash-screen`, `expo-web-browser`, and `react-native-screens` to `~4.26.0` (lock resolves `expo-constants` to `57.0.7`).
+
+Why:
+- Expo CI on PR #13 failed at `expo-doctor` with 7 out-of-date packages (SDK patch drift after the 2026-07-18 alignment).
+
+Effect:
+- `npx expo-doctor` 20/20 and `npx expo install --check` report dependencies up to date.
+
+Safety-risk:
+- Patch-only within SDK 57; restart Metro / Expo CLI after install. No product-behavior intent.
+
+Related files:
+- `package.json`, `package-lock.json`, `docs/DECISIONS.md`, `docs/TASKS.md`
