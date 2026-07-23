@@ -657,3 +657,37 @@ Safety-risk:
 
 Related files:
 - `app/product/[id]/index.tsx`, `app/product/[id]/rate.tsx`, `src/features/products/mockProductImages.ts`, `assets/images/products/*`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md`, `docs/USER_FLOWS.md`, `docs/TASKS.md`
+
+## 2026-07-21 — Restore Validation Skill Discovery Stubs
+
+What changed:
+- Restored `.agents/skills/test-and-validation-loop/SKILL.md` and `.claude/skills/test-and-validation-loop/SKILL.md` to thin discovery stubs with YAML `name` / `description` front matter that point at the canonical `skills/test-and-validation-loop/SKILL.md`.
+
+Why:
+- Task 10 accidentally replaced both stubs with a full Markdown copy of the routine (heading only, no front matter). Skill discovery for `.agents/skills/*` and `.claude/skills/*` depends on that front matter, so `test-and-validation-loop` dropped out of discoverable triggers even though `AGENTS.md` still indexed it.
+
+Effect:
+- Agents asked to run project checks can discover and select `test-and-validation-loop` again. Canonical routine content is unchanged under `skills/`.
+
+Safety-risk:
+- Docs/process only; no app behavior change.
+
+Related files:
+- `.agents/skills/test-and-validation-loop/SKILL.md`, `.claude/skills/test-and-validation-loop/SKILL.md`, `docs/DECISIONS.md`, `docs/TASKS.md`
+
+## 2026-07-23 — Align Expo SDK 57 Patch Dependencies Again
+
+What changed:
+- Updated Expo SDK 57 packages required by `expo-doctor` / `expo install --check`: `expo` and `expo-router` to `~57.0.8`, plus matching bumps for `expo-linking`, `expo-splash-screen`, `expo-web-browser`, and `react-native-screens` to `~4.26.0` (lock resolves `expo-constants` to `57.0.7`).
+
+Why:
+- Expo CI on PR #13 failed at `expo-doctor` with 7 out-of-date packages (SDK patch drift after the 2026-07-18 alignment).
+
+Effect:
+- `npx expo-doctor` 20/20 and `npx expo install --check` report dependencies up to date.
+
+Safety-risk:
+- Patch-only within SDK 57; restart Metro / Expo CLI after install. No product-behavior intent.
+
+Related files:
+- `package.json`, `package-lock.json`, `docs/DECISIONS.md`, `docs/TASKS.md`
