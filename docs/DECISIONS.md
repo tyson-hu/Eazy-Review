@@ -673,4 +673,4 @@ Safety-risk:
 - Docs/process only; no app behavior change.
 
 Related files:
-- `.agents/skills/test-and-validation-loop/SKILL.md`, `.claude/skills/test-and-validation-loop/SKILL.md`, `docs/DECISIONS.md`
+- `.agents/skills/test-and-validation-loop/SKILL.md`, `.claude/skills/test-and-validation-loop/SKILL.md`, `docs/DECISIONS.md`, `docs/TASKS.md`

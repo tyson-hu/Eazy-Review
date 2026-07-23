@@ -231,6 +231,7 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
   - Follow-up: evaluate the implementer after Task 8 (delegation prompt quality, boundary adherence, rework, context savings vs. handoff cost).
 - Done 2026-07-12: Expo SDK 57 patch dependency alignment (`expo`, `expo-linking`, `expo-router`) landed in PR #8 and was merged to `master`. The pilot branch was rebased onto that fix; `npx expo-doctor` and `npx expo install --check` pass.
 - Done 2026-07-14: skill path sync after Task 8 route restructure — `app/product/[id].tsx` → `app/product/[id]/index.tsx` in `skills/ui-screen-builder`, `skills/feature-slice-builder`, and `skills/session-handoff` (approved skill-maintenance change; Task 8 remains Done).
+- Done 2026-07-21: restore `test-and-validation-loop` discovery stubs — `.agents/skills/` and `.claude/skills/` wrappers were accidentally replaced with full skill copies (no YAML front matter) during Task 10; restored thin `name` / `description` stubs pointing at `skills/test-and-validation-loop/SKILL.md`. Decision: `docs/DECISIONS.md` 2026-07-21 restore entry.
 - Added 2026-07-14: before wiring real multi-marketplace offers, define Product Detail lowest-price behavior for mixed currencies—enforce one currency per payload, group prices by currency, or introduce an explicit conversion source. Current mock/MVP catalog fallback assumes USD.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
