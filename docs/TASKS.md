@@ -309,8 +309,8 @@ Status: Pending.
 Goal: add complete RLS policies, then grant least-privilege Data API access to `anon` / `authenticated`, then prove unauthorized scenarios fail. **Grants must not land before policies.**
 
 Deliverables:
-- Policies matching `docs/DATA_MODEL.md` (published catalog reads, owner-only `user_ratings`, no client writes to `rating_aggregates`).
-- Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`), including `UPDATE` on `profiles` for authenticated own-profile edits.
+- Policies matching `docs/DATA_MODEL.md` (published catalog reads, owner-only `user_ratings` with published-product INSERT/UPDATE checks, no client writes to `rating_aggregates`).
+- Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`), including **column-level** `UPDATE` on `profiles` (`display_name`, `username`, `avatar_url`) and column-level `INSERT`/`UPDATE` on `user_ratings` (scores + `private_note` only; no client grants on `id` / timestamps).
 - Authorization tests (SQL or project-approved harness).
 
 Required scenarios (minimum):
@@ -318,6 +318,8 @@ Required scenarios (minimum):
 - Anonymous cannot read unpublished products or their related catalog rows.
 - Anonymous cannot create ratings.
 - Authenticated user can create / update / delete **own** rating (`product_id` immutable).
+- Authenticated user cannot insert or update a rating for an unpublished product (own DELETE still allowed).
+- Authenticated user cannot rewrite `profiles` / `user_ratings` audit or identity columns via Data API grants.
 - User cannot read another user’s `private_note`.
 - User cannot modify another user’s rating.
 - Client cannot modify `rating_aggregates` (no write grants; cannot execute refresh RPC).
@@ -346,10 +348,18 @@ Status: Pending.
 
 Goal: replace mock product reads for Browse and Product Detail. Rating writes stay mock/session until Task 16.
 
+Deliverables:
+- Browse and Product Detail load published catalog rows from Supabase (not `mockProducts` / `getMockProductDetailById` for those screens).
+- **Rate/Edit compatibility adapter (required in this task):** Detail will navigate with real product UUIDs, but rating persistence stays session-only until Task 16. Do **not** leave the rate route bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys — that rejects every UUID and blocks Task 15’s “logged-in user reaches the form” path.
+  - Load rate-screen product context from the same real product/detail repository used by Detail (or a thin adapter over it).
+  - Keep My Rating in a temporary session map keyed by **any** product ID string, including UUIDs.
+  - Replace that session map with Supabase persistence in Task 16.
+
 Acceptance:
 - Anonymous Browse and Detail work against Supabase public reads.
 - Canonical Detail field sources in `docs/API_CONTRACTS.md` still hold.
 - No client-trusted Community Score calculation.
+- Opening Rate/Edit for a seeded Supabase product UUID shows the form (product context loads); session save/load works for that UUID without requiring a mock catalog id.
 
 ### Task 15: Authentication
 
@@ -402,6 +412,7 @@ Status: Done (2026-07-24).
 
 Added `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers`, wired into `npm run check` and Expo CI. Validates:
 - each `.agents/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` has YAML front matter (`name`, `description`);
+- `name` / `description` are non-empty string scalars (rejects empty, comment-only, and YAML null spellings `null` / `~`);
 - declared canonical `skills/<name>/SKILL.md` exists and is referenced;
 - agent and Claude wrapper directories stay synchronized and byte-identical.
 

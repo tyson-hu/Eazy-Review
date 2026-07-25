@@ -25,7 +25,9 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Anonymous clients can read **published** products only (`is_published = true`).
 - Related catalog rows (images, current Eazy assessments, rating aggregates, offers) are readable anonymously only for published products; draft-related rows stay hidden.
 - Users can only insert/update/delete their own ratings; `private_note` is owner-only.
-- Authenticated users can update their own profile (`display_name` / `username` / `avatar_url`) under owner-only RLS.
+- Users cannot insert or update ratings for unpublished products; they may delete an existing own rating after unpublish.
+- Authenticated users can update only mutable profile fields (`display_name` / `username` / `avatar_url`); audit timestamps are server-maintained.
+- Rating writes cannot set `user_ratings.id` or timestamps via client grants.
 - Community Score is recalculated by database/server-side logic; clients cannot write `rating_aggregates` or execute refresh RPCs.
 - User cannot create duplicate ratings for the same product.
 - `user_ratings.product_id` is immutable after insert.

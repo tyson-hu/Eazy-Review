@@ -43,8 +43,9 @@ function listSkillNames(dir) {
 /**
  * Parse the limited YAML subset used by skill wrappers: a flat mapping of
  * unquoted or fully closed single-/double-quoted scalar keys required for discovery.
- * Rejects null/empty values (e.g. `description: # comment`), unclosed quotes,
- * and unsupported collection/block indicators (`[`, `{`, `|`, `>`).
+ * Rejects null/empty values (e.g. `description: # comment`), YAML null spellings
+ * (`null`, `~`, case-insensitive when unquoted), unclosed quotes, and unsupported
+ * collection/block indicators (`[`, `{`, `|`, `>`).
  *
  * @param {string} body
  * @param {string} fileLabel
@@ -98,6 +99,12 @@ function parseSimpleYamlMapping(body, fileLabel) {
         return null;
       }
       value = raw.slice(1, -1);
+    } else if (/^(?:~|null)$/i.test(raw.trim())) {
+      // Unquoted YAML null scalars are not usable discovery strings.
+      errors.push(
+        `${fileLabel}: front matter \`${key}\` is a YAML null scalar (use a non-empty string description)`,
+      );
+      return null;
     }
 
     if (value.trim() === '') {

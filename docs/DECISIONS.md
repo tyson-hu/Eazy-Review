@@ -797,3 +797,23 @@ Safety-risk:
 
 Related files:
 - `skills/supabase-schema-change/SKILL.md`, `.cursor/rules/supabase.mdc`, `.cursor/rules/mcp-policy.mdc`, `docs/MCP_WORKFLOW.md`, `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/RELEASE_CHECKLIST.md`, `docs/BLUEBOOK.md`, `docs/SECURITY.md`, `scripts/check-skill-wrappers.cjs`, `docs/DECISIONS.md`
+
+## 2026-07-24 — Close Post-Plan Review Gaps (Grants, Null YAML, Published Ratings, Rate UUID Adapter)
+
+What changed:
+- Column-level Data API grants: `profiles` UPDATE only `display_name` / `username` / `avatar_url`; `user_ratings` INSERT/UPDATE only scores + `private_note` (not `id` / timestamps). Added `set_updated_at` triggers for profiles and ratings.
+- Rating INSERT/UPDATE RLS requires the referenced product to be published; DELETE remains owner-only after unpublish.
+- Skill-wrapper parser rejects unquoted YAML null scalars (`null`, `~`, case-insensitive).
+- Task 14 now requires a Rate/Edit compatibility adapter so real product UUIDs still reach the session rating form before Task 16 persistence.
+
+Why:
+- Latest plan-head review: table-wide UPDATE grants let clients rewrite audit fields; ownership-only rating policies accept draft product IDs; wrapper check still accepted `description: null` / `~`; Task 14 UUID Detail navigation would break the mock-only rate route and block Task 15.
+
+Effect:
+- Task 11–12 schema/policy contract and Task 14 deliverables match the security and continuity findings before migrations or real reads start.
+
+Safety-risk:
+- Docs/process and CI script only; no migrations applied; no app runtime change yet for the rate adapter (required when Task 14 lands).
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/SECURITY.md`, `docs/RELEASE_CHECKLIST.md`, `docs/AGENT_WORKFLOW.md`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `skills/skill-creator/SKILL.md`, `.cursor/rules/supabase.mdc`, `.cursor/rules/security.mdc`, `scripts/check-skill-wrappers.cjs`

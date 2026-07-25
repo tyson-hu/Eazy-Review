@@ -314,6 +314,28 @@ before update on public.user_ratings
 for each row
 execute function public.enforce_user_rating_product_id_immutable();
 
+-- Timestamps are server-owned. Clients do not receive UPDATE grants on
+-- created_at / updated_at (or id); triggers maintain updated_at.
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger profiles_set_updated_at
+before update on public.profiles
+for each row
+execute function public.set_updated_at();
+
+create trigger user_ratings_set_updated_at
+before update on public.user_ratings
+for each row
+execute function public.set_updated_at();
+
 create or replace function public.handle_user_rating_change()
 returns trigger
 language plpgsql
@@ -343,6 +365,8 @@ revoke all on function public.handle_user_rating_change() from public;
 revoke all on function public.handle_user_rating_change() from anon, authenticated;
 revoke all on function public.enforce_user_rating_product_id_immutable() from public;
 revoke all on function public.enforce_user_rating_product_id_immutable() from anon, authenticated;
+revoke all on function public.set_updated_at() from public;
+revoke all on function public.set_updated_at() from anon, authenticated;
 ```
 
 ## Privileges And Data API Exposure
@@ -375,10 +399,35 @@ grant select on public.eazy_assessments to anon, authenticated;
 grant select on public.rating_aggregates to anon, authenticated;
 grant select on public.product_offers to anon, authenticated;
 grant select on public.profiles to anon, authenticated;
-grant update on public.profiles to authenticated;
+-- Column-level only: clients must not rewrite created_at / updated_at.
+grant update (display_name, username, avatar_url)
+on public.profiles to authenticated;
 
 -- My Rating: authenticated owners only (RLS still restricts to own rows).
-grant select, insert, update, delete on public.user_ratings to authenticated;
+-- Column-level INSERT/UPDATE so clients cannot set id or timestamps.
+grant select, delete on public.user_ratings to authenticated;
+grant insert (
+  product_id,
+  user_id,
+  look,
+  comfort,
+  quality,
+  outfit,
+  value,
+  overall,
+  private_note
+)
+on public.user_ratings to authenticated;
+grant update (
+  look,
+  comfort,
+  quality,
+  outfit,
+  value,
+  overall,
+  private_note
+)
+on public.user_ratings to authenticated;
 
 -- Never grant INSERT/UPDATE/DELETE on rating_aggregates to anon or authenticated.
 -- service_role retains full access for admin/seed tooling outside the mobile client.
@@ -450,7 +499,7 @@ using (
 );
 ```
 
-User ratings — **owner-only row access** so `private_note` cannot leak. Community Score comes from `rating_aggregates`, not from browsing other users’ rows. `product_id` is immutable (see trigger above):
+User ratings — **owner-only row access** so `private_note` cannot leak. Community Score comes from `rating_aggregates`, not from browsing other users’ rows. `product_id` is immutable (see trigger above). INSERT/UPDATE also require the referenced product to be **published** (FK existence alone does not imply catalog visibility; drafts must not receive client ratings). DELETE stays owner-only so a user can remove an existing rating after a product is unpublished:
 
 ```sql
 create policy "Users can read own ratings"
@@ -459,12 +508,28 @@ using (auth.uid() = user_id);
 
 create policy "Users can insert own ratings"
 on public.user_ratings for insert
-with check (auth.uid() = user_id);
+with check (
+  auth.uid() = user_id
+  and exists (
+    select 1
+    from public.products p
+    where p.id = product_id
+      and p.is_published = true
+  )
+);
 
 create policy "Users can update own ratings"
 on public.user_ratings for update
 using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+with check (
+  auth.uid() = user_id
+  and exists (
+    select 1
+    from public.products p
+    where p.id = product_id
+      and p.is_published = true
+  )
+);
 
 create policy "Users can delete own ratings"
 on public.user_ratings for delete
@@ -494,6 +559,8 @@ with check (auth.uid() = id);
 - Anonymous cannot read unpublished / draft products, their images, offers, assessments, or aggregates.
 - Anonymous cannot create ratings.
 - User can create / update / delete own rating (`product_id` cannot change on update).
+- User cannot insert or update a rating for an **unpublished** product (DELETE of an existing own rating remains allowed).
+- User cannot rewrite audit/identity columns (`profiles.created_at` / `updated_at`; `user_ratings.id` / `created_at` / `updated_at`) — column-level grants only; `updated_at` is trigger-maintained.
 - User cannot read another user’s `private_note` (no cross-user SELECT).
 - User cannot modify another user’s rating.
 - Client cannot modify `rating_aggregates` (no table write grants; cannot `EXECUTE` refresh helpers via RPC).

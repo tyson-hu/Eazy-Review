@@ -44,6 +44,8 @@ Canonical schema and RLS expectations: `docs/DATA_MODEL.md`. Task order: `docs/T
 - **Task 12:** add complete policies, then explicit Data API `GRANT`s for `anon` / `authenticated`, then authorization tests. Never grant client roles before the authorizing policies exist.
 - `SECURITY DEFINER` aggregate helpers must `REVOKE EXECUTE` from `PUBLIC`, `anon`, and `authenticated` (trigger-only).
 - Catalog policies must enforce **published** products (`is_published`); drafts are not anonymously readable.
+- Rating **INSERT/UPDATE** policies must also require the referenced product to be published (FK existence alone is not enough). Owner **DELETE** of an existing rating may remain allowed after unpublish.
+- Client Data API grants are least-privilege and **column-level** where writes are allowed: `profiles` UPDATE only `display_name` / `username` / `avatar_url`; `user_ratings` INSERT/UPDATE only score fields + `private_note` (not `id` / `created_at` / `updated_at`). Timestamps are trigger-maintained.
 - `private_note` is owner-only. Do not add public `SELECT` on `user_ratings` while notes share that row.
 - `rating_aggregates` are server-owned. Clients must not insert, update, or delete aggregate rows; Community Score recalculation stays in security-definer SQL that clients cannot execute.
 - `user_ratings.product_id` is immutable after insert.

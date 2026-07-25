@@ -268,6 +268,8 @@ Before Supabase (Tasks 11–13 schema work does not require removing mocks):
 - Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
 - Screens must call this API only — never import or mutate the private map.
 
+**Task 14 transitional note:** when Browse/Detail switch to Supabase product UUIDs, Rate/Edit must not stay bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys (those reject unknown IDs). Load product context from the real Detail repository (or adapter); keep session My Rating in a map keyed by any product ID string until Task 16 replaces it with Supabase persistence. See `docs/TASKS.md` Task 14.
+
 ```ts
 import type { Product } from '@/src/types/product';
 
