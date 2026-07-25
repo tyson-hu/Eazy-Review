@@ -42,7 +42,7 @@ Goal: run the narrowest project checks for a finished change, fix only failures 
 ## Memory step
 
 - Add pre-existing failures to `docs/TASKS.md` as new task items with the exact error text.
-- No `docs/DECISIONS.md` entry; validation runs are not decisions.
+- No decision record; validation runs are not decisions.
 
 ## Common mistakes
 

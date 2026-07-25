@@ -63,6 +63,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 - `docs/DOCUMENTATION_POLICY.md` has been followed for every release-bound change.
 - `docs/TASKS.md` reflects completed and remaining work.
-- `docs/DECISIONS.md` captures meaningful decisions since the previous release.
+- Qualifying high-impact decisions have individual records under `docs/decisions/`; routine fixes and task progress were not converted into ADRs.
+- `npm run decisions:check` confirms the generated `docs/DECISIONS.md` index is current.
 - `README.md` setup and validation instructions are current.
 - Product, UI, data, API, and user-flow docs match the released behavior.

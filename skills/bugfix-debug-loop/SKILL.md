@@ -46,7 +46,7 @@ Goal: fix one reported bug with the smallest change that makes the reproduction 
 
 - Update `docs/TASKS.md`: mark the bug task done, and record any different pre-existing issues discovered along the way as new items (do not fix them now).
 - If this bug has a related `docs/notes/blocker-*.md`, delete it and remove the `docs/TASKS.md` pointer after the blocker is resolved, or mark the note as resolved if the record is still useful.
-- Add a `docs/DECISIONS.md` entry only if the fix changed a contract or documented behavior.
+- Add or update a `docs/decisions/*.md` record only if the fix introduced a durable high-impact contract or behavior decision under `docs/decisions/README.md`; a routine fix that restores the existing contract is not an ADR.
 
 ## Common mistakes
 

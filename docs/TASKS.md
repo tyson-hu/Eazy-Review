@@ -216,14 +216,14 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
 
 ## Follow-Ups / Discovered Work
 
-- Done 2026-07-19: **UI style layout/shape/type pass** — Visual System + primitives aligned to `docs/UI_STYLE.md` chrome grammar: pill CTAs/inputs, card padding 24px / gaps 20–24px, no card/button/text shadows (product-image shadow only), `AppText` body ~17px / weights 400+600, press `scale(0.95)`. Did not adopt Apple full-bleed marketing tiles, black global nav, or 80px section pads. Spec: `docs/UI_STYLE.md` + `docs/DESIGN.md` Visual System; decision: `docs/DECISIONS.md` 2026-07-19 layout entry.
+- Done 2026-07-19: **UI style layout/shape/type pass** — Visual System + primitives aligned to `docs/UI_STYLE.md` chrome grammar: pill CTAs/inputs, card padding 24px / gaps 20–24px, no card/button/text shadows (product-image shadow only), `AppText` body ~17px / weights 400+600, press `scale(0.95)`. Did not adopt Apple full-bleed marketing tiles, black global nav, or 80px section pads. Spec: `docs/UI_STYLE.md` + `docs/DESIGN.md` Visual System; durable context: `docs/decisions/2026-07-19-separate-style-language-from-product-ux.md`.
 - Done 2026-07-19: **Screen-level chrome alignment** — stacked screen cards now use 20px spacing, Detail score/price emphasis uses weight 600, primary Button labels use weight 400, and `app/+not-found.tsx` reuses `Button`. Feed and Account product jobs were not redesigned.
 - Done 2026-07-19: **Approved UI audit remediation** — contrast-safe secondary/score tones; eight bundled mock catalog images; Detail decision summary before the complete community breakdown; Overall first on Rating; explicit web tab accessibility labels. Mobile web 393×852 `pass`; iOS Simulator `not-run`; physical device `tested-pass` on iPhone 17 Pro Max / iOS 27.0. Evidence: `docs/evidence/ui-audit-remediation-20260719/RESULT.md` (three representative web PNGs selected; physical journey observed live through iPhone Mirroring; raw diagnostics local-only).
 - Done 2026-07-19: **UI remediation follow-up** — ProductCard uses CSS `boxShadow` on web and native shadow/elevation props elsewhere, removing the React Native Web `shadow*` deprecation warning; multiline Comment uses the 18px card radius while single-line score inputs remain pills.
 - Done 2026-07-19: **Physical-device completion for the UI audit remediation** — after two LAN attempts stalled before app load, an explicitly approved temporary Expo tunnel loaded the app on iPhone 17 Pro Max / iOS 27.0. The physical Browse → Detail → Rate/Edit journey passed, including brand/name/SKU search, empty-state recovery, invalid validation, session-only save feedback, updated `My Rating`, both rating branches, and meaningful Back navigation. The tunnel was stopped after the run.
-- Done 2026-07-21: **PR #11 review polish** — shared Detail community-category field list; Decision summary hides Top strength / Weakest when averages tie at one-decimal display precision; unmapped `mock-product://` URIs use the "Image coming soon" placeholder; mock catalog PNGs resized/compressed to 800×533 (~3.1MB total). Decision: `docs/DECISIONS.md` 2026-07-21 entry; contract note: `docs/API_CONTRACTS.md`.
+- Done 2026-07-21: **PR #11 review polish** — shared Detail community-category field list; Decision summary hides Top strength / Weakest when averages tie at one-decimal display precision; unmapped `mock-product://` URIs use the "Image coming soon" placeholder; mock catalog PNGs resized/compressed to 800×533 (~3.1MB total). Contract note: `docs/API_CONTRACTS.md`. This routine review-fix history remains archive-only.
 - Done 2026-07-19: **Packet — Header chrome polish** — (1) `Screen` defaults to no top safe-area (`safeTop` opt-in); bottom inset still when `footer` is set; Feed duplicate in-page title removed so section cards start with `pt-4` under the tab header. (2) `HeaderBackButton` keeps a square 40×40 hit target (removed trailing `mr-2`) so iOS 26 liquid-glass shared background stays circular, not an oval with empty space after the chevron.
-- Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Context: `docs/DECISIONS.md` 2026-07-04 cross-agent portability entry.
+- Done 2026-07-04: promoted `.cursor/rules/security.mdc` content to `docs/SECURITY.md`; the rule is now a thin mirror. Durable context: `docs/decisions/2026-07-04-agent-agnostic-security-source.md`.
 - Added 2026-07-12: phased delegation system (policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy). Four approved roles, all instantiated in `.cursor/agents/`. Rollout status:
   - Done 2026-07-12: piloted `reviewer` and `verifier` during Tasks 6-7 (results below).
   - Done 2026-07-12: created `implementer.md` — Active. First-use positive-path validation passed on Task 8 Packet 1 (all changed paths inside allowed edit scope; typecheck + lint pass; served model recorded as Cursor Grok 4.5 / frontmatter `grok-4.5[effort=high,fast=false]`). Status in `docs/AGENT_WORKFLOW.md` is plain Active.
@@ -231,11 +231,11 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
   - Follow-up: evaluate the implementer after Task 8 (delegation prompt quality, boundary adherence, rework, context savings vs. handoff cost).
 - Done 2026-07-12: Expo SDK 57 patch dependency alignment (`expo`, `expo-linking`, `expo-router`) landed in PR #8 and was merged to `master`. The pilot branch was rebased onto that fix; `npx expo-doctor` and `npx expo install --check` pass.
 - Done 2026-07-14: skill path sync after Task 8 route restructure — `app/product/[id].tsx` → `app/product/[id]/index.tsx` in `skills/ui-screen-builder`, `skills/feature-slice-builder`, and `skills/session-handoff` (approved skill-maintenance change; Task 8 remains Done).
-- Done 2026-07-21: restore `test-and-validation-loop` discovery stubs — `.agents/skills/` and `.claude/skills/` wrappers were accidentally replaced with full skill copies (no YAML front matter) during Task 10; restored thin `name` / `description` stubs pointing at `skills/test-and-validation-loop/SKILL.md`. Decision: `docs/DECISIONS.md` 2026-07-21 restore entry.
-- Done 2026-07-23: Expo SDK 57 patch realignment for CI — `expo-doctor` failed on PR #13 with 7 out-of-date packages (`expo`/`expo-router` → `~57.0.8`, `react-native-screens` → `~4.26.0`, plus matching Expo module patches). Decision: `docs/DECISIONS.md` 2026-07-23 alignment entry.
+- Done 2026-07-21: restore `test-and-validation-loop` discovery stubs — `.agents/skills/` and `.claude/skills/` wrappers were accidentally replaced with full skill copies (no YAML front matter) during Task 10; restored thin `name` / `description` stubs pointing at `skills/test-and-validation-loop/SKILL.md`. This routine repair remains archive-only.
+- Done 2026-07-23: Expo SDK 57 patch realignment for CI — `expo-doctor` failed on PR #13 with 7 out-of-date packages (`expo`/`expo-router` → `~57.0.8`, `react-native-screens` → `~4.26.0`, plus matching Expo module patches). This routine dependency maintenance remains archive-only.
 - Added 2026-07-14: before wiring real multi-marketplace offers, define Product Detail lowest-price behavior for mixed currencies—enforce one currency per payload, group prices by currency, or introduce an explicit conversion source. Current mock/MVP catalog fallback assumes USD.
-- Added 2026-07-24: post–Task 10 weekend plan recorded — packetized Supabase Tasks 11–18, `private_note` language, RLS-before-UI, skill-wrapper validation companion; freeze UI/agent/MCP expansion. Decision: `docs/DECISIONS.md` 2026-07-24 entry; roadmap: `docs/ROADMAP.md` Phase 4.
-- Done 2026-07-24: **skill-wrapper validation** — `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers` wired into `npm run check` and Expo CI. Decision: `docs/DECISIONS.md` 2026-07-24 automation entry.
+- Added 2026-07-24: post–Task 10 weekend plan recorded — packetized Supabase Tasks 11–18, `private_note` language, RLS-before-UI, skill-wrapper validation companion; freeze UI/agent/MCP expansion. Durable sequencing: `docs/decisions/2026-07-24-security-first-supabase-task-sequencing.md`; roadmap: `docs/ROADMAP.md` Phase 4.
+- Done 2026-07-24: **skill-wrapper validation** — `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers` wired into `npm run check` and Expo CI. The validation implementation history remains archive-only.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
 
@@ -284,7 +284,7 @@ Deliverables:
 - **New-user profile trigger:** `handle_new_user` on `auth.users` AFTER INSERT inserts `public.profiles (id)` only; `REVOKE EXECUTE` from clients (see `docs/DATA_MODEL.md`).
 - Environment-variable validation pattern (anon key / URL only in Expo; never service-role in the mobile bundle).
 - **Secret scanning** wired for the foundation workstream (CI and/or pre-commit); Task 11 does not pass without it.
-- Docs: `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, this file.
+- Docs: `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, this file, and the Task 11 records linked from generated `docs/DECISIONS.md`. Add a new decision record only if implementation changes a durable high-impact choice.
 
 Acceptance:
 - Local `supabase start` / reset works from committed migrations.
@@ -302,12 +302,12 @@ Task 11 contract checklist (fill before implementation):
   - package scripts / lockfile changes required for the CLI or secret-scan tooling (`package.json`, `package-lock.json`)
   - env example and validation module for anon URL/key only (for example `.env.example`, `src/lib/supabase*` or equivalent — no service-role in the mobile bundle)
   - secret-scanning CI/hook config
-  - listed docs (`docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, `docs/TASKS.md`)
+  - listed docs (`docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/TASKS.md`; `docs/decisions/*.md` plus generated `docs/DECISIONS.md` only if a qualifying decision changes)
   - Do **not** expand into Browse/Detail/Rating UI, seed catalog, auth screens, or TanStack Query unless an explicit tiny companion packet says so
 - Required constraints, `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, per-product serialized aggregate refresh, and `auth.users` → `profiles` ensure trigger (see `docs/DATA_MODEL.md`).
 - Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12** (and that clients never receive `profiles` INSERT).
 - Whether seed data is included (default: no full catalog).
-- Required validation commands (include `npm run check:skill-wrappers` and secret-scan command).
+- Required validation commands (include `npm run decisions:check`, `npm run check:skill-wrappers`, and the secret-scan command).
 - Staging-only execution confirmation.
 
 ### Task 12: Policies, Data API Grants, And Authorization Tests
@@ -419,7 +419,7 @@ Acceptance:
 - Insert/update/delete rating refreshes `rating_aggregates`.
 - Concurrent ratings for the same product leave a correct final `rating_count` / averages (refresh serialized per product; cover concurrent writes in aggregate tests).
 - Tests prove clients cannot forge aggregates.
-- Aggregation mechanism recorded in `docs/DECISIONS.md` (trigger vs post-mutation function vs schedule).
+- Durable aggregation mechanism recorded in an individual `docs/decisions/*.md` ADR (trigger vs post-mutation function vs schedule), followed by `npm run decisions:build`.
 
 ### Task 18: TanStack Query And Cache Invalidation
 

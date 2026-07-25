@@ -111,7 +111,7 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 
 ## Memory step
 
-- Add a `docs/DECISIONS.md` entry for the new or merged skill (a skill is a workflow decision).
+- Add or update a `docs/decisions/*.md` record when the new or merged skill establishes a durable high-impact workflow decision under `docs/decisions/README.md`; do not record routine skill maintenance as an ADR.
 - Update `docs/TASKS.md` only if the skill creation was itself a tracked task.
 
 ## Common mistakes

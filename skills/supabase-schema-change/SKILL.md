@@ -56,7 +56,7 @@ Goal: safely change database schema, RLS, migrations, or data contracts, keeping
 ## Memory step
 
 - Update `docs/TASKS.md` (Supabase Tasks section) with what is done or newly discovered.
-- Add a `docs/DECISIONS.md` entry — schema changes are always meaningful.
+- Add or update a `docs/decisions/*.md` record only when the schema work introduces or changes a durable high-impact architecture, data-ownership, or security choice under `docs/decisions/README.md`; implementing an already-recorded contract is not a new ADR.
 
 ## Common mistakes
 

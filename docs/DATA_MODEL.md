@@ -217,7 +217,7 @@ User submits rating
 -> App refetches Product Detail
 ```
 
-Recommended default: database function + trigger after user_rating insert/update/delete, with explicit tests. Record the final choice in `docs/DECISIONS.md`.
+Recommended default: database function + trigger after user_rating insert/update/delete, with explicit tests. When Task 17 selects the durable mechanism, add or update its `docs/decisions/*.md` record and regenerate `docs/DECISIONS.md`.
 
 Hard rules for aggregate SQL:
 - `product_id` on `user_ratings` is **immutable** after insert (enforced by trigger). Re-rating another product means delete + insert, not moving the row.

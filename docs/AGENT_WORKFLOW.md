@@ -14,6 +14,17 @@ If no skill matches, work directly but still apply the context map, definition o
 
 When continuing work from a previous session: read `AGENTS.md`, the spec, and `docs/notes/handoff.md` (plus any linked `docs/notes/blocker-*.md`), then restate the plan before editing anything.
 
+### Decision lookup
+
+Do not read every decision record:
+
+1. Read the generated `docs/DECISIONS.md` index.
+2. Match the current task number or area.
+3. Open only the linked records relevant to the work.
+4. Search superseded records or the legacy archive only when historical reasoning is needed.
+
+Recording rules, statuses, and search examples live in `docs/decisions/README.md`.
+
 ## Session Boundaries And State Persistence
 
 Chat is the workbench; files are the hard drive. For long tasks, loops, and cross-day collaboration, state must never live only in chat — `docs/notes/handoff.md`, `docs/notes/blocker-*.md`, `docs/TASKS.md`, issue boards, and PR checklists are the external state the next session reads, not old transcripts.
@@ -185,7 +196,7 @@ A task is not done until:
 
 - Docs affected by the change are updated per `docs/DOCUMENTATION_POLICY.md`.
 - `docs/TASKS.md` reflects the completed work and any newly discovered follow-up work.
-- `docs/DECISIONS.md` has an entry for each meaningful product, architecture, data, workflow, design-system, dependency, or toolchain decision, using its entry template.
+- A new or changed durable high-impact decision has an individual record under `docs/decisions/`, and `docs/DECISIONS.md` has been regenerated. Routine fixes, validation, and task progress are not ADRs.
 - Validation was run, or skipped commands are named with a reason.
 - The Human-readable handoff (below) is written, listing docs updated or stating `No documentation update needed` with a reason.
 
@@ -195,14 +206,16 @@ This section is the canonical home for validation commands; `AGENTS.md` carries 
 
 Pick the narrowest command that covers the change:
 
+- `npm run decisions:build` — validates ADR metadata and writes the generated `docs/DECISIONS.md` index after a decision record changes.
+- `npm run decisions:check` — validates decision filenames, metadata, statuses, IDs, supersession links, required sections, the legacy archive, and generated-index freshness without writing. Run after decision-record or index-tooling edits; CI and `npm run check` also run it.
 - `npm run check:skill-wrappers` — discovery stubs under `.agents/skills` and `.claude/skills` have YAML front matter with non-empty **string** `name`/`description` (rejects empty, comment-only, YAML null `null`/`~`, and non-string scalars such as booleans/numbers), point at existing canonical `skills/*/SKILL.md` paths, and stay synchronized. Fast; run after any skill or skill-wrapper edit, and always as part of `npm run check`.
 - `npm run typecheck` — TypeScript only. Fastest app check; enough for pure type or logic edits.
 - `npm run lint` — ESLint via Expo. Add it when code style or imports changed.
-- `npm run check` — skill-wrapper validation, typed-route generation, typecheck, lint, Expo doctor, and Expo dependency alignment. Use for route changes, dependency changes, skill changes, or before handing off a finished task.
+- `npm run check` — decision-index validation, skill-wrapper validation, typed-route generation, typecheck, lint, Expo doctor, and Expo dependency alignment. Use for route changes, dependency changes, skill changes, or before handing off a finished task.
 - `npm run generate:routes` — regenerates typed routes; required before typecheck on clean checkouts.
 - `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
 - Interactive UX / simulator / mobile-web walks — `skills/interactive-preview-loop` (SOPs under `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`; evidence under `docs/evidence/`). These do not replace the npm commands above.
-- Docs-only changes need no command; say so in Validation.
+- Docs-only changes use a targeted check when one exists (for example, `npm run decisions:check`); otherwise say why no command was needed in Validation.
 
 ### Expo doctor and dependency checks — agent sandbox
 
@@ -310,5 +323,7 @@ One home per instruction; everywhere else points, never restates.
 | Loop anatomy, global stop conditions, retry policy, loop index | `docs/LOOP_ENGINEERING.md` |
 | Concrete loop routines | `skills/<name>/SKILL.md` |
 | Task status and build order | `docs/TASKS.md` |
-| Decision log | `docs/DECISIONS.md` |
+| Decision recording threshold, statuses, metadata, and template | `docs/decisions/README.md` |
+| Generated current-decision index | `docs/DECISIONS.md` |
+| Historical pre-ADR decision log | `docs/decisions/archive/2026-pre-adr-log.md` |
 | Copy-paste Stitch prompts (keeps inline token values by design) | `docs/STITCH_PROMPTS.md` |
