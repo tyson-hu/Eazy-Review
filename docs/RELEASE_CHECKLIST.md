@@ -41,7 +41,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Text does not overflow buttons/cards.
 - Touch targets are comfortable.
 - Navigation back behavior is predictable.
-- Keyboard does not block rating/comment inputs.
+- Keyboard does not block rating inputs or the Private note field.
 
 ## Security
 
