@@ -756,3 +756,22 @@ Safety-risk:
 
 Related files:
 - `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/SECURITY.md`, `docs/ROADMAP.md`, `docs/API_CONTRACTS.md`, `.cursor/rules/security.mdc`, `docs/DECISIONS.md`
+
+## 2026-07-24 — Atomic RLS Then Grants Sequencing
+
+What changed:
+- Task 11 enables RLS on every exposed table at create time (deny-by-default) and must **not** grant `anon` / `authenticated` table privileges.
+- Task 12 owns complete policies, then Data API grants, then authorization tests.
+- `docs/DATA_MODEL.md`, `docs/SECURITY.md`, and `docs/ROADMAP.md` updated so grants never precede authorizing policies.
+
+Why:
+- PR #14 review: Task 11 requiring client grants while Task 12 owned RLS could mark schema complete with privileges open and policies missing.
+
+Effect:
+- Client Data API exposure is atomic with policies; Task 11 stays locked down until Task 12.
+
+Safety-risk:
+- Docs-only sequencing fix on the planning branch.
+
+Related files:
+- `docs/TASKS.md`, `docs/DATA_MODEL.md`, `docs/SECURITY.md`, `docs/ROADMAP.md`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`

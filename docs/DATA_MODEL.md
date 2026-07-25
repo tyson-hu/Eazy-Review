@@ -347,7 +347,25 @@ revoke all on function public.enforce_user_rating_product_id_immutable() from an
 
 ## Privileges And Data API Exposure
 
-RLS alone is not enough on newer Supabase projects: tables are not automatically exposed to the Data API. After enabling RLS and policies, grant **least-privilege** table access explicitly. Without these grants, public reads can fail before policies run.
+RLS alone is not enough on newer Supabase projects: tables are not automatically exposed to the Data API. Grant **least-privilege** table access only **after** RLS is enabled and the authorizing policies exist. Without grants, intended public reads can fail before policies run; with grants before policies, clients can be exposed while still open.
+
+Sequencing (required):
+
+1. **Task 11** — create tables/constraints/triggers; `ALTER TABLE … ENABLE ROW LEVEL SECURITY` on every exposed table in the same migration (deny-by-default: no client policies yet). Do **not** `GRANT` to `anon` or `authenticated`. Optional `service_role` tooling grants only. Keep aggregate `REVOKE EXECUTE` here.
+2. **Task 12** — add complete policies; then `GRANT` to `anon` / `authenticated`; then run authorization tests.
+
+```sql
+-- Task 11 (same migration as CREATE TABLE): deny-by-default for API roles.
+alter table public.products enable row level security;
+-- …enable RLS on every exposed table…
+-- no anon/authenticated GRANTs yet
+
+-- Task 12: policies first, then grants (example).
+-- create policy ... on public.products ...;
+grant select on public.products to anon, authenticated;
+```
+
+Full Task 12 grant set (after policies):
 
 ```sql
 -- Catalog reads (anon + authenticated). Writes stay off for clients.
@@ -372,11 +390,9 @@ grant select, insert, update, delete on public.profiles to service_role;
 grant select, insert, update, delete on public.user_ratings to service_role;
 ```
 
-Task 11/12 migrations must include these grants (or the project’s equivalent explicit Data API exposure) alongside RLS.
-
 ## Row-Level Security
 
-Enable RLS on every exposed table before UI integration:
+**Task 11:** enable RLS on every exposed table at creation time (deny-by-default until Task 12 policies exist).
 
 ```sql
 alter table public.profiles enable row level security;
@@ -388,7 +404,7 @@ alter table public.rating_aggregates enable row level security;
 alter table public.product_offers enable row level security;
 ```
 
-Published catalog reads only (`is_published = true`). Related rows are visible only when their product is published:
+**Task 12:** published catalog policies and owner rating policies. Related rows are visible only when their product is published:
 
 ```sql
 create policy "Public can read published products"

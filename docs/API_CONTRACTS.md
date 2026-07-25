@@ -249,7 +249,7 @@ Rules:
 - `private_note` / `privateNote`: owner-only; never select other users’ notes.
 - Public written reviews: not implemented.
 - Mock UI may still label the optional field “Comment” and use `comment` until Task 16 renames the connected path.
-- Data API access requires explicit `GRANT`s after RLS; see `docs/DATA_MODEL.md` Privileges And Data API Exposure.
+- Data API access requires explicit `GRANT`s **after** RLS policies (Task 12); Task 11 only enables RLS deny-by-default. See `docs/DATA_MODEL.md` Privileges And Data API Exposure.
 
 ## Mock Data Contract
 

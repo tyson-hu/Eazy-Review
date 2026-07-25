@@ -40,7 +40,8 @@ Canonical schema and RLS expectations: `docs/DATA_MODEL.md`. Task order: `docs/T
 - Never put the service-role key in the Expo / mobile bundle, web client, or committed env examples meant for the app.
 - Expo may receive only the project URL and anon (publishable) key, validated at startup when the client is introduced.
 - Define and test RLS **before** wiring Browse / Detail / Rating to Supabase. Unauthorized scenarios in Task 12 are required, not optional polish.
-- New tables need explicit Data API `GRANT`s for `anon` / `authenticated` after RLS; do not assume automatic exposure.
+- **Task 11:** enable RLS on every new table in the create migration (deny-by-default). Do not grant `anon` / `authenticated` table privileges in Task 11.
+- **Task 12:** add complete policies, then explicit Data API `GRANT`s for `anon` / `authenticated`, then authorization tests. Never grant client roles before the authorizing policies exist.
 - `SECURITY DEFINER` aggregate helpers must `REVOKE EXECUTE` from `PUBLIC`, `anon`, and `authenticated` (trigger-only).
 - Catalog policies must enforce **published** products (`is_published`); drafts are not anonymously readable.
 - `private_note` is owner-only. Do not add public `SELECT` on `user_ratings` while notes share that row.

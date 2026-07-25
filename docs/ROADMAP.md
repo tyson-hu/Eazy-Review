@@ -37,8 +37,8 @@ Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and
 
 Replace the old “add Supabase” checklist with these milestones. Detail and acceptance live in `docs/TASKS.md` Tasks 11–18.
 
-1. **Task 11** — Environments and core schema (no mobile UI wiring).
-2. **Task 12** — Constraints, RLS, authorization tests.
+1. **Task 11** — Environments and core schema (RLS on at create = deny-by-default; no client grants; no mobile UI wiring).
+2. **Task 12** — Policies, Data API grants, authorization tests (grants only after policies).
 3. **Task 13** — Product seed data (small seed first).
 4. **Task 14** — Real Browse and Product Detail reads.
 5. **Task 15** — Authentication (email first).
@@ -109,19 +109,20 @@ Status: Done.
 
 Deliverables:
 - Local and staging Supabase environments.
-- Versioned migrations for core tables.
+- Versioned migrations for core tables with RLS enabled at create (deny-by-default).
+- Task 12 policies + `anon`/`authenticated` grants + authorization tests.
 - PostgreSQL constraints.
-- RLS on all exposed tables + authorization tests.
 - Small product seed (expand catalog after trust).
 
 Acceptance:
-- Published products can be read publicly under RLS + grants.
+- Published products can be read publicly only after Task 12 policies and grants.
 - Unpublished products are not anonymously readable.
 - User ratings (when auth exists) are owner-writable; `private_note` is not readable by other users.
 - Clients cannot write `rating_aggregates` or execute aggregate refresh RPCs.
 - Data model, API contracts, tasks, security, and decisions are current.
 - No production project touched by agents.
 - Secret scanning is required and present for Task 11.
+- Task 11 never completes with client grants while RLS policies are still missing.
 
 ### Milestone 4: Real Product Data (Task 14)
 

@@ -278,7 +278,8 @@ Deliverables:
   - `rating_aggregates` (server-owned Community Score summary)
   - `product_offers` only if it does not bloat the first migration
 - PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
-- Explicit Data API `GRANT`s for `anon` / `authenticated` (and `service_role` tooling) per `docs/DATA_MODEL.md` — RLS alone is not exposure.
+- **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
+- Optional: `service_role` tooling grants only (never ship service-role into Expo).
 - Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only).
 - Environment-variable validation pattern (anon key / URL only in Expo; never service-role in the mobile bundle).
 - **Secret scanning** wired for the foundation workstream (CI and/or pre-commit); Task 11 does not pass without it.
@@ -287,6 +288,7 @@ Deliverables:
 Acceptance:
 - Local `supabase start` / reset works from committed migrations.
 - Staging project exists and is the only remote target for agent work.
+- Every Task 11 table has RLS enabled; client roles cannot read/write via the Data API yet (no policies + no `anon`/`authenticated` grants).
 - Migration is human-readable; no UI, seed catalog, auth screens, or TanStack Query in this task unless explicitly added as a tiny companion packet.
 - Confirmation recorded that no production project was touched.
 - Secret scanning job/hook is present and fails on a deliberate test secret pattern (or documented equivalent proof).
@@ -294,16 +296,22 @@ Acceptance:
 Task 11 contract checklist (fill before implementation):
 - Exact tables and excluded features.
 - Allowed file paths (migrations + listed docs + secret-scanning config only).
-- Required constraints, `is_published`, grants, and aggregate `REVOKE`s.
+- Required constraints, `is_published`, RLS-on-create (deny-by-default), and aggregate `REVOKE`s.
+- Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12**.
 - Whether seed data is included (default: no full catalog).
 - Required validation commands (include `npm run check:skill-wrappers` and secret-scan command).
 - Staging-only execution confirmation.
 
-### Task 12: Constraints Hardening, RLS, And Authorization Tests
+### Task 12: Policies, Data API Grants, And Authorization Tests
 
 Status: Pending.
 
-Goal: every exposed table has RLS; unauthorized scenarios fail in tests.
+Goal: add complete RLS policies, then grant least-privilege Data API access to `anon` / `authenticated`, then prove unauthorized scenarios fail. **Grants must not land before policies.**
+
+Deliverables:
+- Policies matching `docs/DATA_MODEL.md` (published catalog reads, owner-only `user_ratings`, no client writes to `rating_aggregates`).
+- Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`).
+- Authorization tests (SQL or project-approved harness).
 
 Required scenarios (minimum):
 - Anonymous can read published products (and related public catalog reads for published products only).
@@ -316,9 +324,10 @@ Required scenarios (minimum):
 - Client cannot mark a purchase as verified (when that column exists).
 
 Acceptance:
-- RLS enabled on all exposed tables; policies match `docs/DATA_MODEL.md`.
-- Authorization tests (SQL or project-approved harness) cover the scenarios above.
-- Aggregate refresh remains server-owned (function/trigger); clients cannot write summary rows.
+- RLS remains enabled on all exposed tables; policies match `docs/DATA_MODEL.md`.
+- `anon` / `authenticated` grants exist only alongside the policies that authorize them.
+- Authorization tests cover the scenarios above.
+- Aggregate refresh remains server-owned (function/trigger); clients cannot write summary rows or execute refresh helpers via RPC.
 
 ### Task 13: Product Seed Data
 
