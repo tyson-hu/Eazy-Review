@@ -32,7 +32,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Rating writes cannot set `user_ratings.id` or timestamps via client grants.
 - Community Score is recalculated by database/server-side logic; clients cannot write `rating_aggregates` or execute refresh RPCs.
 - Every product has a zero-count `rating_aggregates` row from create/seed (or Detail normalizes a missing join to `ratingCount: 0`).
-- Rating saves use insert vs score-only update (or a controlled server function), not a client PostgREST upsert that updates identity columns.
+- Rating saves use a controlled server function or insert vs score-only update with unique-conflict retry (`23505`), not a client PostgREST upsert that updates identity columns.
 - User cannot create duplicate ratings for the same product.
 - `user_ratings.product_id` is immutable after insert.
 

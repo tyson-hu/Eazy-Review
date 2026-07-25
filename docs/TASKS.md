@@ -396,7 +396,7 @@ Status: Pending.
 Goal: persist the signed-in user’s rating (`private_note` owner-only); ship Account → Rated Products so users can find and reopen products they rated. Do **not** use a direct PostgREST upsert that updates identity columns.
 
 Deliverables:
-- `saveUserRating` / delete APIs using **insert vs score-only update** (or a controlled security-definer helper) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`.
+- `saveUserRating` / delete APIs using a controlled security-definer helper **or** insert vs score-only update with unique-conflict retry (`23505` → score/private-note-only update) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`.
 - Frontend rename `comment` → `privateNote` and UI label **Private note** (retire “Comment” on the connected form).
 - Connected Rate/Edit enforces the 500-character `private_note` limit before submit.
 - Create `app/account/rated-products.tsx` (route already documented in `docs/USER_FLOWS.md`); wire Account → Rated Products → Product Detail.
@@ -404,6 +404,7 @@ Deliverables:
 
 Acceptance:
 - One rating per user per product enforced.
+- Concurrent first saves for the same user/product do not leave an unhandled unique-constraint failure; the final row contains one complete submitted rating (atomic helper or insert→`23505`→score-only update).
 - Private note never returned for other users.
 - Detail My Rating reflects persisted data after submit; mock session map retired for the connected path.
 - Frontend field rename `comment` → `privateNote` and visible **Private note** label land with this task (or an explicit tiny precede packet).

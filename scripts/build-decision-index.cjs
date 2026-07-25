@@ -467,11 +467,26 @@ function loadDecisions() {
   }
   assertLegacyArchiveIntegrity();
 
-  const fileNames = fs
+  const allowedNonAdrFiles = new Set(['README.md']);
+  const candidateFiles = fs
     .readdirSync(DECISIONS_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md')
+    .filter((entry) => entry.isFile())
     .map((entry) => entry.name)
     .sort();
+
+  /** @type {string[]} */
+  const fileNames = [];
+  for (const fileName of candidateFiles) {
+    if (allowedNonAdrFiles.has(fileName)) {
+      continue;
+    }
+    if (!FILE_NAME_RE.test(fileName)) {
+      throw new Error(
+        `docs/decisions/${fileName}: filename must be YYYY-MM-DD-lowercase-slug.md (misnamed decision files are rejected, not ignored)`,
+      );
+    }
+    fileNames.push(fileName);
+  }
 
   if (fileNames.length === 0) {
     throw new Error('no ADR files found under docs/decisions');
@@ -489,6 +504,12 @@ function loadDecisions() {
   }
 
   for (const decision of decisions) {
+    if (decision.supersedes.length > 0 && decision.status !== 'accepted') {
+      throw new Error(
+        `${decision.fileName}: only \`status: accepted\` records may supersede other decisions (found \`${decision.status}\`)`,
+      );
+    }
+
     for (const supersededId of decision.supersedes) {
       const superseded = byId.get(supersededId);
       if (!superseded) {
@@ -509,6 +530,11 @@ function loadDecisions() {
       if (!replacement) {
         throw new Error(
           `${decision.fileName}: \`superseded_by\` references missing id ${decision.superseded_by}`,
+        );
+      }
+      if (replacement.status !== 'accepted') {
+        throw new Error(
+          `${decision.fileName}: \`superseded_by\` target ${decision.superseded_by} must be \`status: accepted\` (found \`${replacement.status}\`)`,
         );
       }
       if (!replacement.supersedes.includes(decision.id)) {

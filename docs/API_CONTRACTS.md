@@ -181,9 +181,9 @@ Task 12 column-level grants allow `INSERT` of identity + scores + `private_note`
 
 Required client (or thin repository) behavior:
 
-1. Attempt **insert** with `product_id`, `user_id`, scores, and optional `private_note` when no own rating exists; or
-2. **Update** only score columns + `private_note` for the existing own row (filter by `product_id` + `user_id` / `auth.uid()`); or
-3. Use a controlled **security-definer** server function that performs the insert-or-score-update atomically and is granted carefully (still no client table-wide upsert).
+1. Preferred: call a controlled **security-definer** server function that performs the insert-or-score-update atomically and is granted carefully (still no client table-wide upsert); or
+2. Split path: **insert** with `product_id`, `user_id`, scores, and optional `private_note` when no own rating exists; **update** only score columns + `private_note` for an existing own row (filter by `product_id` + `user_id` / `auth.uid()`).
+3. On the split path, if insert fails with PostgreSQL unique violation `23505` on `(product_id, user_id)` (concurrent first save), immediately retry the permitted score/private-note-only update for that user and product. Do not surface the unique conflict as a failed save when the retry succeeds.
 
 Do **not** ship `supabase.from('user_ratings').upsert({ product_id, user_id, … })` as the connected write path. The historical name `upsertUserRating` in older notes means “create or replace my rating,” not PostgREST upsert.
 

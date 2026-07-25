@@ -41,10 +41,15 @@ Use only:
 
 Keep superseded, reversed, and deprecated records. A replacement lists the old
 record in `supersedes`; the old record points back with `superseded_by`.
+Only an `accepted` record may supersede another decision — a `proposed`
+replacement must not mark the old record `superseded`, or the generated index
+would drop binding guidance before the replacement is approved.
 
 ## File and metadata rules
 
-- Filename: `YYYY-MM-DD-lowercase-slug.md`.
+- Filename: `YYYY-MM-DD-lowercase-slug.md` (lowercase `.md` only). Misnamed
+  files such as `.MD`, `.markdown`, or `.md.bak` are rejected by
+  `npm run decisions:check`, not silently ignored.
 - `id`: stable lowercase slug prefixed with `decision-`; never reuse it.
 - `date`: original decision date and filename date.
 - `updated`: optional; use it when status or substance changes later.
