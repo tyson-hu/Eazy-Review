@@ -25,7 +25,7 @@ Goal: change frontend product/rating data shapes, types, or mock data — keepin
 ## Routine
 
 1. Confirm the change is frontend-only. If it implies a database column, stop and switch skills.
-2. Keep `ProductCardData` flat: `id`, `brand`, `name`, `sku`, `imageUrl`, `eazyScore`, `communityScore`, `ratingCount`, `lowestPrice`. Do not nest sub-objects into the card shape.
+2. Keep `ProductCardData` flat: `id`, `brand`, `name`, `sku`, `imageUrl`, `eazyScore`, `communityScore`, `ratingCount`, `lowestPrice`, `lowestPriceCurrency`. Do not nest sub-objects into the card shape.
 3. Apply UI naming rules: fields are camelCase mirrors of the documented schema (`eazyScore`, not `officialScore`); user-facing labels stay `Eazy Score`, `Community Score`, `My Rating`.
 4. Update `src/types/product.ts`, `src/features/products/mockProducts.ts`, and the type blocks in `docs/API_CONTRACTS.md` together in the same change.
 5. Update every consumer the typecheck flags (screens, `src/features/products/*`); do not leave `any` casts to silence errors.

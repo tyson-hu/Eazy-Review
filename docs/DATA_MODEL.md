@@ -681,7 +681,7 @@ Before scraping, confirm source permission, field fit, stable identifiers, and d
 
 1. Community aggregation mechanism: **resolved** — Task 11 implements trigger-owned `refresh_rating_aggregates` / `handle_user_rating_change`; Task 17 verifies and hardens it (no RPC/schedule re-selection).
 2. Primary catalog image: **resolved** — `sort_order ASC`, then `created_at ASC`, then `id ASC`; unique `(product_id, sort_order)`; no images → `imageUrl: null`.
-3. Mixed-currency offers for Detail lowest price: **resolved for MVP** — Task 14 requires one currency per product offer payload (reject or omit mismatched offers); raw cross-currency numeric minimum is prohibited. Conversion or per-currency grouping needs a later ADR.
+3. Mixed-currency offers for Detail/Browse lowest price: **resolved for MVP** — Task 14 requires one currency per product offer payload (reject or omit mismatched offers); raw cross-currency numeric minimum is prohibited. Browse cards carry that selected currency as `lowestPriceCurrency` with `lowestPrice`. Conversion or per-currency grouping needs a later ADR.
 4. `private_note` maximum: **resolved** at 500 characters across the database check constraint, API contract, and connected Rate/Edit form (`maxLength` / validation in Task 16). Do not choose a different limit.
 
 ## Unresolved decisions (decide in Task 11 planning; do not invent in code)

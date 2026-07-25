@@ -23,6 +23,8 @@ export type ProductCardData = {
   communityScore: number | null;
   ratingCount: number;
   lowestPrice: number | null;
+  /** ISO currency for `lowestPrice`; null when there is no displayable price. */
+  lowestPriceCurrency: string | null;
 };
 
 export type RatingBreakdown = {

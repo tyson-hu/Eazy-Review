@@ -249,6 +249,8 @@ function extractTitleAndValidateSections(body, fileLabel) {
   const lines = body.split(/\r?\n/);
   /** @type {{ line: string, lineIndex: number }[]} */
   const titleMatches = [];
+  /** @type {number[]} */
+  const h2LineIndexes = [];
   /** @type {Map<string, number[]>} */
   const matchesBySection = new Map(REQUIRED_SECTIONS.map((section) => [section, []]));
 
@@ -256,6 +258,10 @@ function extractTitleAndValidateSections(body, fileLabel) {
     // Level-one ATX heading: "# " then text (not "## ...").
     if (/^# .+/.test(line) && !line.startsWith('##')) {
       titleMatches.push({ line, lineIndex });
+    }
+    // Any unfenced level-two ATX heading bounds section bodies (required or not).
+    if (/^## /.test(line)) {
+      h2LineIndexes.push(lineIndex);
     }
     for (const section of REQUIRED_SECTIONS) {
       if (new RegExp(`^${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`).test(line)) {
@@ -301,8 +307,12 @@ function extractTitleAndValidateSections(body, fileLabel) {
   }
 
   for (let index = 0; index < REQUIRED_SECTIONS.length; index += 1) {
-    const contentStart = sectionLineIndexes[index] + 1;
-    const contentEnd = sectionLineIndexes[index + 1] ?? lines.length;
+    const headingIndex = sectionLineIndexes[index];
+    const contentStart = headingIndex + 1;
+    // Bound each required section at the next unfenced ## heading of any name so
+    // an empty canonical section cannot borrow a following ## Notes (etc.) body.
+    const nextH2 = h2LineIndexes.find((lineIndex) => lineIndex > headingIndex);
+    const contentEnd = nextH2 ?? lines.length;
     const sectionBody = lines.slice(contentStart, contentEnd).join('\n');
     if (sectionBody.trim() === '') {
       throw new Error(`${fileLabel}: section \`${REQUIRED_SECTIONS[index]}\` must not be empty`);
@@ -425,7 +435,13 @@ function readDecision(fileName) {
     if (!/^[1-9]\d*$/.test(task)) {
       throw new Error(`${fileLabel}: every \`tasks\` value must be a positive integer`);
     }
-    return Number(task);
+    const parsedTask = Number(task);
+    if (!Number.isSafeInteger(parsedTask) || parsedTask <= 0) {
+      throw new Error(
+        `${fileLabel}: every \`tasks\` value must be a positive safe integer`,
+      );
+    }
+    return parsedTask;
   });
   assertUniqueSorted(metadata.tasks, fileLabel, 'tasks', (left, right) => left - right);
 
@@ -511,9 +527,15 @@ function loadDecisions() {
   }
 
   for (const decision of decisions) {
-    if (decision.supersedes.length > 0 && decision.status !== 'accepted') {
+    // Accepted records may newly supersede others; superseded records may retain
+    // historical `supersedes` when a later accepted record replaces them.
+    if (
+      decision.supersedes.length > 0 &&
+      decision.status !== 'accepted' &&
+      decision.status !== 'superseded'
+    ) {
       throw new Error(
-        `${decision.fileName}: only \`status: accepted\` records may supersede other decisions (found \`${decision.status}\`)`,
+        `${decision.fileName}: only \`accepted\` or \`superseded\` records may list \`supersedes\` (found \`${decision.status}\`)`,
       );
     }
 
@@ -539,9 +561,9 @@ function loadDecisions() {
           `${decision.fileName}: \`superseded_by\` references missing id ${decision.superseded_by}`,
         );
       }
-      if (replacement.status !== 'accepted') {
+      if (replacement.status !== 'accepted' && replacement.status !== 'superseded') {
         throw new Error(
-          `${decision.fileName}: \`superseded_by\` target ${decision.superseded_by} must be \`status: accepted\` (found \`${replacement.status}\`)`,
+          `${decision.fileName}: \`superseded_by\` target ${decision.superseded_by} must be \`accepted\` or \`superseded\` (found \`${replacement.status}\`)`,
         );
       }
       if (!replacement.supersedes.includes(decision.id)) {
@@ -553,8 +575,54 @@ function loadDecisions() {
   }
 
   assertAcyclicSupersession(decisions);
+  assertSupersessionTerminatesAtAccepted(decisions, byId);
 
   return decisions;
+}
+
+/**
+ * Every superseded record's `superseded_by` chain must be acyclic (checked
+ * separately) and terminate at a currently `accepted` record. Intermediate
+ * replacements may themselves be `superseded`.
+ *
+ * @param {Array<{ id: string, status: string, superseded_by?: string, fileName: string }>} decisions
+ * @param {Map<string, { id: string, status: string, superseded_by?: string, fileName: string }>} byId
+ */
+function assertSupersessionTerminatesAtAccepted(decisions, byId) {
+  for (const decision of decisions) {
+    if (decision.status !== 'superseded') {
+      continue;
+    }
+
+    const seen = new Set();
+    let current = decision;
+    while (current.status === 'superseded') {
+      if (seen.has(current.id)) {
+        throw new Error(
+          `${decision.fileName}: supersession chain cycles while resolving terminal accepted record`,
+        );
+      }
+      seen.add(current.id);
+      if (!current.superseded_by) {
+        throw new Error(
+          `${current.fileName}: superseded decision is missing \`superseded_by\` while resolving terminal accepted record`,
+        );
+      }
+      const next = byId.get(current.superseded_by);
+      if (!next) {
+        throw new Error(
+          `${current.fileName}: \`superseded_by\` references missing id ${current.superseded_by}`,
+        );
+      }
+      current = next;
+    }
+
+    if (current.status !== 'accepted') {
+      throw new Error(
+        `${decision.fileName}: supersession chain must terminate at an \`accepted\` record (ended at \`${current.id}\` with status \`${current.status}\`)`,
+      );
+    }
+  }
 }
 
 function escapeTable(value) {
@@ -678,7 +746,11 @@ function main() {
   const expected = renderIndex(decisions);
 
   if (checkOnly) {
-    const actual = fs.existsSync(INDEX_FILE) ? fs.readFileSync(INDEX_FILE, 'utf8') : '';
+    // Normalize CRLF/CR → LF so Windows checkouts with core.autocrlf=true do
+    // not report a clean generated index as stale.
+    const actual = fs.existsSync(INDEX_FILE)
+      ? fs.readFileSync(INDEX_FILE, 'utf8').replace(/\r\n?/g, '\n')
+      : '';
     if (actual !== expected) {
       console.error(
         'decision-index: docs/DECISIONS.md is stale; run `npm run decisions:build` and commit the result',

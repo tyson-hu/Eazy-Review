@@ -41,9 +41,14 @@ Use only:
 
 Keep superseded, reversed, and deprecated records. A replacement lists the old
 record in `supersedes`; the old record points back with `superseded_by`.
-Only an `accepted` record may supersede another decision — a `proposed`
-replacement must not mark the old record `superseded`, or the generated index
-would drop binding guidance before the replacement is approved.
+Only an `accepted` record may **newly** supersede another decision — a
+`proposed` replacement must not mark the old record `superseded`, or the
+generated index would drop binding guidance before the replacement is
+approved. When that accepted replacement is later superseded itself, it may
+retain its historical `supersedes` list while `status: superseded`. Multi-
+generation chains (`A ← B ← C`) are valid: every immediate forward/back link
+must agree, the graph must be acyclic, and every `superseded_by` chain must
+terminate at a currently `accepted` record.
 
 ## File and metadata rules
 
@@ -55,7 +60,8 @@ would drop binding guidance before the replacement is approved.
 - `updated`: optional; use it when status or substance changes later.
 - `area`: one of `product-ux`, `data-supabase`, `auth-security`,
   `architecture`, `tooling-ci`, or `agent-workflow`.
-- `tasks`: sorted task numbers, or `[]` when the decision is not task-specific.
+- `tasks`: sorted positive safe integers (JavaScript `Number.isSafeInteger`),
+  or `[]` when the decision is not task-specific.
 - `pr`: a PR number, or `null`.
 - `tags` and `supersedes`: sorted inline arrays of lowercase slugs/IDs.
 
@@ -127,18 +133,23 @@ rg "status: accepted" docs/decisions
 the five template headings as exact level-two lines outside fenced code
 (`## Context`, `## Decision`, `## Consequences`, `## Revisit when`,
 `## Related`), each once and in that order. Prefixed or alternate wording does
-not count. Headings inside backtick or tilde fences (` ``` ` / `~~~`) are
-ignored for both the title and required sections; a fence closes only with a
-compatible marker and run length (an opposite marker inside the fence stays
-content). Supersession links must be acyclic: a record may not supersede
-itself, and `superseded_by` chains must not form a cycle.
+not count. Each required section’s body is bounded by the next unfenced
+level-two heading of any name (so an empty `## Context` followed by
+`## Notes` does not false-pass). Headings inside backtick or tilde fences
+(` ``` ` / `~~~`) are ignored for both the title and required sections; a
+fence closes only with a compatible marker and run length (an opposite marker
+inside the fence stays content). Supersession links must be acyclic: a record
+may not supersede itself, `superseded_by` chains must not form a cycle, and
+every superseded chain must terminate at an `accepted` record (intermediate
+replacements may themselves be `superseded`).
 
 The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry
 into a standalone record. Promote an archived choice only if it becomes
 currently relevant and still meets the high-impact criteria above.
 `npm run decisions:check` verifies that archive against a committed SHA-256
-digest of **LF-normalized** UTF-8 text (CRLF checkouts with
+digest of **LF-normalized** UTF-8 text, and compares the generated
+`docs/DECISIONS.md` index after the same LF normalization (CRLF checkouts with
 `core.autocrlf=true` must not fail when content is unchanged). If you
 intentionally rewrite the archive, update `EXPECTED_ARCHIVE_SHA256` in
 `scripts/build-decision-index.cjs`.
