@@ -317,8 +317,10 @@ function assertLegacyArchiveIntegrity() {
     throw new Error('legacy archive is missing at docs/decisions/archive/2026-pre-adr-log.md');
   }
 
-  const content = fs.readFileSync(ARCHIVE_FILE);
-  const digest = crypto.createHash('sha256').update(content).digest('hex');
+  // Normalize CRLF/CR → LF before hashing so Windows checkouts with
+  // core.autocrlf=true do not false-fail when tracked content is unchanged.
+  const normalized = fs.readFileSync(ARCHIVE_FILE, 'utf8').replace(/\r\n?/g, '\n');
+  const digest = crypto.createHash('sha256').update(normalized, 'utf8').digest('hex');
   if (digest !== EXPECTED_ARCHIVE_SHA256) {
     throw new Error(
       `legacy archive SHA-256 mismatch (expected ${EXPECTED_ARCHIVE_SHA256}, got ${digest}). ` +

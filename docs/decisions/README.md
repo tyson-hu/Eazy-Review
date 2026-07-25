@@ -138,5 +138,7 @@ The complete legacy log is preserved at
 into a standalone record. Promote an archived choice only if it becomes
 currently relevant and still meets the high-impact criteria above.
 `npm run decisions:check` verifies that archive against a committed SHA-256
-digest; if you intentionally rewrite it, update
-`EXPECTED_ARCHIVE_SHA256` in `scripts/build-decision-index.cjs`.
+digest of **LF-normalized** UTF-8 text (CRLF checkouts with
+`core.autocrlf=true` must not fail when content is unchanged). If you
+intentionally rewrite the archive, update `EXPECTED_ARCHIVE_SHA256` in
+`scripts/build-decision-index.cjs`.

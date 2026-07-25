@@ -195,6 +195,6 @@ During the fake-local-state phase:
 After successful real submission:
 - Invalidate `['product', productId]`.
 - Invalidate `['products']`.
-- Invalidate `['userRating', productId]`.
-- Invalidate `['ratedProducts']`.
+- Invalidate `['userRating', userId, productId]`.
+- Invalidate `['ratedProducts', userId]`.
 - Navigate back to Product Detail.

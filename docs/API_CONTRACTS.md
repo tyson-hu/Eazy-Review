@@ -182,7 +182,16 @@ Task 12 column-level grants allow `INSERT` of identity + scores + `private_note`
 
 Required client (or thin repository) behavior:
 
-1. Preferred: call a controlled **security-definer** server function that performs the insert-or-score-update atomically and is granted carefully (still no client table-wide upsert); or
+1. Preferred: call a **security-definer** server function that performs the insert-or-score-update atomically (still no client table-wide upsert). Because `SECURITY DEFINER` runs with the owner’s privileges and bypasses the caller’s table RLS, the helper **must** enforce authorization itself — not merely be “granted carefully”:
+   - Derive the rating owner solely from `auth.uid()`; do **not** accept a trusted `user_id` argument from the client.
+   - Reject unauthenticated calls (`auth.uid()` is null).
+   - Verify the target product exists and `is_published = true`.
+   - Insert or update only the caller’s `(product_id, auth.uid())` row.
+   - Write only score columns and `private_note` (never identity / audit columns).
+   - Enforce score bounds (1–10) and the 500-character `private_note` limit.
+   - Declare `SECURITY DEFINER SET search_path = ''` and use fully qualified relation names.
+   - `REVOKE EXECUTE` from `PUBLIC` and `anon`; `GRANT EXECUTE` only to `authenticated`.
+   - Authorization tests must attempt writing another user’s rating and rating an unpublished product (both must fail).
 2. Split path: **insert** with `product_id`, `user_id`, scores, and optional `private_note` when no own rating exists; **update** only score columns + `private_note` for an existing own row (filter by `product_id` + `user_id` / `auth.uid()`).
 3. On the split path, if insert fails with PostgreSQL unique violation `23505` on `(product_id, user_id)` (concurrent first save), immediately retry the permitted score/private-note-only update for that user and product. Do not surface the unique conflict as a failed save when the retry succeeds.
 
@@ -202,8 +211,15 @@ Hooks:
 File: `src/features/ratings/queries.ts`
 
 Hooks:
-- `useUserRatingQuery(productId)`
-- `useUserRatedProductsQuery()`
+- `useUserRatingQuery(productId)` — enabled only when an authenticated `userId` is present
+- `useUserRatedProductsQuery()` — enabled only when an authenticated `userId` is present
+
+User-scoped query keys **must** include the authenticated account id so sign-out / account switch cannot serve another user’s cached My Rating or private note:
+
+- `['userRating', userId, productId]`
+- `['ratedProducts', userId]`
+
+On every auth transition (sign-out, sign-in as a different user), remove or invalidate all prior user-scoped queries (at minimum those key prefixes). Do not enable either query until `userId` is known.
 
 ## Ratings Mutations
 
@@ -216,8 +232,8 @@ Hooks:
 After rating mutation succeeds, invalidate:
 - `['product', productId]`
 - `['products']`
-- `['userRating', productId]`
-- `['ratedProducts']`
+- `['userRating', userId, productId]`
+- `['ratedProducts', userId]`
 
 ## Search And Filters
 

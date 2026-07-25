@@ -23,15 +23,25 @@ observe a missing row and race on insert.
 ## Decision
 
 `saveUserRating` uses an authorized insert for a missing rating and a
-score/private-note-only update for an existing rating, or calls a controlled
-server function with equivalent restrictions. The client does not issue a
-direct PostgREST `.upsert()` of rating identity columns.
+score/private-note-only update for an existing rating, or calls a
+`SECURITY DEFINER` server function that enforces the same restrictions
+inside the function body. The client does not issue a direct PostgREST
+`.upsert()` of rating identity columns.
+
+When the preferred definer helper is used, it must:
+
+- derive the owner solely from `auth.uid()` (no trusted client `user_id`);
+- reject unauthenticated callers and unpublished products;
+- insert/update only `(product_id, auth.uid())` score columns + `private_note`;
+- use `SECURITY DEFINER SET search_path = ''` with fully qualified names;
+- `REVOKE EXECUTE` from `PUBLIC` / `anon` and `GRANT EXECUTE` only to
+  `authenticated`.
 
 When using the split insert/update path, an insert that fails with PostgreSQL
 unique-violation `23505` on `(product_id, user_id)` must immediately retry the
-permitted score/private-note-only update for that user and product. Prefer a
-controlled atomic security-definer function when available; either path must
-preserve the no-identity-upsert rule.
+permitted score/private-note-only update for that user and product. Prefer the
+atomic definer helper when available; either path must preserve the
+no-identity-upsert rule.
 
 ## Consequences
 

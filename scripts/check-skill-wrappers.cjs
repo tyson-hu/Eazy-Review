@@ -4,7 +4,7 @@
  *
  * Checks:
  * - wrapper directories stay synchronized with each other and with skills/<name>/SKILL.md
- * - each wrapper has YAML front matter with non-empty name and description scalars
+ * - each wrapper has YAML front matter with non-empty string name and description
  * - each wrapper points at an existing canonical skills/<name>/SKILL.md
  * - paired wrappers are byte-identical
  *
@@ -14,6 +14,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const yaml = require('yaml');
 
 const ROOT = path.resolve(__dirname, '..');
 const CANONICAL_DIR = path.join(ROOT, 'skills');
@@ -41,110 +42,14 @@ function listSkillNames(dir) {
 }
 
 /**
- * Parse the limited YAML subset used by skill wrappers: a flat mapping of
- * unquoted or fully closed single-/double-quoted scalar keys required for discovery.
- * Rejects null/empty values (e.g. `description: # comment`), YAML null spellings
- * (`null`, `~`, case-insensitive when unquoted), non-string YAML scalars (booleans,
- * numbers, and special floats such as `.inf` / `.nan`), unclosed quotes, and
- * unsupported collection/block indicators (`[`, `{`, `|`, `>`).
+ * Parse skill-wrapper front matter with a real YAML parser and require
+ * non-empty string `name` and `description`. Handwritten numeric regexes miss
+ * YAML spellings such as `0x10`, `0o20`, and `0b10000`.
  *
- * @param {string} body
+ * @param {string} content
  * @param {string} fileLabel
- * @returns {Record<string, string> | null}
+ * @returns {{ name: string, description: string } | null}
  */
-function parseSimpleYamlMapping(body, fileLabel) {
-  /** @type {Record<string, string>} */
-  const result = {};
-  const lines = body.split(/\r?\n/);
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i];
-    if (line.trim() === '' || line.trimStart().startsWith('#')) {
-      continue;
-    }
-
-    const match = line.match(/^([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.*)$/);
-    if (!match) {
-      errors.push(`${fileLabel}: unsupported front matter line ${i + 1} (expected key: scalar)`);
-      return null;
-    }
-
-    const key = match[1];
-    let raw = match[2];
-
-    if (raw.includes(' #')) {
-      raw = raw.slice(0, raw.indexOf(' #')).trimEnd();
-    }
-
-    if (raw === '' || raw === '#' || raw.startsWith('#')) {
-      errors.push(
-        `${fileLabel}: front matter \`${key}\` is null/empty (comments alone are not a valid value)`,
-      );
-      return null;
-    }
-
-    const first = raw[0];
-    if (first === '[' || first === '{' || first === '|' || first === '>') {
-      errors.push(
-        `${fileLabel}: front matter \`${key}\` uses unsupported YAML syntax (collections/block scalars are not allowed)`,
-      );
-      return null;
-    }
-
-    let value = raw;
-    if (first === '"' || first === "'") {
-      if (raw.length < 2 || raw[raw.length - 1] !== first) {
-        errors.push(
-          `${fileLabel}: front matter \`${key}\` has an unclosed ${first === '"' ? 'double' : 'single'} quote`,
-        );
-        return null;
-      }
-      value = raw.slice(1, -1);
-    } else {
-      const trimmed = raw.trim();
-      // Unquoted YAML null / boolean / numeric scalars are not usable discovery strings.
-      if (/^(?:~|null)$/i.test(trimmed)) {
-        errors.push(
-          `${fileLabel}: front matter \`${key}\` is a YAML null scalar (use a non-empty string description)`,
-        );
-        return null;
-      }
-      if (/^(?:true|false|yes|no|on|off)$/i.test(trimmed)) {
-        errors.push(
-          `${fileLabel}: front matter \`${key}\` is a YAML boolean scalar (use a quoted or plain string)`,
-        );
-        return null;
-      }
-      if (/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(trimmed)) {
-        errors.push(
-          `${fileLabel}: front matter \`${key}\` is a YAML numeric scalar (use a quoted or plain string)`,
-        );
-        return null;
-      }
-      if (/^[+-]?\.(?:inf|nan)$/i.test(trimmed)) {
-        errors.push(
-          `${fileLabel}: front matter \`${key}\` is a YAML special float (use a quoted or plain string)`,
-        );
-        return null;
-      }
-    }
-
-    if (value.trim() === '') {
-      errors.push(`${fileLabel}: front matter \`${key}\` must be a non-empty scalar`);
-      return null;
-    }
-
-    if (Object.prototype.hasOwnProperty.call(result, key)) {
-      errors.push(`${fileLabel}: duplicate front matter key \`${key}\``);
-      return null;
-    }
-
-    result[key] = value;
-  }
-
-  return result;
-}
-
 function parseFrontMatter(content, fileLabel) {
   const match = content.match(FRONT_MATTER_RE);
   if (!match) {
@@ -152,25 +57,54 @@ function parseFrontMatter(content, fileLabel) {
     return null;
   }
 
-  const mapping = parseSimpleYamlMapping(match[1], fileLabel);
-  if (!mapping) {
+  let parsed;
+  try {
+    parsed = yaml.parse(match[1], { uniqueKeys: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`${fileLabel}: invalid YAML front matter (${message})`);
     return null;
   }
 
-  if (!Object.prototype.hasOwnProperty.call(mapping, 'name')) {
-    errors.push(`${fileLabel}: front matter missing required \`name:\` field`);
-  }
-  if (!Object.prototype.hasOwnProperty.call(mapping, 'description')) {
-    errors.push(`${fileLabel}: front matter missing required \`description:\` field`);
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    errors.push(`${fileLabel}: front matter must be a YAML mapping`);
+    return null;
   }
 
-  if (!mapping.name || !mapping.description) {
+  /** @type {Record<string, unknown>} */
+  const mapping = parsed;
+  let ok = true;
+
+  for (const key of ['name', 'description']) {
+    if (!Object.prototype.hasOwnProperty.call(mapping, key)) {
+      errors.push(`${fileLabel}: front matter missing required \`${key}:\` field`);
+      ok = false;
+      continue;
+    }
+
+    const value = mapping[key];
+    if (typeof value !== 'string') {
+      const kind = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
+      errors.push(
+        `${fileLabel}: front matter \`${key}\` must be a non-empty string (got ${kind})`,
+      );
+      ok = false;
+      continue;
+    }
+
+    if (value.trim() === '') {
+      errors.push(`${fileLabel}: front matter \`${key}\` must be a non-empty string`);
+      ok = false;
+    }
+  }
+
+  if (!ok) {
     return null;
   }
 
   return {
-    name: mapping.name,
-    description: mapping.description,
+    name: /** @type {string} */ (mapping.name),
+    description: /** @type {string} */ (mapping.description),
   };
 }
 

@@ -319,8 +319,8 @@ Goal: add complete RLS policies, then grant least-privilege Data API access to `
 Deliverables:
 - A **new** forward-only migration (do not edit or extend Task 11's applied migration) that adds policies and Data API grants after Task 11's deny-by-default schema has been applied and verified.
 - Policies matching `docs/DATA_MODEL.md` (published catalog reads, owner-only `user_ratings` with published-product INSERT/UPDATE checks, no client writes to `rating_aggregates`).
-- Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`), including **column-level** `UPDATE` on `profiles` (`display_name`, `username`, `avatar_url`) and column-level `INSERT`/`UPDATE` on `user_ratings` (scores + `private_note` only; no client grants on `id` / timestamps).
-- Authorization tests (SQL or project-approved harness).
+- Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`), including **`REVOKE ALL PRIVILEGES`** on each client-facing table from `anon` / `authenticated` before rebuilding the allowlist, then **column-level** `UPDATE` on `profiles` (`display_name`, `username`, `avatar_url`) and column-level `INSERT`/`UPDATE` on `user_ratings` (scores + `private_note` only; no client grants on `id` / timestamps).
+- Authorization tests (SQL or project-approved harness), including privilege inventory (`information_schema.role_table_grants` / column privileges) and attempted audit-column updates.
 
 Required scenarios (minimum):
 - Anonymous can read published products (and related public catalog reads for published products only).
@@ -328,7 +328,7 @@ Required scenarios (minimum):
 - Anonymous cannot create ratings.
 - Authenticated user can create / update / delete **own** rating (`product_id` immutable).
 - Authenticated user cannot insert or update a rating for an unpublished product (own DELETE still allowed).
-- Authenticated user cannot rewrite `profiles` / `user_ratings` audit or identity columns via Data API grants.
+- Authenticated user cannot rewrite `profiles` / `user_ratings` audit or identity columns via Data API grants (prove after revoke+allowlist; table-wide UPDATE must not remain).
 - Client cannot directly insert arbitrary `profiles` rows; authenticated users can update only their own mutable profile fields.
 - User cannot read another user’s `private_note`.
 - User cannot modify another user’s rating.
@@ -407,7 +407,7 @@ Status: Pending.
 Goal: persist the signed-in user’s rating (`private_note` owner-only); ship Account → Rated Products so users can find and reopen products they rated. Do **not** use a direct PostgREST upsert that updates identity columns.
 
 Deliverables:
-- `saveUserRating` / delete APIs using a controlled security-definer helper **or** insert vs score-only update with unique-conflict retry (`23505` → score/private-note-only update) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`.
+- `saveUserRating` / delete APIs using a **security-definer** helper **or** insert vs score-only update with unique-conflict retry (`23505` → score/private-note-only update) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`. If the preferred definer helper is chosen, it must authorize inside the function (`auth.uid()` only, published-product check, score/`private_note`-only writes, restricted `EXECUTE`) per that contract.
 - Frontend rename `comment` → `privateNote` and UI label **Private note** (retire “Comment” on the connected form).
 - Connected Rate/Edit enforces the 500-character `private_note` limit before submit.
 - Create `app/account/rated-products.tsx` (route already documented in `docs/USER_FLOWS.md`); wire Account → Rated Products → Product Detail.
@@ -443,7 +443,8 @@ Goal: query hooks, query-key factory, runtime validation for DB responses, struc
 
 Acceptance:
 - Mock fetch paths replaced for connected screens (including Rated Products when present).
-- Invalidation list in `docs/API_CONTRACTS.md` is implemented (includes `['ratedProducts']` after rating mutations).
+- Invalidation list in `docs/API_CONTRACTS.md` is implemented (includes `['ratedProducts', userId]` after rating mutations).
+- User-scoped keys include the authenticated account id (`['userRating', userId, productId]`, `['ratedProducts', userId]`); queries stay disabled until `userId` is known; auth transitions clear prior user-scoped cache entries.
 - No Redux/Zustand for server state; no optimistic rating mutations in the first backend version.
 
 ### Companion: Skill-wrapper validation
@@ -452,7 +453,7 @@ Status: Done (2026-07-24).
 
 Added `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers`, wired into `npm run check` and Expo CI. Validates:
 - each `.agents/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` has YAML front matter (`name`, `description`);
-- `name` / `description` are non-empty **string** scalars (rejects empty, comment-only, YAML null `null` / `~`, and non-string scalars such as booleans/numbers);
+- front matter is parsed as YAML; `name` / `description` must be non-empty **strings** after trim (rejects null, booleans, and every YAML numeric form including hex/octal/binary/`0x10`);
 - declared canonical `skills/<name>/SKILL.md` exists and is referenced;
 - agent and Claude wrapper directories stay synchronized and byte-identical.
 
