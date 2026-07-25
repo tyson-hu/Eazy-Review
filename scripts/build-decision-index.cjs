@@ -169,6 +169,121 @@ function assertUniqueSorted(values, fileLabel, field, compare) {
   }
 }
 
+/**
+ * Locate required ## headings as exact markdown lines outside fenced code.
+ * Returns the 0-based line indexes of each required section in template order.
+ */
+function findRequiredSectionLines(body, fileLabel) {
+  const lines = body.split(/\r?\n/);
+  /** @type {Map<string, number[]>} */
+  const matchesBySection = new Map(REQUIRED_SECTIONS.map((section) => [section, []]));
+  let inFence = false;
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    if (/^ {0,3}```/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      continue;
+    }
+
+    for (const section of REQUIRED_SECTIONS) {
+      if (new RegExp(`^${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`).test(line)) {
+        matchesBySection.get(section).push(lineIndex);
+      }
+    }
+  }
+
+  /** @type {number[]} */
+  const sectionLineIndexes = [];
+  for (const section of REQUIRED_SECTIONS) {
+    const matches = matchesBySection.get(section) ?? [];
+    if (matches.length === 0) {
+      throw new Error(`${fileLabel}: missing required section \`${section}\``);
+    }
+    if (matches.length > 1) {
+      throw new Error(
+        `${fileLabel}: required section \`${section}\` must appear exactly once (found ${matches.length})`,
+      );
+    }
+    sectionLineIndexes.push(matches[0]);
+  }
+
+  for (let index = 1; index < sectionLineIndexes.length; index += 1) {
+    if (sectionLineIndexes[index] <= sectionLineIndexes[index - 1]) {
+      throw new Error(`${fileLabel}: required sections are out of order`);
+    }
+  }
+
+  for (let index = 0; index < REQUIRED_SECTIONS.length; index += 1) {
+    const contentStart = sectionLineIndexes[index] + 1;
+    const contentEnd = sectionLineIndexes[index + 1] ?? lines.length;
+    const sectionBody = lines.slice(contentStart, contentEnd).join('\n');
+    if (sectionBody.trim() === '') {
+      throw new Error(`${fileLabel}: section \`${REQUIRED_SECTIONS[index]}\` must not be empty`);
+    }
+  }
+
+  return sectionLineIndexes;
+}
+
+/**
+ * Reject self-references and cycles in the superseded_by replacement graph.
+ * Edges run from each superseded decision to its replacement.
+ */
+function assertAcyclicSupersession(decisions) {
+  /** @type {Map<string, string>} */
+  const replacementById = new Map();
+
+  for (const decision of decisions) {
+    if (decision.supersedes.includes(decision.id)) {
+      throw new Error(
+        `${decision.fileName}: \`supersedes\` must not include the record's own id \`${decision.id}\``,
+      );
+    }
+    if (decision.superseded_by === decision.id) {
+      throw new Error(
+        `${decision.fileName}: \`superseded_by\` must not reference the record's own id \`${decision.id}\``,
+      );
+    }
+    if (decision.superseded_by) {
+      replacementById.set(decision.id, decision.superseded_by);
+    }
+  }
+
+  const visiting = new Set();
+  const visited = new Set();
+
+  /**
+   * @param {string} decisionId
+   * @param {string[]} path
+   */
+  function visit(decisionId, path) {
+    if (visited.has(decisionId)) {
+      return;
+    }
+    if (visiting.has(decisionId)) {
+      const cycleStart = path.indexOf(decisionId);
+      const cycle = [...path.slice(cycleStart), decisionId];
+      throw new Error(`supersession cycle detected: ${cycle.join(' -> ')}`);
+    }
+
+    visiting.add(decisionId);
+    const replacementId = replacementById.get(decisionId);
+    if (replacementId) {
+      visit(replacementId, [...path, decisionId]);
+    }
+    visiting.delete(decisionId);
+    visited.add(decisionId);
+  }
+
+  for (const decisionId of replacementById.keys()) {
+    visit(decisionId, []);
+  }
+}
+
 function readDecision(fileName) {
   const filePath = path.join(DECISIONS_DIR, fileName);
   const fileLabel = `docs/decisions/${fileName}`;
@@ -248,26 +363,7 @@ function readDecision(fileName) {
     throw new Error(`${fileLabel}: body must contain exactly one level-one title`);
   }
   const title = headings[0].slice(2).trim();
-  let previousIndex = -1;
-  const sectionIndexes = [];
-  for (const section of REQUIRED_SECTIONS) {
-    const sectionIndex = body.indexOf(section);
-    if (sectionIndex === -1) {
-      throw new Error(`${fileLabel}: missing required section \`${section}\``);
-    }
-    if (sectionIndex < previousIndex) {
-      throw new Error(`${fileLabel}: required sections are out of order`);
-    }
-    sectionIndexes.push(sectionIndex);
-    previousIndex = sectionIndex;
-  }
-  for (let index = 0; index < REQUIRED_SECTIONS.length; index += 1) {
-    const contentStart = sectionIndexes[index] + REQUIRED_SECTIONS[index].length;
-    const contentEnd = sectionIndexes[index + 1] ?? body.length;
-    if (body.slice(contentStart, contentEnd).trim() === '') {
-      throw new Error(`${fileLabel}: section \`${REQUIRED_SECTIONS[index]}\` must not be empty`);
-    }
-  }
+  findRequiredSectionLines(body, fileLabel);
 
   return {
     ...metadata,
@@ -336,6 +432,8 @@ function loadDecisions() {
       }
     }
   }
+
+  assertAcyclicSupersession(decisions);
 
   return decisions;
 }

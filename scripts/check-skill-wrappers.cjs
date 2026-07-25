@@ -45,8 +45,8 @@ function listSkillNames(dir) {
  * unquoted or fully closed single-/double-quoted scalar keys required for discovery.
  * Rejects null/empty values (e.g. `description: # comment`), YAML null spellings
  * (`null`, `~`, case-insensitive when unquoted), non-string YAML scalars (booleans,
- * numbers), unclosed quotes, and unsupported collection/block indicators
- * (`[`, `{`, `|`, `>`).
+ * numbers, and special floats such as `.inf` / `.nan`), unclosed quotes, and
+ * unsupported collection/block indicators (`[`, `{`, `|`, `>`).
  *
  * @param {string} body
  * @param {string} fileLabel
@@ -118,6 +118,12 @@ function parseSimpleYamlMapping(body, fileLabel) {
       if (/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(trimmed)) {
         errors.push(
           `${fileLabel}: front matter \`${key}\` is a YAML numeric scalar (use a quoted or plain string)`,
+        );
+        return null;
+      }
+      if (/^[+-]?\.(?:inf|nan)$/i.test(trimmed)) {
+        errors.push(
+          `${fileLabel}: front matter \`${key}\` is a YAML special float (use a quoted or plain string)`,
         );
         return null;
       }

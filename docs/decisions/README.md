@@ -115,6 +115,13 @@ rg "status: accepted" docs/decisions
 3. Run `npm run decisions:check` before handoff; CI and `npm run check` run the
    same stale-index and metadata validation.
 
+`npm run decisions:check` requires the five template headings as exact
+level-two lines outside fenced code (`## Context`, `## Decision`,
+`## Consequences`, `## Revisit when`, `## Related`), each once and in that
+order. Prefixed or alternate wording does not count. Supersession links must
+be acyclic: a record may not supersede itself, and `superseded_by` chains
+must not form a cycle.
+
 The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry
 into a standalone record. Promote an archived choice only if it becomes
