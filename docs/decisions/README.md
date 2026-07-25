@@ -119,9 +119,10 @@ rg "status: accepted" docs/decisions
 level-two lines outside fenced code (`## Context`, `## Decision`,
 `## Consequences`, `## Revisit when`, `## Related`), each once and in that
 order. Prefixed or alternate wording does not count. Headings inside backtick
-or tilde fences (` ``` ` / `~~~`) are ignored. Supersession links must be
-acyclic: a record may not supersede itself, and `superseded_by` chains must
-not form a cycle.
+or tilde fences (` ``` ` / `~~~`) are ignored; a fence closes only with a
+compatible marker and run length (an opposite marker inside the fence stays
+content). Supersession links must be acyclic: a record may not supersede
+itself, and `superseded_by` chains must not form a cycle.
 
 The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry

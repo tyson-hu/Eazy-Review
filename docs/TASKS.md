@@ -249,7 +249,7 @@ Flow used per task: parent implements -> `reviewer` spec review -> parent applie
 
 ## Supabase Tasks (post Task 10)
 
-Mock UX is **GO**. Work these as small sequential milestones — not one large “add Supabase” task. Tasks 11 and 12 may share one migration only if the diff stays small and reviewable. Canonical schema: `docs/DATA_MODEL.md`. Skill: `skills/supabase-schema-change`.
+Mock UX is **GO**. Work these as small sequential milestones — not one large “add Supabase” task. Task 11 and Task 12 must use separate migrations. Task 12 creates a new forward-only migration for policies and Data API grants after Task 11's deny-by-default migration has been applied and verified. Canonical schema: `docs/DATA_MODEL.md`. Skill: `skills/supabase-schema-change`.
 
 ### Weekend / near-term freeze
 
@@ -317,6 +317,7 @@ Status: Pending.
 Goal: add complete RLS policies, then grant least-privilege Data API access to `anon` / `authenticated`, then prove unauthorized scenarios fail. **Grants must not land before policies.**
 
 Deliverables:
+- A **new** forward-only migration (do not edit or extend Task 11's applied migration) that adds policies and Data API grants after Task 11's deny-by-default schema has been applied and verified.
 - Policies matching `docs/DATA_MODEL.md` (published catalog reads, owner-only `user_ratings` with published-product INSERT/UPDATE checks, no client writes to `rating_aggregates`).
 - Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`), including **column-level** `UPDATE` on `profiles` (`display_name`, `username`, `avatar_url`) and column-level `INSERT`/`UPDATE` on `user_ratings` (scores + `private_note` only; no client grants on `id` / timestamps).
 - Authorization tests (SQL or project-approved harness).
@@ -335,6 +336,7 @@ Required scenarios (minimum):
 - Client cannot mark a purchase as verified (when that column exists).
 
 Acceptance:
+- Policies and grants land in a migration separate from Task 11's schema/deny-by-default migration (Task 11 migration left unchanged after apply).
 - RLS remains enabled on all exposed tables; policies match `docs/DATA_MODEL.md`.
 - `anon` / `authenticated` grants exist only alongside the policies that authorize them.
 - Authorization tests cover the scenarios above.

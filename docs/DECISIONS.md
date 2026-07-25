@@ -15,8 +15,8 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Data and Supabase | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Accepted | 16 | 2026-07-25 |
 | Data and Supabase | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Accepted | 11, 12, 13, 14, 15, 16, 17, 18 | 2026-07-24 |
 | Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 14, 16, 17 | 2026-06-28 |
+| Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-25 |
 | Authentication and security | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Accepted | 11, 12, 15 | 2026-07-25 |
-| Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-24 |
 | Authentication and security | [Forbid coding-agent access to the production database](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | — | 2026-07-24 |
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
@@ -33,7 +33,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-25 |
 | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-07-25 |
 | [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) | Agent workflow | Accepted | 2026-07-25 |
-| [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Authentication and security | Accepted | 2026-07-24 |
+| [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Authentication and security | Accepted | 2026-07-25 |
 | [Forbid coding-agent access to the production database](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-24 |
 | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Data and Supabase | Accepted | 2026-07-24 |
 | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Tooling and CI | Accepted | 2026-07-19 |
@@ -56,8 +56,8 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Authentication and security
 
-- [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) — Accepted; Tasks 11, 12, 15.
 - [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) — Accepted; Tasks 11, 12.
+- [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) — Accepted; Tasks 11, 12, 15.
 - [Forbid coding-agent access to the production database](decisions/2026-07-24-forbid-agent-production-database-access.md) — Accepted.
 - [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) — Accepted.
 

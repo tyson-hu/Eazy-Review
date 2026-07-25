@@ -186,6 +186,25 @@ function assertSameSet(labelA, setA, labelB, setB) {
   }
 }
 
+/**
+ * Extract Markdown inline code-span tokens (single backticks; no newlines).
+ * Used so wrapper targets must match the canonical path exactly, not as a substring.
+ *
+ * @param {string} content
+ * @returns {string[]}
+ */
+function extractCodeSpanTokens(content) {
+  /** @type {string[]} */
+  const tokens = [];
+  const re = /`([^`\n]+)`/g;
+  let match = re.exec(content);
+  while (match) {
+    tokens.push(match[1]);
+    match = re.exec(content);
+  }
+  return tokens;
+}
+
 function validateWrapper(rootLabel, skillName, content) {
   const fileLabel = `${rootLabel}/${skillName}/SKILL.md`;
   const meta = parseFrontMatter(content, fileLabel);
@@ -205,8 +224,11 @@ function validateWrapper(rootLabel, skillName, content) {
     errors.push(`${fileLabel}: canonical skill missing at ${canonicalRel}`);
   }
 
-  if (!content.includes(canonicalRel) && !content.includes(`\`${canonicalRel}\``)) {
-    errors.push(`${fileLabel}: must point at canonical path \`${canonicalRel}\``);
+  const codeSpans = extractCodeSpanTokens(content);
+  if (!codeSpans.includes(canonicalRel)) {
+    errors.push(
+      `${fileLabel}: must include an exact Markdown code span for canonical path \`${canonicalRel}\``,
+    );
   }
 }
 

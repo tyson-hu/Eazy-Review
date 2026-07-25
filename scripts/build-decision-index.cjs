@@ -173,20 +173,60 @@ function assertUniqueSorted(values, fileLabel, field, compare) {
  * Locate required ## headings as exact markdown lines outside fenced code.
  * Returns the 0-based line indexes of each required section in template order.
  */
+/**
+ * Parse a CommonMark fence line. Closing fences must use the same marker, a run
+ * at least as long as the opener, and only trailing whitespace after the run.
+ *
+ * @param {string} line
+ * @returns {{ marker: '`' | '~', length: number, info: string } | null}
+ */
+function parseFenceLine(line) {
+  const match = line.match(/^ {0,3}([`~])\1{2,}(.*)$/);
+  if (!match) {
+    return null;
+  }
+
+  const marker = /** @type {'`' | '~'} */ (match[1]);
+  const afterIndent = line.replace(/^ {0,3}/, '');
+  let length = 0;
+  while (length < afterIndent.length && afterIndent[length] === marker) {
+    length += 1;
+  }
+  const info = afterIndent.slice(length);
+  return { marker, length, info };
+}
+
 function findRequiredSectionLines(body, fileLabel) {
   const lines = body.split(/\r?\n/);
   /** @type {Map<string, number[]>} */
   const matchesBySection = new Map(REQUIRED_SECTIONS.map((section) => [section, []]));
-  let inFence = false;
+  /** @type {{ marker: '`' | '~', length: number } | null} */
+  let openFence = null;
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
-    // CommonMark fenced code: opening/closing runs of ` or ~ (3+), optionally indented.
-    if (/^ {0,3}(?:`{3,}|~{3,})/.test(line)) {
-      inFence = !inFence;
-      continue;
+    const fenceLine = parseFenceLine(line);
+    if (fenceLine) {
+      if (openFence === null) {
+        // Opening backtick fences cannot contain backticks in the info string.
+        if (fenceLine.marker === '`' && fenceLine.info.includes('`')) {
+          // Not a fence; fall through and treat as ordinary content.
+        } else {
+          openFence = { marker: fenceLine.marker, length: fenceLine.length };
+          continue;
+        }
+      } else if (
+        fenceLine.marker === openFence.marker &&
+        fenceLine.length >= openFence.length &&
+        /^\s*$/.test(fenceLine.info)
+      ) {
+        openFence = null;
+        continue;
+      }
+      // Opposite marker, shorter run, or non-whitespace after a closing run:
+      // remain inside the open fence and treat the line as fenced content.
     }
-    if (inFence) {
+    if (openFence !== null) {
       continue;
     }
 

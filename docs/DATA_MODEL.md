@@ -442,7 +442,7 @@ RLS alone is not enough on newer Supabase projects: tables are not automatically
 Sequencing (required):
 
 1. **Task 11** — create tables/constraints/triggers; `ALTER TABLE … ENABLE ROW LEVEL SECURITY` on every exposed table in the same migration (deny-by-default: no client policies yet). Do **not** `GRANT` to `anon` or `authenticated`. Optional `service_role` tooling grants only. Keep aggregate `REVOKE EXECUTE` here.
-2. **Task 12** — add complete policies; then `GRANT` to `anon` / `authenticated`; then run authorization tests.
+2. **Task 12** — after Task 11's migration is applied and verified, add a **new** forward-only migration with complete policies; then `GRANT` to `anon` / `authenticated`; then run authorization tests. Do not edit or reuse the Task 11 migration for policies or client grants.
 
 ```sql
 -- Task 11 (same migration as CREATE TABLE): deny-by-default for API roles.
@@ -450,7 +450,7 @@ alter table public.products enable row level security;
 -- …enable RLS on every exposed table…
 -- no anon/authenticated GRANTs yet
 
--- Task 12: policies first, then grants (example).
+-- Task 12 (separate new migration): policies first, then grants (example).
 -- create policy ... on public.products ...;
 grant select on public.products to anon, authenticated;
 ```

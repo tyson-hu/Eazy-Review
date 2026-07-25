@@ -1,6 +1,7 @@
 ---
 id: decision-rls-before-client-grants
 date: 2026-07-24
+updated: 2026-07-25
 status: accepted
 area: auth-security
 tasks: [11, 12]
@@ -27,7 +28,9 @@ the boundary is accepted.
 ## Consequences
 
 - New exposed tables begin deny-by-default.
-- Policies and client grants are reviewed as one authorization boundary.
+- Policies and client grants are reviewed as one authorization boundary in a
+  Task 12 migration separate from Task 11's schema migration (never by editing
+  an applied Task 11 migration).
 - Column-level grants further restrict mutable profile and rating fields.
 
 ## Revisit when
