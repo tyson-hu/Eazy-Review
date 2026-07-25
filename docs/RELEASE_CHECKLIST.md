@@ -22,14 +22,13 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 ## Data And Auth
 
-- Products are publicly readable.
-- Product images are publicly readable.
-- Eazy Scores are publicly readable.
-- Rating summaries are publicly readable.
-- Product offers are publicly readable.
-- Users can only insert/update/delete their own ratings.
-- Community Score is recalculated by database/server-side logic.
+- Anonymous clients can read **published** products only (`is_published = true`).
+- Related catalog rows (images, current Eazy assessments, rating aggregates, offers) are readable anonymously only for published products; draft-related rows stay hidden.
+- Users can only insert/update/delete their own ratings; `private_note` is owner-only.
+- Authenticated users can update their own profile (`display_name` / `username` / `avatar_url`) under owner-only RLS.
+- Community Score is recalculated by database/server-side logic; clients cannot write `rating_aggregates` or execute refresh RPCs.
 - User cannot create duplicate ratings for the same product.
+- `user_ratings.product_id` is immutable after insert.
 
 ## Mobile QA
 

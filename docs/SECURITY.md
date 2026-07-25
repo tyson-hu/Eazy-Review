@@ -49,4 +49,4 @@ Canonical schema and RLS expectations: `docs/DATA_MODEL.md`. Task order: `docs/T
 - `user_ratings.product_id` is immutable after insert.
 - Clients must never be able to mark purchases as verified or otherwise self-attest privileged provenance flags.
 - Prefer staging-only confirmation in every schema packet completion report (“no production project touched”).
-- MCP (when used): read-only inspection of local/staging is acceptable; production writes, service-role secrets, account deletion, RLS changes, and migrations stay outside ordinary MCP tool authority (`docs/MCP_WORKFLOW.md`).
+- MCP (when used): read-only inspection of local/staging is acceptable; production database access, production writes, service-role secrets for production, account deletion, and production migrations are **FORBIDDEN** — not HIGH IMPACT and not approvable via chat (`docs/MCP_WORKFLOW.md`).

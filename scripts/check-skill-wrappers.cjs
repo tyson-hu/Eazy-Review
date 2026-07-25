@@ -4,7 +4,7 @@
  *
  * Checks:
  * - wrapper directories stay synchronized with each other and with skills/<name>/SKILL.md
- * - each wrapper has YAML front matter with name and description
+ * - each wrapper has YAML front matter with non-empty name and description scalars
  * - each wrapper points at an existing canonical skills/<name>/SKILL.md
  * - paired wrappers are byte-identical
  *
@@ -23,8 +23,6 @@ const WRAPPER_ROOTS = [
 ];
 
 const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
-const NAME_RE = /^name:\s*(.+)\s*$/m;
-const DESCRIPTION_RE = /^description:\s*(.+)\s*$/m;
 
 /** @type {string[]} */
 const errors = [];
@@ -42,6 +40,70 @@ function listSkillNames(dir) {
     .sort();
 }
 
+/**
+ * Parse the limited YAML subset used by skill wrappers: a flat mapping of
+ * unquoted or single-/double-quoted scalar keys required for discovery.
+ * Rejects null/empty values such as `description: # comment`.
+ *
+ * @param {string} body
+ * @param {string} fileLabel
+ * @returns {Record<string, string> | null}
+ */
+function parseSimpleYamlMapping(body, fileLabel) {
+  /** @type {Record<string, string>} */
+  const result = {};
+  const lines = body.split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (line.trim() === '' || line.trimStart().startsWith('#')) {
+      continue;
+    }
+
+    const match = line.match(/^([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.*)$/);
+    if (!match) {
+      errors.push(`${fileLabel}: unsupported front matter line ${i + 1} (expected key: scalar)`);
+      return null;
+    }
+
+    const key = match[1];
+    let raw = match[2];
+
+    if (raw.includes(' #')) {
+      raw = raw.slice(0, raw.indexOf(' #')).trimEnd();
+    }
+
+    if (raw === '' || raw === '#' || raw.startsWith('#')) {
+      errors.push(
+        `${fileLabel}: front matter \`${key}\` is null/empty (comments alone are not a valid value)`,
+      );
+      return null;
+    }
+
+    let value = raw;
+    if (
+      (raw.startsWith('"') && raw.endsWith('"') && raw.length >= 2) ||
+      (raw.startsWith("'") && raw.endsWith("'") && raw.length >= 2)
+    ) {
+      value = raw.slice(1, -1);
+    }
+
+    if (value.trim() === '') {
+      errors.push(`${fileLabel}: front matter \`${key}\` must be a non-empty scalar`);
+      return null;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(result, key)) {
+      errors.push(`${fileLabel}: duplicate front matter key \`${key}\``);
+      return null;
+    }
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
 function parseFrontMatter(content, fileLabel) {
   const match = content.match(FRONT_MATTER_RE);
   if (!match) {
@@ -49,20 +111,25 @@ function parseFrontMatter(content, fileLabel) {
     return null;
   }
 
-  const body = match[1];
-  const nameMatch = body.match(NAME_RE);
-  const descriptionMatch = body.match(DESCRIPTION_RE);
+  const mapping = parseSimpleYamlMapping(match[1], fileLabel);
+  if (!mapping) {
+    return null;
+  }
 
-  if (!nameMatch) {
+  if (!Object.prototype.hasOwnProperty.call(mapping, 'name')) {
     errors.push(`${fileLabel}: front matter missing required \`name:\` field`);
   }
-  if (!descriptionMatch) {
+  if (!Object.prototype.hasOwnProperty.call(mapping, 'description')) {
     errors.push(`${fileLabel}: front matter missing required \`description:\` field`);
   }
 
+  if (!mapping.name || !mapping.description) {
+    return null;
+  }
+
   return {
-    name: nameMatch ? nameMatch[1].trim() : null,
-    description: descriptionMatch ? descriptionMatch[1].trim() : null,
+    name: mapping.name,
+    description: mapping.description,
   };
 }
 
@@ -85,7 +152,7 @@ function validateWrapper(rootLabel, skillName, content) {
     return;
   }
 
-  if (meta.name && meta.name !== skillName) {
+  if (meta.name !== skillName) {
     errors.push(
       `${fileLabel}: front matter name "${meta.name}" does not match directory name "${skillName}"`,
     );

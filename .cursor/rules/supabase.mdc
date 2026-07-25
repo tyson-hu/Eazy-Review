@@ -12,8 +12,9 @@ Schema, RLS, and triggers are defined in `docs/DATA_MODEL.md`; do not change sch
 
 Rules:
 - Use relational Supabase tables; do not create one giant product JSON object.
-- RLS defaults: products, images, offers, Eazy Scores, and rating summaries are publicly readable; users can only insert/update/delete their own `user_ratings` rows.
-- Trusted Community Score recalculation happens in a database trigger/function or server-side logic, never only on the client.
+- RLS sequencing: enable RLS at table create (deny-by-default). Task 12 adds published-product catalog policies and owner-only `user_ratings` policies, then client `GRANT`s. Anonymous reads are limited to `is_published` products and their related rows.
+- Trusted Community Score recalculation happens in `refresh_rating_aggregates` (trigger/function) or equivalent server-side logic, never only on the client; revoke client `EXECUTE` on those helpers.
 - Never expose service-role keys in client code.
+- Never access or write production databases from agents or MCP.
 
 Schema, RLS, migration, and contract work follows the routine in `skills/supabase-schema-change/SKILL.md`.

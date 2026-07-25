@@ -775,3 +775,25 @@ Safety-risk:
 
 Related files:
 - `docs/TASKS.md`, `docs/DATA_MODEL.md`, `docs/SECURITY.md`, `docs/ROADMAP.md`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`
+
+## 2026-07-24 — Align Schema Skill, Grants, Release Checks, And MCP Forbidden Zone
+
+What changed:
+- Synced `skills/supabase-schema-change` and `.cursor/rules/supabase.mdc` to `eazy_assessments` / `rating_aggregates`, Task 11 deny-by-default, and Task 12 policies-then-grants.
+- Made `product_offers` mandatory in Task 11; granted `UPDATE` on `profiles` to `authenticated`.
+- Release checklist now requires published-only anonymous catalog access.
+- MCP policy adds **FORBIDDEN** for any production database access (no longer HIGH IMPACT / approvable).
+- Skill-wrapper check parses front matter as a strict flat YAML mapping so null/comment-only values fail.
+- `docs/BLUEBOOK.md` points at `eazy_assessments` instead of permitting `official_ratings`.
+
+Why:
+- PR #14 follow-up review: agents following the schema skill or MCP classifier could recreate the obsolete schema, grant clients before policies, expose drafts via the release checklist, or treat production DB writes as approvable.
+
+Effect:
+- Task 11 workflow sources and runtime checks match the security-first packet plan.
+
+Safety-risk:
+- Docs/process and CI script only; no migrations applied.
+
+Related files:
+- `skills/supabase-schema-change/SKILL.md`, `.cursor/rules/supabase.mdc`, `.cursor/rules/mcp-policy.mdc`, `docs/MCP_WORKFLOW.md`, `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/RELEASE_CHECKLIST.md`, `docs/BLUEBOOK.md`, `docs/SECURITY.md`, `scripts/check-skill-wrappers.cjs`, `docs/DECISIONS.md`

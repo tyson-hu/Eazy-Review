@@ -276,7 +276,7 @@ Deliverables:
   - `eazy_assessments` (editorial Eazy Score; replaces planned `official_ratings` name)
   - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id`)
   - `rating_aggregates` (server-owned Community Score summary)
-  - `product_offers` only if it does not bloat the first migration
+  - `product_offers` (required in Task 11 so Task 12 policies/grants and Task 14 Detail offers have a relation)
 - PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
 - **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
 - Optional: `service_role` tooling grants only (never ship service-role into Expo).
@@ -310,7 +310,7 @@ Goal: add complete RLS policies, then grant least-privilege Data API access to `
 
 Deliverables:
 - Policies matching `docs/DATA_MODEL.md` (published catalog reads, owner-only `user_ratings`, no client writes to `rating_aggregates`).
-- Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`).
+- Explicit Data API `GRANT`s for `anon` / `authenticated` **after** those policies exist (see Privileges And Data API Exposure in `docs/DATA_MODEL.md`), including `UPDATE` on `profiles` for authenticated own-profile edits.
 - Authorization tests (SQL or project-approved harness).
 
 Required scenarios (minimum):

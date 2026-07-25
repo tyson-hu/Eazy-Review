@@ -79,7 +79,7 @@ Use these UI names:
 - Community Score: average rating from normal users.
 - My Rating: the logged-in user's own rating for the product.
 
-Do not call the app-builder rating "official rating" in UI. Internal database names can still use `official_ratings`.
+Do not call the app-builder rating "official rating" in UI. Internal database table: `eazy_assessments` (not `official_ratings`).
 
 ## Recommended Stack
 

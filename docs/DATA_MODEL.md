@@ -22,7 +22,7 @@ Task sequencing: `docs/TASKS.md` Tasks 11–18. Do not implement schema assumpti
 - `eazy_assessments`: app-builder Eazy Score (editorial); prefer versioned rows with one current/active assessment.
 - `user_ratings`: one rating per user per product (scores + `private_note`); `product_id` immutable after insert.
 - `rating_aggregates`: calculated Community Score data (server-owned; clients must not write or execute refresh RPCs).
-- `product_offers`: purchase links and prices by size (include in Task 11 only if the migration stays small).
+- `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked).
 
 Lookup / join tables (recommended defaults; decide in Task 11 planning if deferred one packet):
 
@@ -375,6 +375,7 @@ grant select on public.eazy_assessments to anon, authenticated;
 grant select on public.rating_aggregates to anon, authenticated;
 grant select on public.product_offers to anon, authenticated;
 grant select on public.profiles to anon, authenticated;
+grant update on public.profiles to authenticated;
 
 -- My Rating: authenticated owners only (RLS still restricts to own rows).
 grant select, insert, update, delete on public.user_ratings to authenticated;
