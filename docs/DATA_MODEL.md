@@ -217,7 +217,7 @@ User submits rating
 -> App refetches Product Detail
 ```
 
-Recommended default: database function + trigger after user_rating insert/update/delete, with explicit tests. When Task 17 selects the durable mechanism, add or update its `docs/decisions/*.md` record and regenerate `docs/DECISIONS.md`.
+Durable mechanism (Task 11): database function + trigger after user_rating insert/update/delete. Task 17 verifies concurrency, correctness, and forgery resistance; it does not re-select among trigger / RPC / schedule. Changing the mechanism later requires a superseding ADR and a forward migration.
 
 Hard rules for aggregate SQL:
 - `product_id` on `user_ratings` is **immutable** after insert (enforced by trigger). Re-rating another product means delete + insert, not moving the row.

@@ -43,7 +43,7 @@ Replace the old “add Supabase” checklist with these milestones. Detail and a
 4. **Task 14** — Real Browse and Product Detail reads.
 5. **Task 15** — Authentication (email first).
 6. **Task 16** — My Rating persistence + Rated Products (`private_note`, owner-only; Account rated list).
-7. **Task 17** — Server-owned community aggregates (verify if already in Task 12).
+7. **Task 17** — Server-owned community aggregates (verify/harden Task 11 trigger path; no mechanism re-selection).
 8. **Task 18** — TanStack Query and cache invalidation.
 
 Companion: skill-wrapper front-matter validation — **Done** (`npm run check:skill-wrappers` in `npm run check` + CI).

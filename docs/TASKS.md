@@ -280,7 +280,7 @@ Deliverables:
 - PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
 - **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
 - Optional: `service_role` tooling grants only (never ship service-role into Expo).
-- Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings`; zero-count `rating_aggregates` row on every `products` INSERT (see `docs/DATA_MODEL.md`).
+- Aggregate helpers: **Task 11 owns the aggregation mechanism** — implement `refresh_rating_aggregates` + `handle_user_rating_change` / `user_ratings_refresh_aggregates_trigger` (trigger after insert/update/delete). Helpers are `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings`; zero-count `rating_aggregates` row on every `products` INSERT (see `docs/DATA_MODEL.md`). Do not leave mechanism choice (RPC vs schedule vs trigger) to Task 17.
 - **New-user profile trigger:** `handle_new_user` on `auth.users` AFTER INSERT inserts `public.profiles (id)` only; `REVOKE EXECUTE` from clients (see `docs/DATA_MODEL.md`).
 - Environment-variable validation pattern (anon key / URL only in Expo; never service-role in the mobile bundle).
 - **Secret scanning** wired for the foundation workstream (CI and/or pre-commit); Task 11 does not pass without it.
@@ -413,15 +413,15 @@ Acceptance:
 
 ### Task 17: Server-Owned Community Aggregates
 
-Status: Pending (may ship with Task 12 triggers if already complete — then this task is verify-only).
+Status: Pending — **verification and hardening only** (Task 11 already selects and implements the trigger-based refresh mechanism).
 
-Goal: trusted Community Score and category averages via database function/trigger; never client-written.
+Goal: prove the Task 11 trigger-owned Community Score path stays correct under concurrency and forgery attempts; never client-written. Changing the mechanism requires a new superseding ADR and a forward migration — not a Task 17 mechanism re-selection.
 
 Acceptance:
-- Insert/update/delete rating refreshes `rating_aggregates`.
+- Insert/update/delete rating refreshes `rating_aggregates` via the Task 11 triggers/helpers.
 - Concurrent ratings for the same product leave a correct final `rating_count` / averages (refresh serialized per product; cover concurrent writes in aggregate tests).
-- Tests prove clients cannot forge aggregates.
-- Durable aggregation mechanism recorded in an individual `docs/decisions/*.md` ADR (trigger vs post-mutation function vs schedule), followed by `npm run decisions:build`.
+- Tests prove clients cannot forge aggregates (no write grants; cannot execute refresh RPC).
+- Performance evaluation recorded if refresh cost is a concern; no new mechanism choice unless an ADR supersedes the Task 11 trigger decision.
 
 ### Task 18: TanStack Query And Cache Invalidation
 

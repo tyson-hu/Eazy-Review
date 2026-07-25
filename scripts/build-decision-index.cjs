@@ -7,6 +7,7 @@
  *   node scripts/build-decision-index.cjs --check
  */
 
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -14,6 +15,9 @@ const ROOT = path.resolve(__dirname, '..');
 const DECISIONS_DIR = path.join(ROOT, 'docs', 'decisions');
 const INDEX_FILE = path.join(ROOT, 'docs', 'DECISIONS.md');
 const ARCHIVE_FILE = path.join(DECISIONS_DIR, 'archive', '2026-pre-adr-log.md');
+/** Immutable legacy log digest. Update only when the archive is intentionally rewritten. */
+const EXPECTED_ARCHIVE_SHA256 =
+  'f50f9dd3181bc87d740019aecec6eaebcbf7311e7046e374f56dcb7d44f9c8f2';
 const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
 const FILE_NAME_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const ID_RE = /^decision-[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -170,10 +174,6 @@ function assertUniqueSorted(values, fileLabel, field, compare) {
 }
 
 /**
- * Locate required ## headings as exact markdown lines outside fenced code.
- * Returns the 0-based line indexes of each required section in template order.
- */
-/**
  * Parse a CommonMark fence line. Closing fences must use the same marker, a run
  * at least as long as the opener, and only trailing whitespace after the run.
  *
@@ -196,10 +196,14 @@ function parseFenceLine(line) {
   return { marker, length, info };
 }
 
-function findRequiredSectionLines(body, fileLabel) {
+/**
+ * Walk body lines outside fenced code (compatible open/close markers).
+ *
+ * @param {string} body
+ * @param {(line: string, lineIndex: number, lines: string[]) => void} onUnfencedLine
+ */
+function forEachUnfencedLine(body, onUnfencedLine) {
   const lines = body.split(/\r?\n/);
-  /** @type {Map<string, number[]>} */
-  const matchesBySection = new Map(REQUIRED_SECTIONS.map((section) => [section, []]));
   /** @type {{ marker: '`' | '~', length: number } | null} */
   let openFence = null;
 
@@ -229,12 +233,45 @@ function findRequiredSectionLines(body, fileLabel) {
     if (openFence !== null) {
       continue;
     }
+    onUnfencedLine(line, lineIndex, lines);
+  }
+}
 
+/**
+ * Extract the unique unfenced level-one title and validate required ## sections
+ * as exact unfenced heading lines in canonical order.
+ *
+ * @param {string} body
+ * @param {string} fileLabel
+ * @returns {string}
+ */
+function extractTitleAndValidateSections(body, fileLabel) {
+  const lines = body.split(/\r?\n/);
+  /** @type {{ line: string, lineIndex: number }[]} */
+  const titleMatches = [];
+  /** @type {Map<string, number[]>} */
+  const matchesBySection = new Map(REQUIRED_SECTIONS.map((section) => [section, []]));
+
+  forEachUnfencedLine(body, (line, lineIndex) => {
+    // Level-one ATX heading: "# " then text (not "## ...").
+    if (/^# .+/.test(line) && !line.startsWith('##')) {
+      titleMatches.push({ line, lineIndex });
+    }
     for (const section of REQUIRED_SECTIONS) {
       if (new RegExp(`^${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`).test(line)) {
         matchesBySection.get(section).push(lineIndex);
       }
     }
+  });
+
+  if (titleMatches.length !== 1) {
+    throw new Error(
+      `${fileLabel}: body must contain exactly one unfenced level-one title (found ${titleMatches.length})`,
+    );
+  }
+  const title = titleMatches[0].line.replace(/^#\s+/, '').trim();
+  if (title === '') {
+    throw new Error(`${fileLabel}: level-one title must not be empty`);
   }
 
   /** @type {number[]} */
@@ -267,7 +304,22 @@ function findRequiredSectionLines(body, fileLabel) {
     }
   }
 
-  return sectionLineIndexes;
+  return title;
+}
+
+function assertLegacyArchiveIntegrity() {
+  if (!fs.existsSync(ARCHIVE_FILE)) {
+    throw new Error('legacy archive is missing at docs/decisions/archive/2026-pre-adr-log.md');
+  }
+
+  const content = fs.readFileSync(ARCHIVE_FILE);
+  const digest = crypto.createHash('sha256').update(content).digest('hex');
+  if (digest !== EXPECTED_ARCHIVE_SHA256) {
+    throw new Error(
+      `legacy archive SHA-256 mismatch (expected ${EXPECTED_ARCHIVE_SHA256}, got ${digest}). ` +
+        'If the archive was intentionally rewritten, update EXPECTED_ARCHIVE_SHA256 in scripts/build-decision-index.cjs.',
+    );
+  }
 }
 
 /**
@@ -399,12 +451,7 @@ function readDecision(fileName) {
     throw new Error(`${fileLabel}: only superseded decisions may define \`superseded_by\``);
   }
 
-  const headings = body.match(/^# .+$/gm) ?? [];
-  if (headings.length !== 1) {
-    throw new Error(`${fileLabel}: body must contain exactly one level-one title`);
-  }
-  const title = headings[0].slice(2).trim();
-  findRequiredSectionLines(body, fileLabel);
+  const title = extractTitleAndValidateSections(body, fileLabel);
 
   return {
     ...metadata,
@@ -418,9 +465,7 @@ function loadDecisions() {
   if (!fs.existsSync(DECISIONS_DIR)) {
     throw new Error('docs/decisions is missing');
   }
-  if (!fs.existsSync(ARCHIVE_FILE)) {
-    throw new Error('legacy archive is missing at docs/decisions/archive/2026-pre-adr-log.md');
-  }
+  assertLegacyArchiveIntegrity();
 
   const fileNames = fs
     .readdirSync(DECISIONS_DIR, { withFileTypes: true })

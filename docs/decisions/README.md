@@ -115,11 +115,12 @@ rg "status: accepted" docs/decisions
 3. Run `npm run decisions:check` before handoff; CI and `npm run check` run the
    same stale-index and metadata validation.
 
-`npm run decisions:check` requires the five template headings as exact
-level-two lines outside fenced code (`## Context`, `## Decision`,
-`## Consequences`, `## Revisit when`, `## Related`), each once and in that
-order. Prefixed or alternate wording does not count. Headings inside backtick
-or tilde fences (` ``` ` / `~~~`) are ignored; a fence closes only with a
+`npm run decisions:check` requires exactly one unfenced level-one title and
+the five template headings as exact level-two lines outside fenced code
+(`## Context`, `## Decision`, `## Consequences`, `## Revisit when`,
+`## Related`), each once and in that order. Prefixed or alternate wording does
+not count. Headings inside backtick or tilde fences (` ``` ` / `~~~`) are
+ignored for both the title and required sections; a fence closes only with a
 compatible marker and run length (an opposite marker inside the fence stays
 content). Supersession links must be acyclic: a record may not supersede
 itself, and `superseded_by` chains must not form a cycle.
@@ -128,3 +129,6 @@ The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry
 into a standalone record. Promote an archived choice only if it becomes
 currently relevant and still meets the high-impact criteria above.
+`npm run decisions:check` verifies that archive against a committed SHA-256
+digest; if you intentionally rewrite it, update
+`EXPECTED_ARCHIVE_SHA256` in `scripts/build-decision-index.cjs`.
