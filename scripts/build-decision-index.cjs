@@ -286,6 +286,34 @@ function forEachUnfencedLine(body, onVisibleUnfencedLine) {
 }
 
 /**
+ * True when a Markdown line still has visible text after stripping empty
+ * structural markers (headings, bare list/blockquote/task markers).
+ *
+ * Empty structures such as `-`, `>`, `1.`, `> -`, and `- [ ]` must not count
+ * as substantive section content.
+ *
+ * @param {string} line
+ * @returns {boolean}
+ */
+function hasVisibleMarkdownContent(line) {
+  let content = line.trim();
+  if (content === '') {
+    return false;
+  }
+  // Headings are structural, not section body content.
+  if (/^#{1,6}\s/.test(content)) {
+    return false;
+  }
+  // Remove one or more empty blockquote markers.
+  content = content.replace(/^(?:>\s*)+/, '');
+  // Remove an unordered or ordered list marker.
+  content = content.replace(/^(?:[-+*]|\d+[.)])\s*/, '');
+  // An unchecked/checked task marker alone is also empty structure.
+  content = content.replace(/^\[[ xX]\]\s*/, '');
+  return content.trim() !== '';
+}
+
+/**
  * Extract the unique unfenced level-one title and validate required ## sections
  * as exact unfenced heading lines in canonical order.
  *
@@ -362,21 +390,16 @@ function extractTitleAndValidateSections(body, fileLabel) {
     const contentEnd = nextH2 ?? lines.length;
 
     // Require at least one substantive visible unfenced line. Empty fenced
-    // blocks and HTML comments (including multi-line) must not count as content.
+    // blocks, HTML comments (including multi-line), and empty Markdown block
+    // markers (`-`, `>`, `1.`, `> -`, `- [ ]`, …) must not count as content.
     let hasSubstantiveContent = false;
     forEachUnfencedLine(body, (line, lineIndex) => {
       if (lineIndex <= headingIndex || lineIndex >= contentEnd) {
         return;
       }
-      const trimmed = line.trim();
-      if (trimmed === '') {
-        return;
+      if (hasVisibleMarkdownContent(line)) {
+        hasSubstantiveContent = true;
       }
-      // Headings are structural, not section body content.
-      if (/^#{1,6}\s/.test(trimmed)) {
-        return;
-      }
-      hasSubstantiveContent = true;
     });
 
     if (!hasSubstantiveContent) {

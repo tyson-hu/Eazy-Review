@@ -136,8 +136,9 @@ the five template headings as exact level-two lines outside fenced code
 not count. Each required section’s body is bounded by the next unfenced
 level-two heading of any name (so an empty `## Context` followed by
 `## Notes` does not false-pass) and must contain at least one substantive
-visible unfenced line (empty fenced blocks and HTML comments — including
-multi-line `<!-- … -->` — alone do not count). Headings inside backtick or
+visible unfenced line (empty fenced blocks, HTML comments — including
+multi-line `<!-- … -->` — and empty Markdown block markers such as `-`,
+`>`, `1.`, `> -`, or `- [ ]` alone do not count). Headings inside backtick or
 tilde fences (` ``` ` / `~~~`) and text inside HTML comments are ignored for
 both the title and required sections; a fence closes only with a compatible
 marker and run length (an opposite marker inside the fence stays content).
