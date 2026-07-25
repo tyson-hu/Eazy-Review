@@ -195,9 +195,10 @@ This section is the canonical home for validation commands; `AGENTS.md` carries 
 
 Pick the narrowest command that covers the change:
 
-- `npm run typecheck` — TypeScript only. Fastest; enough for pure type or logic edits.
+- `npm run check:skill-wrappers` — discovery stubs under `.agents/skills` and `.claude/skills` have YAML front matter, point at existing canonical `skills/*/SKILL.md` paths, and stay synchronized. Fast; run after any skill or skill-wrapper edit, and always as part of `npm run check`.
+- `npm run typecheck` — TypeScript only. Fastest app check; enough for pure type or logic edits.
 - `npm run lint` — ESLint via Expo. Add it when code style or imports changed.
-- `npm run check` — typed-route generation, typecheck, lint, Expo doctor, and Expo dependency alignment. Use for route changes, dependency changes, or before handing off a finished task.
+- `npm run check` — skill-wrapper validation, typed-route generation, typecheck, lint, Expo doctor, and Expo dependency alignment. Use for route changes, dependency changes, skill changes, or before handing off a finished task.
 - `npm run generate:routes` — regenerates typed routes; required before typecheck on clean checkouts.
 - `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
 - Interactive UX / simulator / mobile-web walks — `skills/interactive-preview-loop` (SOPs under `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`; evidence under `docs/evidence/`). These do not replace the npm commands above.

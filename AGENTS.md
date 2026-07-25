@@ -50,7 +50,8 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 ## Validation
 
 - `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
-- `npm run check` (routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency changes or before handoff.
+- `npm run check:skill-wrappers` after skill or discovery-stub edits (also part of `npm run check`).
+- `npm run check` (skill wrappers, routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency/skill changes or before handoff.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
 - `expo-doctor` / `expo install --check` (and thus the Expo tail of `npm run check`) must run **outside the agent sandbox** — sandboxed runs can false-pass doctor or `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation Commands → Expo doctor and dependency checks — agent sandbox.
 

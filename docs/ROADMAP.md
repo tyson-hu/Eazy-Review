@@ -7,7 +7,7 @@
 3. Confirm `docs/DATA_MODEL.md`.
 4. Set up `AGENTS.md`.
 5. Set up `.cursor/rules`.
-6. Set up Supabase local/dev project.
+6. Set up Supabase local + staging (Task 11) — **in progress next**.
 
 All phases follow the doc-update gate in `docs/DOCUMENTATION_POLICY.md`.
 
@@ -20,32 +20,44 @@ All phases follow the doc-update gate in `docs/DOCUMENTATION_POLICY.md`.
 5. Rating display components.
 6. Empty/loading/error components.
 
-## Phase 3: Core Screens
+Status: Done for MVP shell (Tasks 1–5).
+
+## Phase 3: Core Screens (mock)
 
 1. Feed placeholder.
 2. Browse/search.
 3. Product detail.
 4. Rating flow.
-5. Account.
-6. Rated products list.
+5. Account placeholder.
+6. Rated products list (deferred until auth + real ratings).
 
-## Phase 4: Real Data
+Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and Account remain placeholders. Do not expand mock UI while Supabase foundation is open.
 
-1. Supabase product table.
-2. User rating table.
-3. User profile table.
-4. Product query hooks.
-5. Rating submission mutation.
-6. Feed/search queries.
+## Phase 4: Real Data (packetized)
+
+Replace the old “add Supabase” checklist with these milestones. Detail and acceptance live in `docs/TASKS.md` Tasks 11–18.
+
+1. **Task 11** — Environments and core schema (no mobile UI wiring).
+2. **Task 12** — Constraints, RLS, authorization tests.
+3. **Task 13** — Product seed data (small seed first).
+4. **Task 14** — Real Browse and Product Detail reads.
+5. **Task 15** — Authentication (email first).
+6. **Task 16** — My Rating persistence (`private_note`, owner-only).
+7. **Task 17** — Server-owned community aggregates (verify if already in Task 12).
+8. **Task 18** — TanStack Query and cache invalidation.
+
+Companion: skill-wrapper front-matter validation — **Done** (`npm run check:skill-wrappers` in `npm run check` + CI).
 
 ## Phase 5: Social Layer
 
 Future only, after core app works:
-- Comments.
+- Comments / public written reviews.
 - Likes.
 - Shares.
 - Reports/moderation.
 - Activity feed.
+
+Do not start during Tasks 11–18.
 
 ## Phase 6: Polish And Release
 
@@ -72,6 +84,8 @@ Acceptance:
 - App runs on iOS/Android simulator or physical device.
 - Docs and tasks reflect the completed app-shell state.
 
+Status: Done.
+
 ### Milestone 2: Mock Product Experience
 
 Deliverables:
@@ -80,6 +94,7 @@ Deliverables:
 - Product cards.
 - Product detail screen.
 - Rating form with fake local update.
+- Task 10 UX readiness **GO**.
 
 Acceptance:
 - User can browse fake products.
@@ -88,20 +103,38 @@ Acceptance:
 - UI flow feels understandable.
 - Docs and tasks reflect any route/component/type decisions made during the mock flow.
 
-### Milestone 3: Supabase Setup
+Status: Done.
+
+### Milestone 3: Supabase Foundation (Tasks 11–13)
 
 Deliverables:
-- Supabase project created.
-- Tables created.
-- RLS policies added.
-- Seed product data added.
+- Local and staging Supabase environments.
+- Versioned migrations for core tables.
+- PostgreSQL constraints.
+- RLS on all exposed tables + authorization tests.
+- Small product seed (expand catalog after trust).
 
 Acceptance:
-- Products can be read publicly.
-- User ratings can only be changed by the owner.
-- Data model, API contracts, tasks, and decisions are current.
+- Published products can be read publicly under RLS + grants.
+- Unpublished products are not anonymously readable.
+- User ratings (when auth exists) are owner-writable; `private_note` is not readable by other users.
+- Clients cannot write `rating_aggregates` or execute aggregate refresh RPCs.
+- Data model, API contracts, tasks, security, and decisions are current.
+- No production project touched by agents.
+- Secret scanning is required and present for Task 11.
 
-### Milestone 4: Auth
+### Milestone 4: Real Product Data (Task 14)
+
+Deliverables:
+- Browse fetches Supabase products.
+- Product detail fetches Supabase product.
+- Product card shows real score and price data.
+
+Acceptance:
+- No mock catalog required for product browsing on the connected path.
+- Only published products are visible to anonymous clients.
+
+### Milestone 5: Auth (Task 15)
 
 Deliverables:
 - Sign up.
@@ -115,28 +148,19 @@ Acceptance:
 - Logged-out user must sign in to rate.
 - Logged-in user can access rating form.
 
-### Milestone 5: Real Product Data
-
-Deliverables:
-- Browse fetches Supabase products.
-- Product detail fetches Supabase product.
-- Product card shows real score and price data.
-
-Acceptance:
-- No mock data needed for product browsing.
-
-### Milestone 6: Real Rating System
+### Milestone 6: Real Rating System (Tasks 16–18)
 
 Deliverables:
 - User can submit rating.
 - User can edit rating.
-- Rating summary recalculates.
-- Product detail refreshes after rating.
-- Rated Products screen works.
+- Rating summary recalculates server-side.
+- Product detail refreshes after rating (TanStack Query invalidation).
+- Rated Products screen works when scoped.
 
 Acceptance:
-- Community Score changes after user rating.
+- Community Score changes after user rating via server-owned aggregates.
 - User cannot create duplicate ratings for the same product.
+- Private notes stay owner-only.
 
 ### Milestone 7: Feed
 
@@ -151,6 +175,8 @@ Acceptance:
 - Feed uses real product data.
 - Product cards open Product Detail.
 
+Defer until after Milestone 6.
+
 ### Milestone 8: Polish
 
 Deliverables:
@@ -164,3 +190,12 @@ Deliverables:
 
 Acceptance:
 - App feels stable and usable.
+
+## Explicit deferrals (post Task 10)
+
+Do not pull these into Phase 4 foundation work:
+- Fit profiles, ownership duration, experience labels.
+- Price-history snapshots, advanced taxonomy, comparison features.
+- Public AI-readable product pages, Sentry, product analytics.
+- Custom MCP server (reassess after the 2026-07-28 MCP spec final).
+- Agent-role expansion or blanket Cursor Router default changes without measured trials.

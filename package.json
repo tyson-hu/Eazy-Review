@@ -38,7 +38,8 @@
     "generate:routes": "expo customize tsconfig.json",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "check": "npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
+    "check:skill-wrappers": "node scripts/check-skill-wrappers.cjs",
+    "check": "npm run check:skill-wrappers && npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
   },
   "private": true
 }

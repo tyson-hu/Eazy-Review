@@ -33,7 +33,7 @@ Eazy Review combines an app-curated product score with community ratings and the
 - Browse: product list with search, filters, sorting, infinite-scroll placeholder, and product detail navigation.
 - Account: logged-out auth entry points and logged-in profile/rated-products/settings flows.
 - Product Detail: product identity, scores, offers, breakdowns, My Rating, description, and rating CTA.
-- Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional comment.
+- Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional private note (not a public review).
 
 ## Core Product Flow
 
@@ -93,6 +93,7 @@ Do not call the app-builder rating "official rating" in UI. Internal database na
 
 ## Build Order
 
+Mock / shell (done through Task 10 GO):
 1. Create Expo app with TypeScript.
 2. Set up Expo Router.
 3. Set up NativeWind.
@@ -101,17 +102,23 @@ Do not call the app-builder rating "official rating" in UI. Internal database na
 6. Build Browse screen with fake data.
 7. Build Product Detail screen with fake data.
 8. Build Rating Form with fake local update.
-9. Build Feed placeholder.
-10. Build Account placeholder.
-11. Create Supabase project.
-12. Create database schema.
-13. Add Supabase Auth.
-14. Connect Browse/Product Detail to Supabase.
-15. Connect rating submission to Supabase.
-16. Add TanStack Query.
-17. Add real filtering/sorting/search.
-18. Add Feed sections.
-19. Add scraping/import pipeline later.
+9. UX review before backend (Task 10).
+10. Feed and Account remain placeholders until after real product reads / auth.
+
+Supabase foundation (packetized — see `docs/TASKS.md` Tasks 11–18 and `docs/ROADMAP.md`):
+11. Environments and core schema (local + staging; no mobile UI wiring).
+12. Constraints, RLS, authorization tests.
+13. Product seed data (small seed first).
+14. Real Browse and Product Detail reads.
+15. Authentication (email first).
+16. My Rating persistence (`private_note`, owner-only).
+17. Server-owned community aggregates (verify if already covered in 12).
+18. TanStack Query and cache invalidation.
+
+Later:
+19. Real filtering / sorting / search expansion.
+20. Feed sections on real data.
+21. Scraping / import pipeline only after core app works and provenance rules are clear.
 
 ## Success Criteria
 

@@ -27,7 +27,13 @@ export type RatingBreakdown = {
   outfit: number;
   value: number;
   overall: number;
+  /**
+   * Mock-era field name. Supabase / Task 16+ use `privateNote` mapped from
+   * `user_ratings.private_note` (owner-only; max 500 chars). Do not treat as a public review.
+   */
   comment?: string | null;
+  /** Preferred name once My Rating persistence lands (Task 16). */
+  privateNote?: string | null;
 };
 
 export type ProductRatingSummary = {
@@ -39,7 +45,7 @@ export type ProductRatingSummary = {
   outfitAvg: number | null;
   valueAvg: number | null;
   overallAvg: number | null;
-  /** Community aggregate; maps from DB rating_summaries.score. */
+  /** Community aggregate; maps from DB `rating_aggregates.score`. */
   communityScore: number | null;
 };
 
@@ -226,9 +232,28 @@ MVP sort options:
 - Lowest Price.
 - Recently Added.
 
+## Backend Field Naming (Tasks 11–16)
+
+Align new Supabase types and adapters with `docs/DATA_MODEL.md`:
+
+| Concern | DB | Frontend |
+| --- | --- | --- |
+| Published catalog gate | `products.is_published` | filter / map only published rows for anonymous Browse |
+| Editorial Eazy Score | `eazy_assessments` (current row) | `product.eazyScore` / assessment adapter |
+| Community aggregate | `rating_aggregates` | `ProductRatingSummary` |
+| My Rating scores | `user_ratings` score columns | `RatingBreakdown` scores |
+| Optional personal text | `user_ratings.private_note` | `privateNote` (not a public comment) |
+
+Rules:
+- Numeric rating: persisted and shown as My Rating to the owner.
+- `private_note` / `privateNote`: owner-only; never select other users’ notes.
+- Public written reviews: not implemented.
+- Mock UI may still label the optional field “Comment” and use `comment` until Task 16 renames the connected path.
+- Data API access requires explicit `GRANT`s after RLS; see `docs/DATA_MODEL.md` Privileges And Data API Exposure.
+
 ## Mock Data Contract
 
-Before Supabase:
+Before Supabase (Tasks 11–13 schema work does not require removing mocks):
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
 - Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Unmapped `mock-product://` URIs resolve to no image source so UI shows the "Image coming soon" placeholder. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
@@ -238,7 +263,7 @@ Before Supabase:
 `saveMockMyRating` semantics (session-only; not a backend write):
 
 - Confirms the product/detail fixture exists with the same rules as `getMockProductDetailById`; returns `false` if not.
-- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment is stored as `null`.
+- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment (mock alias for private note) is stored as `null`.
 - Returns `true` on success.
 - Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
 - Screens must call this API only — never import or mutate the private map.

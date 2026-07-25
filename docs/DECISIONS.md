@@ -691,3 +691,68 @@ Safety-risk:
 
 Related files:
 - `package.json`, `package-lock.json`, `docs/DECISIONS.md`, `docs/TASKS.md`
+
+## 2026-07-24 — Post–Task 10 Packetized Supabase Plan
+
+What changed:
+- Replaced the broad “add Supabase” checklist with Tasks 11–18: environments/schema → RLS/authz tests → seed → real reads → auth → My Rating persistence → server aggregates → TanStack Query.
+- Renamed planned editorial table to `eazy_assessments` (was `official_ratings`) and summary table to `rating_aggregates` (was `product_rating_summary`).
+- Standardized optional personal text as `private_note` / `privateNote` (owner-only, max 500 chars); public written reviews stay out of MVP. Mock UI may keep `comment` until Task 16.
+- Required owner-only `SELECT` on `user_ratings` so private notes cannot leak; Community Score comes from `rating_aggregates` only.
+- Froze weekend scope against UI expansion, agent-framework growth, custom MCP, scraping, and social/AI features; companion skill-wrapper validation remains allowed.
+- Recorded recommended defaults for unresolved schema choices (profile lookup, intended-use join, assessment history, current offers first, email auth first, function/trigger aggregates) without implementing them yet.
+- Extended `docs/SECURITY.md` with local/staging-only agent boundaries, no service-role in Expo, and RLS-before-UI.
+
+Why:
+- Task 10 is GO and the repo head is maintenance-only; the next risk is one oversized backend task or premature UI/agent work. The weekly planning report needs durable docs so the next session starts from a security-first contract.
+
+Effect:
+- Next implementation session starts at Task 11 with an explicit contract. Cursor Router / Copilot review experiments stay optional and measured; they do not rewrite agent defaults this weekend.
+
+Safety-risk:
+- Docs-only. Schema SQL in `docs/DATA_MODEL.md` is planning guidance until Task 11 migrations land. Older decisions that mention `official_ratings` remain historical; this entry supersedes the planned table name going forward.
+
+Related files:
+- `docs/TASKS.md`, `docs/ROADMAP.md`, `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/BLUEBOOK.md`, `docs/DECISIONS.md`
+
+## 2026-07-24 — Automate Skill-Wrapper Discovery Validation
+
+What changed:
+- Added `scripts/check-skill-wrappers.cjs` and `npm run check:skill-wrappers`.
+- Wired the check into `npm run check` and `.github/workflows/expo-ci.yml`.
+- Documented it in Validation Commands and marked the Task companion Done.
+
+Why:
+- PR #13 restored discovery front matter after Task 10 accidentally replaced stubs with full skill copies. Manual discovery is not enough; the same drift can happen on the next large docs/UX pass.
+
+Effect:
+- Missing YAML front matter, missing canonical skill targets, or `.agents` / `.claude` wrapper drift fail CI and local `npm run check` immediately.
+
+Safety-risk:
+- Low. Read-only Node script with no new dependencies; does not touch app runtime.
+
+Related files:
+- `scripts/check-skill-wrappers.cjs`, `package.json`, `.github/workflows/expo-ci.yml`, `docs/AGENT_WORKFLOW.md`, `AGENTS.md`, `docs/TASKS.md`, `skills/skill-creator/SKILL.md`, `docs/DECISIONS.md`
+
+## 2026-07-24 — Close Task 11 Plan Review Gaps
+
+What changed:
+- Aggregate helpers: `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated`; empty `search_path` on definer functions.
+- Explicit Data API `GRANT`s for `anon` / `authenticated` / `service_role` documented beside RLS.
+- `products.is_published` added; public policies limited to published products and their related rows.
+- `user_ratings.product_id` made immutable via `BEFORE UPDATE` trigger.
+- Task 11 now requires secret scanning (not optional “prefer”); SECURITY and Task checklist updated.
+- Removed accidental duplicate `scripts/check-skill-wrappers.mjs`.
+- Roadmap milestones reordered: Real Product Data (Task 14) before Auth (Task 15).
+
+Why:
+- Read-only plan review found the docs directionally right but not yet safe/complete enough to implement Task 11.
+
+Effect:
+- Task 11 contract is plan-compliant for security boundaries before migrations start.
+
+Safety-risk:
+- Docs-only. No migrations applied.
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/SECURITY.md`, `docs/ROADMAP.md`, `docs/API_CONTRACTS.md`, `.cursor/rules/security.mdc`, `docs/DECISIONS.md`

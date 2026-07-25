@@ -2,12 +2,12 @@
 
 ## Current Repo Status
 
-As of this document setup:
-- Expo project exists with Expo Router.
-- NativeWind v4 is configured with Tailwind, Babel, and Metro.
-- Bottom tabs are Feed, Browse, and Account with placeholder screens.
-- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow, RatingInputRow).
-- Mock products, Product Detail, and Rating Form (Task 9) are implemented with session-only fake local rating state.
+As of 2026-07-24 (post Task 10 / PR #13 merge):
+- Expo SDK 57 app with Expo Router, NativeWind v4, and bottom tabs (Feed, Browse, Account).
+- Reusable UI primitives under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow, RatingInputRow, HeaderBackButton).
+- Mock Browse → Product Detail → Rate/Edit journey is UX-ready (Task 10 **GO**), with bundled catalog images, decision summary, Overall-first rating form, and session-only My Rating.
+- Head is maintenance after Task 10 (skill-discovery restore + Expo patch alignment). **No Supabase client, migrations, auth, or real product/rating APIs yet.**
+- Next work is a security-first Supabase foundation (Tasks 11+). Do not expand UI, Feed, agent framework, MCP, social features, or AI assistant while that foundation is open.
 
 ## Definition Of Done
 
@@ -234,6 +234,8 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
 - Done 2026-07-21: restore `test-and-validation-loop` discovery stubs — `.agents/skills/` and `.claude/skills/` wrappers were accidentally replaced with full skill copies (no YAML front matter) during Task 10; restored thin `name` / `description` stubs pointing at `skills/test-and-validation-loop/SKILL.md`. Decision: `docs/DECISIONS.md` 2026-07-21 restore entry.
 - Done 2026-07-23: Expo SDK 57 patch realignment for CI — `expo-doctor` failed on PR #13 with 7 out-of-date packages (`expo`/`expo-router` → `~57.0.8`, `react-native-screens` → `~4.26.0`, plus matching Expo module patches). Decision: `docs/DECISIONS.md` 2026-07-23 alignment entry.
 - Added 2026-07-14: before wiring real multi-marketplace offers, define Product Detail lowest-price behavior for mixed currencies—enforce one currency per payload, group prices by currency, or introduce an explicit conversion source. Current mock/MVP catalog fallback assumes USD.
+- Added 2026-07-24: post–Task 10 weekend plan recorded — packetized Supabase Tasks 11–18, `private_note` language, RLS-before-UI, skill-wrapper validation companion; freeze UI/agent/MCP expansion. Decision: `docs/DECISIONS.md` 2026-07-24 entry; roadmap: `docs/ROADMAP.md` Phase 4.
+- Done 2026-07-24: **skill-wrapper validation** — `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers` wired into `npm run check` and Expo CI. Decision: `docs/DECISIONS.md` 2026-07-24 automation entry.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
 
@@ -245,15 +247,153 @@ Flow used per task: parent implements -> `reviewer` spec review -> parent applie
 - **Did either subagent trigger at inappropriate times?** No. Both ran only when explicitly delegated at the pilot's defined points.
 - **Fix-cycle note:** the reviewer-fix-verify sequence surfaced one avoidable loop — the reviewer's accepted retry-timer fix introduced the lint error the verifier then caught. One extra parent fix pass resolved it; within the one-review-fix-pass budget, but worth watching.
 
-## Supabase Tasks
+## Supabase Tasks (post Task 10)
 
-Do not start until mock UX flow works:
-- Create Supabase project.
-- Add schema migrations.
-- Add RLS policies.
-- Seed products.
-- Add Supabase Auth.
-- Add product and rating queries.
-- Add TanStack Query.
-- Replace mock product browsing with Supabase data.
-- Replace fake rating flow with real rating mutations.
+Mock UX is **GO**. Work these as small sequential milestones — not one large “add Supabase” task. Tasks 11 and 12 may share one migration only if the diff stays small and reviewable. Canonical schema: `docs/DATA_MODEL.md`. Skill: `skills/supabase-schema-change`.
+
+### Weekend / near-term freeze
+
+Out of scope until the foundation tasks below say otherwise:
+- Broad UI restyling, Feed, Filter/Sort expansion.
+- New agent roles, global model reassignment, custom MCP server.
+- Marketplace scraping, public written reviews, social features, AI chatbot/verdicts.
+- Connecting the mobile UI before Task 14.
+- TanStack Query before Task 18 (after real reads exist).
+- Production database access or automated production migrations for coding agents.
+
+### Task 11: Environments And Core Schema
+
+Status: Pending — next.
+
+Goal: local + staging Supabase environments and the smallest readable core schema. **Do not connect the mobile UI.**
+
+Deliverables:
+- Supabase CLI; local stack; separate staging project (no production work).
+- Versioned SQL migration(s) for first tables:
+  - `profiles`
+  - `products` (including `is_published` for draft vs public catalog)
+  - `product_images`
+  - `eazy_assessments` (editorial Eazy Score; replaces planned `official_ratings` name)
+  - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id`)
+  - `rating_aggregates` (server-owned Community Score summary)
+  - `product_offers` only if it does not bloat the first migration
+- PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
+- Explicit Data API `GRANT`s for `anon` / `authenticated` (and `service_role` tooling) per `docs/DATA_MODEL.md` — RLS alone is not exposure.
+- Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only).
+- Environment-variable validation pattern (anon key / URL only in Expo; never service-role in the mobile bundle).
+- **Secret scanning** wired for the foundation workstream (CI and/or pre-commit); Task 11 does not pass without it.
+- Docs: `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, this file.
+
+Acceptance:
+- Local `supabase start` / reset works from committed migrations.
+- Staging project exists and is the only remote target for agent work.
+- Migration is human-readable; no UI, seed catalog, auth screens, or TanStack Query in this task unless explicitly added as a tiny companion packet.
+- Confirmation recorded that no production project was touched.
+- Secret scanning job/hook is present and fails on a deliberate test secret pattern (or documented equivalent proof).
+
+Task 11 contract checklist (fill before implementation):
+- Exact tables and excluded features.
+- Allowed file paths (migrations + listed docs + secret-scanning config only).
+- Required constraints, `is_published`, grants, and aggregate `REVOKE`s.
+- Whether seed data is included (default: no full catalog).
+- Required validation commands (include `npm run check:skill-wrappers` and secret-scan command).
+- Staging-only execution confirmation.
+
+### Task 12: Constraints Hardening, RLS, And Authorization Tests
+
+Status: Pending.
+
+Goal: every exposed table has RLS; unauthorized scenarios fail in tests.
+
+Required scenarios (minimum):
+- Anonymous can read published products (and related public catalog reads for published products only).
+- Anonymous cannot read unpublished products or their related catalog rows.
+- Anonymous cannot create ratings.
+- Authenticated user can create / update / delete **own** rating (`product_id` immutable).
+- User cannot read another user’s `private_note`.
+- User cannot modify another user’s rating.
+- Client cannot modify `rating_aggregates` (no write grants; cannot execute refresh RPC).
+- Client cannot mark a purchase as verified (when that column exists).
+
+Acceptance:
+- RLS enabled on all exposed tables; policies match `docs/DATA_MODEL.md`.
+- Authorization tests (SQL or project-approved harness) cover the scenarios above.
+- Aggregate refresh remains server-owned (function/trigger); clients cannot write summary rows.
+
+### Task 13: Product Seed Data
+
+Status: Pending.
+
+Goal: seed one or two representative products first; expand toward the eight-product mock catalog only after the small seed is trusted.
+
+Acceptance:
+- Seed SQL (or approved script) loads into local reset and staging.
+- Image strategy decided: upload approved assets to Storage **or** keep mock-image resolution until real catalog ingestion (see unresolved decisions in `docs/DATA_MODEL.md`).
+- Provenance fields populated where required by the schema (`source_type`, capture timestamps, methodology version as applicable).
+
+### Task 14: Real Browse And Product Detail Reads
+
+Status: Pending.
+
+Goal: replace mock product reads for Browse and Product Detail. Rating writes stay mock/session until Task 16.
+
+Acceptance:
+- Anonymous Browse and Detail work against Supabase public reads.
+- Canonical Detail field sources in `docs/API_CONTRACTS.md` still hold.
+- No client-trusted Community Score calculation.
+
+### Task 15: Authentication
+
+Status: Pending.
+
+Goal: email auth first unless Apple Sign-In is required for the next TestFlight. Browse remains public; rating requires login.
+
+Acceptance:
+- Sign up / sign in / sign out / session persistence.
+- Logged-out Rate CTA becomes sign-in gate; logged-in user reaches the form.
+- Account screen reflects auth state without Feed/social scope growth.
+
+### Task 16: My Rating Persistence
+
+Status: Pending.
+
+Goal: real upsert/update/delete for the signed-in user’s rating; `private_note` owner-only.
+
+Acceptance:
+- One rating per user per product enforced.
+- Private note never returned for other users.
+- Detail My Rating reflects persisted data after submit; mock session map retired for the connected path.
+- Frontend field rename `comment` → `privateNote` lands with this task (or an explicit tiny precede packet).
+
+### Task 17: Server-Owned Community Aggregates
+
+Status: Pending (may ship with Task 12 triggers if already complete — then this task is verify-only).
+
+Goal: trusted Community Score and category averages via database function/trigger; never client-written.
+
+Acceptance:
+- Insert/update/delete rating refreshes `rating_aggregates`.
+- Tests prove clients cannot forge aggregates.
+- Aggregation mechanism recorded in `docs/DECISIONS.md` (trigger vs post-mutation function vs schedule).
+
+### Task 18: TanStack Query And Cache Invalidation
+
+Status: Pending — after real reads (Task 14+).
+
+Goal: query hooks, query-key factory, runtime validation for DB responses, structured loading/retry; invalidate product / user-rating keys after rating mutations.
+
+Acceptance:
+- Mock fetch paths replaced for connected screens.
+- Invalidation list in `docs/API_CONTRACTS.md` is implemented.
+- No Redux/Zustand for server state; no optimistic rating mutations in the first backend version.
+
+### Companion: Skill-wrapper validation
+
+Status: Done (2026-07-24).
+
+Added `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers`, wired into `npm run check` and Expo CI. Validates:
+- each `.agents/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` has YAML front matter (`name`, `description`);
+- declared canonical `skills/<name>/SKILL.md` exists and is referenced;
+- agent and Claude wrapper directories stay synchronized and byte-identical.
+
+Converts the PR #13 repair into a durable regression check.

@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check skill discovery wrappers
+        run: npm run check:skill-wrappers
+
       - name: Generate typed routes
         run: npm run generate:routes
 
