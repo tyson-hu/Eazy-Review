@@ -195,7 +195,7 @@ This section is the canonical home for validation commands; `AGENTS.md` carries 
 
 Pick the narrowest command that covers the change:
 
-- `npm run check:skill-wrappers` — discovery stubs under `.agents/skills` and `.claude/skills` have YAML front matter with non-empty string `name`/`description` (rejects empty, comment-only, and YAML null spellings `null`/`~`), point at existing canonical `skills/*/SKILL.md` paths, and stay synchronized. Fast; run after any skill or skill-wrapper edit, and always as part of `npm run check`.
+- `npm run check:skill-wrappers` — discovery stubs under `.agents/skills` and `.claude/skills` have YAML front matter with non-empty **string** `name`/`description` (rejects empty, comment-only, YAML null `null`/`~`, and non-string scalars such as booleans/numbers), point at existing canonical `skills/*/SKILL.md` paths, and stay synchronized. Fast; run after any skill or skill-wrapper edit, and always as part of `npm run check`.
 - `npm run typecheck` — TypeScript only. Fastest app check; enough for pure type or logic edits.
 - `npm run lint` — ESLint via Expo. Add it when code style or imports changed.
 - `npm run check` — skill-wrapper validation, typed-route generation, typecheck, lint, Expo doctor, and Expo dependency alignment. Use for route changes, dependency changes, skill changes, or before handing off a finished task.

@@ -44,8 +44,9 @@ function listSkillNames(dir) {
  * Parse the limited YAML subset used by skill wrappers: a flat mapping of
  * unquoted or fully closed single-/double-quoted scalar keys required for discovery.
  * Rejects null/empty values (e.g. `description: # comment`), YAML null spellings
- * (`null`, `~`, case-insensitive when unquoted), unclosed quotes, and unsupported
- * collection/block indicators (`[`, `{`, `|`, `>`).
+ * (`null`, `~`, case-insensitive when unquoted), non-string YAML scalars (booleans,
+ * numbers), unclosed quotes, and unsupported collection/block indicators
+ * (`[`, `{`, `|`, `>`).
  *
  * @param {string} body
  * @param {string} fileLabel
@@ -99,12 +100,27 @@ function parseSimpleYamlMapping(body, fileLabel) {
         return null;
       }
       value = raw.slice(1, -1);
-    } else if (/^(?:~|null)$/i.test(raw.trim())) {
-      // Unquoted YAML null scalars are not usable discovery strings.
-      errors.push(
-        `${fileLabel}: front matter \`${key}\` is a YAML null scalar (use a non-empty string description)`,
-      );
-      return null;
+    } else {
+      const trimmed = raw.trim();
+      // Unquoted YAML null / boolean / numeric scalars are not usable discovery strings.
+      if (/^(?:~|null)$/i.test(trimmed)) {
+        errors.push(
+          `${fileLabel}: front matter \`${key}\` is a YAML null scalar (use a non-empty string description)`,
+        );
+        return null;
+      }
+      if (/^(?:true|false|yes|no|on|off)$/i.test(trimmed)) {
+        errors.push(
+          `${fileLabel}: front matter \`${key}\` is a YAML boolean scalar (use a quoted or plain string)`,
+        );
+        return null;
+      }
+      if (/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(trimmed)) {
+        errors.push(
+          `${fileLabel}: front matter \`${key}\` is a YAML numeric scalar (use a quoted or plain string)`,
+        );
+        return null;
+      }
     }
 
     if (value.trim() === '') {

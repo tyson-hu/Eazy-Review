@@ -220,6 +220,7 @@ Hard rules for aggregate SQL:
 - `product_id` on `user_ratings` is **immutable** after insert (enforced by trigger). Re-rating another product means delete + insert, not moving the row.
 - `refresh_rating_aggregates` and `handle_user_rating_change` are `SECURITY DEFINER` for trigger use only. **Revoke `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`** so clients cannot call them via RPC and forge aggregates.
 - Prefer `set search_path = ''` with fully qualified `public.` relations inside definer functions.
+- **Serialize refreshes per product** before reading `user_ratings`. Concurrent rating writes can otherwise each compute from a snapshot that omits the other transaction’s uncommitted row; the later `ON CONFLICT` upsert then overwrites a correct aggregate with a stale count/average until another mutation runs. Use a transaction-scoped advisory lock (or equivalent product-row lock) at the start of `refresh_rating_aggregates`.
 
 ```sql
 create or replace function public.refresh_rating_aggregates(target_product_id uuid)
@@ -229,6 +230,11 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- One refresh at a time per product within concurrent rating transactions.
+  perform pg_advisory_xact_lock(
+    hashtextextended(target_product_id::text, 0)
+  );
+
   insert into public.rating_aggregates (
     product_id,
     rating_count,

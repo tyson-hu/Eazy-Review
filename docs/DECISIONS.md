@@ -817,3 +817,44 @@ Safety-risk:
 
 Related files:
 - `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/SECURITY.md`, `docs/RELEASE_CHECKLIST.md`, `docs/AGENT_WORKFLOW.md`, `docs/API_CONTRACTS.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `skills/skill-creator/SKILL.md`, `.cursor/rules/supabase.mdc`, `.cursor/rules/security.mdc`, `scripts/check-skill-wrappers.cjs`
+
+## 2026-07-24 — Upgrade Expo CI checkout And setup-node To v6
+
+What changed:
+- `.github/workflows/expo-ci.yml` now uses `actions/checkout@v6` and `actions/setup-node@v6` (from v4).
+
+Why:
+- Align CI action runtimes with Node 24–native GitHub Actions hosts and stop depending on deprecated Node 20 action runtimes. Project CI already targets Node 24 (`fc6e951`).
+
+Effect:
+- Expo CI continues to check out the repo and install Node with current major action versions.
+
+Rollback:
+- Revert the two `uses:` pins in `.github/workflows/expo-ci.yml` to `actions/checkout@v4` and `actions/setup-node@v4` if a v6-specific runner/action regression blocks CI.
+
+Safety-risk:
+- Low. Workflow pin bump only; no app runtime or dependency lockfile change in that commit.
+
+Related files:
+- `.github/workflows/expo-ci.yml`, `docs/DECISIONS.md`
+
+## 2026-07-24 — Close Follow-Up Plan Gaps (Aggregate Lock, Task 11 Paths, Typed YAML, Auth-Scoped Session Ratings)
+
+What changed:
+- `refresh_rating_aggregates` acquires a per-product `pg_advisory_xact_lock` before reading `user_ratings`; Task 17 requires concurrent-write coverage.
+- Task 11 allowed paths now include local Supabase config, env example/validation, and package script/lockfile changes needed for a reproducible stack.
+- Skill-wrapper check rejects unquoted YAML boolean and numeric scalars (not only null).
+- Task 14/15 transitional session My Rating must be keyed by viewer identity + product ID and cleared/re-keyed on auth change.
+- Task 16 connected form must enforce the 500-character `private_note` limit client-side.
+
+Why:
+- Concurrent aggregate refreshes can overwrite a correct upsert with a stale snapshot; the Task 11 allowlist blocked env deliverables; `description: true` still false-passed the wrapper check; a product-only session map leaks ratings across accounts after Task 15; Task 16 rename-only acceptance would defer note-length errors to the DB.
+
+Effect:
+- Remaining plan-head findings are recorded before Task 11 implementation starts.
+
+Safety-risk:
+- Docs/process and CI script only; no migrations applied.
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/AGENT_WORKFLOW.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `skills/skill-creator/SKILL.md`, `.cursor/rules/supabase.mdc`, `scripts/check-skill-wrappers.cjs`

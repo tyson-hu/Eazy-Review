@@ -47,7 +47,7 @@ Canonical schema and RLS expectations: `docs/DATA_MODEL.md`. Task order: `docs/T
 - Rating **INSERT/UPDATE** policies must also require the referenced product to be published (FK existence alone is not enough). Owner **DELETE** of an existing rating may remain allowed after unpublish.
 - Client Data API grants are least-privilege and **column-level** where writes are allowed: `profiles` UPDATE only `display_name` / `username` / `avatar_url`; `user_ratings` INSERT/UPDATE only score fields + `private_note` (not `id` / `created_at` / `updated_at`). Timestamps are trigger-maintained.
 - `private_note` is owner-only. Do not add public `SELECT` on `user_ratings` while notes share that row.
-- `rating_aggregates` are server-owned. Clients must not insert, update, or delete aggregate rows; Community Score recalculation stays in security-definer SQL that clients cannot execute.
+- `rating_aggregates` are server-owned. Clients must not insert, update, or delete aggregate rows; Community Score recalculation stays in security-definer SQL that clients cannot execute. Refresh must be serialized per product so concurrent ratings cannot leave a stale aggregate.
 - `user_ratings.product_id` is immutable after insert.
 - Clients must never be able to mark purchases as verified or otherwise self-attest privileged provenance flags.
 - Prefer staging-only confirmation in every schema packet completion report (“no production project touched”).

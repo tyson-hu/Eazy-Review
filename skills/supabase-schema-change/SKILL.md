@@ -30,7 +30,7 @@ Goal: safely change database schema, RLS, migrations, or data contracts, keeping
 1. Write the change as SQL against the documented schema first; confirm it does not conflict with `docs/DATA_MODEL.md` naming rules (`comfort` not `comforts`, `value` or `resale_markup` not `markups`, `private_note` not `comment`, `eazy_assessments` / `rating_aggregates` not the obsolete names).
 2. Create a migration file in `supabase/migrations/` — never edit applied migrations.
 3. Apply the correct packet defaults:
-   - **Task 11 (schema create):** enable RLS on every new exposed table in the same migration (deny-by-default). Do **not** add public/catalog policies and do **not** `GRANT` to `anon` or `authenticated`. Optional `service_role` tooling grants only. Include `product_offers` in the first schema slice. Revoke `EXECUTE` on aggregate helpers from `PUBLIC` / `anon` / `authenticated`.
+   - **Task 11 (schema create):** enable RLS on every new exposed table in the same migration (deny-by-default). Do **not** add public/catalog policies and do **not** `GRANT` to `anon` or `authenticated`. Optional `service_role` tooling grants only. Include `product_offers` in the first schema slice. Revoke `EXECUTE` on aggregate helpers from `PUBLIC` / `anon` / `authenticated`. Serialize per-product aggregate refresh (advisory/xact lock before reading `user_ratings`). Environment setup files (`supabase/config.toml`, env example/validation, package scripts/lockfile for CLI/secret-scan) are in scope when required by the Task 11 checklist — not UI screens.
    - **Task 12 (policies + grants):** add published-product catalog policies and owner-only `user_ratings` policies from `docs/DATA_MODEL.md` (INSERT/UPDATE also require `is_published`), **then** least-privilege `GRANT`s for `anon` / `authenticated` — including **column-level** `UPDATE` on `profiles` (`display_name`, `username`, `avatar_url`) and column-level `INSERT`/`UPDATE` on `user_ratings` (scores + `private_note` only). Never grant client roles before the authorizing policies exist. Keep `updated_at` trigger-maintained (no client UPDATE grant on timestamps / `id`).
 4. Keep Community Score recalculation server-side: any change touching `user_ratings` aggregates goes through `refresh_rating_aggregates` and its trigger, never client code. Keep `user_ratings.product_id` immutable.
 5. Update `docs/DATA_MODEL.md` to match the new schema exactly, in the same change.
@@ -64,6 +64,7 @@ Goal: safely change database schema, RLS, migrations, or data contracts, keeping
 - Adding public-read policies or `anon`/`authenticated` grants during Task 11 (locks must stay deny-by-default until Task 12).
 - Forgetting RLS on a new table at create time.
 - Recalculating `rating_aggregates` in the app because it seemed simpler.
+- Refreshing aggregates without per-product serialization (concurrent ratings can leave a stale `rating_count` / averages after `ON CONFLICT`).
 - Leaving `SECURITY DEFINER` aggregate functions executable by `anon` / `authenticated`.
 - Using obsolete names `official_ratings` or `product_rating_summary`.
 - Widening a migration into a refactor of adjacent tables.

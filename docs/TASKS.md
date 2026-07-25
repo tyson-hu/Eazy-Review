@@ -280,7 +280,7 @@ Deliverables:
 - PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
 - **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
 - Optional: `service_role` tooling grants only (never ship service-role into Expo).
-- Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only).
+- Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings` (see `docs/DATA_MODEL.md`).
 - Environment-variable validation pattern (anon key / URL only in Expo; never service-role in the mobile bundle).
 - **Secret scanning** wired for the foundation workstream (CI and/or pre-commit); Task 11 does not pass without it.
 - Docs: `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, this file.
@@ -295,8 +295,14 @@ Acceptance:
 
 Task 11 contract checklist (fill before implementation):
 - Exact tables and excluded features.
-- Allowed file paths (migrations + listed docs + secret-scanning config only).
-- Required constraints, `is_published`, RLS-on-create (deny-by-default), and aggregate `REVOKE`s.
+- Allowed file paths — must cover both schema **and** environment setup deliverables above:
+  - `supabase/migrations/**`, `supabase/config.toml`, and other committed local Supabase CLI config needed for `supabase start` / reset
+  - package scripts / lockfile changes required for the CLI or secret-scan tooling (`package.json`, `package-lock.json`)
+  - env example and validation module for anon URL/key only (for example `.env.example`, `src/lib/supabase*` or equivalent — no service-role in the mobile bundle)
+  - secret-scanning CI/hook config
+  - listed docs (`docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, `docs/TASKS.md`)
+  - Do **not** expand into Browse/Detail/Rating UI, seed catalog, auth screens, or TanStack Query unless an explicit tiny companion packet says so
+- Required constraints, `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, and per-product serialized aggregate refresh (see `docs/DATA_MODEL.md`).
 - Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12**.
 - Whether seed data is included (default: no full catalog).
 - Required validation commands (include `npm run check:skill-wrappers` and secret-scan command).
@@ -352,7 +358,8 @@ Deliverables:
 - Browse and Product Detail load published catalog rows from Supabase (not `mockProducts` / `getMockProductDetailById` for those screens).
 - **Rate/Edit compatibility adapter (required in this task):** Detail will navigate with real product UUIDs, but rating persistence stays session-only until Task 16. Do **not** leave the rate route bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys — that rejects every UUID and blocks Task 15’s “logged-in user reaches the form” path.
   - Load rate-screen product context from the same real product/detail repository used by Detail (or a thin adapter over it).
-  - Keep My Rating in a temporary session map keyed by **any** product ID string, including UUIDs.
+  - Keep My Rating in a temporary session map keyed by **viewer identity + product ID** (any product ID string, including UUIDs). A product-ID-only map is not enough once Task 15 adds auth in the same JS runtime — user B must not see or overwrite user A’s note.
+  - Clear or re-key the map on sign-in / sign-out / account switch (Task 15 must verify this if the map still exists then).
   - Replace that session map with Supabase persistence in Task 16.
 
 Acceptance:
@@ -371,6 +378,7 @@ Acceptance:
 - Sign up / sign in / sign out / session persistence.
 - Logged-out Rate CTA becomes sign-in gate; logged-in user reaches the form.
 - Account screen reflects auth state without Feed/social scope growth.
+- If the Task 14 transitional session rating map still exists, it is namespaced by signed-in user (and cleared or re-keyed on auth change) so one account cannot read or overwrite another’s in-memory My Rating.
 
 ### Task 16: My Rating Persistence
 
@@ -383,6 +391,7 @@ Acceptance:
 - Private note never returned for other users.
 - Detail My Rating reflects persisted data after submit; mock session map retired for the connected path.
 - Frontend field rename `comment` → `privateNote` lands with this task (or an explicit tiny precede packet).
+- Connected Rate/Edit form enforces the 500-character `private_note` limit before submit (`maxLength` and/or explicit validation with a clear field error) so oversized notes fail in-form instead of only at the database check.
 
 ### Task 17: Server-Owned Community Aggregates
 
@@ -392,6 +401,7 @@ Goal: trusted Community Score and category averages via database function/trigge
 
 Acceptance:
 - Insert/update/delete rating refreshes `rating_aggregates`.
+- Concurrent ratings for the same product leave a correct final `rating_count` / averages (refresh serialized per product; cover concurrent writes in aggregate tests).
 - Tests prove clients cannot forge aggregates.
 - Aggregation mechanism recorded in `docs/DECISIONS.md` (trigger vs post-mutation function vs schedule).
 
@@ -412,7 +422,7 @@ Status: Done (2026-07-24).
 
 Added `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers`, wired into `npm run check` and Expo CI. Validates:
 - each `.agents/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` has YAML front matter (`name`, `description`);
-- `name` / `description` are non-empty string scalars (rejects empty, comment-only, and YAML null spellings `null` / `~`);
+- `name` / `description` are non-empty **string** scalars (rejects empty, comment-only, YAML null `null` / `~`, and non-string scalars such as booleans/numbers);
 - declared canonical `skills/<name>/SKILL.md` exists and is referenced;
 - agent and Claude wrapper directories stay synchronized and byte-identical.
 

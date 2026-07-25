@@ -246,7 +246,7 @@ Align new Supabase types and adapters with `docs/DATA_MODEL.md`:
 
 Rules:
 - Numeric rating: persisted and shown as My Rating to the owner.
-- `private_note` / `privateNote`: owner-only; never select other users’ notes.
+- `private_note` / `privateNote`: owner-only; never select other users’ notes. Max **500** characters (DB check + connected Rate/Edit form validation / `maxLength` in Task 16 — do not rely on the DB error alone).
 - Public written reviews: not implemented.
 - Mock UI may still label the optional field “Comment” and use `comment` until Task 16 renames the connected path.
 - Data API access requires explicit `GRANT`s **after** RLS policies (Task 12); Task 11 only enables RLS deny-by-default. See `docs/DATA_MODEL.md` Privileges And Data API Exposure.
@@ -268,7 +268,7 @@ Before Supabase (Tasks 11–13 schema work does not require removing mocks):
 - Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
 - Screens must call this API only — never import or mutate the private map.
 
-**Task 14 transitional note:** when Browse/Detail switch to Supabase product UUIDs, Rate/Edit must not stay bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys (those reject unknown IDs). Load product context from the real Detail repository (or adapter); keep session My Rating in a map keyed by any product ID string until Task 16 replaces it with Supabase persistence. See `docs/TASKS.md` Task 14.
+**Task 14 transitional note:** when Browse/Detail switch to Supabase product UUIDs, Rate/Edit must not stay bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys (those reject unknown IDs). Load product context from the real Detail repository (or adapter); keep session My Rating in a map keyed by **viewer identity + product ID** (including UUIDs) until Task 16 replaces it with Supabase persistence. Clear or re-key on auth changes so accounts never share in-memory ratings. See `docs/TASKS.md` Task 14–15.
 
 ```ts
 import type { Product } from '@/src/types/product';
