@@ -148,6 +148,7 @@ Acceptance:
 - Logged-out user can browse.
 - Logged-out user must sign in to rate.
 - Logged-in user can access rating form.
+- Sign-up produces exactly one readable `public.profiles` row for the new user (Account can load it).
 
 ### Milestone 6: Real Rating System (Tasks 16–18)
 

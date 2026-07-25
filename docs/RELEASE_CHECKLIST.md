@@ -28,6 +28,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Users can only insert/update/delete their own ratings; `private_note` is owner-only.
 - Users cannot insert or update ratings for unpublished products; they may delete an existing own rating after unpublish.
 - Authenticated users can update only mutable profile fields (`display_name` / `username` / `avatar_url`); audit timestamps are server-maintained.
+- Profile rows are created by the auth.users trigger, not by client INSERT; sign-up leaves a readable profile for Account.
 - Rating writes cannot set `user_ratings.id` or timestamps via client grants.
 - Community Score is recalculated by database/server-side logic; clients cannot write `rating_aggregates` or execute refresh RPCs.
 - Every product has a zero-count `rating_aggregates` row from create/seed (or Detail normalizes a missing join to `ratingCount: 0`).

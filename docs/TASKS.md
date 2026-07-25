@@ -270,7 +270,7 @@ Goal: local + staging Supabase environments and the smallest readable core schem
 Deliverables:
 - Supabase CLI; local stack; separate staging project (no production work).
 - Versioned SQL migration(s) for first tables:
-  - `profiles`
+  - `profiles` (row created by protected `AFTER INSERT ON auth.users` trigger — clients never INSERT profiles)
   - `products` (including `is_published` for draft vs public catalog)
   - `product_images`
   - `eazy_assessments` (editorial Eazy Score; replaces planned `official_ratings` name)
@@ -281,6 +281,7 @@ Deliverables:
 - **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
 - Optional: `service_role` tooling grants only (never ship service-role into Expo).
 - Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings`; zero-count `rating_aggregates` row on every `products` INSERT (see `docs/DATA_MODEL.md`).
+- **New-user profile trigger:** `handle_new_user` on `auth.users` AFTER INSERT inserts `public.profiles (id)` only; `REVOKE EXECUTE` from clients (see `docs/DATA_MODEL.md`).
 - Environment-variable validation pattern (anon key / URL only in Expo; never service-role in the mobile bundle).
 - **Secret scanning** wired for the foundation workstream (CI and/or pre-commit); Task 11 does not pass without it.
 - Docs: `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, this file.
@@ -289,6 +290,7 @@ Acceptance:
 - Local `supabase start` / reset works from committed migrations.
 - Staging project exists and is the only remote target for agent work.
 - Every Task 11 table has RLS enabled; client roles cannot read/write via the Data API yet (no policies + no `anon`/`authenticated` grants).
+- Inserting into `auth.users` (local auth / test harness) creates exactly one matching `public.profiles` row for that id.
 - Migration is human-readable; no UI, seed catalog, auth screens, or TanStack Query in this task unless explicitly added as a tiny companion packet.
 - Confirmation recorded that no production project was touched.
 - Secret scanning job/hook is present and fails on a deliberate test secret pattern (or documented equivalent proof).
@@ -302,8 +304,8 @@ Task 11 contract checklist (fill before implementation):
   - secret-scanning CI/hook config
   - listed docs (`docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, `docs/TASKS.md`)
   - Do **not** expand into Browse/Detail/Rating UI, seed catalog, auth screens, or TanStack Query unless an explicit tiny companion packet says so
-- Required constraints, `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, and per-product serialized aggregate refresh (see `docs/DATA_MODEL.md`).
-- Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12**.
+- Required constraints, `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, per-product serialized aggregate refresh, and `auth.users` → `profiles` ensure trigger (see `docs/DATA_MODEL.md`).
+- Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12** (and that clients never receive `profiles` INSERT).
 - Whether seed data is included (default: no full catalog).
 - Required validation commands (include `npm run check:skill-wrappers` and secret-scan command).
 - Staging-only execution confirmation.
@@ -326,6 +328,7 @@ Required scenarios (minimum):
 - Authenticated user can create / update / delete **own** rating (`product_id` immutable).
 - Authenticated user cannot insert or update a rating for an unpublished product (own DELETE still allowed).
 - Authenticated user cannot rewrite `profiles` / `user_ratings` audit or identity columns via Data API grants.
+- Client cannot directly insert arbitrary `profiles` rows; authenticated users can update only their own mutable profile fields.
 - User cannot read another user’s `private_note`.
 - User cannot modify another user’s rating.
 - Client cannot modify `rating_aggregates` (no write grants; cannot execute refresh RPC).
@@ -379,6 +382,7 @@ Goal: email auth first unless Apple Sign-In is required for the next TestFlight.
 
 Acceptance:
 - Sign up / sign in / sign out / session persistence.
+- Sign-up creates exactly one `public.profiles` row for the new `auth.users` id (via Task 11 `handle_new_user`); the logged-in Account screen can read that row (avatar / display name / username / joined date fields as designed — nulls until the user edits).
 - Logged-out Rate CTA becomes sign-in gate; logged-in user reaches the form.
 - Account screen reflects auth state without Feed/social scope growth.
 - If the Task 14 transitional session rating map still exists, it is namespaced by signed-in user (and cleared or re-keyed on auth change) so one account cannot read or overwrite another’s in-memory My Rating.

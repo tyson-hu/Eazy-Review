@@ -878,3 +878,23 @@ Safety-risk:
 
 Related files:
 - `AGENTS.md`, `docs/TASKS.md`, `docs/API_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/USER_FLOWS.md`, `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `docs/BLUEBOOK.md`, `docs/ROADMAP.md`, `docs/RELEASE_CHECKLIST.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `.cursor/rules/supabase.mdc`
+
+## 2026-07-25 — Create Profile Row On Auth User Insert
+
+What changed:
+- Task 11 requires `handle_new_user` (`AFTER INSERT ON auth.users`) to insert `public.profiles (id)` only; client EXECUTE revoked.
+- Task 12 authorization tests: clients cannot INSERT profiles; owners can UPDATE only mutable columns.
+- Task 15: sign-up must leave exactly one readable profile row for the logged-in Account screen.
+- Grants/policies remain SELECT + column-level UPDATE only — no client INSERT path.
+
+Why:
+- Plan review: fresh sign-ups created `auth.users` without `public.profiles`, and UPDATE cannot create the missing row, so Account had no avatar/display name/username/joined-date source.
+
+Effect:
+- User→profile lifecycle is assigned before Task 15 implementation.
+
+Safety-risk:
+- Docs-only; trigger lands with Task 11 migrations.
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/SECURITY.md`, `docs/ROADMAP.md`, `docs/RELEASE_CHECKLIST.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `.cursor/rules/supabase.mdc`

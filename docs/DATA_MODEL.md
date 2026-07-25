@@ -16,7 +16,7 @@ Task sequencing: `docs/TASKS.md` Tasks 11–18. Do not implement schema assumpti
 
 ## Tables (Task 11 first slice)
 
-- `profiles`: public user profile data.
+- `profiles`: public user profile data (row created by `auth.users` trigger; clients update mutable fields only).
 - `products`: core product identity and facts (`is_published` gates anonymous catalog reads).
 - `product_images`: one or more images for each product.
 - `eazy_assessments`: app-builder Eazy Score (editorial); prefer versioned rows with one current/active assessment.
@@ -92,6 +92,9 @@ create table public.profiles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Profile rows are created only by a trusted auth.users trigger (Task 11).
+-- Clients get SELECT + column-level UPDATE in Task 12 — never INSERT.
 
 create table public.products (
   id uuid primary key default gen_random_uuid(),
@@ -343,6 +346,27 @@ before update on public.user_ratings
 for each row
 execute function public.set_updated_at();
 
+-- New auth users get a profiles row (identity key only). Clients cannot INSERT
+-- profiles via the Data API; Account reads this row after Task 15 sign-up.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.profiles (id)
+  values (new.id)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row
+execute function public.handle_new_user();
+
 create or replace function public.handle_user_rating_change()
 returns trigger
 language plpgsql
@@ -407,6 +431,8 @@ revoke all on function public.set_updated_at() from public;
 revoke all on function public.set_updated_at() from anon, authenticated;
 revoke all on function public.ensure_rating_aggregate_for_product() from public;
 revoke all on function public.ensure_rating_aggregate_for_product() from anon, authenticated;
+revoke all on function public.handle_new_user() from public;
+revoke all on function public.handle_new_user() from anon, authenticated;
 ```
 
 ## Privileges And Data API Exposure
@@ -440,6 +466,7 @@ grant select on public.rating_aggregates to anon, authenticated;
 grant select on public.product_offers to anon, authenticated;
 grant select on public.profiles to anon, authenticated;
 -- Column-level only: clients must not rewrite created_at / updated_at.
+-- No INSERT grant: profile rows are created by handle_new_user on auth.users insert.
 grant update (display_name, username, avatar_url)
 on public.profiles to authenticated;
 
@@ -580,7 +607,7 @@ Do **not** add a public `SELECT` on `user_ratings` while `private_note` lives on
 
 `rating_aggregates`: SELECT via grants + published-product policy; no INSERT/UPDATE/DELETE policies for `authenticated` / `anon`. Aggregate writes occur only inside the revoked-from-clients security-definer refresh path (and `service_role` tooling).
 
-Profiles:
+Profiles — public read; owner-only update of mutable fields. **No client INSERT policy** (and no `INSERT` grant): each `auth.users` insert creates exactly one `public.profiles` row via `handle_new_user` (Task 11). An UPDATE cannot create a missing profile.
 
 ```sql
 create policy "Public can read profiles"
@@ -601,6 +628,8 @@ with check (auth.uid() = id);
 - User can create / update / delete own rating (`product_id` cannot change on update).
 - User cannot insert or update a rating for an **unpublished** product (DELETE of an existing own rating remains allowed).
 - User cannot rewrite audit/identity columns (`profiles.created_at` / `updated_at`; `user_ratings.id` / `created_at` / `updated_at`) — column-level grants only; `updated_at` is trigger-maintained.
+- Client cannot directly `INSERT` into `profiles` (no grant / no policy); profile rows appear only via the auth.users trigger.
+- Authenticated user can update only their own mutable profile fields (`display_name` / `username` / `avatar_url`).
 - User cannot read another user’s `private_note` (no cross-user SELECT).
 - User cannot modify another user’s rating.
 - Client cannot modify `rating_aggregates` (no table write grants; cannot `EXECUTE` refresh helpers via RPC).
