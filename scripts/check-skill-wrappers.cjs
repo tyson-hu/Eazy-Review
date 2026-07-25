@@ -42,8 +42,9 @@ function listSkillNames(dir) {
 
 /**
  * Parse the limited YAML subset used by skill wrappers: a flat mapping of
- * unquoted or single-/double-quoted scalar keys required for discovery.
- * Rejects null/empty values such as `description: # comment`.
+ * unquoted or fully closed single-/double-quoted scalar keys required for discovery.
+ * Rejects null/empty values (e.g. `description: # comment`), unclosed quotes,
+ * and unsupported collection/block indicators (`[`, `{`, `|`, `>`).
  *
  * @param {string} body
  * @param {string} fileLabel
@@ -80,11 +81,22 @@ function parseSimpleYamlMapping(body, fileLabel) {
       return null;
     }
 
+    const first = raw[0];
+    if (first === '[' || first === '{' || first === '|' || first === '>') {
+      errors.push(
+        `${fileLabel}: front matter \`${key}\` uses unsupported YAML syntax (collections/block scalars are not allowed)`,
+      );
+      return null;
+    }
+
     let value = raw;
-    if (
-      (raw.startsWith('"') && raw.endsWith('"') && raw.length >= 2) ||
-      (raw.startsWith("'") && raw.endsWith("'") && raw.length >= 2)
-    ) {
+    if (first === '"' || first === "'") {
+      if (raw.length < 2 || raw[raw.length - 1] !== first) {
+        errors.push(
+          `${fileLabel}: front matter \`${key}\` has an unclosed ${first === '"' ? 'double' : 'single'} quote`,
+        );
+        return null;
+      }
       value = raw.slice(1, -1);
     }
 

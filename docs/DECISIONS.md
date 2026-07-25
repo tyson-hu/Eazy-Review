@@ -783,7 +783,7 @@ What changed:
 - Made `product_offers` mandatory in Task 11; granted `UPDATE` on `profiles` to `authenticated`.
 - Release checklist now requires published-only anonymous catalog access.
 - MCP policy adds **FORBIDDEN** for any production database access (no longer HIGH IMPACT / approvable).
-- Skill-wrapper check parses front matter as a strict flat YAML mapping so null/comment-only values fail.
+- Skill-wrapper check parses front matter as a strict flat YAML mapping so null/comment-only values fail; unclosed quotes and collection/block indicators (`[`, `{`, `|`, `>`) are rejected.
 - `docs/BLUEBOOK.md` points at `eazy_assessments` instead of permitting `official_ratings`.
 
 Why:
