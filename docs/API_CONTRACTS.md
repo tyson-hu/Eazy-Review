@@ -191,7 +191,7 @@ Required client (or thin repository) behavior:
    - Reject unauthenticated calls (`auth.uid()` is null).
    - Verify the target product exists and `is_published = true`.
    - Insert or update only the caller’s `(product_id, auth.uid())` row.
-   - Write only score columns and `private_note` (never identity / audit columns).
+   - On **insert**, write the validated `product_id` and server-derived `auth.uid()` as identity fields together with scores and `private_note`. On **conflict / update**, update only scores and `private_note`; never update identity or audit columns. Never accept a client-controlled `user_id`.
    - Enforce score bounds (1–10) and the 500-character `private_note` limit.
    - Declare `SECURITY DEFINER SET search_path = ''` and use fully qualified relation names.
    - `REVOKE EXECUTE` from `PUBLIC` and `anon`; `GRANT EXECUTE` only to `authenticated`.

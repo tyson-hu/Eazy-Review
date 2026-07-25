@@ -136,13 +136,15 @@ the five template headings as exact level-two lines outside fenced code
 not count. Each required section’s body is bounded by the next unfenced
 level-two heading of any name (so an empty `## Context` followed by
 `## Notes` does not false-pass) and must contain at least one substantive
-unfenced line (empty fenced blocks alone do not count). Headings inside
-backtick or tilde fences (` ``` ` / `~~~`) are ignored for both the title and
-required sections; a fence closes only with a compatible marker and run length
-(an opposite marker inside the fence stays content). Supersession links must be
-acyclic: a record may not supersede itself, `superseded_by` chains must not
-form a cycle, and every superseded chain must terminate at an `accepted`
-record (intermediate replacements may themselves be `superseded`).
+visible unfenced line (empty fenced blocks and HTML comments — including
+multi-line `<!-- … -->` — alone do not count). Headings inside backtick or
+tilde fences (` ``` ` / `~~~`) and text inside HTML comments are ignored for
+both the title and required sections; a fence closes only with a compatible
+marker and run length (an opposite marker inside the fence stays content).
+Supersession links must be acyclic: a record may not supersede itself,
+`superseded_by` chains must not form a cycle, and every superseded chain must
+terminate at an `accepted` record (intermediate replacements may themselves be
+`superseded`).
 
 The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry

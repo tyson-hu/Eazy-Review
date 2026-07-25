@@ -32,7 +32,9 @@ When the preferred definer helper is used, it must:
 
 - derive the owner solely from `auth.uid()` (no trusted client `user_id`);
 - reject unauthenticated callers and unpublished products;
-- insert/update only `(product_id, auth.uid())` score columns + `private_note`;
+- on insert, write validated `product_id` and server-derived `auth.uid()` with
+  scores and `private_note`; on conflict, update only scores and
+  `private_note` (never identity or audit columns);
 - use `SECURITY DEFINER SET search_path = ''` with fully qualified names;
 - `REVOKE EXECUTE` from `PUBLIC` / `anon` and `GRANT EXECUTE` only to
   `authenticated`.

@@ -274,7 +274,7 @@ Deliverables:
   - `products` (including `is_published` for draft vs public catalog)
   - `product_images` (unique `(product_id, sort_order)` so Task 14 primary-image selection is deterministic)
   - `eazy_assessments` (editorial Eazy Score; replaces planned `official_ratings` name)
-  - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id`)
+  - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id` and `user_id`)
   - `rating_aggregates` (server-owned Community Score summary)
   - `product_offers` (required in Task 11 so Task 12 policies/grants and Task 14 Detail offers have a relation)
 - PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
@@ -326,7 +326,7 @@ Required scenarios (minimum):
 - Anonymous can read published products (and related public catalog reads for published products only).
 - Anonymous cannot read unpublished products or their related catalog rows.
 - Anonymous cannot create ratings.
-- Authenticated user can create / update / delete **own** rating (`product_id` immutable).
+- Authenticated user can create / update / delete **own** rating (`product_id` and `user_id` immutable).
 - Authenticated user cannot insert or update a rating for an unpublished product (own DELETE still allowed).
 - Authenticated user cannot rewrite `profiles` / `user_ratings` audit or identity columns via Data API grants (prove after revoke+allowlist; table-wide UPDATE must not remain).
 - Client cannot directly insert arbitrary `profiles` rows; authenticated users can update only their own mutable profile fields.
@@ -408,7 +408,7 @@ Status: Pending.
 Goal: persist the signed-in user’s rating (`private_note` owner-only); ship Account → Rated Products so users can find and reopen products they rated. Do **not** use a direct PostgREST upsert that updates identity columns.
 
 Deliverables:
-- `saveUserRating` / delete APIs using a **security-definer** helper **or** insert vs score-only update with unique-conflict retry (`23505` → score/private-note-only update) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`. If the preferred definer helper is chosen, it must authorize inside the function (`auth.uid()` only, published-product check, score/`private_note`-only writes, restricted `EXECUTE`) per that contract.
+- `saveUserRating` / delete APIs using a **security-definer** helper **or** insert vs score-only update with unique-conflict retry (`23505` → score/private-note-only update) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`. If the preferred definer helper is chosen, it must authorize inside the function (`auth.uid()` only, published-product check, insert with `product_id` + `auth.uid()` then conflict-update scores/`private_note` only, restricted `EXECUTE`) per that contract.
 - Frontend rename `comment` → `privateNote` and UI label **Private note** (retire “Comment” on the connected form).
 - Connected Rate/Edit enforces the 500-character `private_note` limit before submit.
 - Create `app/account/rated-products.tsx` (route already documented in `docs/USER_FLOWS.md`); wire Account → Rated Products → Product Detail.

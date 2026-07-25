@@ -34,7 +34,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Every product has a zero-count `rating_aggregates` row from create/seed (or Detail normalizes a missing join to `ratingCount: 0`).
 - Rating saves use a controlled server function or insert vs score-only update with unique-conflict retry (`23505`), not a client PostgREST upsert that updates identity columns.
 - User cannot create duplicate ratings for the same product.
-- `user_ratings.product_id` is immutable after insert.
+- `user_ratings.product_id` and `user_ratings.user_id` are immutable after insert.
 
 ## Mobile QA
 

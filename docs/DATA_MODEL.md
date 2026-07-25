@@ -20,7 +20,7 @@ Task sequencing: `docs/TASKS.md` Tasks 11–18. Do not implement schema assumpti
 - `products`: core product identity and facts (`is_published` gates anonymous catalog reads).
 - `product_images`: one or more images for each product.
 - `eazy_assessments`: app-builder Eazy Score (editorial); prefer versioned rows with one current/active assessment.
-- `user_ratings`: one rating per user per product (scores + `private_note`); `product_id` immutable after insert.
+- `user_ratings`: one rating per user per product (scores + `private_note`); `product_id` and `user_id` immutable after insert.
 - `rating_aggregates`: calculated Community Score data (server-owned; clients must not write or execute refresh RPCs).
 - `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked).
 
@@ -226,7 +226,7 @@ User submits rating
 Durable mechanism (Task 11): database function + trigger after user_rating insert/update/delete. Task 17 verifies concurrency, correctness, and forgery resistance; it does not re-select among trigger / RPC / schedule. Changing the mechanism later requires a superseding ADR and a forward migration.
 
 Hard rules for aggregate SQL:
-- `product_id` on `user_ratings` is **immutable** after insert (enforced by trigger). Re-rating another product means delete + insert, not moving the row.
+- `product_id` and `user_id` on `user_ratings` are **immutable** after insert (enforced by trigger). Re-rating another product means delete + insert, not moving the row. Ownership cannot be reassigned by privileged SQL either.
 - `refresh_rating_aggregates` and `handle_user_rating_change` are `SECURITY DEFINER` for trigger use only. **Revoke `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`** so clients cannot call them via RPC and forge aggregates.
 - Prefer `set search_path = ''` with fully qualified `public.` relations inside definer functions.
 - **Serialize refreshes per product** before reading `user_ratings`. Concurrent rating writes can otherwise each compute from a snapshot that omits the other transaction’s uncommitted row; the later `ON CONFLICT` upsert then overwrites a correct aggregate with a stale count/average until another mutation runs. Use a transaction-scoped advisory lock (or equivalent product-row lock) at the start of `refresh_rating_aggregates`.
@@ -313,7 +313,7 @@ begin
 end;
 $$;
 
-create or replace function public.enforce_user_rating_product_id_immutable()
+create or replace function public.enforce_user_rating_identity_immutable()
 returns trigger
 language plpgsql
 as $$
@@ -321,14 +321,17 @@ begin
   if new.product_id is distinct from old.product_id then
     raise exception 'user_ratings.product_id is immutable';
   end if;
+  if new.user_id is distinct from old.user_id then
+    raise exception 'user_ratings.user_id is immutable';
+  end if;
   return new;
 end;
 $$;
 
-create trigger user_ratings_product_id_immutable
+create trigger user_ratings_identity_immutable
 before update on public.user_ratings
 for each row
-execute function public.enforce_user_rating_product_id_immutable();
+execute function public.enforce_user_rating_identity_immutable();
 
 -- Timestamps are server-owned. Clients do not receive UPDATE grants on
 -- created_at / updated_at (or id); triggers maintain updated_at.
@@ -431,8 +434,8 @@ revoke all on function public.refresh_rating_aggregates(uuid) from public;
 revoke all on function public.refresh_rating_aggregates(uuid) from anon, authenticated;
 revoke all on function public.handle_user_rating_change() from public;
 revoke all on function public.handle_user_rating_change() from anon, authenticated;
-revoke all on function public.enforce_user_rating_product_id_immutable() from public;
-revoke all on function public.enforce_user_rating_product_id_immutable() from anon, authenticated;
+revoke all on function public.enforce_user_rating_identity_immutable() from public;
+revoke all on function public.enforce_user_rating_identity_immutable() from anon, authenticated;
 revoke all on function public.set_updated_at() from public;
 revoke all on function public.set_updated_at() from anon, authenticated;
 revoke all on function public.ensure_rating_aggregate_for_product() from public;
@@ -583,7 +586,7 @@ using (
 );
 ```
 
-User ratings — **owner-only row access** so `private_note` cannot leak. Community Score comes from `rating_aggregates`, not from browsing other users’ rows. `product_id` is immutable (see trigger above). INSERT/UPDATE also require the referenced product to be **published** (FK existence alone does not imply catalog visibility; drafts must not receive client ratings). DELETE stays owner-only so a user can remove an existing rating after a product is unpublished:
+User ratings — **owner-only row access** so `private_note` cannot leak. Community Score comes from `rating_aggregates`, not from browsing other users’ rows. `product_id` and `user_id` are immutable (see trigger above). INSERT/UPDATE also require the referenced product to be **published** (FK existence alone does not imply catalog visibility; drafts must not receive client ratings). DELETE stays owner-only so a user can remove an existing rating after a product is unpublished:
 
 ```sql
 create policy "Users can read own ratings"
@@ -642,7 +645,7 @@ with check (auth.uid() = id);
 - Anonymous can read **published** products (and related public catalog joins for those products only).
 - Anonymous cannot read unpublished / draft products, their images, offers, assessments, or aggregates.
 - Anonymous cannot create ratings.
-- User can create / update / delete own rating (`product_id` cannot change on update).
+- User can create / update / delete own rating (`product_id` and `user_id` cannot change on update).
 - User cannot insert or update a rating for an **unpublished** product (DELETE of an existing own rating remains allowed).
 - User cannot rewrite audit/identity columns (`profiles.created_at` / `updated_at`; `user_ratings.id` / `created_at` / `updated_at`) — after `REVOKE ALL` from `anon` / `authenticated`, only the column-level allowlist remains; `updated_at` is trigger-maintained. Authorization tests must confirm via `information_schema.role_table_grants` / column privilege views and by attempting direct audit-column updates.
 - Client cannot directly `INSERT` into `profiles` (no grant / no policy); profile rows appear only via the auth.users trigger.

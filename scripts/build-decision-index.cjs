@@ -203,15 +203,54 @@ function parseFenceLine(line) {
 }
 
 /**
- * Walk body lines outside fenced code (compatible open/close markers).
+ * Strip HTML comments from a line while tracking multi-line comment state.
+ * Nested comments are not supported (HTML comment rules).
+ *
+ * @param {string} line
+ * @param {boolean} inComment
+ * @returns {{ text: string, inComment: boolean }}
+ */
+function stripHtmlComments(line, inComment) {
+  let text = '';
+  let index = 0;
+  let currentlyInComment = inComment;
+
+  while (index < line.length) {
+    if (currentlyInComment) {
+      const end = line.indexOf('-->', index);
+      if (end === -1) {
+        return { text, inComment: true };
+      }
+      index = end + 3;
+      currentlyInComment = false;
+      continue;
+    }
+
+    const start = line.indexOf('<!--', index);
+    if (start === -1) {
+      text += line.slice(index);
+      break;
+    }
+    text += line.slice(index, start);
+    index = start + 4;
+    currentlyInComment = true;
+  }
+
+  return { text, inComment: currentlyInComment };
+}
+
+/**
+ * Walk body lines outside fenced code and outside HTML comments.
+ * Compatible fence open/close markers; HTML comments may span lines.
  *
  * @param {string} body
- * @param {(line: string, lineIndex: number, lines: string[]) => void} onUnfencedLine
+ * @param {(line: string, lineIndex: number, lines: string[]) => void} onVisibleUnfencedLine
  */
-function forEachUnfencedLine(body, onUnfencedLine) {
+function forEachUnfencedLine(body, onVisibleUnfencedLine) {
   const lines = body.split(/\r?\n/);
   /** @type {{ marker: '`' | '~', length: number } | null} */
   let openFence = null;
+  let inHtmlComment = false;
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
@@ -239,7 +278,10 @@ function forEachUnfencedLine(body, onUnfencedLine) {
     if (openFence !== null) {
       continue;
     }
-    onUnfencedLine(line, lineIndex, lines);
+
+    const stripped = stripHtmlComments(line, inHtmlComment);
+    inHtmlComment = stripped.inComment;
+    onVisibleUnfencedLine(stripped.text, lineIndex, lines);
   }
 }
 
@@ -319,8 +361,8 @@ function extractTitleAndValidateSections(body, fileLabel) {
     const nextH2 = h2LineIndexes.find((lineIndex) => lineIndex > headingIndex);
     const contentEnd = nextH2 ?? lines.length;
 
-    // Require at least one substantive unfenced line. Empty fenced blocks still
-    // leave fence delimiters in a raw slice, which must not count as content.
+    // Require at least one substantive visible unfenced line. Empty fenced
+    // blocks and HTML comments (including multi-line) must not count as content.
     let hasSubstantiveContent = false;
     forEachUnfencedLine(body, (line, lineIndex) => {
       if (lineIndex <= headingIndex || lineIndex >= contentEnd) {
