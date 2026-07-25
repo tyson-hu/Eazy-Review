@@ -17,8 +17,9 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Loading states exist for product lists and product detail.
 - Empty states exist for no products, no search results, and no rated products.
 - Error states exist for failed product and rating requests.
-- Rating form validation messages are clear.
+- Rating form validation messages are clear (including Private note max length when connected).
 - Account logged-out and logged-in states both work.
+- Rated Products empty and populated states both work.
 
 ## Data And Auth
 
@@ -29,6 +30,8 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Authenticated users can update only mutable profile fields (`display_name` / `username` / `avatar_url`); audit timestamps are server-maintained.
 - Rating writes cannot set `user_ratings.id` or timestamps via client grants.
 - Community Score is recalculated by database/server-side logic; clients cannot write `rating_aggregates` or execute refresh RPCs.
+- Every product has a zero-count `rating_aggregates` row from create/seed (or Detail normalizes a missing join to `ratingCount: 0`).
+- Rating saves use insert vs score-only update (or a controlled server function), not a client PostgREST upsert that updates identity columns.
 - User cannot create duplicate ratings for the same product.
 - `user_ratings.product_id` is immutable after insert.
 

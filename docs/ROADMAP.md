@@ -42,7 +42,7 @@ Replace the old “add Supabase” checklist with these milestones. Detail and a
 3. **Task 13** — Product seed data (small seed first).
 4. **Task 14** — Real Browse and Product Detail reads.
 5. **Task 15** — Authentication (email first).
-6. **Task 16** — My Rating persistence (`private_note`, owner-only).
+6. **Task 16** — My Rating persistence + Rated Products (`private_note`, owner-only; Account rated list).
 7. **Task 17** — Server-owned community aggregates (verify if already in Task 12).
 8. **Task 18** — TanStack Query and cache invalidation.
 
@@ -152,16 +152,17 @@ Acceptance:
 ### Milestone 6: Real Rating System (Tasks 16–18)
 
 Deliverables:
-- User can submit rating.
+- User can submit rating (insert vs score-only update — not PostgREST upsert of identity columns).
 - User can edit rating.
 - Rating summary recalculates server-side.
 - Product detail refreshes after rating (TanStack Query invalidation).
-- Rated Products screen works when scoped.
+- Rated Products screen (`app/account/rated-products.tsx`) lists the signed-in user’s ratings and opens Detail (Task 16).
 
 Acceptance:
 - Community Score changes after user rating via server-owned aggregates.
 - User cannot create duplicate ratings for the same product.
-- Private notes stay owner-only.
+- Private notes stay owner-only; Rate/Edit shows **Private note**, not Comment.
+- Logged-in user can find rated products from Account.
 
 ### Milestone 7: Feed
 

@@ -280,7 +280,7 @@ Deliverables:
 - PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
 - **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
 - Optional: `service_role` tooling grants only (never ship service-role into Expo).
-- Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings` (see `docs/DATA_MODEL.md`).
+- Aggregate helpers: `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings`; zero-count `rating_aggregates` row on every `products` INSERT (see `docs/DATA_MODEL.md`).
 - Environment-variable validation pattern (anon key / URL only in Expo; never service-role in the mobile bundle).
 - **Secret scanning** wired for the foundation workstream (CI and/or pre-commit); Task 11 does not pass without it.
 - Docs: `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, this file.
@@ -345,6 +345,7 @@ Goal: seed one or two representative products first; expand toward the eight-pro
 
 Acceptance:
 - Seed SQL (or approved script) loads into local reset and staging.
+- Every seeded product has a matching `rating_aggregates` row (zero-count when no ratings yet — product insert trigger and/or explicit seed rows). No published product relies on a missing summary join.
 - Image strategy decided: upload approved assets to Storage **or** keep mock-image resolution until real catalog ingestion (see unresolved decisions in `docs/DATA_MODEL.md`).
 - Provenance fields populated where required by the schema (`source_type`, capture timestamps, methodology version as applicable).
 
@@ -361,12 +362,14 @@ Deliverables:
   - Keep My Rating in a temporary session map keyed by **viewer identity + product ID** (any product ID string, including UUIDs). A product-ID-only map is not enough once Task 15 adds auth in the same JS runtime — user B must not see or overwrite user A’s note.
   - Clear or re-key the map on sign-in / sign-out / account switch (Task 15 must verify this if the map still exists then).
   - Replace that session map with Supabase persistence in Task 16.
+- Detail/Browse mapping produces a non-null `ProductRatingSummary` even when the aggregate join is missing: normalize to the canonical empty summary (`ratingCount: 0`, null averages / Community Score). Prefer the DB zero-row from Task 11/13; normalization is the safety net.
 
 Acceptance:
 - Anonymous Browse and Detail work against Supabase public reads.
 - Canonical Detail field sources in `docs/API_CONTRACTS.md` still hold.
 - No client-trusted Community Score calculation.
 - Opening Rate/Edit for a seeded Supabase product UUID shows the form (product context loads); session save/load works for that UUID without requiring a mock catalog id.
+- A published product with zero ratings still yields `ratingSummary.ratingCount === 0` (never an undefined summary).
 
 ### Task 15: Authentication
 
@@ -380,18 +383,27 @@ Acceptance:
 - Account screen reflects auth state without Feed/social scope growth.
 - If the Task 14 transitional session rating map still exists, it is namespaced by signed-in user (and cleared or re-keyed on auth change) so one account cannot read or overwrite another’s in-memory My Rating.
 
-### Task 16: My Rating Persistence
+### Task 16: My Rating Persistence And Rated Products
 
 Status: Pending.
 
-Goal: real upsert/update/delete for the signed-in user’s rating; `private_note` owner-only.
+Goal: persist the signed-in user’s rating (`private_note` owner-only); ship Account → Rated Products so users can find and reopen products they rated. Do **not** use a direct PostgREST upsert that updates identity columns.
+
+Deliverables:
+- `saveUserRating` / delete APIs using **insert vs score-only update** (or a controlled security-definer helper) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`.
+- Frontend rename `comment` → `privateNote` and UI label **Private note** (retire “Comment” on the connected form).
+- Connected Rate/Edit enforces the 500-character `private_note` limit before submit.
+- Create `app/account/rated-products.tsx` (route already documented in `docs/USER_FLOWS.md`); wire Account → Rated Products → Product Detail.
+- `getUserRatedProducts` (and query hook if not deferred to Task 18) returns the signed-in user’s rated products for that list.
 
 Acceptance:
 - One rating per user per product enforced.
 - Private note never returned for other users.
 - Detail My Rating reflects persisted data after submit; mock session map retired for the connected path.
-- Frontend field rename `comment` → `privateNote` lands with this task (or an explicit tiny precede packet).
+- Frontend field rename `comment` → `privateNote` and visible **Private note** label land with this task (or an explicit tiny precede packet).
 - Connected Rate/Edit form enforces the 500-character `private_note` limit before submit (`maxLength` and/or explicit validation with a clear field error) so oversized notes fail in-form instead of only at the database check.
+- Logged-in user can open Rated Products from Account, see products they rated, and navigate to Detail.
+- Empty Rated Products state is handled.
 
 ### Task 17: Server-Owned Community Aggregates
 
@@ -412,8 +424,8 @@ Status: Pending — after real reads (Task 14+).
 Goal: query hooks, query-key factory, runtime validation for DB responses, structured loading/retry; invalidate product / user-rating keys after rating mutations.
 
 Acceptance:
-- Mock fetch paths replaced for connected screens.
-- Invalidation list in `docs/API_CONTRACTS.md` is implemented.
+- Mock fetch paths replaced for connected screens (including Rated Products when present).
+- Invalidation list in `docs/API_CONTRACTS.md` is implemented (includes `['ratedProducts']` after rating mutations).
 - No Redux/Zustand for server state; no optimistic rating mutations in the first backend version.
 
 ### Companion: Skill-wrapper validation

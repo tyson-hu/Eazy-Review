@@ -221,6 +221,7 @@ Hard rules for aggregate SQL:
 - `refresh_rating_aggregates` and `handle_user_rating_change` are `SECURITY DEFINER` for trigger use only. **Revoke `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`** so clients cannot call them via RPC and forge aggregates.
 - Prefer `set search_path = ''` with fully qualified `public.` relations inside definer functions.
 - **Serialize refreshes per product** before reading `user_ratings`. Concurrent rating writes can otherwise each compute from a snapshot that omits the other transaction’s uncommitted row; the later `ON CONFLICT` upsert then overwrites a correct aggregate with a stale count/average until another mutation runs. Use a transaction-scoped advisory lock (or equivalent product-row lock) at the start of `refresh_rating_aggregates`.
+- **Zero-count row on product create:** `products` AFTER INSERT ensures a `rating_aggregates` row with `rating_count = 0` so seeded/published products always have a joinable summary before any rating exists. Task 14 still normalizes a missing join to the canonical empty `ProductRatingSummary` as a safety net.
 
 ```sql
 create or replace function public.refresh_rating_aggregates(target_product_id uuid)
@@ -364,6 +365,37 @@ after insert or update or delete on public.user_ratings
 for each row
 execute function public.handle_user_rating_change();
 
+-- Every product gets a zero-count aggregate row at create time so Detail/Browse
+-- joins never depend on a missing summary for unpublished→published seeds.
+create or replace function public.ensure_rating_aggregate_for_product()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.rating_aggregates (
+    product_id,
+    rating_count,
+    score,
+    updated_at
+  )
+  values (
+    new.id,
+    0,
+    null,
+    now()
+  )
+  on conflict (product_id) do nothing;
+  return new;
+end;
+$$;
+
+create trigger products_ensure_rating_aggregate
+after insert on public.products
+for each row
+execute function public.ensure_rating_aggregate_for_product();
+
 -- Clients must not invoke aggregate helpers via PostgREST RPC.
 revoke all on function public.refresh_rating_aggregates(uuid) from public;
 revoke all on function public.refresh_rating_aggregates(uuid) from anon, authenticated;
@@ -373,6 +405,8 @@ revoke all on function public.enforce_user_rating_product_id_immutable() from pu
 revoke all on function public.enforce_user_rating_product_id_immutable() from anon, authenticated;
 revoke all on function public.set_updated_at() from public;
 revoke all on function public.set_updated_at() from anon, authenticated;
+revoke all on function public.ensure_rating_aggregate_for_product() from public;
+revoke all on function public.ensure_rating_aggregate_for_product() from anon, authenticated;
 ```
 
 ## Privileges And Data API Exposure

@@ -171,9 +171,21 @@ File: `src/features/ratings/api.ts`
 
 Functions:
 - `getUserRating(productId, userId)`
-- `upsertUserRating(input)`
+- `saveUserRating(input)` — **not** a single PostgREST `.upsert()` against `user_ratings`
 - `deleteUserRating(productId, userId)`
 - `getUserRatedProducts(userId)`
+
+### `saveUserRating` write pattern (required)
+
+Task 12 column-level grants allow `INSERT` of identity + scores + `private_note`, but `UPDATE` only of score columns + `private_note` (not `product_id` / `user_id` / `id` / timestamps). A natural PostgREST upsert (`INSERT … ON CONFLICT DO UPDATE` with the full payload) therefore requires `UPDATE` privilege on the identity columns included in the update set and can fail **before** the immutability trigger or RLS run.
+
+Required client (or thin repository) behavior:
+
+1. Attempt **insert** with `product_id`, `user_id`, scores, and optional `private_note` when no own rating exists; or
+2. **Update** only score columns + `private_note` for the existing own row (filter by `product_id` + `user_id` / `auth.uid()`); or
+3. Use a controlled **security-definer** server function that performs the insert-or-score-update atomically and is granted carefully (still no client table-wide upsert).
+
+Do **not** ship `supabase.from('user_ratings').upsert({ product_id, user_id, … })` as the connected write path. The historical name `upsertUserRating` in older notes means “create or replace my rating,” not PostgREST upsert.
 
 ## Product Query Hooks
 
@@ -248,8 +260,15 @@ Rules:
 - Numeric rating: persisted and shown as My Rating to the owner.
 - `private_note` / `privateNote`: owner-only; never select other users’ notes. Max **500** characters (DB check + connected Rate/Edit form validation / `maxLength` in Task 16 — do not rely on the DB error alone).
 - Public written reviews: not implemented.
-- Mock UI may still label the optional field “Comment” and use `comment` until Task 16 renames the connected path.
+- **UI label (Task 16+):** the Rate/Edit optional field is **Private note** (not “Comment”). Property rename `comment` → `privateNote` and the visible label change land together so the owner-only field is not presented as a public comment. Mock-era screens may still say “Comment” until that task.
 - Data API access requires explicit `GRANT`s **after** RLS policies (Task 12); Task 11 only enables RLS deny-by-default. See `docs/DATA_MODEL.md` Privileges And Data API Exposure.
+
+### Zero-rating / missing aggregate rows
+
+`ProductRatingSummary.ratingCount` is a required number. Trusted path:
+
+1. Every `products` insert creates a matching `rating_aggregates` row with `rating_count = 0` and null averages/score (see `docs/DATA_MODEL.md` product→aggregate ensure trigger). Task 13 seeds must not leave published products without that row.
+2. Task 14 Detail/Browse adapters still **normalize** a missing join to the canonical empty summary (`ratingCount: 0`, null averages / `communityScore`) so a seed gap cannot crash Detail. Do not invent client-side Community Score math — only the empty shape.
 
 ## Mock Data Contract
 

@@ -13,8 +13,8 @@ Schema, RLS, and triggers are defined in `docs/DATA_MODEL.md`; do not change sch
 Rules:
 - Use relational Supabase tables; do not create one giant product JSON object.
 - RLS sequencing: enable RLS at table create (deny-by-default). Task 12 adds published-product catalog policies and owner-only `user_ratings` policies (INSERT/UPDATE also require `is_published`), then client `GRANT`s. Anonymous reads are limited to `is_published` products and their related rows.
-- Client write grants are column-level: `profiles` UPDATE only mutable profile fields; `user_ratings` INSERT/UPDATE only scores + `private_note` (not `id` / timestamps). `updated_at` is trigger-maintained.
-- Trusted Community Score recalculation happens in `refresh_rating_aggregates` (trigger/function) or equivalent server-side logic, never only on the client; revoke client `EXECUTE` on those helpers. Serialize refreshes per product before reading `user_ratings`.
+- Client write grants are column-level: `profiles` UPDATE only mutable profile fields; `user_ratings` INSERT/UPDATE only scores + `private_note` (not `id` / timestamps). `updated_at` is trigger-maintained. Do not use PostgREST upsert of identity columns for ratings.
+- Trusted Community Score recalculation happens in `refresh_rating_aggregates` (trigger/function) or equivalent server-side logic, never only on the client; revoke client `EXECUTE` on those helpers. Serialize refreshes per product before reading `user_ratings`. Ensure a zero-count aggregate row on product create.
 - Never expose service-role keys in client code.
 - Never access or write production databases from agents or MCP.
 

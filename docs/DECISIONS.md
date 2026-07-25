@@ -858,3 +858,23 @@ Safety-risk:
 
 Related files:
 - `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/AGENT_WORKFLOW.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `skills/skill-creator/SKILL.md`, `.cursor/rules/supabase.mdc`, `scripts/check-skill-wrappers.cjs`
+
+## 2026-07-25 — Close Plan Gaps (Rated Products, Private Note UI, Zero Aggregates, No Client Upsert)
+
+What changed:
+- Task 16 owns Rated Products (`app/account/rated-products.tsx` + `getUserRatedProducts`); ROADMAP / Bluebook / release checklist aligned.
+- UI contract synchronized: Rate/Edit optional field is **Private note** (AGENTS, USER_FLOWS, DESIGN, STITCH); mock may keep “Comment” until Task 16.
+- Product INSERT ensures a zero-count `rating_aggregates` row; Task 13 seeds and Task 14 missing-join normalization required.
+- Rating writes documented as `saveUserRating` via insert vs score-only update (or controlled server function) — not PostgREST `.upsert()` of identity columns under column-level grants.
+
+Why:
+- MVP docs required Rated Products but no task built the route; Comment vs private_note guidance conflicted across sources; seeded products with no ratings left Detail without a summary row; natural upsert conflicts with restricted UPDATE columns.
+
+Effect:
+- Tasks 11–18 plan covers rated history, label consistency, empty aggregates, and a grant-safe write path before implementation.
+
+Safety-risk:
+- Docs/process only; no migrations or app routes landed in this change.
+
+Related files:
+- `AGENTS.md`, `docs/TASKS.md`, `docs/API_CONTRACTS.md`, `docs/DATA_MODEL.md`, `docs/USER_FLOWS.md`, `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md`, `docs/BLUEBOOK.md`, `docs/ROADMAP.md`, `docs/RELEASE_CHECKLIST.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `.cursor/rules/supabase.mdc`

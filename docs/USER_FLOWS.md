@@ -178,7 +178,7 @@ Fields:
 - Outfit: 1-10.
 - Value: 1-10.
 - Overall: 1-10.
-- Comment: optional.
+- Private note: optional (owner-only; not a public review). Max 500 characters once Task 16 connects the form.
 
 ### Task 9 mock behavior
 
@@ -189,6 +189,7 @@ During the fake-local-state phase:
 - Product Detail reflects the updated My Rating after submission.
 - Community Score and community category averages do not change.
 - App reload resets the mock rating fixtures.
+- The Rate/Edit optional text field may still be labeled **Comment** in mock UI until Task 16 renames the connected field to **Private note** (`privateNote`).
 - The real query invalidation behavior below applies after Supabase integration.
 
 After successful real submission:

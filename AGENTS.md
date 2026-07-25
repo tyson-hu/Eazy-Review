@@ -11,7 +11,7 @@ Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase,
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
 - Browsing must not require login; rating must require login.
 - Use the UI names `Eazy Score`, `Community Score`, and `My Rating` exactly.
-- Keep the first rating form short: look, comfort, quality, outfit, value, overall, optional comment (all scores 1-10).
+- Keep the first rating form short: look, comfort, quality, outfit, value, overall, optional private note (all scores 1-10).
 - Keep the app clean, boring, and consistent before making it fancy.
 - Domain guardrails (Expo routing, relational tables/RLS/score recalculation, UI component rules) live in `.cursor/rules/react-native-expo.mdc`, `supabase.mdc`, and `design-system.mdc`. Cursor attaches them by glob; if your tool does not, read the matching rule file before touching Expo/routing, Supabase/data, or UI code.
 
