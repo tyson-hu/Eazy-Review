@@ -130,10 +130,12 @@ Deliverables:
 - Browse fetches Supabase products.
 - Product detail fetches Supabase product.
 - Product card shows real score and price data.
+- Deterministic primary `imageUrl` and single-currency offer lowest-price mapping.
 
 Acceptance:
 - No mock catalog required for product browsing on the connected path.
 - Only published products are visible to anonymous clients.
+- Primary image and lowest-price rules in `docs/API_CONTRACTS.md` hold.
 
 ### Milestone 5: Auth (Task 15)
 
@@ -142,13 +144,16 @@ Deliverables:
 - Sign in.
 - Sign out.
 - Session persistence.
-- Auth-aware Account screen.
+- Password recovery (forgot-password + reset completion).
+- Delete account (protected server-side deletion; no service-role in the app).
+- Auth-aware Account screen (Forgot Password / Delete Account entry points).
 
 Acceptance:
 - Logged-out user can browse.
 - Logged-out user must sign in to rate.
 - Logged-in user can access rating form.
 - Sign-up produces exactly one readable `public.profiles` row for the new user (Account can load it).
+- Password recovery and delete-account paths work end-to-end.
 
 ### Milestone 6: Real Rating System (Tasks 16–18)
 

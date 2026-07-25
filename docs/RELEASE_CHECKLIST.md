@@ -49,7 +49,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - No Supabase service-role key in client code.
 - Environment variables are documented.
 - RLS is enabled on public tables.
-- Delete-account flow is confirmed before release.
+- Delete-account flow is confirmed before release (owned by Task 15; protected server-side deletion, no service-role in the client).
 
 ## Store Readiness
 

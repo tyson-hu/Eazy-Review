@@ -233,7 +233,7 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
 - Done 2026-07-14: skill path sync after Task 8 route restructure — `app/product/[id].tsx` → `app/product/[id]/index.tsx` in `skills/ui-screen-builder`, `skills/feature-slice-builder`, and `skills/session-handoff` (approved skill-maintenance change; Task 8 remains Done).
 - Done 2026-07-21: restore `test-and-validation-loop` discovery stubs — `.agents/skills/` and `.claude/skills/` wrappers were accidentally replaced with full skill copies (no YAML front matter) during Task 10; restored thin `name` / `description` stubs pointing at `skills/test-and-validation-loop/SKILL.md`. This routine repair remains archive-only.
 - Done 2026-07-23: Expo SDK 57 patch realignment for CI — `expo-doctor` failed on PR #13 with 7 out-of-date packages (`expo`/`expo-router` → `~57.0.8`, `react-native-screens` → `~4.26.0`, plus matching Expo module patches). This routine dependency maintenance remains archive-only.
-- Added 2026-07-14: before wiring real multi-marketplace offers, define Product Detail lowest-price behavior for mixed currencies—enforce one currency per payload, group prices by currency, or introduce an explicit conversion source. Current mock/MVP catalog fallback assumes USD.
+- Done 2026-07-25: mixed-currency Detail lowest-price strategy assigned to Task 14 — MVP one currency per product offer payload (no raw cross-currency min). See `docs/API_CONTRACTS.md` and `docs/DATA_MODEL.md` Resolved decisions.
 - Added 2026-07-24: post–Task 10 weekend plan recorded — packetized Supabase Tasks 11–18, `private_note` language, RLS-before-UI, skill-wrapper validation companion; freeze UI/agent/MCP expansion. Durable sequencing: `docs/decisions/2026-07-24-security-first-supabase-task-sequencing.md`; roadmap: `docs/ROADMAP.md` Phase 4.
 - Done 2026-07-24: **skill-wrapper validation** — `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers` wired into `npm run check` and Expo CI. The validation implementation history remains archive-only.
 
@@ -272,7 +272,7 @@ Deliverables:
 - Versioned SQL migration(s) for first tables:
   - `profiles` (row created by protected `AFTER INSERT ON auth.users` trigger — clients never INSERT profiles)
   - `products` (including `is_published` for draft vs public catalog)
-  - `product_images`
+  - `product_images` (unique `(product_id, sort_order)` so Task 14 primary-image selection is deterministic)
   - `eazy_assessments` (editorial Eazy Score; replaces planned `official_ratings` name)
   - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id`)
   - `rating_aggregates` (server-owned Community Score summary)
@@ -352,6 +352,7 @@ Acceptance:
 - Seed SQL (or approved script) loads into local reset and staging.
 - Every seeded product has a matching `rating_aggregates` row (zero-count when no ratings yet — product insert trigger and/or explicit seed rows). No published product relies on a missing summary join.
 - Image strategy decided: upload approved assets to Storage **or** keep mock-image resolution until real catalog ingestion (see unresolved decisions in `docs/DATA_MODEL.md`).
+- Seeded `product_images` use deliberate unique `sort_order` values per product (schema unique `(product_id, sort_order)`).
 - Provenance fields populated where required by the schema (`source_type`, capture timestamps, methodology version as applicable).
 
 ### Task 14: Real Browse And Product Detail Reads
@@ -362,6 +363,8 @@ Goal: replace mock product reads for Browse and Product Detail. Rating writes st
 
 Deliverables:
 - Browse and Product Detail load published catalog rows from Supabase (not `mockProducts` / `getMockProductDetailById` for those screens).
+- **Primary image mapping:** flatten `product_images` to a single `imageUrl` using `sort_order ASC`, then `created_at ASC`, then `id ASC`; products with no images → `null`. Selection must be stable across repeated reads.
+- **Offer currency (MVP):** each product’s offer payload is single-currency. Omit or reject mismatched-currency offers before computing lowest price; never take a raw numeric minimum across currencies (`docs/API_CONTRACTS.md`).
 - **Rate/Edit compatibility adapter (required in this task):** Detail will navigate with real product UUIDs, but rating persistence stays session-only until Task 16. Do **not** leave the rate route bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys — that rejects every UUID and blocks Task 15’s “logged-in user reaches the form” path.
   - Load rate-screen product context from the same real product/detail repository used by Detail (or a thin adapter over it).
   - Keep My Rating in a temporary session map keyed by **viewer identity + product ID** (any product ID string, including UUIDs). A product-ID-only map is not enough once Task 15 adds auth in the same JS runtime — user B must not see or overwrite user A’s note.
@@ -371,22 +374,30 @@ Deliverables:
 
 Acceptance:
 - Anonymous Browse and Detail work against Supabase public reads.
-- Canonical Detail field sources in `docs/API_CONTRACTS.md` still hold.
+- Canonical Detail field sources in `docs/API_CONTRACTS.md` still hold (including single-currency lowest price and deterministic primary `imageUrl`).
 - No client-trusted Community Score calculation.
 - Opening Rate/Edit for a seeded Supabase product UUID shows the form (product context loads); session save/load works for that UUID without requiring a mock catalog id.
 - A published product with zero ratings still yields `ratingSummary.ratingCount === 0` (never an undefined summary).
+- Repeated Browse/Detail reads for a multi-image product return the same primary `imageUrl`.
 
 ### Task 15: Authentication
 
 Status: Pending.
 
-Goal: email auth first unless Apple Sign-In is required for the next TestFlight. Browse remains public; rating requires login.
+Goal: email auth first unless Apple Sign-In is required for the next TestFlight. Browse remains public; rating requires login. Own password recovery and account deletion so users are not locked out and the release gate can pass.
+
+Deliverables:
+- Sign up / sign in / sign out / session persistence.
+- **Password recovery:** `app/auth/forgot-password.tsx` (and any companion reset-completion route the auth provider requires); Account logged-out Forgot Password entry point (`docs/DESIGN.md`); recovery-email submission with honest success/error states; recovery deep-link / session handling; new-password completion; verify new password works and old password does not.
+- **Delete account:** logged-in Account Delete Account action with destructive confirmation (and reauthentication if the provider requires it); protected server-side deletion (never a service-role key in the Expo bundle); defined cascade / anonymization / retention for `profiles`, `user_ratings`, and related rows; local session/cache cleanup; verify the deleted account can no longer sign in.
 
 Acceptance:
 - Sign up / sign in / sign out / session persistence.
 - Sign-up creates exactly one `public.profiles` row for the new `auth.users` id (via Task 11 `handle_new_user`); the logged-in Account screen can read that row (avatar / display name / username / joined date fields as designed — nulls until the user edits).
 - Logged-out Rate CTA becomes sign-in gate; logged-in user reaches the form.
-- Account screen reflects auth state without Feed/social scope growth.
+- Account screen reflects auth state without Feed/social scope growth (including Forgot Password when logged out and Delete Account when logged in).
+- Password recovery path works end-to-end for an email user (request → email/deep-link → new password → sign-in with new password only).
+- Delete-account path works end-to-end; deleted credentials cannot sign in; client holds no service-role key.
 - If the Task 14 transitional session rating map still exists, it is namespaced by signed-in user (and cleared or re-keyed on auth change) so one account cannot read or overwrite another’s in-memory My Rating.
 
 ### Task 16: My Rating Persistence And Rated Products

@@ -75,6 +75,9 @@ supersedes: []
 
 # Decision title
 
+Titles must not contain Markdown link delimiters (`[`, `]`, or `\`) so the
+generated index cannot reshape links.
+
 ## Context
 
 What made a durable choice necessary.

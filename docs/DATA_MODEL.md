@@ -122,8 +122,14 @@ create table public.product_images (
   image_url text not null,
   sort_order int not null default 0,
   -- optional: source_type, rights_status, captured_at
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique (product_id, sort_order)
 );
+
+-- Primary catalog image (Task 14 → Product.imageUrl / ProductCardData.imageUrl):
+-- first row ordered by sort_order ASC, created_at ASC, id ASC.
+-- Products with no images map to imageUrl: null. Task 13 seeds must use deliberate
+-- unique sort_order values per product (enforced by the unique constraint above).
 
 -- Editorial Eazy Score. Prefer one current row per product in MVP;
 -- preserve history with is_current (or equivalent) rather than silent overwrite.
@@ -660,13 +666,18 @@ Scraping should not write:
 
 Before scraping, confirm source permission, field fit, stable identifiers, and duplicate handling. Use SKU for duplicate detection when available. Track provenance (`source_type`, timestamps, rights).
 
+## Resolved decisions (do not reopen in implementation)
+
+1. Community aggregation mechanism: **resolved** — Task 11 implements trigger-owned `refresh_rating_aggregates` / `handle_user_rating_change`; Task 17 verifies and hardens it (no RPC/schedule re-selection).
+2. Primary catalog image: **resolved** — `sort_order ASC`, then `created_at ASC`, then `id ASC`; unique `(product_id, sort_order)`; no images → `imageUrl: null`.
+3. Mixed-currency offers for Detail lowest price: **resolved for MVP** — Task 14 requires one currency per product offer payload (reject or omit mismatched offers); raw cross-currency numeric minimum is prohibited. Conversion or per-currency grouping needs a later ADR.
+
 ## Unresolved decisions (decide in Task 11 planning; do not invent in code)
 
-1. Community aggregation: trigger (recommended default), explicit post-mutation RPC, or scheduled job?
-2. Product profile: lookup table (recommended), enum, or checked text?
-3. Intended use: join table (recommended) vs validated array?
-4. Assessment history: versioned with one `is_current` (recommended) vs overwrite-only?
-5. Offers: current offer rows first (recommended); price snapshots later.
-6. `private_note` limit: 500 characters (recommended).
-7. Seed images: Storage upload vs keep mock-image resolution until catalog ingestion.
-8. Auth methods: email first (recommended) unless Apple is required for the next TestFlight.
+1. Product profile: lookup table (recommended), enum, or checked text?
+2. Intended use: join table (recommended) vs validated array?
+3. Assessment history: versioned with one `is_current` (recommended) vs overwrite-only?
+4. Offers: current offer rows first (recommended); price snapshots later.
+5. `private_note` limit: 500 characters (recommended).
+6. Seed images: Storage upload vs keep mock-image resolution until catalog ingestion.
+7. Auth methods: email first (recommended) unless Apple is required for the next TestFlight.

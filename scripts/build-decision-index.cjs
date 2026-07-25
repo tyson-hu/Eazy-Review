@@ -273,6 +273,11 @@ function extractTitleAndValidateSections(body, fileLabel) {
   if (title === '') {
     throw new Error(`${fileLabel}: level-one title must not be empty`);
   }
+  if (/[\[\]\\]/.test(title)) {
+    throw new Error(
+      `${fileLabel}: level-one title must not contain Markdown link delimiters ([, ], or \\)`,
+    );
+  }
 
   /** @type {number[]} */
   const sectionLineIndexes = [];
@@ -554,8 +559,16 @@ function escapeTable(value) {
   return String(value).replace(/\|/g, '\\|');
 }
 
+/** Escape characters that would break Markdown link text: `[label](url)`. */
+function escapeLinkText(value) {
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/\[/g, '\\[')
+    .replace(/\]/g, '\\]');
+}
+
 function decisionLink(decision) {
-  return `[${escapeTable(decision.title)}](decisions/${decision.fileName})`;
+  return `[${escapeTable(escapeLinkText(decision.title))}](decisions/${decision.fileName})`;
 }
 
 function tasksLabel(tasks) {
