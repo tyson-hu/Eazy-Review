@@ -136,7 +136,13 @@ function parseFrontMatter(content, fileLabel) {
       if (value === 'null') {
         metadata[field] = null;
       } else if (/^[1-9]\d*$/.test(value)) {
-        metadata[field] = Number(value);
+        const parsedPr = Number(value);
+        if (!Number.isSafeInteger(parsedPr) || parsedPr <= 0) {
+          throw new Error(
+            `${fileLabel}: front matter \`pr\` must be a positive safe integer or null`,
+          );
+        }
+        metadata[field] = parsedPr;
       } else {
         throw new Error(`${fileLabel}: front matter \`pr\` must be a positive integer or null`);
       }
@@ -308,13 +314,30 @@ function extractTitleAndValidateSections(body, fileLabel) {
 
   for (let index = 0; index < REQUIRED_SECTIONS.length; index += 1) {
     const headingIndex = sectionLineIndexes[index];
-    const contentStart = headingIndex + 1;
     // Bound each required section at the next unfenced ## heading of any name so
     // an empty canonical section cannot borrow a following ## Notes (etc.) body.
     const nextH2 = h2LineIndexes.find((lineIndex) => lineIndex > headingIndex);
     const contentEnd = nextH2 ?? lines.length;
-    const sectionBody = lines.slice(contentStart, contentEnd).join('\n');
-    if (sectionBody.trim() === '') {
+
+    // Require at least one substantive unfenced line. Empty fenced blocks still
+    // leave fence delimiters in a raw slice, which must not count as content.
+    let hasSubstantiveContent = false;
+    forEachUnfencedLine(body, (line, lineIndex) => {
+      if (lineIndex <= headingIndex || lineIndex >= contentEnd) {
+        return;
+      }
+      const trimmed = line.trim();
+      if (trimmed === '') {
+        return;
+      }
+      // Headings are structural, not section body content.
+      if (/^#{1,6}\s/.test(trimmed)) {
+        return;
+      }
+      hasSubstantiveContent = true;
+    });
+
+    if (!hasSubstantiveContent) {
       throw new Error(`${fileLabel}: section \`${REQUIRED_SECTIONS[index]}\` must not be empty`);
     }
   }

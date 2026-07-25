@@ -62,7 +62,7 @@ terminate at a currently `accepted` record.
   `architecture`, `tooling-ci`, or `agent-workflow`.
 - `tasks`: sorted positive safe integers (JavaScript `Number.isSafeInteger`),
   or `[]` when the decision is not task-specific.
-- `pr`: a PR number, or `null`.
+- `pr`: a positive safe integer (JavaScript `Number.isSafeInteger`), or `null`.
 - `tags` and `supersedes`: sorted inline arrays of lowercase slugs/IDs.
 
 Template:
@@ -135,13 +135,14 @@ the five template headings as exact level-two lines outside fenced code
 `## Related`), each once and in that order. Prefixed or alternate wording does
 not count. Each required section’s body is bounded by the next unfenced
 level-two heading of any name (so an empty `## Context` followed by
-`## Notes` does not false-pass). Headings inside backtick or tilde fences
-(` ``` ` / `~~~`) are ignored for both the title and required sections; a
-fence closes only with a compatible marker and run length (an opposite marker
-inside the fence stays content). Supersession links must be acyclic: a record
-may not supersede itself, `superseded_by` chains must not form a cycle, and
-every superseded chain must terminate at an `accepted` record (intermediate
-replacements may themselves be `superseded`).
+`## Notes` does not false-pass) and must contain at least one substantive
+unfenced line (empty fenced blocks alone do not count). Headings inside
+backtick or tilde fences (` ``` ` / `~~~`) are ignored for both the title and
+required sections; a fence closes only with a compatible marker and run length
+(an opposite marker inside the fence stays content). Supersession links must be
+acyclic: a record may not supersede itself, `superseded_by` chains must not
+form a cycle, and every superseded chain must terminate at an `accepted`
+record (intermediate replacements may themselves be `superseded`).
 
 The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry

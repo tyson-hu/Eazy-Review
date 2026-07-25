@@ -106,8 +106,8 @@ Mock / shell (done through Task 10 GO):
 10. Feed and Account remain placeholders until after real product reads / auth.
 
 Supabase foundation (packetized — see `docs/TASKS.md` Tasks 11–18 and `docs/ROADMAP.md`):
-11. Environments and core schema (local + staging; no mobile UI wiring).
-12. Constraints, RLS, authorization tests.
+11. Environments, core schema, and PostgreSQL constraints.
+12. RLS policies, Data API grants, and authorization tests.
 13. Product seed data (small seed first).
 14. Real Browse and Product Detail reads.
 15. Authentication (email first).
