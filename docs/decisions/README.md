@@ -118,9 +118,10 @@ rg "status: accepted" docs/decisions
 `npm run decisions:check` requires the five template headings as exact
 level-two lines outside fenced code (`## Context`, `## Decision`,
 `## Consequences`, `## Revisit when`, `## Related`), each once and in that
-order. Prefixed or alternate wording does not count. Supersession links must
-be acyclic: a record may not supersede itself, and `superseded_by` chains
-must not form a cycle.
+order. Prefixed or alternate wording does not count. Headings inside backtick
+or tilde fences (` ``` ` / `~~~`) are ignored. Supersession links must be
+acyclic: a record may not supersede itself, and `superseded_by` chains must
+not form a cycle.
 
 The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry

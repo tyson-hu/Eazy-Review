@@ -181,7 +181,8 @@ function findRequiredSectionLines(body, fileLabel) {
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
-    if (/^ {0,3}```/.test(line)) {
+    // CommonMark fenced code: opening/closing runs of ` or ~ (3+), optionally indented.
+    if (/^ {0,3}(?:`{3,}|~{3,})/.test(line)) {
       inFence = !inFence;
       continue;
     }
