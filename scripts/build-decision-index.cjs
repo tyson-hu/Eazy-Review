@@ -287,10 +287,12 @@ function forEachUnfencedLine(body, onVisibleUnfencedLine) {
 
 /**
  * True when a Markdown line still has visible text after stripping empty
- * structural markers (headings, bare list/blockquote/task markers).
+ * structural markers (headings, bare list/blockquote/task markers, and
+ * link-reference definitions).
  *
- * Empty structures such as `-`, `>`, `1.`, `> -`, and `- [ ]` must not count
- * as substantive section content.
+ * Empty structures such as `-`, `>`, `1.`, `> -`, `- [ ]`, and
+ * `[label]: https://example.invalid` must not count as substantive section
+ * content.
  *
  * @param {string} line
  * @returns {boolean}
@@ -310,7 +312,15 @@ function hasVisibleMarkdownContent(line) {
   content = content.replace(/^(?:[-+*]|\d+[.)])\s*/, '');
   // An unchecked/checked task marker alone is also empty structure.
   content = content.replace(/^\[[ xX]\]\s*/, '');
-  return content.trim() !== '';
+  content = content.trim();
+  if (content === '') {
+    return false;
+  }
+  // Link-reference definitions render no visible section body.
+  if (/^\s{0,3}\[[^\]]+\]:\s*(?:\S+|<[^>]+>)(?:\s+["'(].*["')])?\s*$/.test(content)) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -390,8 +400,9 @@ function extractTitleAndValidateSections(body, fileLabel) {
     const contentEnd = nextH2 ?? lines.length;
 
     // Require at least one substantive visible unfenced line. Empty fenced
-    // blocks, HTML comments (including multi-line), and empty Markdown block
-    // markers (`-`, `>`, `1.`, `> -`, `- [ ]`, …) must not count as content.
+    // blocks, HTML comments (including multi-line), empty Markdown block
+    // markers (`-`, `>`, `1.`, `> -`, `- [ ]`, …), and link-reference
+    // definitions must not count as content.
     let hasSubstantiveContent = false;
     forEachUnfencedLine(body, (line, lineIndex) => {
       if (lineIndex <= headingIndex || lineIndex >= contentEnd) {

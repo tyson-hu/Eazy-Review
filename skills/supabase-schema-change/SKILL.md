@@ -10,7 +10,7 @@ Goal: safely change database schema, RLS, migrations, or data contracts, keeping
 ## When not to use
 
 - Frontend-only shape, type, mock, or display changes with no SQL: use `skills/product-data-modeling`.
-- Screen work that merely consumes existing data: use `skills/ui-screen-builder` or `skills/feature-slice-builder`.
+- Screen work that merely consumes existing data without schema/RLS changes: use `skills/ui-screen-builder` or `skills/feature-slice-builder` (Task 14+ connected-read mode when replacing mock catalog reads).
 
 ## Inputs expected
 

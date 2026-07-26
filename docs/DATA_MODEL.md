@@ -350,10 +350,28 @@ before update on public.profiles
 for each row
 execute function public.set_updated_at();
 
+create trigger products_set_updated_at
+before update on public.products
+for each row
+execute function public.set_updated_at();
+
+create trigger eazy_assessments_set_updated_at
+before update on public.eazy_assessments
+for each row
+execute function public.set_updated_at();
+
+create trigger product_offers_set_updated_at
+before update on public.product_offers
+for each row
+execute function public.set_updated_at();
+
 create trigger user_ratings_set_updated_at
 before update on public.user_ratings
 for each row
 execute function public.set_updated_at();
+
+-- `rating_aggregates.updated_at` is owned by `refresh_rating_aggregates` (explicit
+-- writes); do not add a generic set_updated_at trigger on that table.
 
 -- New auth users get a profiles row (identity key only). Clients cannot INSERT
 -- profiles via the Data API; Account reads this row after Task 15 sign-up.

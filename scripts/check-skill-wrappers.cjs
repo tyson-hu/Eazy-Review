@@ -5,8 +5,8 @@
  * Checks:
  * - skills/manifest.json is the authoritative inventory (sorted unique names)
  * - canonical skills/ and both wrapper roots equal that manifest
- * - AGENTS.md Skill Index and docs/LOOP_ENGINEERING.md trigger table list the
- *   same skill names as the manifest
+ * - AGENTS.md Skill Index and docs/LOOP_ENGINEERING.md Loop Index Skill column
+ *   list the same skill names as the manifest (Trigger cells must not carry paths)
  * - each wrapper has YAML front matter with non-empty string name and description
  * - each wrapper points at an existing canonical skills/<name>/SKILL.md
  * - paired wrappers are byte-identical
@@ -253,13 +253,27 @@ function extractAgentsIndexSkills(content, manifestNames) {
 }
 
 /**
- * Skill names referenced as `skills/<name>` in the ## Loop Index table only.
- * Mentions elsewhere in LOOP_ENGINEERING.md must not mask a missing trigger row.
+ * Split a Markdown table row into cells (trimmed), dropping empty edge slots
+ * from the leading/trailing pipes.
  *
- * @param {string} content
+ * @param {string} row
  * @returns {string[]}
  */
-function extractLoopIndexSkills(content) {
+function splitMarkdownTableCells(row) {
+  const trimmed = row.trim();
+  const withoutEdges = trimmed.replace(/^\|/, '').replace(/\|$/, '');
+  return withoutEdges.split('|').map((cell) => cell.trim());
+}
+
+/**
+ * Skill names from the ## Loop Index Skill column only.
+ * Trigger-cell paths and whole-row matches must not satisfy the inventory check.
+ *
+ * @param {string} content
+ * @param {string[]} manifestNames
+ * @returns {string[]}
+ */
+function extractLoopIndexSkills(content, manifestNames) {
   const sectionMatch = content.match(
     /## Loop Index\r?\n([\s\S]*?)(?=\r?\n## |\r?\n# |$)/,
   );
@@ -269,35 +283,96 @@ function extractLoopIndexSkills(content) {
   }
 
   const section = sectionMatch[1];
-  const tableRows = section
+  const rawRows = section
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line.startsWith('|') && !/^\|\s*-+/.test(line));
+    .filter((line) => line.startsWith('|'));
 
-  if (tableRows.length === 0) {
+  if (rawRows.length === 0) {
     errors.push('docs/LOOP_ENGINEERING.md: `## Loop Index` has no Markdown table rows');
     return [];
   }
 
-  /** @type {Set<string>} */
-  const found = new Set();
-  const re = /`skills\/([a-z0-9]+(?:-[a-z0-9]+)*)`/g;
-  for (const row of tableRows) {
-    re.lastIndex = 0;
-    let match = re.exec(row);
-    while (match) {
-      found.add(match[1]);
-      match = re.exec(row);
-    }
-  }
-
-  if (found.size === 0) {
+  const headerCells = splitMarkdownTableCells(rawRows[0]);
+  if (
+    headerCells.length !== 2 ||
+    headerCells[0].toLowerCase() !== 'trigger' ||
+    headerCells[1].toLowerCase() !== 'skill'
+  ) {
     errors.push(
-      'docs/LOOP_ENGINEERING.md: `## Loop Index` table has no `skills/<name>` path cells',
+      'docs/LOOP_ENGINEERING.md: `## Loop Index` header must be `| Trigger | Skill |`',
     );
+    return [];
   }
 
-  return [...found].sort();
+  if (rawRows.length < 2 || !/^\|\s*-+/.test(rawRows[1])) {
+    errors.push('docs/LOOP_ENGINEERING.md: `## Loop Index` is missing a separator row');
+    return [];
+  }
+
+  const separatorCells = splitMarkdownTableCells(rawRows[1]);
+  if (separatorCells.length !== 2 || !separatorCells.every((cell) => /^:?-{3,}:?$/.test(cell))) {
+    errors.push('docs/LOOP_ENGINEERING.md: `## Loop Index` separator must have two dashed cells');
+    return [];
+  }
+
+  const dataRows = rawRows.slice(2);
+  if (dataRows.length === 0) {
+    errors.push('docs/LOOP_ENGINEERING.md: `## Loop Index` has no data rows');
+    return [];
+  }
+
+  const skillPathRe = /`skills\/([a-z0-9]+(?:-[a-z0-9]+)*)`/g;
+  const allowed = new Set(manifestNames);
+  /** @type {string[]} */
+  const found = [];
+  /** @type {Set<string>} */
+  const seen = new Set();
+
+  for (let index = 0; index < dataRows.length; index += 1) {
+    const rowLabel = `docs/LOOP_ENGINEERING.md Loop Index row ${index + 1}`;
+    const cells = splitMarkdownTableCells(dataRows[index]);
+    if (cells.length !== 2) {
+      errors.push(`${rowLabel}: expected exactly 2 cells (Trigger, Skill), found ${cells.length}`);
+      continue;
+    }
+
+    const [triggerCell, skillCell] = cells;
+    skillPathRe.lastIndex = 0;
+    if (skillPathRe.test(triggerCell)) {
+      errors.push(`${rowLabel}: Trigger cell must not contain a \`skills/<name>\` path`);
+    }
+
+    /** @type {string[]} */
+    const skillMatches = [];
+    skillPathRe.lastIndex = 0;
+    let match = skillPathRe.exec(skillCell);
+    while (match) {
+      skillMatches.push(match[1]);
+      match = skillPathRe.exec(skillCell);
+    }
+
+    if (skillMatches.length !== 1) {
+      errors.push(
+        `${rowLabel}: Skill cell must contain exactly one \`skills/<name>\` path (found ${skillMatches.length})`,
+      );
+      continue;
+    }
+
+    const skillName = skillMatches[0];
+    if (!allowed.has(skillName)) {
+      errors.push(`${rowLabel}: Skill \`${skillName}\` is not in skills/manifest.json`);
+      continue;
+    }
+    if (seen.has(skillName)) {
+      errors.push(`${rowLabel}: duplicate Skill \`${skillName}\` in Loop Index`);
+      continue;
+    }
+    seen.add(skillName);
+    found.push(skillName);
+  }
+
+  return found.sort();
 }
 
 /**
@@ -354,7 +429,10 @@ function main() {
   if (!fs.existsSync(LOOP_INDEX_FILE)) {
     errors.push('docs/LOOP_ENGINEERING.md is missing');
   } else {
-    const loopNames = extractLoopIndexSkills(fs.readFileSync(LOOP_INDEX_FILE, 'utf8'));
+    const loopNames = extractLoopIndexSkills(
+      fs.readFileSync(LOOP_INDEX_FILE, 'utf8'),
+      manifestNames,
+    );
     assertSameSet(
       'skills/manifest.json',
       manifestNames,
