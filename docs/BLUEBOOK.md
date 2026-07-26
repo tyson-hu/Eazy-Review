@@ -112,7 +112,7 @@ Supabase foundation (packetized — see `docs/TASKS.md` Tasks 11–18 and `docs/
 14. Real Browse and Product Detail reads.
 15. Authentication (email first).
 16. My Rating persistence + Rated Products (`private_note`, owner-only; Account rated list).
-17. Server-owned community aggregates (verify if already covered in 12).
+17. Verify and harden the Task 11 server-owned community aggregate mechanism, including concurrency, forgery resistance, and performance coverage.
 18. TanStack Query and cache invalidation.
 
 Later:

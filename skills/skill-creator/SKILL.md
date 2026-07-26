@@ -99,8 +99,8 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 
 - The structured proposal (name, trigger, why, inputs, workflow summary, overlap check, files) was shown and explicitly approved before any files were created or modified.
 - All three files exist, the two stubs are identical, and the stub description states the trigger in one sentence.
-- Run `npm run check:skill-wrappers` (also part of `npm run check` / CI) and confirm it passes — this is the durable regression check for missing front matter, empty/YAML-null/`true`/`42`-style non-string descriptions, missing canonical targets, `.agents` / `.claude` drift, and inventory drift against `skills/manifest.json` (including `AGENTS.md` / `docs/LOOP_ENGINEERING.md` indexes).
-- The loop index in `docs/LOOP_ENGINEERING.md`, the skill index in `AGENTS.md`, and `skills/manifest.json` list the new skill, and no two index rows can fire on the same task.
+- Run `npm run check:skill-wrappers` (also part of `npm run check` / CI) and confirm it passes — this is the durable regression check for missing front matter, empty/YAML-null/`true`/`42`-style non-string descriptions, missing canonical targets, `.agents` / `.claude` drift, and inventory drift against `skills/manifest.json` (including `AGENTS.md` and the `docs/LOOP_ENGINEERING.md` Loop Index table).
+- The Loop Index table in `docs/LOOP_ENGINEERING.md`, the skill index in `AGENTS.md`, and `skills/manifest.json` list the new skill, and no two index rows can fire on the same task.
 - Every path and command in the skill was checked against the current repo, not written from memory.
 
 ## Stop conditions

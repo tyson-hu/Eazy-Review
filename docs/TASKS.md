@@ -454,7 +454,7 @@ Acceptance:
 Status: Done (2026-07-24).
 
 Added `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers`, wired into `npm run check` and Expo CI. Validates:
-- `skills/manifest.json` is the authoritative inventory; canonical `skills/`, both wrapper roots, the `AGENTS.md` Skill Index, and `docs/LOOP_ENGINEERING.md` skill paths must match it (prevents deleting a skill from all three directories while indexes still advertise it);
+- `skills/manifest.json` is the authoritative inventory; canonical `skills/`, both wrapper roots, the `AGENTS.md` Skill Index, and the `docs/LOOP_ENGINEERING.md` **Loop Index** table must match it (prevents deleting a skill from all three directories while indexes still advertise it; prose mentions outside the Loop Index table do not count);
 - each `.agents/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` has YAML front matter (`name`, `description`);
 - front matter is parsed as YAML; `name` / `description` must be non-empty **strings** after trim (rejects null, booleans, and every YAML numeric form including hex/octal/binary/`0x10`);
 - declared canonical `skills/<name>/SKILL.md` exists and is referenced;

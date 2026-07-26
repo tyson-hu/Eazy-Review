@@ -253,20 +253,50 @@ function extractAgentsIndexSkills(content, manifestNames) {
 }
 
 /**
- * Skill names referenced as `skills/<name>` in the LOOP_ENGINEERING trigger table.
+ * Skill names referenced as `skills/<name>` in the ## Loop Index table only.
+ * Mentions elsewhere in LOOP_ENGINEERING.md must not mask a missing trigger row.
  *
  * @param {string} content
  * @returns {string[]}
  */
 function extractLoopIndexSkills(content) {
+  const sectionMatch = content.match(
+    /## Loop Index\r?\n([\s\S]*?)(?=\r?\n## |\r?\n# |$)/,
+  );
+  if (!sectionMatch) {
+    errors.push('docs/LOOP_ENGINEERING.md: missing `## Loop Index` section');
+    return [];
+  }
+
+  const section = sectionMatch[1];
+  const tableRows = section
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('|') && !/^\|\s*-+/.test(line));
+
+  if (tableRows.length === 0) {
+    errors.push('docs/LOOP_ENGINEERING.md: `## Loop Index` has no Markdown table rows');
+    return [];
+  }
+
   /** @type {Set<string>} */
   const found = new Set();
   const re = /`skills\/([a-z0-9]+(?:-[a-z0-9]+)*)`/g;
-  let match = re.exec(content);
-  while (match) {
-    found.add(match[1]);
-    match = re.exec(content);
+  for (const row of tableRows) {
+    re.lastIndex = 0;
+    let match = re.exec(row);
+    while (match) {
+      found.add(match[1]);
+      match = re.exec(row);
+    }
   }
+
+  if (found.size === 0) {
+    errors.push(
+      'docs/LOOP_ENGINEERING.md: `## Loop Index` table has no `skills/<name>` path cells',
+    );
+  }
+
   return [...found].sort();
 }
 
@@ -328,7 +358,7 @@ function main() {
     assertSameSet(
       'skills/manifest.json',
       manifestNames,
-      'docs/LOOP_ENGINEERING.md skill paths',
+      'docs/LOOP_ENGINEERING.md Loop Index',
       loopNames,
     );
   }
