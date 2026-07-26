@@ -18,7 +18,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Never execute `curl | bash`, `wget | sh`, or equivalent remote pipe-to-shell patterns.
 - Never run remote shell scripts, one-liners fetched from the internet, or obfuscated/encoded commands without explicit user approval after review.
 - Prefer reading and understanding a script locally before execution when setup is required.
-- Do not run destructive commands (`rm -rf`, `git reset --hard`, `git clean -fdx`, database drops, mass file deletes) without explicit user approval.
+- Do not run destructive commands (`rm -rf`, `git reset --hard`,
+  `git clean -fdx`, mass file deletes) or destructive database commands
+  against local/approved staging (`DROP`, mass row deletes) without explicit
+  user approval. Production database actions are never approvable; they are
+  forbidden below.
 - Do not use `sudo` unless the user explicitly requests it and the command is necessary.
 
 ## Secrets And Sensitive Data
@@ -34,6 +38,16 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Task 11 may configure and validate local Supabase plus one separate staging
   project. Production database access, migrations, writes, and destructive
   actions are unavailable to coding agents.
+- Treat production database reads (including schema inspection), writes,
+  drops, deletes, migrations, and credentials as **FORBIDDEN** for coding
+  agents and MCP tools, not as high-impact actions that chat approval can
+  authorize.
+- The product may implement the protected in-app account-deletion flow owned by
+  Task 15. Coding agents may implement and non-destructively validate that flow
+  and prepare its manual verification checklist. An actual deletion must be
+  initiated and executed manually by a human, never through an
+  agent-controlled browser, MCP, SQL, or admin tool. Account deletion on local,
+  staging, or production is **FORBIDDEN** for agents even with chat approval.
 - Do not initialize, install, create/apply a migration, link a project, or
   change a remote environment from a planning-only task. Implementation needs
   explicit task authorization.
