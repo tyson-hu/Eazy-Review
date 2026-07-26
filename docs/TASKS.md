@@ -366,11 +366,21 @@ Goal: seed one or two representative products first; expand toward the eight-pro
 
 Acceptance:
 - Seed SQL (or approved script) loads into local reset and staging.
-- Every seeded product has a matching `rating_aggregates` row (zero-count when no ratings yet — product insert trigger and/or explicit seed rows). No published product relies on a missing summary join.
+- Every seeded product has a matching `rating_aggregates` row created by the
+  Task 11 product-insert trigger (zero-count when no ratings yet). Seed/import
+  code verifies that row but never inserts or updates aggregates directly. No
+  published product relies on a missing summary join.
 - Seeded / imported `product_offers.currency` and `product_offers.size_region` values are trimmed, uppercased, and inside each schema whitelist (MVP: `USD` / `US` only); never insert `NULL`, `''`, or arbitrary codes that bypass `default 'USD'` / `default 'US'`.
-- Image strategy decided: upload approved assets to Storage **or** keep mock-image resolution until real catalog ingestion (see unresolved decisions in `docs/DATA_MODEL.md`).
+- Image strategy decided: use approved HTTP(S) / Storage URLs in
+  `product_images`, or leave images absent so Task 14 maps `imageUrl: null` and
+  shows the existing placeholder. Do not persist the mock-only
+  `mock-product://` scheme as connected catalog data.
 - Seeded `product_images` use deliberate unique `sort_order` values per product (schema unique `(product_id, sort_order)`).
-- Provenance fields populated where required by the schema (`source_type`, capture timestamps, methodology version as applicable).
+- Populate only provenance/timing fields that exist in the Task 11 schema:
+  `eazy_assessments.methodology_version` and
+  `product_offers.last_checked_at` when applicable. A future `source_type` or
+  rights-provenance column requires its own schema-contract change; Task 13 must
+  not invent one.
 
 ### Task 14: Real Browse And Product Detail Reads
 
@@ -407,7 +417,7 @@ Goal: email auth first unless Apple Sign-In is required for the next TestFlight.
 Deliverables:
 - Sign up / sign in / sign out / session persistence.
 - **Password recovery:** `app/auth/forgot-password.tsx` (request) and `app/auth/reset-password.tsx` (completion / recovery deep-link target); Account logged-out Forgot Password entry point (`docs/DESIGN.md`); recovery-email submission with honest success/error states; recovery deep-link / session handling on Reset Password; new-password completion; verify new password works and old password does not.
-- **Delete account:** logged-in Account Delete Account action with destructive confirmation (and reauthentication if the provider requires it); protected server-side deletion (never a service-role key in the Expo bundle); defined cascade / anonymization / retention for `profiles`, `user_ratings`, and related rows; local session/cache cleanup; verify the deleted account can no longer sign in.
+- **Delete account:** logged-in Account Delete Account action with destructive confirmation (and reauthentication if the provider requires it); protected server-side deletion (never a service-role key in the Expo bundle); defined cascade / anonymization / retention for `profiles`, `user_ratings`, and related rows; local session/cache cleanup. Supply a documented human-run end-to-end check that confirms the deleted account can no longer sign in. Coding agents and MCP/tools must not execute the destructive account-deletion step on any environment.
 
 Acceptance:
 - Sign up / sign in / sign out / session persistence.
@@ -415,7 +425,11 @@ Acceptance:
 - Logged-out Rate CTA becomes sign-in gate; logged-in user reaches the form.
 - Account screen reflects auth state without Feed/social scope growth (including Forgot Password when logged out and Delete Account when logged in).
 - Password recovery path works end-to-end for an email user (request → email/deep-link → new password → sign-in with new password only).
-- Delete-account path works end-to-end; deleted credentials cannot sign in; client holds no service-role key.
+- Delete-account implementation and non-destructive tests pass; a human performs
+  and records the destructive end-to-end check (delete → cleared local
+  session/cache → deleted credentials cannot sign in). An agent must not
+  self-complete this acceptance item by deleting an account through the app,
+  MCP, SQL, or an admin API. The client holds no service-role key.
 - If the Task 14 transitional session rating map still exists, it is namespaced by signed-in user (and cleared or re-keyed on auth change) so one account cannot read or overwrite another’s in-memory My Rating.
 
 ### Task 16: My Rating Persistence And Rated Products
