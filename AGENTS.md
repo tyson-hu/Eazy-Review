@@ -42,15 +42,18 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 
 ## Skill Index
 
-Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`):
+Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`; authoritative discovery metadata in `skills/manifest.json`):
 `feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
-Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here or in `docs/LOOP_ENGINEERING.md` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
+Generate both discovery-wrapper trees from the manifest with `npm run skills:generate`; do not edit generated wrappers by hand.
+
+Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here, in `docs/LOOP_ENGINEERING.md`, or in `skills/manifest.json` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
 
 ## Validation
 
 - `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
-- `npm run check` (routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency changes or before handoff.
+- `npm run check:skill-wrappers` after canonical skill, manifest, generator, or discovery-wrapper edits (also part of `npm run check`).
+- `npm run check` (skill wrappers, routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency/skill changes or before handoff.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
 - `expo-doctor` / `expo install --check` (and thus the Expo tail of `npm run check`) must run **outside the agent sandbox** — sandboxed runs can false-pass doctor or `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation Commands → Expo doctor and dependency checks — agent sandbox.
 

@@ -1,0 +1,52 @@
+{
+  "skills": [
+    {
+      "name": "blocker-note",
+      "description": "Use when debugging stalls (2+ failures, 20-30 min no progress, or looping) — persist attempts, evidence, and ruled-out causes to docs/notes/blocker-<topic>.md, then stop."
+    },
+    {
+      "name": "bugfix-debug-loop",
+      "description": "Use when fixing a reported bug in existing behavior — reproduce first, minimal fix, max 2 hypotheses."
+    },
+    {
+      "name": "docs-sync-loop",
+      "description": "Use when docs have drifted from already-shipped code — apply the DOCUMENTATION_POLICY.md update map with pointers, not duplicates."
+    },
+    {
+      "name": "feature-slice-builder",
+      "description": "Use when implementing one user-visible feature from docs/TASKS.md that spans data and UI (mock-first, connected-read, auth-connected, or connected-write)."
+    },
+    {
+      "name": "interactive-preview-loop",
+      "description": "Use when a task requires evidence-backed interactive verification of an Expo user journey in iOS Simulator or the project reference mobile-web viewport, or a screenshot-based UX audit with numbered captures and triaged findings — not for automated project checks, UI implementation, or bug fixing."
+    },
+    {
+      "name": "product-data-modeling",
+      "description": "Use for frontend-only product/rating shape changes — types, mock data, and API contracts, with no SQL."
+    },
+    {
+      "name": "refactor-safety-loop",
+      "description": "Use when restructuring code with zero behavior change — declared non-goals, allowed-files list, before/after checks."
+    },
+    {
+      "name": "session-handoff",
+      "description": "Use at a session boundary (phase done, topic switch, overloaded context) — write docs/notes/handoff.md and recommend a fresh session."
+    },
+    {
+      "name": "skill-creator",
+      "description": "Use when turning a task pattern explained 3+ times into a new SKILL.md, tuning a skill's trigger description, or iterating/maintaining existing skills."
+    },
+    {
+      "name": "supabase-schema-change",
+      "description": "Use for any change needing SQL, a migration, or RLS — schema, triggers, rating summaries, or database-backed contracts."
+    },
+    {
+      "name": "test-and-validation-loop",
+      "description": "Use when running project checks for a finished change — narrowest command first, fix only caused-by-change failures, max 2 retries."
+    },
+    {
+      "name": "ui-screen-builder",
+      "description": "Use when building or redesigning one Expo / React Native screen's UI following docs/DESIGN.md."
+    }
+  ]
+}
