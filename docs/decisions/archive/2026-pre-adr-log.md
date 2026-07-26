@@ -60,6 +60,9 @@ Reason:
 
 Decision:
 - Trusted Community Score calculations belong in Supabase trigger/function or equivalent server-side logic.
+- Category and overall aggregates are two-decimal arithmetic means.
+  Community Score is `round(avg(overall) * 10)` from the unrounded mean; zero
+  ratings keep count `0` with null averages and score.
 
 Reason:
 - Client-calculated aggregate scores are not trustworthy for persisted product summaries.
@@ -903,3 +906,134 @@ Safety-risk:
 
 Related files:
 - `docs/DATA_MODEL.md`, `docs/TASKS.md`, `docs/SECURITY.md`, `docs/ROADMAP.md`, `docs/RELEASE_CHECKLIST.md`, `docs/DECISIONS.md`, `skills/supabase-schema-change/SKILL.md`, `.cursor/rules/supabase.mdc`
+
+## 2026-07-25 — Split Supabase Schema And Authorization Migrations
+
+What changed:
+- Task 11 creates the core schema with RLS enabled, no client policies,
+  inherited `PUBLIC` / `anon` / `authenticated` privileges revoked, and no
+  positive client grants.
+- Task 12 is a separate forward-only migration that creates complete policies,
+  revokes inherited broad privileges (including access through `PUBLIC`),
+  rebuilds explicit least-privilege Data API grants, and proves the effective
+  authorization matrix plus the exact server-only `service_role` allowlist.
+
+Why:
+- Data API grants and RLS protect different layers. Separating the migrations
+  prevents a new table from becoming client-reachable before its policies are
+  present and reviewable.
+
+Effect:
+- Task 11 remains deny-by-default. Published catalog and owner-only rating
+  access become available only after Task 12 policies and grants both pass.
+
+Safety-risk:
+- Planning only. No Supabase project, migration, schema, or runtime client was
+  created or changed by this decision.
+
+Related files:
+- `docs/TASKS.md`, `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`,
+  `docs/SECURITY.md`
+
+## 2026-07-25 — Separate Versioned Eazy Assessments From Community Aggregates
+
+What changed:
+- Editorial scoring uses versioned `eazy_assessments` rows with at most one
+  `is_current = true` row per product.
+- Community scoring uses server-owned `rating_aggregates`, refreshed by the
+  Task 11 trigger path and never written by clients.
+
+Why:
+- Editorial methodology/history and community evidence have different owners,
+  lifecycles, and trust boundaries. The earlier names `official_ratings` and
+  `product_rating_summary` obscured that distinction.
+
+Effect:
+- UI vocabulary stays `Eazy Score` and `Community Score`; implementation and
+  contracts use the clearer relational names.
+- This supersedes the 2026-06-28 allowance for the internal
+  `official_ratings` name.
+
+Safety-risk:
+- Planning only. Aggregate SQL must be locally tested for concurrency,
+  last-rating removal, and product-delete cascades before implementation is
+  called complete.
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`
+
+## 2026-07-25 — Keep My Rating Notes Owner-Only
+
+What changed:
+- The connected database field is `user_ratings.private_note`, optional and
+  capped at 500 characters.
+- Raw `user_ratings` rows are owner-only; public Community Score reads come
+  from `rating_aggregates`.
+
+Why:
+- The optional text belongs to My Rating and is not a public review. Keeping it
+  on an owner-only row prevents accidental disclosure through community reads.
+
+Effect:
+- Task 12 grants/policies expose only a user's own rating. Task 16 owns the
+  frontend rename from the current mock `comment` field to `privateNote`.
+
+Safety-risk:
+- Public written reviews remain out of MVP scope. This decision adds no UI or
+  runtime behavior in Tasks 11–12.
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`
+
+## 2026-07-26 — Make Self-Deletion Caller-Derived And Session-Aware
+
+What changed:
+- The protected deletion server derives the target only from the verified
+  current caller, uses Auth Admin global sign-out to revoke all refresh
+  sessions, then hard-deletes that auth user with a server-only secret.
+- Failed session revocation aborts deletion; the implementation never writes
+  directly to the managed `auth.sessions` table.
+- Profile and My Rating rows cascade with no MVP retention copy; product
+  aggregates remain and are recomputed.
+
+Why:
+- A client-supplied target id would create a cross-account deletion risk, and
+  deleting only the current device's local session would leave other refresh
+  sessions usable.
+
+Effect:
+- Human-run acceptance covers a second session, cascade/aggregate correctness,
+  deleted-credential sign-in failure, and the configured residual JWT-expiry
+  window. Coding agents never execute the destructive check.
+
+Safety-risk:
+- Planning only. No auth user, session, row, server function, or remote project
+  was created, changed, or deleted.
+
+Related files:
+- `docs/TASKS.md`, `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`,
+  `docs/USER_FLOWS.md`, `docs/RELEASE_CHECKLIST.md`
+
+## 2026-07-26 — Separate Public Product Detail Cache From My Rating
+
+What changed:
+- Shared `['product', productId]` queries contain
+  `ProductDetailPublicData` only.
+- Product Detail composes `myRating` from the user-scoped
+  `['userRating', userId, productId]` query.
+
+Why:
+- `ProductDetailData.myRating` is viewer-owned and can contain a private note.
+  Caching it under a shared product key can show one account's data after an
+  auth transition.
+
+Effect:
+- Public product data can survive auth transitions; My Rating remains disabled
+  until `userId` exists and is cleared with the prior user's scoped cache.
+
+Safety-risk:
+- Planning only. Current mock/session behavior remains unchanged until the
+  connected read/query tasks implement this split.
+
+Related files:
+- `docs/API_CONTRACTS.md`, `docs/TASKS.md`, `docs/USER_FLOWS.md`

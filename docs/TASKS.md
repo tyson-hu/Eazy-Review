@@ -238,6 +238,7 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
   cards carry the selected currency instead of hardcoding `$`. Decision:
   [`Keep MVP offer payloads single-currency`](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md).
 - Done 2026-07-26: **ADR decision governance** — preserved the complete pre-ADR log in one archive, promoted only durable active decisions, generated the compact `docs/DECISIONS.md` index, and added `decisions:build` / `decisions:check`.
+- Done 2026-07-26: **PR #14 replacement-stack integration** — independently reviewed, corrected, and merged PRs #15 → #16 → #20 → #17 → #19 → #18. The final #18 composition preserves both skill-wrapper and ADR governance, and no application behavior, dependency, lockfile, Supabase environment, or database state changed.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)
 

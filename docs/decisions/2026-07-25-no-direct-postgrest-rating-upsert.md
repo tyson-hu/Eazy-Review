@@ -1,12 +1,12 @@
 ---
 id: decision-no-direct-postgrest-rating-upsert
 date: 2026-07-25
-updated: 2026-07-25
+updated: 2026-07-26
 status: accepted
 area: data-supabase
-tasks: [16]
+tasks: [12, 16]
 pr: 14
-tags: [postgrest, ratings, supabase, writes]
+tags: [postgrest, privacy, ratings, supabase, writes]
 supersedes: []
 ---
 
@@ -18,7 +18,8 @@ The rating table uses column-level grants so clients can change scores and a
 private note but cannot rewrite identity or audit columns. A natural PostgREST
 upsert includes conflict and identity fields that do not fit that restricted
 UPDATE contract. Concurrent first saves for the same user and product can both
-observe a missing row and race on insert.
+observe a missing row and race on insert. The same row contains
+`private_note`, which belongs to My Rating and is not public review content.
 
 ## Decision
 
@@ -27,6 +28,10 @@ score/private-note-only update for an existing rating, or calls a
 `SECURITY DEFINER` server function that enforces the same restrictions
 inside the function body. The client does not issue a direct PostgREST
 `.upsert()` of rating identity columns.
+
+Raw `user_ratings` reads remain owner-only. Public community surfaces read
+server-owned `rating_aggregates`; they never expose another user's
+`private_note`.
 
 When the preferred definer helper is used, it must:
 
@@ -49,6 +54,7 @@ no-identity-upsert rule.
 
 - Client writes remain compatible with narrow column grants.
 - Ownership, product publication, and immutable identity rules stay enforced.
+- A user's private note cannot leak through public Community Score reads.
 - Concurrent first-save races do not drop the later submission: conflict
   recovery or an atomic helper leaves one complete rating row.
 - Task 16 must test concurrent first saves and prove neither request ends as an

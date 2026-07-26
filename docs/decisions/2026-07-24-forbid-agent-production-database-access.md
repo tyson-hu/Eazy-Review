@@ -34,6 +34,20 @@ implement and non-destructively test the protected in-app Delete Account
 feature, but its destructive end-to-end acceptance check is human-run and
 recorded.
 
+The authority classifier is mutually exclusive:
+
+- **READ** permits schema inspection only in local or explicitly approved
+  staging.
+- **HIGH IMPACT** covers application/service deployment, non-account
+  deletion, and credential changes only when they do not touch a production
+  database.
+- **FORBIDDEN** covers every production database read, schema inspection,
+  write, drop, delete, migration, or credential action, plus account deletion
+  in every environment.
+
+When an action matches more than one description, the stricter classification
+wins.
+
 ## Consequences
 
 - An approval cannot turn a production database action into an allowed agent
@@ -43,6 +57,8 @@ recorded.
   human-owned destructive deletion check.
 - A coding agent cannot self-certify the Delete Account acceptance item by
   deleting a fixture account.
+- Agents may prepare the manual deletion checklist, but may not execute it
+  through a browser, MCP, SQL console, or admin API.
 - Production investigation or change requires a separate human-controlled
   operating process.
 

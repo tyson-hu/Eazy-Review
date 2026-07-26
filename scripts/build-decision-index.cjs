@@ -17,7 +17,7 @@ const INDEX_FILE = path.join(ROOT, 'docs', 'DECISIONS.md');
 const ARCHIVE_FILE = path.join(DECISIONS_DIR, 'archive', '2026-pre-adr-log.md');
 /** Immutable legacy log digest. Update only when the archive is intentionally rewritten. */
 const EXPECTED_ARCHIVE_SHA256 =
-  'f50f9dd3181bc87d740019aecec6eaebcbf7311e7046e374f56dcb7d44f9c8f2';
+  '9ecc84c8b74d9fc019b0505ae534da07568f0b461f42db643a02c8e37f4ab2d7';
 const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
 const FILE_NAME_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const ID_RE = /^decision-[a-z0-9]+(?:-[a-z0-9]+)*$/;

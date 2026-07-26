@@ -1,12 +1,12 @@
 ---
 id: decision-rls-before-client-grants
 date: 2026-07-24
-updated: 2026-07-25
+updated: 2026-07-26
 status: accepted
 area: auth-security
 tasks: [11, 12]
 pr: 14
-tags: [grants, rls, supabase]
+tags: [grants, rls, service-role, supabase]
 supersedes: []
 ---
 
@@ -20,10 +20,18 @@ an incomplete security boundary appear finished.
 
 ## Decision
 
-Task 11 enables RLS on every exposed table at creation and gives no client
-table privileges. Task 12 defines complete policies, applies the narrow
-Data API grants only after those policies, and verifies authorization before
-the boundary is accepted.
+Task 11 enables RLS on every exposed table at creation, explicitly revokes
+table privileges from `PUBLIC`, `anon`, and `authenticated`, and gives no
+positive client grants. Task 12 defines complete policies, revokes inherited
+broad privileges again before rebuilding the allowlist, applies narrow Data
+API grants only after those policies, and verifies authorization before the
+boundary is accepted.
+
+Privilege tests assert effective access with `has_table_privilege` and
+`has_column_privilege`, including access inherited through `PUBLIC`; inspecting
+direct grant rows is insufficient. The trusted `service_role` is server-only
+and must positively match its exact table-privilege allowlist. Its secret never
+enters Expo.
 
 ## Consequences
 
@@ -32,6 +40,10 @@ the boundary is accepted.
   Task 12 migration separate from Task 11's schema migration (never by editing
   an applied Task 11 migration).
 - Column-level grants further restrict mutable profile and rating fields.
+- A passing RLS test cannot conceal a missing required grant, and a passing
+  policy cannot conceal broader access inherited through `PUBLIC`.
+- The server-only allowlist is tested positively instead of assuming
+  `service_role` bypass behavior is sufficient.
 
 ## Revisit when
 
