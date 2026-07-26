@@ -3,7 +3,10 @@
  * Validates skill discovery wrappers under .agents/skills and .claude/skills.
  *
  * Checks:
- * - wrapper directories stay synchronized with each other and with skills/<name>/SKILL.md
+ * - skills/manifest.json is the authoritative inventory (sorted unique names)
+ * - canonical skills/ and both wrapper roots equal that manifest
+ * - AGENTS.md Skill Index and docs/LOOP_ENGINEERING.md trigger table list the
+ *   same skill names as the manifest
  * - each wrapper has YAML front matter with non-empty string name and description
  * - each wrapper points at an existing canonical skills/<name>/SKILL.md
  * - paired wrappers are byte-identical
@@ -17,7 +20,10 @@ const path = require('node:path');
 const yaml = require('yaml');
 
 const ROOT = path.resolve(__dirname, '..');
+const MANIFEST_FILE = path.join(ROOT, 'skills', 'manifest.json');
 const CANONICAL_DIR = path.join(ROOT, 'skills');
+const AGENTS_FILE = path.join(ROOT, 'AGENTS.md');
+const LOOP_INDEX_FILE = path.join(ROOT, 'docs', 'LOOP_ENGINEERING.md');
 const WRAPPER_ROOTS = [
   { label: '.agents/skills', dir: path.join(ROOT, '.agents', 'skills') },
   { label: '.claude/skills', dir: path.join(ROOT, '.claude', 'skills') },
@@ -28,6 +34,10 @@ const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 /** @type {string[]} */
 const errors = [];
 
+/**
+ * @param {string} dir
+ * @returns {string[]}
+ */
 function listSkillNames(dir) {
   if (!fs.existsSync(dir)) {
     return [];
@@ -39,6 +49,71 @@ function listSkillNames(dir) {
     .map((entry) => entry.name)
     .filter((name) => fs.existsSync(path.join(dir, name, 'SKILL.md')))
     .sort();
+}
+
+/**
+ * Load and validate the authoritative skill inventory.
+ *
+ * @returns {string[]}
+ */
+function loadManifestSkills() {
+  const rel = path.relative(ROOT, MANIFEST_FILE);
+  if (!fs.existsSync(MANIFEST_FILE)) {
+    errors.push(`skill manifest missing at ${rel}`);
+    return [];
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(MANIFEST_FILE, 'utf8'));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`${rel}: invalid JSON (${message})`);
+    return [];
+  }
+
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    errors.push(`${rel}: root must be a JSON object with a \`skills\` array`);
+    return [];
+  }
+
+  const skills = /** @type {{ skills?: unknown }} */ (parsed).skills;
+  if (!Array.isArray(skills)) {
+    errors.push(`${rel}: \`skills\` must be an array of skill name strings`);
+    return [];
+  }
+
+  /** @type {string[]} */
+  const names = [];
+  for (let index = 0; index < skills.length; index += 1) {
+    const value = skills[index];
+    if (typeof value !== 'string' || value.trim() === '') {
+      errors.push(`${rel}: skills[${index}] must be a non-empty string`);
+      continue;
+    }
+    if (value !== value.trim()) {
+      errors.push(`${rel}: skills[${index}] must not have leading/trailing whitespace`);
+    }
+    names.push(value.trim());
+  }
+
+  const sorted = [...names].sort();
+  for (let index = 0; index < names.length; index += 1) {
+    if (names[index] !== sorted[index]) {
+      errors.push(`${rel}: \`skills\` must be sorted lexicographically`);
+      break;
+    }
+  }
+
+  const seen = new Set();
+  for (const name of names) {
+    if (seen.has(name)) {
+      errors.push(`${rel}: duplicate skill "${name}"`);
+    }
+    seen.add(name);
+  }
+
+  return sorted.filter((name, index) => sorted.indexOf(name) === index);
 }
 
 /**
@@ -108,6 +183,12 @@ function parseFrontMatter(content, fileLabel) {
   };
 }
 
+/**
+ * @param {string} labelA
+ * @param {string[]} setA
+ * @param {string} labelB
+ * @param {string[]} setB
+ */
 function assertSameSet(labelA, setA, labelB, setB) {
   const onlyA = setA.filter((name) => !setB.includes(name));
   const onlyB = setB.filter((name) => !setA.includes(name));
@@ -139,6 +220,61 @@ function extractCodeSpanTokens(content) {
   return tokens;
 }
 
+/**
+ * Skill names listed in the AGENTS.md Skill Index paragraph (backtick tokens
+ * that match known skill directory names, excluding path-style spans).
+ *
+ * @param {string} content
+ * @param {string[]} manifestNames
+ * @returns {string[]}
+ */
+function extractAgentsIndexSkills(content, manifestNames) {
+  const sectionMatch = content.match(
+    /## Skill Index\r?\n([\s\S]*?)(?=\r?\n## |\r?\n# |$)/,
+  );
+  if (!sectionMatch) {
+    errors.push('AGENTS.md: missing `## Skill Index` section');
+    return [];
+  }
+
+  const allowed = new Set(manifestNames);
+  /** @type {Set<string>} */
+  const found = new Set();
+  for (const token of extractCodeSpanTokens(sectionMatch[1])) {
+    // Index lists bare kebab names (`feature-slice-builder`), not paths.
+    if (token.includes('/') || token.endsWith('.md')) {
+      continue;
+    }
+    if (allowed.has(token) || /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(token)) {
+      found.add(token);
+    }
+  }
+  return [...found].sort();
+}
+
+/**
+ * Skill names referenced as `skills/<name>` in the LOOP_ENGINEERING trigger table.
+ *
+ * @param {string} content
+ * @returns {string[]}
+ */
+function extractLoopIndexSkills(content) {
+  /** @type {Set<string>} */
+  const found = new Set();
+  const re = /`skills\/([a-z0-9]+(?:-[a-z0-9]+)*)`/g;
+  let match = re.exec(content);
+  while (match) {
+    found.add(match[1]);
+    match = re.exec(content);
+  }
+  return [...found].sort();
+}
+
+/**
+ * @param {string} rootLabel
+ * @param {string} skillName
+ * @param {string} content
+ */
 function validateWrapper(rootLabel, skillName, content) {
   const fileLabel = `${rootLabel}/${skillName}/SKILL.md`;
   const meta = parseFrontMatter(content, fileLabel);
@@ -167,9 +303,34 @@ function validateWrapper(rootLabel, skillName, content) {
 }
 
 function main() {
+  const manifestNames = loadManifestSkills();
+  if (manifestNames.length === 0 && errors.length === 0) {
+    errors.push('skill manifest `skills` array must not be empty');
+  }
+
   const canonicalNames = listSkillNames(CANONICAL_DIR);
-  if (canonicalNames.length === 0) {
-    errors.push(`no canonical skills found under ${path.relative(ROOT, CANONICAL_DIR)}`);
+  assertSameSet('skills/manifest.json', manifestNames, 'skills/', canonicalNames);
+
+  if (!fs.existsSync(AGENTS_FILE)) {
+    errors.push('AGENTS.md is missing');
+  } else {
+    const agentsNames = extractAgentsIndexSkills(
+      fs.readFileSync(AGENTS_FILE, 'utf8'),
+      manifestNames,
+    );
+    assertSameSet('skills/manifest.json', manifestNames, 'AGENTS.md Skill Index', agentsNames);
+  }
+
+  if (!fs.existsSync(LOOP_INDEX_FILE)) {
+    errors.push('docs/LOOP_ENGINEERING.md is missing');
+  } else {
+    const loopNames = extractLoopIndexSkills(fs.readFileSync(LOOP_INDEX_FILE, 'utf8'));
+    assertSameSet(
+      'skills/manifest.json',
+      manifestNames,
+      'docs/LOOP_ENGINEERING.md skill paths',
+      loopNames,
+    );
   }
 
   /** @type {Map<string, string[]>} */
@@ -197,7 +358,7 @@ function main() {
     }
 
     contentsByRoot.set(root.label, contents);
-    assertSameSet(root.label, names, 'skills/', canonicalNames);
+    assertSameSet(root.label, names, 'skills/manifest.json', manifestNames);
   }
 
   const [agentsRoot, claudeRoot] = WRAPPER_ROOTS;
@@ -231,7 +392,7 @@ function main() {
   }
 
   console.log(
-    `check-skill-wrappers: ok (${canonicalNames.length} skills; .agents and .claude wrappers in sync)`,
+    `check-skill-wrappers: ok (${manifestNames.length} skills; manifest, indexes, and wrappers in sync)`,
   );
 }
 

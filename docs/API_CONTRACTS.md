@@ -272,7 +272,7 @@ Align new Supabase types and adapters with `docs/DATA_MODEL.md`:
 | Concern | DB | Frontend |
 | --- | --- | --- |
 | Published catalog gate | `products.is_published` | filter / map only published rows for anonymous Browse |
-| Editorial Eazy Score | `eazy_assessments` (current row) | `product.eazyScore` / assessment adapter |
+| Editorial Eazy Score | `eazy_assessments` where `is_current = true` | `product.eazyScore` / assessment adapter |
 | Community aggregate | `rating_aggregates` | `ProductRatingSummary` |
 | My Rating scores | `user_ratings` score columns | `RatingBreakdown` scores |
 | Optional personal text | `user_ratings.private_note` | `privateNote` (not a public comment) |

@@ -9,7 +9,7 @@ A skill is a reusable, parameterized workflow template for an agent. Chat instru
 Agent proposes. Human approves. Agent implements after approval.
 
 - Agents may proactively propose a new skill after the same task pattern, convention, or workflow has been explained 3+ times ("You have explained this same workflow 3+ times. This may deserve a skill.").
-- Agents must not create, delete, merge, or substantially modify skill files without explicit human approval. Requires approval: creating a skill, deleting a skill, merging skills, changing a trigger, changing skill boundaries, adding `scripts/` or `templates/`, and editing the skill indexes in `AGENTS.md` or `docs/LOOP_ENGINEERING.md`.
+- Agents must not create, delete, merge, or substantially modify skill files without explicit human approval. Requires approval: creating a skill, deleting a skill, merging skills, changing a trigger, changing skill boundaries, adding `scripts/` or `templates/`, and editing the skill indexes in `AGENTS.md`, `docs/LOOP_ENGINEERING.md`, or `skills/manifest.json`.
 - The human decides whether the workflow is common enough, whether it overlaps an existing skill, whether the trigger is too broad, whether it adds too much context, and whether it belongs in a skill at all — versus `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, or just the current task.
 - Skills share context with every other instruction: keep them concise and focused, capturing only specific, useful conventions.
 
@@ -81,9 +81,9 @@ Follow the canonical workflow in `skills/<name>/SKILL.md`. Do not improvise a di
    - expected inputs,
    - workflow summary,
    - overlap check against existing skills,
-   - files that would be created or modified (including any index rows in `AGENTS.md` and `docs/LOOP_ENGINEERING.md`).
+   - files that would be created or modified (including `skills/manifest.json` and any index rows in `AGENTS.md` and `docs/LOOP_ENGINEERING.md`).
 6. Wait for explicit approval. Expect one or two iterations on the draft. No skill files, stubs, scripts, templates, or index edits before approval.
-7. Only after approval: write the canonical `skills/<name>/SKILL.md` and the identical discovery stubs `.claude/skills/<name>/SKILL.md` and `.agents/skills/<name>/SKILL.md`, add the trigger row to the loop index in `docs/LOOP_ENGINEERING.md` (and the disambiguation table if the new trigger borders an existing one), add the name to the skill index in `AGENTS.md`, then run the memory step. Writing rules for the skill body:
+7. Only after approval: write the canonical `skills/<name>/SKILL.md` and the identical discovery stubs `.claude/skills/<name>/SKILL.md` and `.agents/skills/<name>/SKILL.md`, add the name to `skills/manifest.json` (sorted), add the trigger row to the loop index in `docs/LOOP_ENGINEERING.md` (and the disambiguation table if the new trigger borders an existing one), add the name to the skill index in `AGENTS.md`, then run the memory step. Writing rules for the skill body:
    - The trigger (When to use / stub description) must be concrete enough that this skill and no other is selected.
    - Numbered steps, each one actionable.
    - Exact local paths and exact commands, not descriptions of them.
@@ -99,8 +99,8 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 
 - The structured proposal (name, trigger, why, inputs, workflow summary, overlap check, files) was shown and explicitly approved before any files were created or modified.
 - All three files exist, the two stubs are identical, and the stub description states the trigger in one sentence.
-- Run `npm run check:skill-wrappers` (also part of `npm run check` / CI) and confirm it passes — this is the durable regression check for missing front matter, empty/YAML-null/`true`/`42`-style non-string descriptions, missing canonical targets, and `.agents` / `.claude` drift.
-- The loop index in `docs/LOOP_ENGINEERING.md` and the skill index in `AGENTS.md` list the new skill, and no two index rows can fire on the same task.
+- Run `npm run check:skill-wrappers` (also part of `npm run check` / CI) and confirm it passes — this is the durable regression check for missing front matter, empty/YAML-null/`true`/`42`-style non-string descriptions, missing canonical targets, `.agents` / `.claude` drift, and inventory drift against `skills/manifest.json` (including `AGENTS.md` / `docs/LOOP_ENGINEERING.md` indexes).
+- The loop index in `docs/LOOP_ENGINEERING.md`, the skill index in `AGENTS.md`, and `skills/manifest.json` list the new skill, and no two index rows can fire on the same task.
 - Every path and command in the skill was checked against the current repo, not written from memory.
 
 ## Stop conditions

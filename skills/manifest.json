@@ -1,0 +1,16 @@
+{
+  "skills": [
+    "blocker-note",
+    "bugfix-debug-loop",
+    "docs-sync-loop",
+    "feature-slice-builder",
+    "interactive-preview-loop",
+    "product-data-modeling",
+    "refactor-safety-loop",
+    "session-handoff",
+    "skill-creator",
+    "supabase-schema-change",
+    "test-and-validation-loop",
+    "ui-screen-builder"
+  ]
+}

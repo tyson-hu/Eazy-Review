@@ -43,10 +43,10 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 
 ## Skill Index
 
-Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`):
+Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`; authoritative inventory in `skills/manifest.json`):
 `feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
-Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here or in `docs/LOOP_ENGINEERING.md` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
+Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here, in `docs/LOOP_ENGINEERING.md`, or `skills/manifest.json` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
 
 ## Validation
 

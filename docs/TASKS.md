@@ -273,7 +273,7 @@ Deliverables:
   - `profiles` (row created by protected `AFTER INSERT ON auth.users` trigger — clients never INSERT profiles)
   - `products` (including `is_published` for draft vs public catalog)
   - `product_images` (unique `(product_id, sort_order)` so Task 14 primary-image selection is deterministic)
-  - `eazy_assessments` (editorial Eazy Score; replaces planned `official_ratings` name)
+  - `eazy_assessments` (editorial Eazy Score; versioned rows with required `is_current` + partial unique one-current-per-product index; replaces planned `official_ratings` name)
   - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id` and `user_id`)
   - `rating_aggregates` (server-owned Community Score summary)
   - `product_offers` (required in Task 11 so Task 12 policies/grants and Task 14 Detail offers have a relation)
@@ -305,6 +305,7 @@ Task 11 contract checklist (fill before implementation):
   - listed docs (`docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/TASKS.md`; `docs/decisions/*.md` plus generated `docs/DECISIONS.md` only if a qualifying decision changes)
   - Do **not** expand into Browse/Detail/Rating UI, seed catalog, auth screens, or TanStack Query unless an explicit tiny companion packet says so
 - Required constraints, `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, per-product serialized aggregate refresh, and `auth.users` → `profiles` ensure trigger (see `docs/DATA_MODEL.md`).
+- Assessment history locked to the versioned model: `eazy_assessments.is_current boolean not null`, partial unique index `eazy_assessments_one_current_per_product`, and confirmation that Task 12 / Task 14 will select only `is_current = true` (overwrite-only is not allowed — `docs/DATA_MODEL.md` Resolved decisions).
 - Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12** (and that clients never receive `profiles` INSERT).
 - Whether seed data is included (default: no full catalog).
 - Required validation commands (include `npm run decisions:check`, `npm run check:skill-wrappers`, and the secret-scan command).
@@ -453,6 +454,7 @@ Acceptance:
 Status: Done (2026-07-24).
 
 Added `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers`, wired into `npm run check` and Expo CI. Validates:
+- `skills/manifest.json` is the authoritative inventory; canonical `skills/`, both wrapper roots, the `AGENTS.md` Skill Index, and `docs/LOOP_ENGINEERING.md` skill paths must match it (prevents deleting a skill from all three directories while indexes still advertise it);
 - each `.agents/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` has YAML front matter (`name`, `description`);
 - front matter is parsed as YAML; `name` / `description` must be non-empty **strings** after trim (rejects null, booleans, and every YAML numeric form including hex/octal/binary/`0x10`);
 - declared canonical `skills/<name>/SKILL.md` exists and is referenced;

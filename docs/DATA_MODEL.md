@@ -131,8 +131,8 @@ create table public.product_images (
 -- Products with no images map to imageUrl: null. Task 13 seeds must use deliberate
 -- unique sort_order values per product (enforced by the unique constraint above).
 
--- Editorial Eazy Score. Prefer one current row per product in MVP;
--- preserve history with is_current (or equivalent) rather than silent overwrite.
+-- Editorial Eazy Score: versioned rows with exactly one current assessment per
+-- product (partial unique index). Do not use overwrite-only storage for MVP.
 create table public.eazy_assessments (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,
@@ -686,12 +686,12 @@ Before scraping, confirm source permission, field fit, stable identifiers, and d
 2. Primary catalog image: **resolved** — `sort_order ASC`, then `created_at ASC`, then `id ASC`; unique `(product_id, sort_order)`; no images → `imageUrl: null`.
 3. Mixed-currency offers for Detail/Browse lowest price: **resolved for MVP** — Task 14 requires one currency per product offer payload (reject or omit mismatched offers); raw cross-currency numeric minimum is prohibited. Browse cards carry that selected currency as `lowestPriceCurrency` with `lowestPrice`. Conversion or per-currency grouping needs a later ADR.
 4. `private_note` maximum: **resolved** at 500 characters across the database check constraint, API contract, and connected Rate/Edit form (`maxLength` / validation in Task 16). Do not choose a different limit.
+5. Assessment history: **resolved** — versioned `eazy_assessments` with required `is_current boolean not null` and partial unique index `eazy_assessments_one_current_per_product`. Task 12 public reads and Task 14 adapters select only `is_current = true`. Overwrite-only storage is rejected for MVP (`docs/decisions/2026-07-25-versioned-eazy-assessments.md`).
 
 ## Unresolved decisions (decide in Task 11 planning; do not invent in code)
 
 1. Product profile: lookup table (recommended), enum, or checked text?
 2. Intended use: join table (recommended) vs validated array?
-3. Assessment history: versioned with one `is_current` (recommended) vs overwrite-only?
-4. Offers: current offer rows first (recommended); price snapshots later.
-5. Seed images: Storage upload vs keep mock-image resolution until catalog ingestion.
-6. Auth methods: email first (recommended) unless Apple is required for the next TestFlight.
+3. Offers: current offer rows first (recommended); price snapshots later.
+4. Seed images: Storage upload vs keep mock-image resolution until catalog ingestion.
+5. Auth methods: email first (recommended) unless Apple is required for the next TestFlight.
