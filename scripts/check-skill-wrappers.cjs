@@ -5,10 +5,13 @@
  * Checks:
  * - skills/manifest.json is the authoritative inventory (sorted unique names)
  * - canonical skills/ and both wrapper roots equal that manifest
- * - AGENTS.md Skill Index and docs/LOOP_ENGINEERING.md Loop Index Skill column
- *   list the same skill names as the manifest (Trigger cells must not carry paths)
+ * - each canonical skills/<name>/SKILL.md is a nonempty regular file with
+ *   a matching H1, Goal:, ## When to use, and ## Routine
+ * - AGENTS.md Skill Index inventory list line matches the manifest (not prose)
+ * - docs/LOOP_ENGINEERING.md Loop Index Skill column matches the manifest
+ *   (Trigger cells need visible instruction text, not HTML comments only)
  * - each wrapper has YAML front matter with non-empty string name and description
- * - each wrapper points at an existing canonical skills/<name>/SKILL.md
+ * - each wrapper targets exactly one canonical skills/<name>/SKILL.md path
  * - paired wrappers are byte-identical
  *
  * Usage: node scripts/check-skill-wrappers.cjs
@@ -30,6 +33,8 @@ const WRAPPER_ROOTS = [
 ];
 
 const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
+const CANONICAL_SKILL_PATH_RE = /^skills\/[a-z0-9]+(?:-[a-z0-9]+)*\/SKILL\.md$/;
+const REQUIRED_CANONICAL_SECTIONS = ['## When to use', '## Routine'];
 
 /** @type {string[]} */
 const errors = [];
@@ -47,8 +52,83 @@ function listSkillNames(dir) {
     .readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
-    .filter((name) => fs.existsSync(path.join(dir, name, 'SKILL.md')))
+    .filter((name) => {
+      const skillPath = path.join(dir, name, 'SKILL.md');
+      try {
+        return fs.statSync(skillPath).isFile();
+      } catch {
+        return false;
+      }
+    })
     .sort();
+}
+
+/**
+ * Normalize a skill heading or directory name for equality checks.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function normalizeSkillHeading(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+/**
+ * Require each canonical skill file to be a nonempty regular file with the
+ * shared operational skeleton agents rely on.
+ *
+ * @param {string[]} skillNames
+ */
+function validateCanonicalSkills(skillNames) {
+  for (const name of skillNames) {
+    const rel = `skills/${name}/SKILL.md`;
+    const abs = path.join(ROOT, rel);
+
+    let stat;
+    try {
+      stat = fs.statSync(abs);
+    } catch {
+      errors.push(`${rel}: missing canonical skill file`);
+      continue;
+    }
+    if (!stat.isFile()) {
+      errors.push(`${rel}: must be a regular file`);
+      continue;
+    }
+
+    const content = fs.readFileSync(abs, 'utf8');
+    if (content.trim() === '') {
+      errors.push(`${rel}: must be non-empty`);
+      continue;
+    }
+
+    const lines = content.split(/\r?\n/);
+    const h1Line = lines.find((line) => /^#\s+\S/.test(line.trim()));
+    if (!h1Line) {
+      errors.push(`${rel}: missing top-level \`#\` skill heading`);
+    } else {
+      const headingText = h1Line.trim().replace(/^#\s+/, '');
+      if (normalizeSkillHeading(headingText) !== normalizeSkillHeading(name)) {
+        errors.push(
+          `${rel}: top-level heading must match skill name "${name}" (got "${headingText}")`,
+        );
+      }
+    }
+
+    if (!/^Goal:\s*\S/m.test(content)) {
+      errors.push(`${rel}: missing \`Goal:\` line with non-empty text`);
+    }
+
+    for (const section of REQUIRED_CANONICAL_SECTIONS) {
+      const sectionRe = new RegExp(
+        `^${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
+        'm',
+      );
+      if (!sectionRe.test(content)) {
+        errors.push(`${rel}: missing required section \`${section}\``);
+      }
+    }
+  }
 }
 
 /**
@@ -221,14 +301,14 @@ function extractCodeSpanTokens(content) {
 }
 
 /**
- * Skill names listed in the AGENTS.md Skill Index paragraph (backtick tokens
- * that match known skill directory names, excluding path-style spans).
+ * Skill names from the AGENTS.md Skill Index **inventory list line** only
+ * (the nonempty line immediately after the “Loop routines live…” declaration).
+ * Explanatory prose later in the section must not satisfy the inventory check.
  *
  * @param {string} content
- * @param {string[]} manifestNames
  * @returns {string[]}
  */
-function extractAgentsIndexSkills(content, manifestNames) {
+function extractAgentsIndexSkills(content) {
   const sectionMatch = content.match(
     /## Skill Index\r?\n([\s\S]*?)(?=\r?\n## |\r?\n# |$)/,
   );
@@ -237,15 +317,46 @@ function extractAgentsIndexSkills(content, manifestNames) {
     return [];
   }
 
-  const allowed = new Set(manifestNames);
+  const lines = sectionMatch[1].split(/\r?\n/);
+  let declarationIndex = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    if (/Loop routines live in/.test(lines[index])) {
+      declarationIndex = index;
+      break;
+    }
+  }
+
+  if (declarationIndex === -1) {
+    errors.push(
+      'AGENTS.md Skill Index: missing “Loop routines live…” inventory declaration line',
+    );
+    return [];
+  }
+
+  /** @type {string | null} */
+  let inventoryLine = null;
+  for (let index = declarationIndex + 1; index < lines.length; index += 1) {
+    if (lines[index].trim() !== '') {
+      inventoryLine = lines[index];
+      break;
+    }
+  }
+
+  if (inventoryLine === null) {
+    errors.push(
+      'AGENTS.md Skill Index: missing inventory list line after the Loop routines declaration',
+    );
+    return [];
+  }
+
   /** @type {Set<string>} */
   const found = new Set();
-  for (const token of extractCodeSpanTokens(sectionMatch[1])) {
-    // Index lists bare kebab names (`feature-slice-builder`), not paths.
+  for (const token of extractCodeSpanTokens(inventoryLine)) {
+    // Inventory lists bare kebab names (`feature-slice-builder`), not paths.
     if (token.includes('/') || token.endsWith('.md')) {
       continue;
     }
-    if (allowed.has(token) || /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(token)) {
+    if (/^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(token)) {
       found.add(token);
     }
   }
@@ -263,6 +374,16 @@ function splitMarkdownTableCells(row) {
   const trimmed = row.trim();
   const withoutEdges = trimmed.replace(/^\|/, '').replace(/\|$/, '');
   return withoutEdges.split('|').map((cell) => cell.trim());
+}
+
+/**
+ * Visible trigger text after stripping HTML comments.
+ *
+ * @param {string} cell
+ * @returns {string}
+ */
+function visibleTriggerText(cell) {
+  return cell.replace(/<!--[\s\S]*?-->/g, '').trim();
 }
 
 /**
@@ -338,8 +459,9 @@ function extractLoopIndexSkills(content, manifestNames) {
     }
 
     const [triggerCell, skillCell] = cells;
-    if (triggerCell.trim() === '') {
-      errors.push(`${rowLabel}: Trigger cell must not be empty`);
+    const visibleTrigger = visibleTriggerText(triggerCell);
+    if (visibleTrigger === '') {
+      errors.push(`${rowLabel}: Trigger cell must contain visible instruction text`);
       continue;
     }
 
@@ -400,14 +522,19 @@ function validateWrapper(rootLabel, skillName, content) {
 
   const canonicalRel = `skills/${skillName}/SKILL.md`;
   const canonicalAbs = path.join(ROOT, canonicalRel);
-  if (!fs.existsSync(canonicalAbs)) {
+  try {
+    if (!fs.statSync(canonicalAbs).isFile()) {
+      errors.push(`${fileLabel}: canonical skill missing at ${canonicalRel}`);
+    }
+  } catch {
     errors.push(`${fileLabel}: canonical skill missing at ${canonicalRel}`);
   }
 
   const codeSpans = extractCodeSpanTokens(content);
-  if (!codeSpans.includes(canonicalRel)) {
+  const targets = codeSpans.filter((token) => CANONICAL_SKILL_PATH_RE.test(token));
+  if (targets.length !== 1 || targets[0] !== canonicalRel) {
     errors.push(
-      `${fileLabel}: must include an exact Markdown code span for canonical path \`${canonicalRel}\``,
+      `${fileLabel}: must target exactly \`${canonicalRel}\` and no other canonical skill`,
     );
   }
 }
@@ -418,16 +545,15 @@ function main() {
     errors.push('skill manifest `skills` array must not be empty');
   }
 
+  validateCanonicalSkills(manifestNames);
+
   const canonicalNames = listSkillNames(CANONICAL_DIR);
   assertSameSet('skills/manifest.json', manifestNames, 'skills/', canonicalNames);
 
   if (!fs.existsSync(AGENTS_FILE)) {
     errors.push('AGENTS.md is missing');
   } else {
-    const agentsNames = extractAgentsIndexSkills(
-      fs.readFileSync(AGENTS_FILE, 'utf8'),
-      manifestNames,
-    );
+    const agentsNames = extractAgentsIndexSkills(fs.readFileSync(AGENTS_FILE, 'utf8'));
     assertSameSet('skills/manifest.json', manifestNames, 'AGENTS.md Skill Index', agentsNames);
   }
 
