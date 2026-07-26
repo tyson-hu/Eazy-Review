@@ -39,7 +39,7 @@ export type ProductRatingSummary = {
   outfitAvg: number | null;
   valueAvg: number | null;
   overallAvg: number | null;
-  /** Community aggregate; maps from DB rating_summaries.score. */
+  /** Community aggregate; maps from DB rating_aggregates.score. */
   communityScore: number | null;
 };
 
@@ -62,6 +62,50 @@ export type ProductDetailData = {
   myRating: RatingBreakdown | null;
 };
 ```
+
+## Task 11–12 Backend Contract
+
+Tasks 11–12 establish database and authorization contracts only. They do not
+replace mock repositories, rename the current mock `comment` field in UI code,
+add auth screens, or connect rating writes.
+
+| Database contract | Frontend / API meaning |
+| --- | --- |
+| `products.is_published` | Anonymous Browse/Detail adapters must eventually select published products only; Tasks 11–12 add no runtime adapter |
+| Current `eazy_assessments` row | Future source for `Product.eazyScore`; select `is_current = true` |
+| `rating_aggregates` | Future source for `ProductRatingSummary` and Community Score; clients never calculate or write it |
+| `user_ratings.private_note` | Future Task 16 `privateNote`; maximum 500 characters and owner-only |
+| Immutable `user_ratings.product_id` / `user_id` | Identity is set on insert and cannot appear in a client update |
+| `product_offers.size_region` / `currency` | Required strings; MVP database allowlists are `US` and `USD` |
+| `product_offers.size` / `price` | `null` means unavailable/unsized; otherwise finite and non-negative |
+
+Task 11 enables RLS while leaving client policies and `PUBLIC` / `anon` /
+`authenticated` grants absent. Task 12 adds policies first, revokes inherited
+table-wide privileges from all three roles, then grants the least-privilege
+Data API allowlist in `docs/DATA_MODEL.md`. Effective privilege tests must
+include access inherited through `PUBLIC`. A successful policy test does not
+prove the required grant exists, and a grant does not replace a row policy.
+
+`rating_aggregates` stores the arithmetic mean of each 1–10 rating category
+rounded to two decimal places. `score` maps to Community Score and is
+`round(avg(overall) * 10)` from the unrounded overall mean. A zero-count row has
+null category averages, `overall_avg`, and `score`.
+
+The privileged trigger boundary is explicit: `handle_new_user` inserts the
+profile for a new auth user, and `handle_user_rating_change` owns aggregate
+writes. Both are trigger-only `SECURITY DEFINER` functions with an empty search
+path, fully qualified relations, and client execution revoked. Trusted
+`service_role` access is server-only and must be positively tested against its
+exact allowlist; its secret never enters Expo.
+
+Raw `user_ratings` rows are not a public review API while `private_note` shares
+the row. Community surfaces read `rating_aggregates`; My Rating reads only the
+authenticated owner's row.
+
+Task 12 intentionally grants rating `UPDATE` only for score columns and
+`private_note`. The later persistence implementation must use a write pattern
+compatible with immutable identity rather than assuming table-wide identity
+updates are available.
 
 ### Canonical Product Detail field sources
 

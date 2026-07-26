@@ -7,7 +7,7 @@
 3. Confirm `docs/DATA_MODEL.md`.
 4. Set up `AGENTS.md`.
 5. Set up `.cursor/rules`.
-6. Set up Supabase local/dev project.
+6. Set up local + staging Supabase through Tasks 11–12.
 
 All phases follow the doc-update gate in `docs/DOCUMENTATION_POLICY.md`.
 
@@ -31,12 +31,17 @@ All phases follow the doc-update gate in `docs/DOCUMENTATION_POLICY.md`.
 
 ## Phase 4: Real Data
 
-1. Supabase product table.
-2. User rating table.
-3. User profile table.
-4. Product query hooks.
-5. Rating submission mutation.
-6. Feed/search queries.
+1. **Task 11** — environments and deny-by-default core schema.
+2. **Task 12** — policies, explicit Data API grants, authorization tests.
+3. **Task 13** — small product seed.
+4. **Task 14** — real Browse and Product Detail reads.
+5. **Task 15** — authentication.
+6. **Task 16** — My Rating persistence and Rated Products.
+7. **Task 17** — server-owned aggregate verification/hardening.
+8. **Task 18** — TanStack Query and cache invalidation.
+
+Task detail and acceptance live in `docs/TASKS.md`. Do not connect UI before
+Task 14 or place auth before real catalog reads.
 
 ## Phase 5: Social Layer
 
@@ -88,55 +93,45 @@ Acceptance:
 - UI flow feels understandable.
 - Docs and tasks reflect any route/component/type decisions made during the mock flow.
 
-### Milestone 3: Supabase Setup
+### Milestone 3: Supabase Security Foundation (Tasks 11–12)
 
 Deliverables:
-- Supabase project created.
-- Tables created.
-- RLS policies added.
-- Seed product data added.
+- Local + staging environments.
+- Task 11 core schema migration with RLS enabled, inherited client privileges
+  revoked, and no positive client grants.
+- Separate Task 12 policies/grants migration plus authorization tests.
 
 Acceptance:
-- Products can be read publicly.
-- User ratings can only be changed by the owner.
-- Data model, API contracts, tasks, and decisions are current.
+- Published catalog access and owner-only private rating access pass the
+  `docs/DATA_MODEL.md` scenarios.
+- No production project is touched and no service-role key enters Expo.
 
-### Milestone 4: Auth
+### Milestone 4: Real Product Data (Tasks 13–14)
 
 Deliverables:
-- Sign up.
-- Sign in.
-- Sign out.
-- Session persistence.
-- Auth-aware Account screen.
+- Small trusted seed.
+- Browse and Product Detail read published Supabase rows.
 
 Acceptance:
-- Logged-out user can browse.
-- Logged-out user must sign in to rate.
-- Logged-in user can access rating form.
+- Connected catalog browsing no longer requires mock product reads.
 
-### Milestone 5: Real Product Data
+### Milestone 5: Auth (Task 15)
 
 Deliverables:
-- Browse fetches Supabase products.
-- Product detail fetches Supabase product.
-- Product card shows real score and price data.
+- Sign up, sign in, sign out, session persistence, and auth-aware Account.
 
 Acceptance:
-- No mock data needed for product browsing.
+- Logged-out browsing stays public; rating requires login.
 
-### Milestone 6: Real Rating System
+### Milestone 6: Real Rating System (Tasks 16–18)
 
 Deliverables:
-- User can submit rating.
-- User can edit rating.
-- Rating summary recalculates.
-- Product detail refreshes after rating.
-- Rated Products screen works.
+- My Rating persistence and Rated Products.
+- Server-owned aggregate verification.
+- Query caching and invalidation.
 
 Acceptance:
-- Community Score changes after user rating.
-- User cannot create duplicate ratings for the same product.
+- One owner-only rating per user/product and trusted Community Score refresh.
 
 ### Milestone 7: Feed
 
