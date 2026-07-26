@@ -264,6 +264,19 @@ test('generator rejects canonical inventory drift without parsing skill prose', 
   );
 });
 
+test('generator rejects an empty canonical skill without parsing its structure', (t) => {
+  const repoRoot = createFixture(t);
+  fs.writeFileSync(
+    path.join(repoRoot, 'skills', 'alpha-skill', 'SKILL.md'),
+    ' \n',
+  );
+
+  assert.throws(
+    () => runGenerator({ repoRoot }),
+    /Canonical skill file must not be empty: skills\/alpha-skill\/SKILL\.md/,
+  );
+});
+
 test('generator refuses to delete unexpected files from wrapper directories', (t) => {
   const repoRoot = createFixture(t);
   const staleDirectory = path.join(

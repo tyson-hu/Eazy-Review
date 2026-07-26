@@ -128,6 +128,9 @@ function validateCanonicalInventory(repoRoot, skills) {
     if (!fs.statSync(canonicalPath, { throwIfNoEntry: false })?.isFile()) {
       throw new Error(`Missing canonical skill file: skills/${name}/SKILL.md`);
     }
+    if (fs.readFileSync(canonicalPath, 'utf8').trim().length === 0) {
+      throw new Error(`Canonical skill file must not be empty: skills/${name}/SKILL.md`);
+    }
   }
 }
 
