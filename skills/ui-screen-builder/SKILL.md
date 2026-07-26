@@ -47,7 +47,7 @@ Goal: build or redesign one Expo / React Native screen's UI following the Eazy R
 ## Memory step
 
 - Update `docs/TASKS.md` if the screen work completes or advances a listed task.
-- Add a `docs/DECISIONS.md` entry only if a component or visual-system decision was made.
+- Add or update a `docs/decisions/*.md` record only if the work introduced a durable high-impact component or visual-system decision under `docs/decisions/README.md`; regenerate the index.
 
 ## Common mistakes
 

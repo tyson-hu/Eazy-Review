@@ -19,6 +19,7 @@ Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase,
 
 - Work one task at a time; keep changes scoped to the requested task.
 - Start each session: `git status --short` -> current task in `docs/TASKS.md` -> pick a skill.
+- Use the generated `docs/DECISIONS.md` index to find the current task or area, then open only the linked decision records; use the legacy archive only for historical reasoning.
 - Do not redesign product flows unless explicitly asked.
 - Do not add unrelated dependencies.
 - Prefer existing project patterns; keep reusable UI components small.
@@ -50,13 +51,15 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 ## Validation
 
 - `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
-- `npm run check` (routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency changes or before handoff.
+- `npm run decisions:check` after decision-record or decision-index tooling edits (also part of `npm run check`).
+- `npm run check` (decision index, routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency changes or before handoff.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
 - `expo-doctor` / `expo install --check` (and thus the Expo tail of `npm run check`) must run **outside the agent sandbox** — sandboxed runs can false-pass doctor or `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation Commands → Expo doctor and dependency checks — agent sandbox.
 
 ## Pointers
 
 - Docs are part of the change: apply the gate in `docs/DOCUMENTATION_POLICY.md` before commit, PR handoff, or reporting completion.
+- Decision recording rules and the ADR template: `docs/decisions/README.md` (the `docs/DECISIONS.md` index is generated).
 - Delegation policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy. Active and conditionally available project subagents live in `.cursor/agents/`; role status, invocation boundaries, and the execution sequence live in `docs/AGENT_WORKFLOW.md`.
 - Security rules: `docs/SECURITY.md`
 - Session flow, definition of done, handoff and PR formats: `docs/AGENT_WORKFLOW.md`

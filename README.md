@@ -20,7 +20,8 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 - `docs/TASKS.md`: current implementation task order.
 - `docs/MCP_WORKFLOW.md`: coding-agent, Stitch, and MCP workflow rules.
 - `docs/STITCH_PROMPTS.md`: reusable UI exploration prompts.
-- `docs/DECISIONS.md`: project decision log.
+- `docs/DECISIONS.md`: generated index of current high-impact decisions.
+- `docs/decisions/`: human-authored ADR-style records, recording rules, and the legacy archive.
 - `docs/RELEASE_CHECKLIST.md`: release-readiness checklist.
 
 ## Stack Direction
@@ -38,6 +39,7 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 ## Quality Checks
 
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
+Decision records use `npm run decisions:build` and `npm run decisions:check`.
 
 ## Documentation Discipline
 
