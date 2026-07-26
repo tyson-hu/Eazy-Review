@@ -16,11 +16,12 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 14, 16, 17 | 2026-07-25 |
 | Data and Supabase | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Accepted | 11, 12, 14 | 2026-07-25 |
 | Data and Supabase | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Accepted | 11, 12, 13, 14, 15, 16, 17, 18 | 2026-07-24 |
+| Authentication and security | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | 15 | 2026-07-26 |
 | Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-25 |
 | Authentication and security | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Accepted | 11, 12, 15 | 2026-07-25 |
-| Authentication and security | [Forbid coding-agent access to the production database](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | — | 2026-07-24 |
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
+| Agent workflow | [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) | Accepted | — | 2026-07-26 |
 | Agent workflow | [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) | Accepted | — | 2026-07-25 |
 | Agent workflow | [Bound delegated writes and keep review independent](decisions/2026-07-12-bounded-delegation-with-independent-checks.md) | Accepted | — | 2026-07-12 |
 | Agent workflow | [Persist session boundaries and stalled debugging in files](decisions/2026-07-03-persist-session-and-blocker-state.md) | Accepted | — | 2026-07-03 |
@@ -31,16 +32,16 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) | Agent workflow | Accepted | 2026-07-26 |
+| [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-26 |
 | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-25 |
 | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-07-25 |
 | [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) | Agent workflow | Accepted | 2026-07-25 |
 | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Data and Supabase | Accepted | 2026-07-25 |
 | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Authentication and security | Accepted | 2026-07-25 |
 | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Data and Supabase | Accepted | 2026-07-25 |
-| [Forbid coding-agent access to the production database](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-24 |
 | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Data and Supabase | Accepted | 2026-07-24 |
 | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Tooling and CI | Accepted | 2026-07-19 |
-| [Separate visual style language from product UX rules](decisions/2026-07-19-separate-style-language-from-product-ux.md) | Product and UX | Accepted | 2026-07-19 |
 
 ## Browse by area
 
@@ -58,9 +59,9 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Authentication and security
 
+- [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) — Accepted; Tasks 15.
 - [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) — Accepted; Tasks 11, 12.
 - [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) — Accepted; Tasks 11, 12, 15.
-- [Forbid coding-agent access to the production database](decisions/2026-07-24-forbid-agent-production-database-access.md) — Accepted.
 - [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) — Accepted.
 
 ### Architecture
@@ -73,6 +74,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Agent workflow
 
+- [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) — Accepted.
 - [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) — Accepted.
 - [Bound delegated writes and keep review independent](decisions/2026-07-12-bounded-delegation-with-independent-checks.md) — Accepted.
 - [Persist session boundaries and stalled debugging in files](decisions/2026-07-03-persist-session-and-blocker-state.md) — Accepted.
