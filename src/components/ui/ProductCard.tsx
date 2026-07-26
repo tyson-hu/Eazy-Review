@@ -4,6 +4,7 @@ import { AppText } from '@/src/components/ui/AppText';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import { resolveProductImageSource } from '@/src/features/products/mockProductImages';
 import type { ProductCardData } from '@/src/types/product';
+import { formatPrice } from '@/src/utils/formatPrice';
 
 type ProductCardProps = {
   product: ProductCardData;
@@ -69,7 +70,9 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
       <View className="mt-5 flex-row items-center justify-between">
         <AppText variant="caption">Lowest price</AppText>
         <AppText className="text-lg font-semibold">
-          {product.lowestPrice == null ? '—' : `$${product.lowestPrice}`}
+          {product.lowestPrice == null || product.lowestPriceCurrency == null
+            ? '—'
+            : formatPrice(product.lowestPrice, product.lowestPriceCurrency)}
         </AppText>
       </View>
     </Pressable>

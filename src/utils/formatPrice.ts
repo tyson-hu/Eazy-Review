@@ -1,6 +1,7 @@
 /**
- * Currency-aware price display for Product Detail offers and lowest-price summary.
- * Whole amounts omit cents; non-integers always show 2 fraction digits (never rounds away cents).
+ * Currency-aware price display for Browse cards, Product Detail offers, and
+ * lowest-price summaries. Whole amounts omit cents; non-integers always show
+ * 2 fraction digits (never rounds away cents).
  */
 export function formatPrice(amount: number, currency = 'USD'): string {
   const fractionDigits = Number.isInteger(amount) ? 0 : 2;
