@@ -5,9 +5,23 @@ alwaysApply: true
 
 The canonical MCP policy lives in `docs/MCP_WORKFLOW.md`, MCP Tool Policy. Classify every MCP action before calling it:
 
-- **READ** — may run without approval (inspect schema, search files, read PRs).
+- **READ** — may run without approval (inspect a local/approved staging schema,
+  search files, read PRs).
 - **REVERSIBLE WRITE** — state the target and intended change before executing (create a branch, update a draft, modify a local or approved staging development record).
-- **HIGH IMPACT** — explicit user approval required (deploy, non-account delete, credential change, force push, destructive local/staging migration, mass update on local/staging).
-- **FORBIDDEN** — never perform, even with chat approval (account deletion on any environment — local, staging, or production; production database access, production writes, production migrations, production credentials for agents).
+- **HIGH IMPACT** — explicit user approval required (application or service
+  deploy, non-account deletion outside a production database, credential
+  changes outside a production database, force push, destructive
+  local/approved staging migration, mass update on local/approved staging).
+- **FORBIDDEN** — never perform, even with chat approval (account deletion on
+  any environment — local, staging, or production; production database reads,
+  including schema inspection, writes, drops, deletes, migrations, or
+  credentials).
 
-Standing principles: read before write; use the narrowest tool available, never a broader one when a narrower exists; never silently switch from a development target to a production target; never treat production DB work or account deletion as approvable; never expose credential values (`docs/SECURITY.md`).
+Standing principles: read before write; use the narrowest tool available, never
+a broader one when a narrower exists; never silently switch from a development
+target to a production target; never treat production DB work or agent-executed
+account deletion as approvable; never expose credential values
+(`docs/SECURITY.md`). Agents may implement and non-destructively validate the
+protected account-deletion flow and prepare a checklist, but an actual deletion
+must be initiated and executed manually by a human, never through an
+agent-controlled browser, MCP, SQL, or admin tool.

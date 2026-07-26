@@ -46,7 +46,8 @@ When any budget is exhausted, stop and return a structured report to the parent 
 - Do not implement schema, migration, authentication, security-sensitive, production infrastructure, or destructive data changes — return them to the parent for strong-tier handling, even when encountered inside a broader task and even if the edit scope includes the files.
 - No commit, push, merge, branch changes, or PR updates.
 - Dependency or lockfile changes only when the packet explicitly scopes them with exact packages, the reason, lockfile permission, dependency validation commands, and prior parent approval.
-- No destructive or HIGH IMPACT MCP actions (`docs/MCP_WORKFLOW.md`).
+- No destructive, HIGH IMPACT, or FORBIDDEN MCP actions
+  (`docs/MCP_WORKFLOW.md`).
 - UI naming is exactly `Eazy Score`, `Community Score`, and `My Rating` wherever shown.
 - Security hard lines (`docs/SECURITY.md`): no remote pipe-to-shell, no destructive commands, never print or expose secret values.
 - Never declare your own work accepted.

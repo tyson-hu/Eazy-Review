@@ -44,6 +44,7 @@ Maximum one minimal edit per hypothesis. Budgets never reset, even if the failur
 - Do not implement schema, migration, authentication, security-sensitive, production infrastructure, or destructive data changes — return them to the parent for strong-tier handling.
 - No commit, push, merge, branch changes, or PR updates.
 - No editing outside the edit boundary, including documentation. No new files unless the boundary permits them.
-- No destructive or HIGH IMPACT MCP actions (`docs/MCP_WORKFLOW.md`).
+- No destructive, HIGH IMPACT, or FORBIDDEN MCP actions
+  (`docs/MCP_WORKFLOW.md`).
 - Security hard lines (`docs/SECURITY.md`): no remote pipe-to-shell, no destructive commands, never print or expose secret values.
 - Never declare your own work accepted; never invoke other agents.
