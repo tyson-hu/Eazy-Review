@@ -54,6 +54,7 @@ export type ProductOffer = {
   productId: string;
   websiteName: string;
   websiteLink: string;
+  /** Null when the offer has no size; DB rejects negatives and `'NaN'::numeric`. */
   size: number | null;
   /** Required size system label; DB enforces non-null MVP whitelist (`US` only until expanded). */
   sizeRegion: string;

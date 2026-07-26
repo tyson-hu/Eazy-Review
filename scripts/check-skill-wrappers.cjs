@@ -9,7 +9,8 @@
  *   a matching H1, Goal:, ## When to use, and ## Routine
  * - AGENTS.md Skill Index inventory list line matches the manifest (not prose)
  * - docs/LOOP_ENGINEERING.md Loop Index Skill column matches the manifest
- *   (Trigger cells need visible instruction text, not HTML comments only)
+ *   (Trigger cells need visible instruction text; closed HTML comments only —
+ *   unmatched <!-- / --> delimiters are rejected; not HTML comments alone)
  * - each wrapper has YAML front matter with non-empty string name and description
  * - each wrapper targets exactly one canonical skills/<name>/SKILL.md path
  * - paired wrappers are byte-identical
@@ -378,11 +379,17 @@ function splitMarkdownTableCells(row) {
 
 /**
  * Visible trigger text after stripping HTML comments.
+ * Returns `null` when `<!--` / `-->` delimiters are unmatched (malformed).
  *
  * @param {string} cell
- * @returns {string}
+ * @returns {string | null}
  */
 function visibleTriggerText(cell) {
+  const opens = (cell.match(/<!--/g) ?? []).length;
+  const closes = (cell.match(/-->/g) ?? []).length;
+  if (opens !== closes) {
+    return null;
+  }
   return cell.replace(/<!--[\s\S]*?-->/g, '').trim();
 }
 
@@ -460,6 +467,10 @@ function extractLoopIndexSkills(content, manifestNames) {
 
     const [triggerCell, skillCell] = cells;
     const visibleTrigger = visibleTriggerText(triggerCell);
+    if (visibleTrigger === null) {
+      errors.push(`${rowLabel}: Trigger cell has unmatched HTML comment delimiters`);
+      continue;
+    }
     if (visibleTrigger === '') {
       errors.push(`${rowLabel}: Trigger cell must contain visible instruction text`);
       continue;

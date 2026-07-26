@@ -22,7 +22,7 @@ Task sequencing: `docs/TASKS.md` Tasks 11–18. Do not implement schema assumpti
 - `eazy_assessments`: app-builder Eazy Score (editorial); prefer versioned rows with one current/active assessment.
 - `user_ratings`: one rating per user per product (scores + `private_note`); `product_id` and `user_id` immutable after insert.
 - `rating_aggregates`: calculated Community Score data (server-owned; clients must not write or execute refresh RPCs).
-- `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked). `price` may be null (unavailable) but never negative and never `'NaN'::numeric`. `currency` is `not null` with default `'USD'` and an MVP whitelist check (`currency in ('USD')`); expand the check deliberately when more ISO 4217 codes are supported. `size_region` is `not null` with default `'US'` and an MVP whitelist check (`size_region in ('US')`); expand when UK/EU/JP (or other) sizing systems ship. Seed/import must trim and uppercase accepted `currency` / `size_region` input before insert — an explicit `NULL` or empty/invalid value must not bypass the defaults into a row that Task 14 would render as misleading fallback text (for example `null 10`).
+- `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked). `price` may be null (unavailable) but never negative and never `'NaN'::numeric`. `size` may be null (no size on the offer) but never negative and never `'NaN'::numeric`. `currency` is `not null` with default `'USD'` and an MVP whitelist check (`currency in ('USD')`); expand the check deliberately when more ISO 4217 codes are supported. `size_region` is `not null` with default `'US'` and an MVP whitelist check (`size_region in ('US')`); expand when UK/EU/JP (or other) sizing systems ship. Seed/import must trim and uppercase accepted `currency` / `size_region` input before insert — an explicit `NULL` or empty/invalid value must not bypass the defaults into a row that Task 14 would render as misleading fallback text (for example `null 10` or `US -1`).
 
 Lookup / join tables (recommended defaults; decide in Task 11 planning if deferred one packet):
 
@@ -196,7 +196,14 @@ create table public.product_offers (
   product_id uuid not null references public.products(id) on delete cascade,
   website_name text not null,
   website_link text not null,
-  size numeric(4,1),
+  size numeric(4,1)
+    check (
+      size is null
+      or (
+        size >= 0
+        and size <> 'NaN'::numeric
+      )
+    ),
   size_region text not null default 'US'
     check (size_region in ('US')),
   currency text not null default 'USD'
