@@ -6,7 +6,7 @@
  * - skills/manifest.json is the authoritative inventory (sorted unique names)
  * - canonical skills/ and both wrapper roots equal that manifest
  * - each canonical skills/<name>/SKILL.md is a nonempty regular file with
- *   a matching H1, Goal:, ## When to use, and ## Routine
+ *   a matching H1, Goal:, and substantive ## When to use / ## Routine bodies
  * - AGENTS.md Skill Index inventory list line matches the manifest (not prose)
  * - docs/LOOP_ENGINEERING.md Loop Index Skill column matches the manifest
  *   (Trigger cells need visible instruction text; closed HTML comments only —
@@ -75,6 +75,84 @@ function normalizeSkillHeading(value) {
 }
 
 /**
+ * Body text under an exact H2 until the next H1/H2 (exclusive).
+ *
+ * @param {string} content
+ * @param {string} heading
+ * @returns {string | null}
+ */
+function extractSectionBody(content, heading) {
+  const lines = content.split(/\r?\n/);
+  let start = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    if (lines[index].trim() === heading) {
+      start = index + 1;
+      break;
+    }
+  }
+  if (start === -1) {
+    return null;
+  }
+
+  /** @type {string[]} */
+  const bodyLines = [];
+  for (let index = start; index < lines.length; index += 1) {
+    if (/^#{1,2}\s/.test(lines[index].trim())) {
+      break;
+    }
+    bodyLines.push(lines[index]);
+  }
+  return bodyLines.join('\n');
+}
+
+/**
+ * True when a skill-section line still has visible instructional text after
+ * stripping empty Markdown/HTML structures.
+ *
+ * @param {string} line
+ * @returns {boolean}
+ */
+function hasVisibleSkillSectionLine(line) {
+  let content = line.trim();
+  if (content === '') {
+    return false;
+  }
+  if (/^#{1,6}\s/.test(content)) {
+    return false;
+  }
+  content = content.replace(/^(?:>\s*)+/, '').trim();
+  if (content === '') {
+    return false;
+  }
+  if (/^(?:\*\s*){3,}$|^(?:-\s*){3,}$|^(?:_\s*){3,}$/.test(content)) {
+    return false;
+  }
+  content = content.replace(/^(?:[-+*]|\d+[.)])\s*/, '');
+  content = content.replace(/^\[[ xX]\]\s*/, '').trim();
+  if (content === '') {
+    return false;
+  }
+  content = content.replace(/<[^>]*>/g, '').trim();
+  return content !== '';
+}
+
+/**
+ * Require at least one substantive visible line in a section body.
+ *
+ * @param {string} body
+ * @returns {boolean}
+ */
+function sectionHasVisibleContent(body) {
+  const withoutComments = body.replace(/<!--[\s\S]*?-->/g, '');
+  for (const line of withoutComments.split(/\r?\n/)) {
+    if (hasVisibleSkillSectionLine(line)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Require each canonical skill file to be a nonempty regular file with the
  * shared operational skeleton agents rely on.
  *
@@ -121,12 +199,15 @@ function validateCanonicalSkills(skillNames) {
     }
 
     for (const section of REQUIRED_CANONICAL_SECTIONS) {
-      const sectionRe = new RegExp(
-        `^${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
-        'm',
-      );
-      if (!sectionRe.test(content)) {
+      const body = extractSectionBody(content, section);
+      if (body === null) {
         errors.push(`${rel}: missing required section \`${section}\``);
+        continue;
+      }
+      if (!sectionHasVisibleContent(body)) {
+        errors.push(
+          `${rel}: section \`${section}\` must contain substantive visible content`,
+        );
       }
     }
   }

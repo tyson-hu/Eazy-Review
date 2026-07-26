@@ -298,10 +298,11 @@ function forEachUnfencedLine(body, onVisibleUnfencedLine) {
 /**
  * True when a Markdown line still has visible text after stripping empty
  * structural markers (headings, thematic breaks, bare list/blockquote/task
- * markers, and link-reference definitions).
+ * markers, raw HTML tags with no remaining text, and link-reference
+ * definitions).
  *
  * Empty structures such as `-`, `>`, `1.`, `> -`, `- [ ]`, thematic breaks
- * (`---`, `***`, `___`, `* * *`), and
+ * (`---`, `***`, `___`, `* * *`), raw HTML like `<div></div>` / `<br>`, and
  * `[label]: https://example.invalid` must not count as substantive section
  * content.
  *
@@ -338,6 +339,11 @@ function hasVisibleMarkdownContent(line) {
   }
   // Link-reference definitions render no visible section body.
   if (/^\s{0,3}\[[^\]]+\]:\s*(?:\S+|<[^>]+>)(?:\s+["'(].*["')])?\s*$/.test(content)) {
+    return false;
+  }
+  // Raw HTML with no remaining text is not substantive (e.g. `<div></div>`).
+  content = content.replace(/<[^>]*>/g, '').trim();
+  if (content === '') {
     return false;
   }
   return true;
