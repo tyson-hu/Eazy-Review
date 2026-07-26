@@ -8,12 +8,15 @@ globs:
   - "src/features/**/*.tsx"
 ---
 
-Schema, RLS, and triggers are defined in `docs/DATA_MODEL.md`; do not change schema without updating it.
+Route Supabase work to the canonical sources instead of repeating schema or
+policy defaults here:
 
-Rules:
-- Use relational Supabase tables; do not create one giant product JSON object.
-- RLS defaults: products, images, offers, Eazy Scores, and rating summaries are publicly readable; users can only insert/update/delete their own `user_ratings` rows.
-- Trusted Community Score recalculation happens in a database trigger/function or server-side logic, never only on the client.
-- Never expose service-role keys in client code.
+- Current task and sequencing: `docs/TASKS.md`.
+- Tables, constraints, functions, RLS, and Data API grants:
+  `docs/DATA_MODEL.md`.
+- Frontend/backend field mappings: `docs/API_CONTRACTS.md`.
+- Environment, secret, and production boundaries: `docs/SECURITY.md`.
+- Execution routine: `skills/supabase-schema-change/SKILL.md`.
 
-Schema, RLS, migration, and contract work follows the routine in `skills/supabase-schema-change/SKILL.md`.
+Do not invent or copy a second SQL contract into this rule. Never expose a
+service-role key in client code.

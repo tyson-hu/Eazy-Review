@@ -691,3 +691,80 @@ Safety-risk:
 
 Related files:
 - `package.json`, `package-lock.json`, `docs/DECISIONS.md`, `docs/TASKS.md`
+
+## 2026-07-25 — Split Supabase Schema And Authorization Migrations
+
+What changed:
+- Task 11 creates the core schema with RLS enabled, no client policies,
+  inherited `anon` / `authenticated` privileges revoked, and no positive
+  client grants.
+- Task 12 is a separate forward-only migration that creates complete policies,
+  revokes inherited broad privileges, rebuilds explicit least-privilege Data
+  API grants, and proves the authorization matrix.
+
+Why:
+- Data API grants and RLS protect different layers. Separating the migrations
+  prevents a new table from becoming client-reachable before its policies are
+  present and reviewable.
+
+Effect:
+- Task 11 remains deny-by-default. Published catalog and owner-only rating
+  access become available only after Task 12 policies and grants both pass.
+
+Safety-risk:
+- Planning only. No Supabase project, migration, schema, or runtime client was
+  created or changed by this decision.
+
+Related files:
+- `docs/TASKS.md`, `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`,
+  `docs/SECURITY.md`
+
+## 2026-07-25 — Separate Versioned Eazy Assessments From Community Aggregates
+
+What changed:
+- Editorial scoring uses versioned `eazy_assessments` rows with at most one
+  `is_current = true` row per product.
+- Community scoring uses server-owned `rating_aggregates`, refreshed by the
+  Task 11 trigger path and never written by clients.
+
+Why:
+- Editorial methodology/history and community evidence have different owners,
+  lifecycles, and trust boundaries. The earlier names `official_ratings` and
+  `product_rating_summary` obscured that distinction.
+
+Effect:
+- UI vocabulary stays `Eazy Score` and `Community Score`; implementation and
+  contracts use the clearer relational names.
+- This supersedes the 2026-06-28 allowance for the internal
+  `official_ratings` name.
+
+Safety-risk:
+- Planning only. Aggregate SQL must be locally tested for concurrency,
+  last-rating removal, and product-delete cascades before implementation is
+  called complete.
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`
+
+## 2026-07-25 — Keep My Rating Notes Owner-Only
+
+What changed:
+- The connected database field is `user_ratings.private_note`, optional and
+  capped at 500 characters.
+- Raw `user_ratings` rows are owner-only; public Community Score reads come
+  from `rating_aggregates`.
+
+Why:
+- The optional text belongs to My Rating and is not a public review. Keeping it
+  on an owner-only row prevents accidental disclosure through community reads.
+
+Effect:
+- Task 12 grants/policies expose only a user's own rating. Task 16 owns the
+  frontend rename from the current mock `comment` field to `privateNote`.
+
+Safety-risk:
+- Public written reviews remain out of MVP scope. This decision adds no UI or
+  runtime behavior in Tasks 11–12.
+
+Related files:
+- `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`

@@ -245,15 +245,126 @@ Flow used per task: parent implements -> `reviewer` spec review -> parent applie
 - **Did either subagent trigger at inappropriate times?** No. Both ran only when explicitly delegated at the pilot's defined points.
 - **Fix-cycle note:** the reviewer-fix-verify sequence surfaced one avoidable loop — the reviewer's accepted retry-timer fix introduced the lint error the verifier then caught. One extra parent fix pass resolved it; within the one-review-fix-pass budget, but worth watching.
 
-## Supabase Tasks
+## Supabase Tasks (post Task 10)
 
-Do not start until mock UX flow works:
-- Create Supabase project.
-- Add schema migrations.
-- Add RLS policies.
-- Seed products.
-- Add Supabase Auth.
-- Add product and rating queries.
-- Add TanStack Query.
-- Replace mock product browsing with Supabase data.
-- Replace fake rating flow with real rating mutations.
+Mock UX is **GO**. Work these as small sequential milestones, not one large “add
+Supabase” task. `docs/DATA_MODEL.md` is the canonical schema and authorization
+contract. Task 11 and Task 12 must use separate forward-only migrations.
+
+### Task 11: Environments And Core Schema
+
+Status: Pending — next.
+
+Goal: create local and staging Supabase environments plus the smallest secure
+core schema. Do not connect the mobile UI, seed the full catalog, or touch a
+production project.
+
+Deliverables:
+
+- Committed local Supabase configuration and a separate staging target.
+- A versioned migration for `profiles`, `products`, `product_images`,
+  `eazy_assessments`, `user_ratings`, `rating_aggregates`, and
+  `product_offers`.
+- Required constraints from `docs/DATA_MODEL.md`, including:
+  `products.is_published`; versioned Eazy assessments with one current row per
+  product; one rating per user/product; immutable rating identity; owner-only
+  `private_note` capped at 500 characters; deterministic image order; and
+  non-negative, finite offer sizes/prices with MVP `US` / `USD` checks.
+- RLS enabled on every exposed table in the same migration as table creation.
+  The migration explicitly revokes any inherited `anon` / `authenticated`
+  table privileges, then adds no client policies or positive client grants.
+- Trigger-owned Community Score aggregation, the `auth.users` → `profiles`
+  creation trigger, immutable rating identity, and server-maintained
+  timestamps.
+- Any `SECURITY DEFINER` helper uses `SET search_path = ''`, fully qualified
+  relations, and explicit `REVOKE EXECUTE` from `PUBLIC`, `anon`, and
+  `authenticated` when it is trigger-only.
+- Expo configuration accepts only the project URL and publishable/legacy anon
+  key; no secret or service-role key enters the mobile bundle.
+- Secret scanning is wired into the foundation workstream and fails on a safe
+  deliberate test pattern.
+
+Acceptance:
+
+- Local reset succeeds from committed migrations; staging is the only remote
+  environment used; no production project is accessed.
+- Every exposed table has RLS enabled and client roles still have no policies
+  or table privileges.
+- An auth-user insert creates exactly one matching profile row.
+- Aggregate behavior is locally tested for rating insert/update/delete, last
+  rating removal, concurrent writes to one product, and product deletion.
+  Product deletion must complete without recreating a zero-count aggregate row
+  for the deleting/deleted parent or failing its FK cascade.
+- New products have a joinable zero-count aggregate row.
+- Aggregate/profile helpers are not callable by `PUBLIC`, `anon`, or
+  `authenticated`.
+- No Browse, Detail, Rating, auth-screen, full-seed, or TanStack Query work is
+  included.
+
+The exact aggregate SQL is intentionally deferred to Task 11 implementation and
+must not be copied from planning pseudocode without the local tests above.
+
+### Task 12: Policies, Data API Grants, And Authorization Tests
+
+Status: Pending — after Task 11 is applied and verified.
+
+Goal: add complete RLS policies, then explicit least-privilege Data API grants,
+then prove unauthorized scenarios fail.
+
+Deliverables:
+
+- A new forward-only migration; do not edit or extend Task 11's applied
+  migration.
+- Published-catalog policies for products and related images, current Eazy
+  assessments, aggregates, and offers.
+- Owner-only `user_ratings` policies; insert/update also require a published
+  product, while an owner may still delete an existing rating after unpublish.
+- Public profile reads and owner-only updates of mutable profile fields; no
+  client profile insert.
+- `REVOKE ALL PRIVILEGES` from `anon` / `authenticated` on each client-facing
+  table before rebuilding the explicit allowlist in `docs/DATA_MODEL.md`.
+- Column-level profile and rating write grants. Rating identity and audit
+  columns are never client-updatable; aggregate rows remain client read-only.
+- Authorization tests and privilege-inventory assertions.
+
+Required scenarios:
+
+- Anonymous users can read published catalog rows and cannot read unpublished
+  products or their related rows.
+- Anonymous users cannot create ratings.
+- An authenticated user can read/create/update/delete only their own rating and
+  cannot rate an unpublished product.
+- A user cannot read another user's `private_note` or change another user's
+  rating.
+- Clients cannot insert profiles, rewrite identity/audit columns, write
+  aggregates, or execute trigger-only helpers.
+- Intended access fails without its explicit grant, proving grants and RLS are
+  separate controls.
+
+### Task 13: Product Seed Data
+
+Status: Pending — seed a small representative catalog after Task 12.
+
+### Task 14: Real Browse And Product Detail Reads
+
+Status: Pending — replace mock catalog reads and align frontend DB mappings
+after the seed is trusted.
+
+### Task 15: Authentication
+
+Status: Pending — email auth after real Browse/Detail reads; browsing remains
+public and rating requires login.
+
+### Task 16: My Rating Persistence And Rated Products
+
+Status: Pending — persist owner-only `private_note` ratings and ship the Rated
+Products path.
+
+### Task 17: Server-Owned Community Aggregates
+
+Status: Pending — verify and harden Task 11's trigger-owned mechanism; do not
+reselect the mechanism without a new decision.
+
+### Task 18: TanStack Query And Cache Invalidation
+
+Status: Pending — add caching only after real reads and writes exist.

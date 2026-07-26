@@ -28,3 +28,30 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Never expose Supabase service-role keys in client code or agent output.
 - Treat credentials in terminal output, MCP responses, and error messages as sensitive; summarize without repeating values.
 - If credentials are discovered in output, files, or history: stop repeating them, redact from any draft response, warn the user that exposure may have occurred, and recommend rotation if the value may have left a trusted boundary.
+
+## Supabase Environments And Agent Boundaries
+
+- Task 11 may configure and validate local Supabase plus one separate staging
+  project. Production database access, migrations, writes, and destructive
+  actions are unavailable to coding agents.
+- Do not initialize, install, create/apply a migration, link a project, or
+  change a remote environment from a planning-only task. Implementation needs
+  explicit task authorization.
+- The Expo bundle may contain only the project URL and a publishable key (or
+  legacy anon key for compatibility). It must never contain a secret key,
+  service-role key, database password, or direct connection string.
+- Treat RLS policies and Data API grants as separate controls. Task 11 enables
+  RLS, revokes inherited `anon` / `authenticated` privileges, and adds no
+  positive client grants. Task 12 adds complete policies before rebuilding the
+  explicit least-privilege client grant allowlist.
+- Any trigger-only `SECURITY DEFINER` function uses
+  `SET search_path = ''`, fully qualified relation names, and
+  `REVOKE EXECUTE` from `PUBLIC`, `anon`, and `authenticated`.
+- `user_ratings.private_note` is owner-only. Do not expose raw rating rows as
+  public community content; Community Score comes from server-owned
+  `rating_aggregates`.
+- Secret scanning is a required Task 11 deliverable. Validate it with a safe
+  deliberate test pattern; never use a real credential as the test.
+- Do not print Supabase project refs, keys, tokens, connection strings, or
+  dashboard/MCP responses containing them. Report presence and validation
+  status without echoing values.
