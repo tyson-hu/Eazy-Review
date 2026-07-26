@@ -39,7 +39,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "decisions:build": "node scripts/build-decision-index.cjs",
-    "decisions:check": "node scripts/build-decision-index.cjs --check",
+    "test:decisions": "node --test scripts/build-decision-index.test.cjs",
+    "decisions:check": "node scripts/build-decision-index.cjs --check && npm run test:decisions",
     "check": "npm run decisions:check && npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
   },
   "private": true

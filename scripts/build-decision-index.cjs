@@ -168,6 +168,16 @@ function isValidDate(value) {
   return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
 }
 
+function compareCodeUnits(left, right) {
+  if (left < right) {
+    return -1;
+  }
+  if (left > right) {
+    return 1;
+  }
+  return 0;
+}
+
 function assertUniqueSorted(values, fileLabel, field, compare) {
   if (new Set(values).size !== values.length) {
     throw new Error(`${fileLabel}: front matter \`${field}\` contains duplicate values`);
@@ -578,18 +588,14 @@ function readDecision(fileName) {
       throw new Error(`${fileLabel}: tag \`${tag}\` must be a lowercase slug`);
     }
   }
-  assertUniqueSorted(metadata.tags, fileLabel, 'tags', (left, right) =>
-    left.localeCompare(right),
-  );
+  assertUniqueSorted(metadata.tags, fileLabel, 'tags', compareCodeUnits);
 
   for (const decisionId of metadata.supersedes) {
     if (!ID_RE.test(decisionId)) {
       throw new Error(`${fileLabel}: superseded id \`${decisionId}\` is invalid`);
     }
   }
-  assertUniqueSorted(metadata.supersedes, fileLabel, 'supersedes', (left, right) =>
-    left.localeCompare(right),
-  );
+  assertUniqueSorted(metadata.supersedes, fileLabel, 'supersedes', compareCodeUnits);
 
   if (metadata.status === 'superseded') {
     if (!metadata.superseded_by || !ID_RE.test(metadata.superseded_by)) {
@@ -618,9 +624,9 @@ function loadDecisions() {
   const requiredNonAdrFiles = new Set(['README.md']);
   const allowedNonAdrFiles = new Set(requiredNonAdrFiles);
   const allowedDirectories = new Set(['archive']);
-  const entries = fs.readdirSync(DECISIONS_DIR, { withFileTypes: true }).sort((left, right) =>
-    left.name.localeCompare(right.name),
-  );
+  const entries = fs
+    .readdirSync(DECISIONS_DIR, { withFileTypes: true })
+    .sort((left, right) => compareCodeUnits(left.name, right.name));
 
   for (const requiredFile of requiredNonAdrFiles) {
     if (!entries.some((entry) => entry.isFile() && entry.name === requiredFile)) {
@@ -811,16 +817,18 @@ function sortByAreaThenUpdated(left, right) {
   const areaKeys = [...AREA_LABELS.keys()];
   return (
     areaKeys.indexOf(left.area) - areaKeys.indexOf(right.area) ||
-    right.updated.localeCompare(left.updated) ||
-    left.title.localeCompare(right.title)
+    compareCodeUnits(right.updated, left.updated) ||
+    compareCodeUnits(left.title, right.title) ||
+    compareCodeUnits(left.fileName, right.fileName)
   );
 }
 
 function sortByUpdated(left, right) {
   return (
-    right.updated.localeCompare(left.updated) ||
-    right.date.localeCompare(left.date) ||
-    left.title.localeCompare(right.title)
+    compareCodeUnits(right.updated, left.updated) ||
+    compareCodeUnits(right.date, left.date) ||
+    compareCodeUnits(left.title, right.title) ||
+    compareCodeUnits(left.fileName, right.fileName)
   );
 }
 
@@ -928,9 +936,17 @@ function main() {
   console.log(`decision-index: wrote docs/DECISIONS.md from ${decisions.length} decision records`);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(`decision-index: ${error instanceof Error ? error.message : String(error)}`);
-  process.exitCode = 1;
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
+    console.error(`decision-index: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 1;
+  }
 }
+
+module.exports = {
+  compareCodeUnits,
+  sortByAreaThenUpdated,
+  sortByUpdated,
+};

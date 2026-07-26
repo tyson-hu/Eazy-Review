@@ -13,7 +13,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Product and UX | [Separate visual style language from product UX rules](decisions/2026-07-19-separate-style-language-from-product-ux.md) | Accepted | — | 2026-07-19 |
 | Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 14, 16 | 2026-06-28 |
 | Data and Supabase | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Accepted | 16 | 2026-07-25 |
-| Data and Supabase | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Accepted | 14 | 2026-07-25 |
+| Data and Supabase | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Accepted | 11, 13, 14 | 2026-07-25 |
 | Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 14, 16, 17 | 2026-07-25 |
 | Data and Supabase | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Accepted | 11, 12, 14 | 2026-07-25 |
 | Data and Supabase | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Accepted | 11, 12, 13, 14, 15, 16, 17, 18 | 2026-07-24 |
@@ -54,7 +54,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 ### Data and Supabase
 
 - [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) — Accepted; Tasks 16.
-- [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) — Accepted; Tasks 14.
+- [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) — Accepted; Tasks 11, 13, 14.
 - [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) — Accepted; Tasks 11, 12, 13, 14, 16, 17.
 - [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) — Accepted; Tasks 11, 12, 14.
 - [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) — Accepted; Tasks 11, 12, 13, 14, 15, 16, 17, 18.

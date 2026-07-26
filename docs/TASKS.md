@@ -233,7 +233,10 @@ Do not expand into Feed, Account, authentication, Supabase, social features, or 
 - Done 2026-07-14: skill path sync after Task 8 route restructure — `app/product/[id].tsx` → `app/product/[id]/index.tsx` in `skills/ui-screen-builder`, `skills/feature-slice-builder`, and `skills/session-handoff` (approved skill-maintenance change; Task 8 remains Done).
 - Done 2026-07-21: restore `test-and-validation-loop` discovery stubs — `.agents/skills/` and `.claude/skills/` wrappers were accidentally replaced with full skill copies (no YAML front matter) during Task 10; restored thin `name` / `description` stubs pointing at `skills/test-and-validation-loop/SKILL.md`. This routine repair remains archive-only.
 - Done 2026-07-23: Expo SDK 57 patch realignment for CI — `expo-doctor` failed on PR #13 with 7 out-of-date packages (`expo`/`expo-router` → `~57.0.8`, `react-native-screens` → `~4.26.0`, plus matching Expo module patches). This routine dependency maintenance remains archive-only.
-- Added 2026-07-14: before wiring real multi-marketplace offers, define Product Detail lowest-price behavior for mixed currencies—enforce one currency per payload, group prices by currency, or introduce an explicit conversion source. Current mock/MVP catalog fallback assumes USD.
+- Done 2026-07-26: Product Detail/Browse offer payloads stay single-currency
+  for MVP (Task 11/13 schema and seed allowlist; Task 14 adapter/filtering);
+  cards carry the selected currency instead of hardcoding `$`. Decision:
+  [`Keep MVP offer payloads single-currency`](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md).
 - Done 2026-07-26: **ADR decision governance** — preserved the complete pre-ADR log in one archive, promoted only durable active decisions, generated the compact `docs/DECISIONS.md` index, and added `decisions:build` / `decisions:check`.
 
 ## Reviewer/Verifier Pilot Results (2026-07-12, Tasks 6-7)

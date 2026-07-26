@@ -34,8 +34,8 @@ Task 12’s public SELECT policy and Task 14’s assessment adapter must filter
 ## Consequences
 
 - Schema, RLS, and frontend contracts stay aligned before the first migration.
-- Editorial reassessments append or flip currency rather than silently
-  destroying history.
+- Editorial reassessments append a version and flip the `is_current` flags
+  rather than silently destroying history.
 - Task 11 must include `is_current` and the partial unique index; Task 12 must
   not invent an alternate assessment-read shape.
 

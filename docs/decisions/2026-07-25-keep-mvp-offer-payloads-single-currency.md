@@ -3,7 +3,7 @@ id: decision-keep-mvp-offer-payloads-single-currency
 date: 2026-07-25
 status: accepted
 area: data-supabase
-tasks: [14]
+tasks: [11, 13, 14]
 pr: 14
 tags: [currency, offers, pricing, supabase]
 supersedes: []
