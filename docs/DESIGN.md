@@ -384,7 +384,7 @@ Logged-out state should show:
 - Short message.
 - Sign In button.
 - Create Account button.
-- Forgot Password link.
+- Forgot Password link (opens `app/auth/forgot-password.tsx`; recovery email deep links land on `app/auth/reset-password.tsx`).
 - Continue browsing message.
 
 Logged-in state should show:

@@ -148,6 +148,9 @@ multi-line `<!-- … -->` — empty Markdown block markers such as `-`,
 tilde fences (` ``` ` / `~~~`) and text inside HTML comments are ignored for
 both the title and required sections; a fence closes only with a compatible
 marker and run length (an opposite marker inside the fence stays content).
+Fence markers that appear only inside HTML comments do not open or close
+scanner fence state (comments are stripped before fence detection). Headings
+inside real fences continue to be ignored.
 Supersession links must be acyclic: a record may not supersede itself,
 `superseded_by` chains must not form a cycle, and every superseded chain must
 terminate at an `accepted` record (intermediate replacements may themselves be

@@ -243,6 +243,10 @@ function stripHtmlComments(line, inComment) {
  * Walk body lines outside fenced code and outside HTML comments.
  * Compatible fence open/close markers; HTML comments may span lines.
  *
+ * HTML comments are stripped before fence detection so commented-out fence
+ * markers cannot open or close scanner fence state. While a real fence is
+ * open, lines stay opaque (including literal `<!--` / `-->` in samples).
+ *
  * @param {string} body
  * @param {(line: string, lineIndex: number, lines: string[]) => void} onVisibleUnfencedLine
  */
@@ -254,34 +258,40 @@ function forEachUnfencedLine(body, onVisibleUnfencedLine) {
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
-    const fenceLine = parseFenceLine(line);
-    if (fenceLine) {
-      if (openFence === null) {
-        // Opening backtick fences cannot contain backticks in the info string.
-        if (fenceLine.marker === '`' && fenceLine.info.includes('`')) {
-          // Not a fence; fall through and treat as ordinary content.
-        } else {
-          openFence = { marker: fenceLine.marker, length: fenceLine.length };
-          continue;
-        }
-      } else if (
+
+    // Inside a real fence, content is opaque — do not parse HTML comments or
+    // treat commented samples as structure; only look for a compatible close.
+    if (openFence !== null) {
+      const fenceLine = parseFenceLine(line);
+      if (
+        fenceLine &&
         fenceLine.marker === openFence.marker &&
         fenceLine.length >= openFence.length &&
         /^\s*$/.test(fenceLine.info)
       ) {
         openFence = null;
-        continue;
       }
-      // Opposite marker, shorter run, or non-whitespace after a closing run:
-      // remain inside the open fence and treat the line as fenced content.
-    }
-    if (openFence !== null) {
       continue;
     }
 
+    // Outside fences: strip HTML comments first so fence markers inside
+    // comments cannot alter scanner state; then detect fences on visible text.
     const stripped = stripHtmlComments(line, inHtmlComment);
     inHtmlComment = stripped.inComment;
-    onVisibleUnfencedLine(stripped.text, lineIndex, lines);
+    const visible = stripped.text;
+
+    const fenceLine = parseFenceLine(visible);
+    if (fenceLine) {
+      // Opening backtick fences cannot contain backticks in the info string.
+      if (fenceLine.marker === '`' && fenceLine.info.includes('`')) {
+        // Not a fence; fall through and treat as ordinary content.
+      } else {
+        openFence = { marker: fenceLine.marker, length: fenceLine.length };
+        continue;
+      }
+    }
+
+    onVisibleUnfencedLine(visible, lineIndex, lines);
   }
 }
 

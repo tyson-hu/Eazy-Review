@@ -391,7 +391,7 @@ Goal: email auth first unless Apple Sign-In is required for the next TestFlight.
 
 Deliverables:
 - Sign up / sign in / sign out / session persistence.
-- **Password recovery:** `app/auth/forgot-password.tsx` (and any companion reset-completion route the auth provider requires); Account logged-out Forgot Password entry point (`docs/DESIGN.md`); recovery-email submission with honest success/error states; recovery deep-link / session handling; new-password completion; verify new password works and old password does not.
+- **Password recovery:** `app/auth/forgot-password.tsx` (request) and `app/auth/reset-password.tsx` (completion / recovery deep-link target); Account logged-out Forgot Password entry point (`docs/DESIGN.md`); recovery-email submission with honest success/error states; recovery deep-link / session handling on Reset Password; new-password completion; verify new password works and old password does not.
 - **Delete account:** logged-in Account Delete Account action with destructive confirmation (and reauthentication if the provider requires it); protected server-side deletion (never a service-role key in the Expo bundle); defined cascade / anonymization / retention for `profiles`, `user_ratings`, and related rows; local session/cache cleanup; verify the deleted account can no longer sign in.
 
 Acceptance:

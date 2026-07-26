@@ -144,7 +144,7 @@ Deliverables:
 - Sign in.
 - Sign out.
 - Session persistence.
-- Password recovery (forgot-password + reset completion).
+- Password recovery (forgot-password request + `app/auth/reset-password.tsx` completion).
 - Delete account (protected server-side deletion; no service-role in the app).
 - Auth-aware Account screen (Forgot Password / Delete Account entry points).
 

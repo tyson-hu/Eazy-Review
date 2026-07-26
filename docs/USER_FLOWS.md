@@ -23,6 +23,7 @@ app/
     sign-in.tsx
     sign-up.tsx
     forgot-password.tsx
+    reset-password.tsx
 
   account/
     rated-products.tsx
@@ -42,6 +43,7 @@ Non-tab screens:
 - Sign In.
 - Sign Up.
 - Forgot Password.
+- Reset Password.
 - Rated Products.
 - Settings.
 - Terms.
@@ -128,6 +130,25 @@ User opens Account
 -> User taps product
 -> Product Detail opens
 ```
+
+## Flow 5: Password Recovery
+
+Routes:
+- Request: `app/auth/forgot-password.tsx` (`/auth/forgot-password`)
+- Completion: `app/auth/reset-password.tsx` (`/auth/reset-password`)
+
+```txt
+Logged-out user opens Account
+-> User taps Forgot Password
+-> Forgot Password screen (request recovery email)
+-> User submits email; honest success/error state
+-> User opens recovery deep link / email link
+-> App opens Reset Password (completion) with recovery session
+-> User sets a new password; honest success/error state
+-> User signs in with the new password only (old password fails)
+```
+
+`forgot-password.tsx` owns the recovery-request UI only. `reset-password.tsx` owns new-password completion and is the deep-link target when the auth provider requires a separate completion screen (Task 15). Do not fold completion into the forgot-password route.
 
 ## Browse Requirements
 
