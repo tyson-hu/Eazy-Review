@@ -7,7 +7,7 @@ The canonical MCP policy lives in `docs/MCP_WORKFLOW.md`, MCP Tool Policy. Class
 
 - **READ** — may run without approval (inspect schema, search files, read PRs).
 - **REVERSIBLE WRITE** — state the target and intended change before executing (create a branch, update a draft, modify a local or approved staging development record).
-- **HIGH IMPACT** — explicit user approval required (deploy, delete, credential change, force push, destructive local/staging migration, mass update on local/staging).
-- **FORBIDDEN** — never perform, even with chat approval (production database access, production writes, production migrations, production credentials for agents).
+- **HIGH IMPACT** — explicit user approval required (deploy, non-account delete, credential change, force push, destructive local/staging migration, mass update on local/staging).
+- **FORBIDDEN** — never perform, even with chat approval (account deletion on any environment — local, staging, or production; production database access, production writes, production migrations, production credentials for agents).
 
-Standing principles: read before write; use the narrowest tool available, never a broader one when a narrower exists; never silently switch from a development target to a production target; never treat production DB work as approvable; never expose credential values (`docs/SECURITY.md`).
+Standing principles: read before write; use the narrowest tool available, never a broader one when a narrower exists; never silently switch from a development target to a production target; never treat production DB work or account deletion as approvable; never expose credential values (`docs/SECURITY.md`).

@@ -64,8 +64,8 @@ Classify every MCP action before calling it, and behave per its level. `.cursor/
 
 - **READ** — may run without approval. Examples: inspect schema, search files, read PRs.
 - **REVERSIBLE WRITE** — state the target and intended change before executing. Examples: create a branch, update a draft, modify a **local or approved staging** development record.
-- **HIGH IMPACT** — explicit user approval required. Examples: deploy, delete, credential change, force push, destructive migration on local/staging, mass update on local/staging.
-- **FORBIDDEN** — never perform, even with approval in chat. Examples: production database access, production database writes, production migrations, granting agents production DB credentials. Production is unavailable to coding agents and MCP tools (`docs/SECURITY.md`).
+- **HIGH IMPACT** — explicit user approval required. Examples: deploy, non-account delete, credential change, force push, destructive migration on local/staging, mass update on local/staging.
+- **FORBIDDEN** — never perform, even with approval in chat. Examples: **account deletion** on any environment (local, staging, or production); production database access, production database writes, production migrations, granting agents production DB credentials. Production is unavailable to coding agents and MCP tools (`docs/SECURITY.md`).
 
 Standing principles at every level:
 
@@ -73,6 +73,7 @@ Standing principles at every level:
 - Use the narrowest tool available; never substitute a broader tool when a narrower one exists.
 - Never silently switch from a development target to a production target.
 - Never treat production database work as HIGH IMPACT that can be approved — it is FORBIDDEN.
+- Never treat account deletion as HIGH IMPACT that can be approved — it is FORBIDDEN on every environment.
 - Never expose credential values (`docs/SECURITY.md`).
 
 ## Agent Security Baseline

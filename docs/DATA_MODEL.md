@@ -22,7 +22,7 @@ Task sequencing: `docs/TASKS.md` Tasks 11–18. Do not implement schema assumpti
 - `eazy_assessments`: app-builder Eazy Score (editorial); prefer versioned rows with one current/active assessment.
 - `user_ratings`: one rating per user per product (scores + `private_note`); `product_id` and `user_id` immutable after insert.
 - `rating_aggregates`: calculated Community Score data (server-owned; clients must not write or execute refresh RPCs).
-- `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked). `price` may be null (unavailable) but never negative.
+- `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked). `price` may be null (unavailable) but never negative and never `'NaN'::numeric`.
 
 Lookup / join tables (recommended defaults; decide in Task 11 planning if deferred one packet):
 
@@ -199,7 +199,14 @@ create table public.product_offers (
   size numeric(4,1),
   size_region text default 'US',
   currency text default 'USD',
-  price numeric(10,2) check (price is null or price >= 0),
+  price numeric(10,2)
+    check (
+      price is null
+      or (
+        price >= 0
+        and price <> 'NaN'::numeric
+      )
+    ),
   last_checked_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

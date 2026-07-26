@@ -54,7 +54,8 @@ terminate at a currently `accepted` record.
 
 - Filename: `YYYY-MM-DD-lowercase-slug.md` (lowercase `.md` only). Misnamed
   files such as `.MD`, `.markdown`, or `.md.bak` are rejected by
-  `npm run decisions:check`, not silently ignored.
+  `npm run decisions:check`, not silently ignored. Records live as flat files in
+  `docs/decisions/`; the only allowed subdirectory is `archive/`.
 - `id`: stable lowercase slug prefixed with `decision-`; never reuse it.
 - `date`: original decision date and filename date.
 - `updated`: optional; use it when status or substance changes later.
@@ -152,8 +153,11 @@ The complete legacy log is preserved at
 `docs/decisions/archive/2026-pre-adr-log.md`. Do not split every archived entry
 into a standalone record. Promote an archived choice only if it becomes
 currently relevant and still meets the high-impact criteria above.
-`npm run decisions:check` verifies that archive against a committed SHA-256
-digest of **LF-normalized** UTF-8 text, and compares the generated
+ADR records must remain flat files under `docs/decisions/` — the only permitted
+subdirectory is `archive/`, and `npm run decisions:check` rejects any other
+nested directory so a misplaced record cannot disappear from the generated
+index. `npm run decisions:check` also verifies that archive against a committed
+SHA-256 digest of **LF-normalized** UTF-8 text, and compares the generated
 `docs/DECISIONS.md` index after the same LF normalization (CRLF checkouts with
 `core.autocrlf=true` must not fail when content is unchanged). If you
 intentionally rewrite the archive, update `EXPECTED_ARCHIVE_SHA256` in

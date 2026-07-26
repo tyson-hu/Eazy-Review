@@ -590,11 +590,41 @@ function loadDecisions() {
   assertLegacyArchiveIntegrity();
 
   const allowedNonAdrFiles = new Set(['README.md']);
-  const candidateFiles = fs
-    .readdirSync(DECISIONS_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
-    .sort();
+  const allowedDirectories = new Set(['archive']);
+  const entries = fs.readdirSync(DECISIONS_DIR, { withFileTypes: true }).sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
+
+  /** @type {string[]} */
+  const candidateFiles = [];
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      if (!allowedDirectories.has(entry.name)) {
+        throw new Error(
+          `docs/decisions/${entry.name}/: unexpected subdirectory (only \`archive/\` is allowed; ADR files must stay flat under docs/decisions/)`,
+        );
+      }
+      const archiveDir = path.join(DECISIONS_DIR, entry.name);
+      const archiveEntries = fs.readdirSync(archiveDir, { withFileTypes: true });
+      const unexpected = archiveEntries.filter(
+        (child) => !(child.isFile() && child.name === path.basename(ARCHIVE_FILE)),
+      );
+      if (unexpected.length > 0) {
+        throw new Error(
+          `docs/decisions/archive/: must contain only ${path.basename(ARCHIVE_FILE)} ` +
+            `(found ${unexpected.map((child) => child.name).join(', ')})`,
+        );
+      }
+      continue;
+    }
+
+    if (!entry.isFile()) {
+      throw new Error(`docs/decisions/${entry.name}: unsupported entry type (expected file or directory)`);
+    }
+    candidateFiles.push(entry.name);
+  }
+
+  candidateFiles.sort();
 
   /** @type {string[]} */
   const fileNames = [];
