@@ -277,7 +277,7 @@ Deliverables:
   - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id` and `user_id`)
   - `rating_aggregates` (server-owned Community Score summary)
   - `product_offers` (required in Task 11 so Task 12 policies/grants and Task 14 Detail offers have a relation)
-- PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs; `product_offers.price` null or a finite `>= 0` value (negative and `'NaN'::numeric` rejected; null remains unavailable); `product_offers.currency` `not null` default `'USD'` with check `currency in ('USD')` (expand the whitelist when more ISO 4217 codes ship).
+- PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs; `product_offers.price` null or a finite `>= 0` value (negative and `'NaN'::numeric` rejected; null remains unavailable); `product_offers.currency` `not null` default `'USD'` with check `currency in ('USD')`; `product_offers.size_region` `not null` default `'US'` with check `size_region in ('US')` (expand each whitelist when more codes / sizing systems ship).
 - **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
 - Optional: `service_role` tooling grants only (never ship service-role into Expo).
 - Aggregate helpers: **Task 11 owns the aggregation mechanism** — implement `refresh_rating_aggregates` + `handle_user_rating_change` / `user_ratings_refresh_aggregates_trigger` (trigger after insert/update/delete). Helpers are `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings`; zero-count `rating_aggregates` row on every `products` INSERT (see `docs/DATA_MODEL.md`). Do not leave mechanism choice (RPC vs schedule vs trigger) to Task 17.
@@ -304,7 +304,7 @@ Task 11 contract checklist (fill before implementation):
   - secret-scanning CI/hook config
   - listed docs (`docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/TASKS.md`; `docs/decisions/*.md` plus generated `docs/DECISIONS.md` only if a qualifying decision changes)
   - Do **not** expand into Browse/Detail/Rating UI, seed catalog, auth screens, or TanStack Query unless an explicit tiny companion packet says so
-- Required constraints (including `product_offers.price` null or finite `>= 0`, rejecting negatives and `'NaN'::numeric`; `product_offers.currency` `not null` default `'USD'` with MVP whitelist check), `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, per-product serialized aggregate refresh, and `auth.users` → `profiles` ensure trigger (see `docs/DATA_MODEL.md`).
+- Required constraints (including `product_offers.price` null or finite `>= 0`, rejecting negatives and `'NaN'::numeric`; `product_offers.currency` / `product_offers.size_region` `not null` with MVP whitelist checks), `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, per-product serialized aggregate refresh, and `auth.users` → `profiles` ensure trigger (see `docs/DATA_MODEL.md`).
 - Assessment history locked to the versioned model: `eazy_assessments.is_current boolean not null`, partial unique index `eazy_assessments_one_current_per_product`, and confirmation that Task 12 / Task 14 will select only `is_current = true` (overwrite-only is not allowed — `docs/DATA_MODEL.md` Resolved decisions).
 - Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12** (and that clients never receive `profiles` INSERT).
 - Whether seed data is included (default: no full catalog).
@@ -352,7 +352,7 @@ Goal: seed one or two representative products first; expand toward the eight-pro
 Acceptance:
 - Seed SQL (or approved script) loads into local reset and staging.
 - Every seeded product has a matching `rating_aggregates` row (zero-count when no ratings yet — product insert trigger and/or explicit seed rows). No published product relies on a missing summary join.
-- Seeded / imported `product_offers.currency` values are trimmed, uppercased, and inside the schema whitelist (MVP: `USD` only); never insert `NULL`, `''`, or arbitrary codes that bypass `default 'USD'`.
+- Seeded / imported `product_offers.currency` and `product_offers.size_region` values are trimmed, uppercased, and inside each schema whitelist (MVP: `USD` / `US` only); never insert `NULL`, `''`, or arbitrary codes that bypass `default 'USD'` / `default 'US'`.
 - Image strategy decided: upload approved assets to Storage **or** keep mock-image resolution until real catalog ingestion (see unresolved decisions in `docs/DATA_MODEL.md`).
 - Seeded `product_images` use deliberate unique `sort_order` values per product (schema unique `(product_id, sort_order)`).
 - Provenance fields populated where required by the schema (`source_type`, capture timestamps, methodology version as applicable).

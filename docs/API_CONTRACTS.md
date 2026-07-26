@@ -55,6 +55,7 @@ export type ProductOffer = {
   websiteName: string;
   websiteLink: string;
   size: number | null;
+  /** Required size system label; DB enforces non-null MVP whitelist (`US` only until expanded). */
   sizeRegion: string;
   /** Required ISO 4217 code; DB enforces non-null MVP whitelist (`USD` only until expanded). */
   currency: string;
