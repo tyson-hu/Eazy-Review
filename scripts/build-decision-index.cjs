@@ -589,11 +589,18 @@ function loadDecisions() {
   }
   assertLegacyArchiveIntegrity();
 
-  const allowedNonAdrFiles = new Set(['README.md']);
+  const requiredNonAdrFiles = new Set(['README.md']);
+  const allowedNonAdrFiles = new Set(requiredNonAdrFiles);
   const allowedDirectories = new Set(['archive']);
   const entries = fs.readdirSync(DECISIONS_DIR, { withFileTypes: true }).sort((left, right) =>
     left.name.localeCompare(right.name),
   );
+
+  for (const requiredFile of requiredNonAdrFiles) {
+    if (!entries.some((entry) => entry.isFile() && entry.name === requiredFile)) {
+      throw new Error(`docs/decisions/${requiredFile} is required`);
+    }
+  }
 
   /** @type {string[]} */
   const candidateFiles = [];

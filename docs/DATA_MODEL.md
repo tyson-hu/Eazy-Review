@@ -22,7 +22,7 @@ Task sequencing: `docs/TASKS.md` Tasks 11–18. Do not implement schema assumpti
 - `eazy_assessments`: app-builder Eazy Score (editorial); prefer versioned rows with one current/active assessment.
 - `user_ratings`: one rating per user per product (scores + `private_note`); `product_id` and `user_id` immutable after insert.
 - `rating_aggregates`: calculated Community Score data (server-owned; clients must not write or execute refresh RPCs).
-- `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked). `price` may be null (unavailable) but never negative and never `'NaN'::numeric`.
+- `product_offers`: purchase links and prices by size (**required in Task 11** so Task 12 policies/grants and Task 14 Detail offers are not blocked). `price` may be null (unavailable) but never negative and never `'NaN'::numeric`. `currency` is `not null` with default `'USD'` and an MVP whitelist check (`currency in ('USD')`); expand the check deliberately when more ISO 4217 codes are supported. Seed/import must trim and uppercase accepted input before insert — an explicit `NULL` or empty/invalid value must not bypass the default into a row that Task 14 would render as misleading fallback text.
 
 Lookup / join tables (recommended defaults; decide in Task 11 planning if deferred one packet):
 
@@ -198,7 +198,8 @@ create table public.product_offers (
   website_link text not null,
   size numeric(4,1),
   size_region text default 'US',
-  currency text default 'USD',
+  currency text not null default 'USD'
+    check (currency in ('USD')),
   price numeric(10,2)
     check (
       price is null
@@ -703,13 +704,13 @@ Scraping should not write:
 - `rating_aggregates` directly
 - `profiles`
 
-Before scraping, confirm source permission, field fit, stable identifiers, and duplicate handling. Use SKU for duplicate detection when available. Track provenance (`source_type`, timestamps, rights).
+Before scraping, confirm source permission, field fit, stable identifiers, and duplicate handling. Use SKU for duplicate detection when available. Track provenance (`source_type`, timestamps, rights). Normalize `product_offers.currency` (trim + uppercase) and reject values outside the schema whitelist before insert — do not insert `NULL`, `''`, or arbitrary codes that would bypass `default 'USD'`.
 
 ## Resolved decisions (do not reopen in implementation)
 
 1. Community aggregation mechanism: **resolved** — Task 11 implements trigger-owned `refresh_rating_aggregates` / `handle_user_rating_change`; Task 17 verifies and hardens it (no RPC/schedule re-selection).
 2. Primary catalog image: **resolved** — `sort_order ASC`, then `created_at ASC`, then `id ASC`; unique `(product_id, sort_order)`; no images → `imageUrl: null`.
-3. Mixed-currency offers for Detail/Browse lowest price: **resolved for MVP** — Task 14 requires one currency per product offer payload (reject or omit mismatched offers); raw cross-currency numeric minimum is prohibited. Browse cards carry that selected currency as `lowestPriceCurrency` with `lowestPrice`. Conversion or per-currency grouping needs a later ADR.
+3. Mixed-currency offers for Detail/Browse lowest price: **resolved for MVP** — `product_offers.currency` is `not null` default `'USD'` with check `currency in ('USD')` (expand the whitelist when more codes ship). Task 14 requires one currency per product offer payload (reject or omit mismatched offers); raw cross-currency numeric minimum is prohibited. Browse cards carry that selected currency as `lowestPriceCurrency` with `lowestPrice`. Conversion or per-currency grouping needs a later ADR.
 4. `private_note` maximum: **resolved** at 500 characters across the database check constraint, API contract, and connected Rate/Edit form (`maxLength` / validation in Task 16). Do not choose a different limit.
 5. Assessment history: **resolved** — versioned `eazy_assessments` with required `is_current boolean not null` and partial unique index `eazy_assessments_one_current_per_product`. Task 12 public reads and Task 14 adapters select only `is_current = true`. Overwrite-only storage is rejected for MVP (`docs/decisions/2026-07-25-versioned-eazy-assessments.md`).
 

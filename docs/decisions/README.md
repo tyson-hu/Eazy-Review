@@ -55,7 +55,10 @@ terminate at a currently `accepted` record.
 - Filename: `YYYY-MM-DD-lowercase-slug.md` (lowercase `.md` only). Misnamed
   files such as `.MD`, `.markdown`, or `.md.bak` are rejected by
   `npm run decisions:check`, not silently ignored. Records live as flat files in
-  `docs/decisions/`; the only allowed subdirectory is `archive/`.
+  `docs/decisions/`; the only allowed subdirectory is `archive/`. This guide
+  (`docs/decisions/README.md`) is a **required** non-ADR support file —
+  `npm run decisions:check` fails if it is missing (it is not merely skipped
+  when absent).
 - `id`: stable lowercase slug prefixed with `decision-`; never reuse it.
 - `date`: original decision date and filename date.
 - `updated`: optional; use it when status or substance changes later.
