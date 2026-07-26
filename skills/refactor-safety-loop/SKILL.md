@@ -45,7 +45,7 @@ Goal: restructure code with zero behavior change, proven by identical checks bef
 ## Memory step
 
 - Update `docs/TASKS.md` only if the refactor completes or unblocks a listed task.
-- Add a `docs/DECISIONS.md` entry if the structure decision is durable (new folder convention, new shared component); update `docs/API_CONTRACTS.md` if the documented folder structure changed.
+- Add or update a `docs/decisions/*.md` record only if the structure choice is durable and high-impact under `docs/decisions/README.md` (for example, a repository-wide folder convention); update `docs/API_CONTRACTS.md` if the documented folder structure changed.
 
 ## Common mistakes
 

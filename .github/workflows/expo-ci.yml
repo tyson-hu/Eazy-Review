@@ -26,6 +26,9 @@ jobs:
       - name: Check skill wrapper contract
         run: npm run check:skill-wrappers
 
+      - name: Check decision records and generated index
+        run: npm run decisions:check
+
       - name: Generate typed routes
         run: npm run generate:routes
 

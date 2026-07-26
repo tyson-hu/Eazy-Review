@@ -45,7 +45,7 @@ Goal: change frontend product/rating data shapes, types, or mock data — keepin
 ## Memory step
 
 - Update `docs/TASKS.md` if the shape change completes or unblocks a listed task.
-- Add a `docs/DECISIONS.md` entry for contract-shape decisions (new fields, renames, nullability changes).
+- Add or update a `docs/decisions/*.md` record only for durable high-impact contract-shape decisions (new fields, renames, nullability changes) under `docs/decisions/README.md`; regenerate the index.
 
 ## Common mistakes
 

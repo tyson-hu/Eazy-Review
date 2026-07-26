@@ -103,6 +103,6 @@ Direct /product/:id/rate → submit → Detail
 - When navigation/behavior changes: `docs/USER_FLOWS.md`.
 - When reusable design rules change: `docs/DESIGN.md`.
 - When frontend data boundaries change: `docs/API_CONTRACTS.md`.
-- Meaningful process/product calls: `docs/DECISIONS.md`.
+- Durable high-impact process/product calls only: add or update `docs/decisions/*.md` under `docs/decisions/README.md`, then regenerate `docs/DECISIONS.md`. Routine findings, triage, pass/fail, and GO status stay in the audit report and `docs/TASKS.md`.
 
 Final validation after the last code change: `npm run typecheck`, `npm run lint`, `npm run check`, `git diff --check`, `git status --short` (docs-only audits may skip compile commands with an explicit reason).

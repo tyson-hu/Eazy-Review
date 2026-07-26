@@ -78,7 +78,7 @@ The next session reads `AGENTS.md`, the spec, and `docs/notes/handoff.md`, then 
 
 - The handoff file itself is the session-state memory: `docs/notes/handoff.md` per the memory rule in `docs/LOOP_ENGINEERING.md`.
 - Update `docs/TASKS.md` with the current task's status and any newly discovered follow-up work.
-- Add a `docs/DECISIONS.md` entry if the session made a meaningful decision that is not yet recorded.
+- Add or update a `docs/decisions/*.md` record only if the session made an unrecorded durable high-impact decision that meets `docs/decisions/README.md`; task progress belongs in `docs/TASKS.md`.
 
 ## Common mistakes
 

@@ -5,7 +5,7 @@ Working state for cross-session continuity — the next session reads these file
 - `handoff.md` — written at a session boundary via `skills/session-handoff`; overwritten by each new handoff.
 - `blocker-<topic>.md` — written when debugging stalls via `skills/blocker-note`; deleted or marked resolved when the blocker is cleared.
 
-These are working state, not project documentation. Durable task status belongs in `docs/TASKS.md`; durable decisions belong in `docs/DECISIONS.md`.
+These are working state, not project documentation. Durable task status belongs in `docs/TASKS.md`; durable high-impact decisions belong in individual `docs/decisions/*.md` records and appear in the generated `docs/DECISIONS.md` index.
 
 Interactive preview and UX audit **evidence** (screenshots, findings) belongs in `docs/evidence/` — see `docs/evidence/README.md` and `skills/interactive-preview-loop`. Do not store verification artifacts here.
 

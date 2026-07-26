@@ -76,8 +76,7 @@ inside the skill.
 ## Memory step
 
 - Update the task status or discovered follow-up in `docs/TASKS.md`.
-- Record only a new durable high-impact data/security decision in
-  `docs/DECISIONS.md`; routine implementation and validation are not decisions.
+- Add or update a `docs/decisions/*.md` record only when the schema work introduces or changes a durable high-impact architecture, data-ownership, or security choice under `docs/decisions/README.md`; implementing an already-recorded contract is not a new ADR.
 
 ## Common mistakes
 

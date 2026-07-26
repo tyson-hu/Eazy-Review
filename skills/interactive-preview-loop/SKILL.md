@@ -87,7 +87,7 @@ Also read the current task in `docs/TASKS.md` when the run advances a listed tas
 ## Memory step
 
 - Update `docs/TASKS.md` with progress, evidence path, environment statuses, and deferred findings when appropriate.
-- Add `docs/DECISIONS.md` only when a genuine workflow or product decision occurs (not for routine pass/fail runs).
+- Add or update a `docs/decisions/*.md` record only when a genuine durable high-impact workflow or product decision meets `docs/decisions/README.md`; routine pass/fail and readiness results are not ADRs.
 - Do not write verification evidence into `docs/notes/`.
 
 ## Common mistakes

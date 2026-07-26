@@ -41,7 +41,10 @@
     "skills:generate": "node scripts/generate-skill-wrappers.cjs",
     "test:skill-wrappers": "node --test scripts/generate-skill-wrappers.test.cjs",
     "check:skill-wrappers": "node scripts/generate-skill-wrappers.cjs --check && npm run test:skill-wrappers",
-    "check": "npm run check:skill-wrappers && npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
+    "decisions:build": "node scripts/build-decision-index.cjs",
+    "test:decisions": "node --test scripts/build-decision-index.test.cjs",
+    "decisions:check": "node scripts/build-decision-index.cjs --check && npm run test:decisions",
+    "check": "npm run check:skill-wrappers && npm run decisions:check && npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
   },
   "private": true
 }
