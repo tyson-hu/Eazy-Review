@@ -13,6 +13,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Product and UX | [Separate visual style language from product UX rules](decisions/2026-07-19-separate-style-language-from-product-ux.md) | Accepted | — | 2026-07-19 |
 | Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 14, 16 | 2026-06-28 |
 | Data and Supabase | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Accepted | 16 | 2026-07-25 |
+| Data and Supabase | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Accepted | 14 | 2026-07-25 |
 | Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 14, 16, 17 | 2026-07-25 |
 | Data and Supabase | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Accepted | 11, 12, 14 | 2026-07-25 |
 | Data and Supabase | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Accepted | 11, 12, 13, 14, 15, 16, 17, 18 | 2026-07-24 |
@@ -36,12 +37,12 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-26 |
 | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-25 |
 | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-07-25 |
+| [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Data and Supabase | Accepted | 2026-07-25 |
 | [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) | Agent workflow | Accepted | 2026-07-25 |
 | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Data and Supabase | Accepted | 2026-07-25 |
 | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Authentication and security | Accepted | 2026-07-25 |
 | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Data and Supabase | Accepted | 2026-07-25 |
 | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Data and Supabase | Accepted | 2026-07-24 |
-| [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Tooling and CI | Accepted | 2026-07-19 |
 
 ## Browse by area
 
@@ -53,6 +54,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 ### Data and Supabase
 
 - [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) — Accepted; Tasks 16.
+- [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) — Accepted; Tasks 14.
 - [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) — Accepted; Tasks 11, 12, 13, 14, 16, 17.
 - [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) — Accepted; Tasks 11, 12, 14.
 - [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) — Accepted; Tasks 11, 12, 13, 14, 15, 16, 17, 18.
