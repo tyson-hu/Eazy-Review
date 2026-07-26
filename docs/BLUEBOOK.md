@@ -33,7 +33,7 @@ Eazy Review combines an app-curated product score with community ratings and the
 - Browse: product list with search, filters, sorting, infinite-scroll placeholder, and product detail navigation.
 - Account: logged-out auth entry points and logged-in profile/rated-products/settings flows.
 - Product Detail: product identity, scores, offers, breakdowns, My Rating, description, and rating CTA.
-- Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional comment.
+- Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional private note (not a public review).
 
 ## Core Product Flow
 
@@ -79,7 +79,8 @@ Use these UI names:
 - Community Score: average rating from normal users.
 - My Rating: the logged-in user's own rating for the product.
 
-Do not call the app-builder rating "official rating" in UI. Internal database names can still use `official_ratings`.
+Do not call the app-builder rating "official rating" in UI. Internal database
+names follow `docs/DATA_MODEL.md` (`eazy_assessments` for editorial scoring).
 
 ## Recommended Stack
 
@@ -103,15 +104,17 @@ Do not call the app-builder rating "official rating" in UI. Internal database na
 8. Build Rating Form with fake local update.
 9. Build Feed placeholder.
 10. Build Account placeholder.
-11. Create Supabase project.
-12. Create database schema.
-13. Add Supabase Auth.
-14. Connect Browse/Product Detail to Supabase.
-15. Connect rating submission to Supabase.
-16. Add TanStack Query.
-17. Add real filtering/sorting/search.
-18. Add Feed sections.
-19. Add scraping/import pipeline later.
+11. Task 11 — create local/staging Supabase environments and the deny-by-default core schema.
+12. Task 12 — add RLS policies, explicit Data API grants, and authorization tests.
+13. Task 13 — seed a small representative catalog (expand only after the small seed is trusted).
+14. Task 14 — connect published Browse/Product Detail reads with deterministic image and single-currency price mapping.
+15. Task 15 — add email-first Supabase Auth, password recovery, and protected account deletion.
+16. Task 16 — connect owner-only My Rating persistence and Rated Products (`private_note` / **Private note**).
+17. Task 17 — verify and harden server-owned Community Score aggregates under concurrency and forgery attempts.
+18. Task 18 — add TanStack Query and cache invalidation.
+19. Add real filtering/sorting/search.
+20. Add Feed sections.
+21. Add scraping/import pipeline later.
 
 ## Success Criteria
 

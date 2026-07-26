@@ -62,15 +62,33 @@ Treat each MCP server as a capability boundary, especially if it can write to a 
 
 Classify every MCP action before calling it, and behave per its level. `.cursor/rules/mcp-policy.mdc` mirrors this section for Cursor's always-apply mechanism; this section is the home, the rule is the mirror.
 
-- **READ** — may run without approval. Examples: inspect schema, search files, read PRs.
-- **REVERSIBLE WRITE** — state the target and intended change before executing. Examples: create a branch, update a draft, modify a development record.
-- **HIGH IMPACT** — explicit user approval required. Examples: deploy, delete, production database write, credential change, force push, destructive migration, mass update.
+- **READ** — may run without approval. Examples: inspect a local/approved
+  staging schema, search files, read PRs.
+- **REVERSIBLE WRITE** — state the target and intended change before executing. Examples: create a branch, update a draft, modify a **local or approved staging** development record.
+- **HIGH IMPACT** — explicit user approval required. Examples: application or
+  service deploy,
+  non-account deletion outside a production database, credential changes
+  outside a production database, force push, destructive migration on
+  local/approved staging, mass update on local/approved staging.
+- **FORBIDDEN** — never perform, even with approval in chat. Examples:
+  **account deletion** on any environment (local, staging, or production);
+  production database reads (including schema inspection), writes, drops,
+  deletes, migrations, or credentials. Production databases are unavailable to
+  coding agents and MCP tools (`docs/SECURITY.md`).
 
 Standing principles at every level:
 
 - Read before write.
 - Use the narrowest tool available; never substitute a broader tool when a narrower one exists.
 - Never silently switch from a development target to a production target.
+- Never treat any production database read, write, drop, delete, migration, or
+  credential operation as HIGH IMPACT that can be approved — it is FORBIDDEN.
+- Agents may implement and non-destructively validate the protected account
+  deletion flow and prepare a checklist, but an actual deletion must be
+  initiated and executed manually by a human, never through an
+  agent-controlled browser, MCP, SQL, or admin tool.
+- Never treat agent-executed account deletion as HIGH IMPACT that can be
+  approved — it is FORBIDDEN on every environment.
 - Never expose credential values (`docs/SECURITY.md`).
 
 ## Agent Security Baseline

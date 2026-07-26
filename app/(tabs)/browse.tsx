@@ -17,6 +17,7 @@ import type { Product, ProductCardData } from '@/src/types/product';
 const FORCE_LOAD_ERROR_QUERY = '__error__';
 
 function toCardData(product: Product): ProductCardData {
+  const lowestPrice = product.lowestPrice ?? null;
   return {
     id: product.id,
     brand: product.brand,
@@ -26,7 +27,10 @@ function toCardData(product: Product): ProductCardData {
     eazyScore: product.eazyScore ?? null,
     communityScore: product.communityScore ?? null,
     ratingCount: product.ratingCount ?? 0,
-    lowestPrice: product.lowestPrice ?? null,
+    lowestPrice,
+    // Mock catalog `Product.lowestPrice` has no currency field; treat as USD.
+    // Task 14 Browse mapping must carry the single selected offer currency instead.
+    lowestPriceCurrency: lowestPrice == null ? null : 'USD',
   };
 }
 

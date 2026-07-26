@@ -8,6 +8,18 @@ The canonical security rules live in `docs/SECURITY.md`. Read and follow them be
 Hard lines (full detail in `docs/SECURITY.md`):
 
 - No remote pipe-to-shell (`curl | bash` and equivalents); no unreviewed remote or obfuscated scripts.
-- No destructive commands (`rm -rf`, `git reset --hard`, `git clean -fdx`, database drops, mass deletes) without explicit user approval; no `sudo` unless the user asks.
+- No destructive commands (`rm -rf`, `git reset --hard`, `git clean -fdx`,
+  mass file deletes) or destructive local/approved staging database commands
+  without explicit user approval; production database operations are
+  FORBIDDEN; no `sudo` unless the user asks.
 - Never print, commit, or expose secret values (`.env` contents, API keys, tokens, service-role keys); describe presence only.
 - Prefer `npm ci` when `package-lock.json` exists; no override install flags without approval.
+- Supabase: local/approved staging only for agents; production DB
+  reads/writes/drops/deletes/migrations/credentials and agent/MCP account
+  deletion on every environment are FORBIDDEN, not approvable; no service-role
+  in the mobile bundle; RLS on at table create (deny-by-default); client grants
+  only after Task 12 policies; trigger-only helpers use an empty `search_path`
+  and revoked client execution. Agents may implement and non-destructively
+  validate the protected account-deletion flow and prepare a checklist, but an
+  actual deletion must be initiated and executed manually by a human, never
+  through an agent-controlled browser, MCP, SQL, or admin tool.

@@ -18,7 +18,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Never execute `curl | bash`, `wget | sh`, or equivalent remote pipe-to-shell patterns.
 - Never run remote shell scripts, one-liners fetched from the internet, or obfuscated/encoded commands without explicit user approval after review.
 - Prefer reading and understanding a script locally before execution when setup is required.
-- Do not run destructive commands (`rm -rf`, `git reset --hard`, `git clean -fdx`, database drops, mass file deletes) without explicit user approval.
+- Do not run destructive commands (`rm -rf`, `git reset --hard`,
+  `git clean -fdx`, mass file deletes) or destructive database commands
+  against local/approved staging (`DROP`, mass row deletes) without explicit
+  user approval. Production database actions are never approvable; they are
+  forbidden below.
 - Do not use `sudo` unless the user explicitly requests it and the command is necessary.
 
 ## Secrets And Sensitive Data
@@ -28,3 +32,46 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Never expose Supabase service-role keys in client code or agent output.
 - Treat credentials in terminal output, MCP responses, and error messages as sensitive; summarize without repeating values.
 - If credentials are discovered in output, files, or history: stop repeating them, redact from any draft response, warn the user that exposure may have occurred, and recommend rotation if the value may have left a trusted boundary.
+
+## Supabase Environments And Agent Boundaries
+
+- Task 11 may configure and validate local Supabase plus one separate staging
+  project. Production database access, migrations, writes, and destructive
+  actions are unavailable to coding agents.
+- Treat production database reads (including schema inspection), writes,
+  drops, deletes, migrations, and credentials as **FORBIDDEN** for coding
+  agents and MCP tools, not as high-impact actions that chat approval can
+  authorize.
+- The product may implement the protected in-app account-deletion flow owned by
+  Task 15. Coding agents may implement and non-destructively validate that flow
+  and prepare its manual verification checklist. An actual deletion must be
+  initiated and executed manually by a human, never through an
+  agent-controlled browser, MCP, SQL, or admin tool. Account deletion on local,
+  staging, or production is **FORBIDDEN** for agents even with chat approval.
+- Do not initialize, install, create/apply a migration, link a project, or
+  change a remote environment from a planning-only task. Implementation needs
+  explicit task authorization.
+- The Expo bundle may contain only the project URL and a publishable key (or
+  legacy anon key for compatibility). It must never contain a secret key,
+  service-role key, database password, or direct connection string.
+- Treat RLS policies and Data API grants as separate controls. Task 11 enables
+  RLS, revokes inherited `PUBLIC` / `anon` / `authenticated` privileges, and
+  adds no positive client grants. Task 12 adds complete policies before
+  rebuilding the explicit least-privilege client grant allowlist. Tests inspect
+  effective privileges so access inherited through `PUBLIC` cannot be missed.
+- The required trigger-only `SECURITY DEFINER` functions are
+  `handle_new_user` and the aggregate-writing `handle_user_rating_change`
+  entrypoint. Each uses
+  `SET search_path = ''`, fully qualified relation names, and
+  `REVOKE EXECUTE` from `PUBLIC`, `anon`, and `authenticated`.
+- `service_role` is server-only. Task 12 positively tests its exact allowlist
+  and aggregate-trigger side effects, while secret scanning proves its key is
+  absent from Expo.
+- `user_ratings.private_note` is owner-only. Do not expose raw rating rows as
+  public community content; Community Score comes from server-owned
+  `rating_aggregates`.
+- Secret scanning is a required Task 11 deliverable. Validate it with a safe
+  deliberate test pattern; never use a real credential as the test.
+- Do not print Supabase project refs, keys, tokens, connection strings, or
+  dashboard/MCP responses containing them. Report presence and validation
+  status without echoing values.

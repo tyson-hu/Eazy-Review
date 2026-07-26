@@ -11,7 +11,7 @@ Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase,
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
 - Browsing must not require login; rating must require login.
 - Use the UI names `Eazy Score`, `Community Score`, and `My Rating` exactly.
-- Keep the first rating form short: look, comfort, quality, outfit, value, overall, optional comment (all scores 1-10).
+- Keep the first rating form short: look, comfort, quality, outfit, value, overall, optional private note (all scores 1-10).
 - Keep the app clean, boring, and consistent before making it fancy.
 - Domain guardrails (Expo routing, relational tables/RLS/score recalculation, UI component rules) live in `.cursor/rules/react-native-expo.mdc`, `supabase.mdc`, and `design-system.mdc`. Cursor attaches them by glob; if your tool does not, read the matching rule file before touching Expo/routing, Supabase/data, or UI code.
 
@@ -43,16 +43,19 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 
 ## Skill Index
 
-Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`):
+Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`; authoritative discovery metadata in `skills/manifest.json`):
 `feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
-Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here or in `docs/LOOP_ENGINEERING.md` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
+Generate both discovery-wrapper trees from the manifest with `npm run skills:generate`; do not edit generated wrappers by hand.
+
+Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here, in `docs/LOOP_ENGINEERING.md`, or in `skills/manifest.json` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
 
 ## Validation
 
 - `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
+- `npm run check:skill-wrappers` after canonical skill, manifest, generator, or discovery-wrapper edits (also part of `npm run check`).
 - `npm run decisions:check` after decision-record or decision-index tooling edits (also part of `npm run check`).
-- `npm run check` (decision index, routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency changes or before handoff.
+- `npm run check` (skill wrappers, decision index, routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency/skill changes or before handoff.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
 - `expo-doctor` / `expo install --check` (and thus the Expo tail of `npm run check`) must run **outside the agent sandbox** — sandboxed runs can false-pass doctor or `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation Commands → Expo doctor and dependency checks — agent sandbox.
 

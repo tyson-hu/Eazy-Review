@@ -1,63 +1,95 @@
 # supabase-schema-change
 
-Goal: safely change database schema, RLS, migrations, or data contracts, keeping docs and frontend types in sync in the same change.
+Goal: plan or apply one authorized Supabase schema, migration, RLS, grant, or
+database-backed contract change without duplicating the canonical SQL contract
+inside the skill.
 
 ## When to use
 
-- Any change requiring SQL, a migration, or an RLS policy: the tables `profiles`, `products`, `product_images`, `official_ratings`, `user_ratings`, `product_rating_summary`, `product_offers`, the `refresh_product_rating_summary` function, or the `user_ratings_refresh_summary_trigger` trigger.
-- Changes to database-backed contracts (a new column that frontend types must expose, the future `product_card_view`).
+- A task needs SQL, a migration, RLS, Data API grants, database functions,
+  triggers, or a database-backed contract change.
+- A Supabase review needs to verify a planned or implemented schema packet.
 
 ## When not to use
 
-- Frontend-only shape, type, mock, or display changes with no SQL: use `skills/product-data-modeling`.
-- Screen work that merely consumes existing data: use `skills/ui-screen-builder` or `skills/feature-slice-builder`.
+- Frontend-only types or mock data: use `skills/product-data-modeling`.
+- A screen that only consumes an existing contract: use the matching UI or
+  feature skill.
+- Remote production database work: agents never perform it.
 
 ## Inputs expected
 
-- The schema or policy change needed and why (which task or bug requires it).
-- Whether it affects existing data.
+- One named task or bug and its allowed file scope.
+- Whether the user authorized planning only or implementation.
+- Whether existing data or an already-applied migration is affected.
 
 ## Read first
 
-- `docs/DATA_MODEL.md` in full for the affected tables (schema, RLS, Rating Summary Logic).
-- The affected contracts in `docs/API_CONTRACTS.md` (`Product`, `ProductRatingSummary`, `ProductOffer`, `ProductCardData`).
+- The named task in `docs/TASKS.md`.
+- Affected sections of `docs/DATA_MODEL.md` and `docs/API_CONTRACTS.md`.
+- `docs/SECURITY.md` for environment, secret, and production boundaries.
+- The installed Supabase CLI version and current official guidance when
+  implementation is authorized.
 
 ## Routine
 
-1. Write the change as SQL against the documented schema first; confirm it does not conflict with `docs/DATA_MODEL.md` naming rules (`comfort` not `comforts`, `value` or `resale_markup` not `markups`).
-2. Create a migration file in `supabase/migrations/` — never edit applied migrations.
-3. Apply the RLS defaults to any new table: public `select` for product-related data; `user_ratings` writes restricted to `auth.uid() = user_id` for insert/update/delete.
-4. Keep Community Score recalculation server-side: any change touching `user_ratings` aggregates goes through `refresh_product_rating_summary` and its trigger, never client code.
-5. Update `docs/DATA_MODEL.md` to match the new schema exactly, in the same change.
-6. Sync frontend types in `src/types/product.ts` and the contracts in `docs/API_CONTRACTS.md`, plus mock data in `src/features/products/mockProducts.ts` if the shape changed.
-7. Run verification, then the memory step.
+1. Restate the packet boundary and authorization level. Planning-only work
+   stops at contracts; it does not initialize Supabase, install tooling, create
+   or apply migrations, or touch a remote project.
+2. Treat `docs/DATA_MODEL.md` as the only schema/RLS/grant contract. Resolve a
+   conflict there instead of adding a second copy to this skill or a rule file.
+3. When implementation is authorized, discover the current CLI command with
+   `--help`, create a new migration through the CLI, and never edit an applied
+   migration.
+4. Implement only the named task's migration boundary. Follow the Task 11 /
+   Task 12 ordering and authorization matrix in `docs/DATA_MODEL.md`; do not
+   move policies or grants across packets.
+5. Keep secrets out of files, output, Expo, and screenshots. Use local by
+   default; staging requires the packet's explicit authorization; production
+   is forbidden.
+6. Update affected canonical docs and frontend contracts in the same branch.
+   Do not change UI or mock behavior unless the task explicitly owns it.
+7. Run the narrowest local schema/authorization checks plus project validation,
+   then complete the documentation gate.
 
 ## Verification
 
-- Review the migration SQL against `docs/DATA_MODEL.md` line by line.
-- Confirm RLS is enabled on every new table and each policy is listed in the doc.
-- `npm run typecheck` for the synced frontend types.
-- If a local Supabase instance exists, apply the migration there before calling the change done; if not, state that it has not been applied anywhere.
+- Diff contains only the allowed packet.
+- New SQL matches `docs/DATA_MODEL.md` line by line.
+- Local migration apply/reset succeeds when implementation is in scope.
+- Required RLS, privilege-inventory, function-execution, and authorization
+  scenarios for the task pass.
+- A planning-only change is reported as not applied or runtime-tested.
+- No production access occurred and no service-role secret entered the client.
 
 ## Stop conditions
 
-- The migration would drop or rewrite existing data (`drop table`, `drop column`, destructive `update`): stop and get explicit human approval first.
-- The change touches service-role keys, or any path that would put one in client code: stop immediately.
-- A new rating category is being added to `user_ratings`: stop; rating categories are a product decision (`look`, `comfort`, `quality`, `outfit`, `value`, `overall` are fixed for MVP).
-- A migration would be applied to a remote/hosted Supabase project: stop and get explicit approval; this skill assumes local migrations only.
+- Authorization is planning-only but an install, initialization, migration, or
+  remote action would be required.
+- The change would drop/rewrite data or edit an applied migration without
+  explicit destructive-change approval.
+- Required SQL/RLS/grant behavior conflicts with the canonical data model.
+- A service-role secret would enter the client or any production database
+  access would occur.
+- Two failed fixes leave a schema or authorization test unresolved.
 
 ## Memory step
 
-- Update `docs/TASKS.md` (Supabase Tasks section) with what is done or newly discovered.
+- Update the task status or discovered follow-up in `docs/TASKS.md`.
 - Add or update a `docs/decisions/*.md` record only when the schema work introduces or changes a durable high-impact architecture, data-ownership, or security choice under `docs/decisions/README.md`; implementing an already-recorded contract is not a new ADR.
 
 ## Common mistakes
 
-- Changing `docs/DATA_MODEL.md` and the SQL in different changes, leaving them out of sync.
-- Forgetting RLS on a new table (default deny is not enough; the public-read policies are deliberate).
-- Recalculating `product_rating_summary` in the app because it seemed simpler.
-- Widening a migration into a refactor of adjacent tables.
+- Treating RLS as a substitute for Data API grants, or grants as a substitute
+  for RLS.
+- Copying table/policy details into this skill or `.cursor/rules` until they
+  drift from `docs/DATA_MODEL.md`.
+- Calling planning SQL implemented or validated without a local database run.
+- Smuggling UI, seed, auth, dependency, or future-task work into a schema
+  packet.
+- Trusting default function execution privileges for a privileged helper.
 
 ## Human-readable handoff
 
-End with the five-section handoff (What changed / Why it matters / What is safe / What needs review / Validation) per `docs/AGENT_WORKFLOW.md`.
+End with the five-section handoff (What changed / Why it matters / What is safe
+/ What needs review / Validation) per `docs/AGENT_WORKFLOW.md`.
