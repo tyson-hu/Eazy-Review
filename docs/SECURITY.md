@@ -34,6 +34,13 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Task 11 may configure and validate local Supabase plus one separate staging
   project. Production database access, migrations, writes, and destructive
   actions are unavailable to coding agents.
+- Treat production database access, writes, migrations, and production
+  credentials as **FORBIDDEN** for coding agents and MCP tools, not as
+  high-impact actions that chat approval can authorize.
+- The product may implement the protected in-app account-deletion flow owned by
+  Task 15, but coding agents and MCP tools must never execute account deletion
+  on local, staging, or production. Account deletion is **FORBIDDEN** even with
+  chat approval.
 - Do not initialize, install, create/apply a migration, link a project, or
   change a remote environment from a planning-only task. Implementation needs
   explicit task authorization.
