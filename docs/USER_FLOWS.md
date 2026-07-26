@@ -143,12 +143,39 @@ Logged-out user opens Account
 -> Forgot Password screen (request recovery email)
 -> User submits email; honest success/error state
 -> User opens recovery deep link / email link
--> App opens Reset Password (completion) with recovery session
+-> App exchanges/verifies the link and observes a PASSWORD_RECOVERY session
+-> App opens Reset Password (completion)
 -> User sets a new password; honest success/error state
 -> User signs in with the new password only (old password fails)
 ```
 
 `forgot-password.tsx` owns the recovery-request UI only. `reset-password.tsx` owns new-password completion and is the deep-link target when the auth provider requires a separate completion screen (Task 15). Do not fold completion into the forgot-password route.
+
+Reset Password enables its completion form only for a verified recovery
+session. Direct navigation, an ordinary signed-in session, or an
+expired/replayed/invalid recovery link shows a safe error with a path to request
+a new email; it must not call the password-update API.
+
+## Flow 6: Delete Account
+
+```txt
+Logged-in user opens Account
+-> User taps Delete Account
+-> App explains permanent profile/My Rating deletion
+-> User confirms and reauthenticates when required
+-> Protected server verifies the caller and derives that same user as target
+-> Auth Admin global sign-out revokes refresh sessions (failure aborts)
+-> Server hard-deletes that auth user
+-> Profile and My Rating rows cascade; Community aggregates recompute
+-> App clears local session and user-scoped cache
+-> App returns to logged-out Account; public browsing remains available
+```
+
+The client never chooses a target user id and never contains a service-role
+secret. A human—not a coding agent or agent-controlled browser/MCP/SQL/admin
+tool—runs the destructive verification, including a second pre-existing
+session that can no longer refresh. Already-issued JWTs may remain valid until
+the configured expiry; the verification records that bounded lifetime.
 
 ## Browse Requirements
 
@@ -219,3 +246,8 @@ After successful real submission:
 - Invalidate `['userRating', userId, productId]`.
 - Invalidate `['ratedProducts', userId]`.
 - Navigate back to Product Detail.
+
+The shared `['product', productId]` query stores public detail data only.
+Product Detail composes My Rating from `['userRating', userId, productId]`;
+never cache `privateNote` or other viewer-owned state under the shared product
+key.

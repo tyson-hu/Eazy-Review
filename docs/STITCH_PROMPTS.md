@@ -148,7 +148,7 @@ Logged in:
 - Terms
 - Privacy
 - Log Out
-- Delete Account
+- Delete Account with permanent-data explanation and destructive confirmation
 
 Use the global visual system. Keep the screen calm, useful, and account-focused.
 ```

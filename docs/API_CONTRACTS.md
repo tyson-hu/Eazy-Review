@@ -63,12 +63,25 @@ export type ProductOffer = {
   price: number | null;
 };
 
-/** Composed Product Detail payload. My Rating is user-specific, not a catalog Product field. */
-export type ProductDetailData = {
+/** Public/cacheable Product Detail data; never contains viewer-owned state. */
+export type ProductDetailPublicData = {
   product: Product;
   offers: ProductOffer[];
   ratingSummary: ProductRatingSummary;
+};
+
+/** Screen composition. My Rating is loaded from a separate user-scoped source. */
+export type ProductDetailData = ProductDetailPublicData & {
   myRating: RatingBreakdown | null;
+};
+
+export type AccountProfile = {
+  id: string;
+  displayName: string | null;
+  username: string | null;
+  avatarUrl: string | null;
+  /** Maps from non-null profiles.created_at. */
+  joinedAt: string;
 };
 ```
 
@@ -84,6 +97,7 @@ add auth screens, or connect rating writes.
 | Current `eazy_assessments` row | Future source for `Product.eazyScore`; select `is_current = true` |
 | `rating_aggregates` | Future source for `ProductRatingSummary` and Community Score; clients never calculate or write it |
 | `user_ratings.private_note` | Future Task 16 `privateNote`; maximum 500 characters and owner-only |
+| `profiles.created_at` | Non-null `AccountProfile.joinedAt`; optional mutable profile fields may remain null |
 | Immutable `user_ratings.product_id` / `user_id` | Identity is set on insert and cannot appear in a client update |
 | `product_offers.size_region` / `currency` | Required strings; MVP database allowlists are `US` and `USD` |
 | `product_offers.size` / `price` | `null` means unavailable/unsized; otherwise finite and non-negative |
@@ -212,10 +226,73 @@ File: `src/features/products/api.ts`
 
 Functions:
 - `getProducts(params)`
-- `getProductById(productId)`
+- `getProductById(productId)` — returns `ProductDetailPublicData`; never embeds
+  `myRating`
 - `searchProducts(query)`
 - `getProductOffers(productId)`
 - `getProductImages(productId)`
+
+## Auth API
+
+File: `src/features/auth/api.ts`
+
+Functions:
+- `requestPasswordReset(email)`
+- `updatePasswordFromRecovery(newPassword)`
+- `deleteCurrentUser()` — calls a protected server endpoint; no user id
+  parameter
+
+### Password-recovery completion (required)
+
+`app/auth/reset-password.tsx` is a recovery-only completion route. It may call
+`updatePasswordFromRecovery` only after the app has exchanged/verified the
+provider deep link and observed a valid `PASSWORD_RECOVERY` auth event/session.
+Direct navigation, an ordinary signed-in session, an expired link, or a
+replayed/invalid link must not expose a working password-update action; show a
+safe error and route back to a new recovery request instead.
+
+Tests cover a valid recovery session, direct navigation, an ordinary session,
+and expired/invalid recovery state. Successful completion proves the new
+password works and the old password does not.
+
+### Delete-current-user server contract (required)
+
+The client sends its current bearer session to a protected server endpoint and
+never sends an authoritative target user id. The server:
+
+1. verifies the caller with the Auth server and derives the target id only from
+   that verified user;
+2. enforces recent reauthentication when the selected provider flow requires
+   it;
+3. calls Supabase Auth Admin
+   [`signOut(callerJwt, 'global')`](https://supabase.com/docs/reference/javascript/auth-admin-signout)
+   with the verified caller JWT to revoke every refresh session; never write
+   directly to the managed `auth.sessions` table, and abort without deleting
+   the user if global revocation fails;
+4. uses a server-only secret/service-role client to hard-delete that same
+   `auth.users` row; and
+5. returns an honest success/error result so the client clears its local auth
+   state and all user-scoped cache only after confirmed deletion.
+
+Reject missing/invalid auth, any attempt to target another id, and any request
+whose verified caller no longer has a live session. The service-role secret
+never enters Expo.
+
+Non-destructive orchestration tests use mocked Auth Admin boundaries to prove
+the verified caller JWT is passed with `global` scope and `deleteUser` is not
+called when sign-out fails. They do not delete an account.
+
+Hard deletion cascades the user's `profiles` and `user_ratings` rows. Those
+rows, including `private_note`, have no MVP retention/anonymization copy.
+Affected products and `rating_aggregates` remain; the rating-delete trigger
+must recompute each aggregate, including the zero-count/null state when the
+deleted user was the last rater.
+
+Revoking sessions invalidates refresh tokens, but an already-issued JWT can
+remain cryptographically valid until its configured expiry. Record the
+project's configured JWT lifetime (MVP maximum: one hour) as the residual
+window. Sensitive server endpoints must validate the JWT `session_id` against
+a live Auth session when immediate post-revocation rejection is required.
 
 ## Ratings API
 
@@ -260,7 +337,8 @@ File: `src/features/products/queries.ts`
 
 Hooks:
 - `useProductsQuery(params)`
-- `useProductQuery(productId)`
+- `useProductQuery(productId)` — public `ProductDetailPublicData` only, keyed
+  by `['product', productId]`
 - `useProductOffersQuery(productId)`
 
 ## Ratings Query Hooks
@@ -277,7 +355,10 @@ User-scoped keys must include the account id:
 - `['ratedProducts', userId]`
 
 On sign-out or account switch, remove or invalidate the prior user's scoped
-queries. Do not enable either query until `userId` is known.
+queries. Do not enable either query until `userId` is known. Product Detail
+composes `ProductDetailData` from the public product query plus
+`useUserRatingQuery`; `myRating` must never be stored under the shared
+`['product', productId]` key.
 
 ## Ratings Mutations
 

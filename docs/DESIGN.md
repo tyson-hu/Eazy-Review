@@ -398,7 +398,9 @@ Logged-in state should show:
 - Terms of Use link.
 - Privacy Policy link.
 - Log Out button.
-- Delete Account button.
+- Delete Account button with permanent-data explanation, destructive
+  confirmation, reauthentication when required, and honest loading/error
+  states.
 
 ## Accessibility
 

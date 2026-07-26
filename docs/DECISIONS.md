@@ -772,3 +772,56 @@ Safety-risk:
 
 Related files:
 - `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/TASKS.md`
+
+## 2026-07-26 — Make Self-Deletion Caller-Derived And Session-Aware
+
+What changed:
+- The protected deletion server derives the target only from the verified
+  current caller, uses Auth Admin global sign-out to revoke all refresh
+  sessions, then hard-deletes that auth user with a server-only secret.
+- Failed session revocation aborts deletion; the implementation never writes
+  directly to the managed `auth.sessions` table.
+- Profile and My Rating rows cascade with no MVP retention copy; product
+  aggregates remain and are recomputed.
+
+Why:
+- A client-supplied target id would create a cross-account deletion risk, and
+  deleting only the current device's local session would leave other refresh
+  sessions usable.
+
+Effect:
+- Human-run acceptance covers a second session, cascade/aggregate correctness,
+  deleted-credential sign-in failure, and the configured residual JWT-expiry
+  window. Coding agents never execute the destructive check.
+
+Safety-risk:
+- Planning only. No auth user, session, row, server function, or remote project
+  was created, changed, or deleted.
+
+Related files:
+- `docs/TASKS.md`, `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`,
+  `docs/USER_FLOWS.md`, `docs/RELEASE_CHECKLIST.md`
+
+## 2026-07-26 — Separate Public Product Detail Cache From My Rating
+
+What changed:
+- Shared `['product', productId]` queries contain
+  `ProductDetailPublicData` only.
+- Product Detail composes `myRating` from the user-scoped
+  `['userRating', userId, productId]` query.
+
+Why:
+- `ProductDetailData.myRating` is viewer-owned and can contain a private note.
+  Caching it under a shared product key can show one account's data after an
+  auth transition.
+
+Effect:
+- Public product data can survive auth transitions; My Rating remains disabled
+  until `userId` exists and is cleared with the prior user's scoped cache.
+
+Safety-risk:
+- Planning only. Current mock/session behavior remains unchanged until the
+  connected read/query tasks implement this split.
+
+Related files:
+- `docs/API_CONTRACTS.md`, `docs/TASKS.md`, `docs/USER_FLOWS.md`

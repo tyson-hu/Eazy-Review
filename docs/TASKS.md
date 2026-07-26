@@ -394,6 +394,9 @@ Deliverables:
 - **Offer currency (MVP):** each product’s offer payload is single-currency. Omit or reject mismatched-currency offers before computing lowest price; never take a raw numeric minimum across currencies (`docs/API_CONTRACTS.md`). Browse `ProductCardData` must carry that same selected currency as `lowestPriceCurrency` (with `lowestPrice`) so cards do not hardcode `$`.
 - **Rate/Edit compatibility adapter (required in this task):** Detail will navigate with real product UUIDs, but rating persistence stays session-only until Task 16. Do **not** leave the rate route bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys — that rejects every UUID and blocks Task 15’s “logged-in user reaches the form” path.
   - Load rate-screen product context from the same real product/detail repository used by Detail (or a thin adapter over it).
+  - Keep connected catalog/detail reads viewer-independent as
+    `ProductDetailPublicData`; compose transitional My Rating state outside that
+    public payload.
   - Keep My Rating in a temporary session map keyed by **viewer identity + product ID** (any product ID string, including UUIDs). A product-ID-only map is not enough once Task 15 adds auth in the same JS runtime — user B must not see or overwrite user A’s note.
   - Clear or re-key the map on sign-in / sign-out / account switch (Task 15 must verify this if the map still exists then).
   - Replace that session map with Supabase persistence in Task 16.
@@ -418,18 +421,44 @@ Deliverables:
 - Sign up / sign in / sign out / session persistence.
 - **Password recovery:** `app/auth/forgot-password.tsx` (request) and `app/auth/reset-password.tsx` (completion / recovery deep-link target); Account logged-out Forgot Password entry point (`docs/DESIGN.md`); recovery-email submission with honest success/error states; recovery deep-link / session handling on Reset Password; new-password completion; verify new password works and old password does not.
 - **Delete account:** logged-in Account Delete Account action with destructive confirmation (and reauthentication if the provider requires it); protected server-side deletion (never a service-role key in the Expo bundle); defined cascade / anonymization / retention for `profiles`, `user_ratings`, and related rows; local session/cache cleanup. Supply a documented human-run end-to-end check that confirms the deleted account can no longer sign in. Coding agents and MCP/tools must not execute the destructive account-deletion step on any environment.
+- **Delete-current-user boundary:** the protected server verifies the bearer
+  session, derives the target id only from that caller (no authoritative
+  client-supplied user id), calls Auth Admin global sign-out with the verified
+  caller JWT, then hard-deletes that same auth user with a server-only secret.
+  Never write directly to `auth.sessions`; failed revocation aborts before
+  deletion. `profiles` and `user_ratings` cascade with no MVP retention copy;
+  affected `rating_aggregates` remain and are recomputed by the existing
+  trigger path.
+- **Session/JWT handling:** record a configured JWT expiry of at most one hour.
+  Session revocation stops refresh immediately but does not falsely claim to
+  invalidate already-issued JWTs before expiry; sensitive server endpoints
+  validate `session_id` against a live Auth session when immediate rejection is
+  required.
 
 Acceptance:
 - Sign up / sign in / sign out / session persistence.
-- Sign-up creates exactly one `public.profiles` row for the new `auth.users` id (via Task 11 `handle_new_user`); the logged-in Account screen can read that row (avatar / display name / username / joined date fields as designed — nulls until the user edits).
+- Sign-up creates exactly one `public.profiles` row for the new `auth.users` id
+  (via Task 11 `handle_new_user`); the logged-in Account screen can read that
+  row. Optional mutable avatar / display name / username fields may be null
+  until edited; joined date maps from non-null `profiles.created_at`.
 - Logged-out Rate CTA becomes sign-in gate; logged-in user reaches the form.
 - Account screen reflects auth state without Feed/social scope growth (including Forgot Password when logged out and Delete Account when logged in).
-- Password recovery path works end-to-end for an email user (request → email/deep-link → new password → sign-in with new password only).
+- Password recovery path works end-to-end for an email user (request →
+  email/deep-link → verified `PASSWORD_RECOVERY` session → new password →
+  sign-in with new password only). Direct route navigation, an ordinary
+  signed-in session, and expired/invalid links cannot update a password.
 - Delete-account implementation and non-destructive tests pass; a human performs
   and records the destructive end-to-end check (delete → cleared local
-  session/cache → deleted credentials cannot sign in). An agent must not
-  self-complete this acceptance item by deleting an account through the app,
-  MCP, SQL, or an admin API. The client holds no service-role key.
+  session/cache → a second pre-existing session cannot refresh → deleted
+  credentials cannot sign in). The check records the configured residual JWT
+  lifetime and confirms protected access ends within that bound. An agent must
+  not self-complete this acceptance item by deleting an account through the
+  app, MCP, SQL, or an admin API. The client holds no service-role key.
+- Mocked non-destructive tests prove Auth Admin receives the verified caller
+  JWT with `global` scope and user deletion is not called when revocation fails.
+- The same human-run local/staging checklist proves the deleted user's profile
+  and ratings are gone, affected aggregates are recomputed correctly (including
+  last-rater removal), and unrelated users/products remain.
 - If the Task 14 transitional session rating map still exists, it is namespaced by signed-in user (and cleared or re-keyed on auth change) so one account cannot read or overwrite another’s in-memory My Rating.
 
 ### Task 16: My Rating Persistence And Rated Products
@@ -477,4 +506,7 @@ Acceptance:
 - Mock fetch paths replaced for connected screens (including Rated Products when present).
 - Invalidation list in `docs/API_CONTRACTS.md` is implemented (includes `['ratedProducts', userId]` after rating mutations).
 - User-scoped keys include the authenticated account id (`['userRating', userId, productId]`, `['ratedProducts', userId]`); queries stay disabled until `userId` is known; auth transitions clear prior user-scoped cache entries.
+- `['product', productId]` contains public `ProductDetailPublicData` only.
+  Product Detail composes `myRating` from the separate user-scoped query; no
+  viewer-owned rating or private note is cached under a shared product key.
 - No Redux/Zustand for server state; no optimistic rating mutations in the first backend version.

@@ -133,13 +133,19 @@ Acceptance:
 
 Deliverables:
 - Sign up, sign in, sign out, session persistence, and auth-aware Account.
-- Forgot-password request and reset-password completion/deep-link routes.
-- Protected server-side account deletion with no service-role key in Expo.
+- Forgot-password request and recovery-session-gated reset completion/deep-link
+  routes.
+- Caller-derived protected account deletion with global refresh-session
+  revocation, documented JWT-expiry bounds, cascade/aggregate tests, and no
+  service-role key in Expo.
 
 Acceptance:
 - Logged-out browsing stays public; rating requires login.
 - Sign-up creates exactly one readable profile row.
-- Recovery and account deletion work end-to-end.
+- Recovery rejects non-recovery/expired route state.
+- Human-run account deletion proves a second session cannot refresh, deleted
+  credentials cannot sign in, profile/ratings cascade, and Community
+  aggregates remain correct.
 
 ### Milestone 6: Real Rating System (Tasks 16–18)
 

@@ -49,7 +49,15 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - No Supabase service-role key in client code.
 - Environment variables are documented.
 - RLS is enabled on public tables.
-- Delete-account flow is confirmed before release (owned by Task 15; protected server-side deletion, no service-role in the client).
+- Delete-account flow is confirmed before release (owned by Task 15):
+  protected server derives the target from the verified caller, revokes all
+  refresh sessions, and keeps the service-role secret out of the client.
+- Human-run deletion evidence covers a second pre-existing session failing to
+  refresh, deleted credentials failing to sign in, profile/rating cascades,
+  correct retained Community aggregates, local cache cleanup, and the
+  configured residual JWT-expiry bound.
+- Reset Password updates credentials only from a verified recovery session;
+  direct navigation and expired/invalid links fail safely.
 
 ## Store Readiness
 
