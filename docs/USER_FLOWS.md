@@ -23,6 +23,7 @@ app/
     sign-in.tsx
     sign-up.tsx
     forgot-password.tsx
+    reset-password.tsx
 
   account/
     rated-products.tsx
@@ -42,6 +43,7 @@ Non-tab screens:
 - Sign In.
 - Sign Up.
 - Forgot Password.
+- Reset Password.
 - Rated Products.
 - Settings.
 - Terms.
@@ -129,6 +131,25 @@ User opens Account
 -> Product Detail opens
 ```
 
+## Flow 5: Password Recovery
+
+Routes:
+- Request: `app/auth/forgot-password.tsx` (`/auth/forgot-password`)
+- Completion: `app/auth/reset-password.tsx` (`/auth/reset-password`)
+
+```txt
+Logged-out user opens Account
+-> User taps Forgot Password
+-> Forgot Password screen (request recovery email)
+-> User submits email; honest success/error state
+-> User opens recovery deep link / email link
+-> App opens Reset Password (completion) with recovery session
+-> User sets a new password; honest success/error state
+-> User signs in with the new password only (old password fails)
+```
+
+`forgot-password.tsx` owns the recovery-request UI only. `reset-password.tsx` owns new-password completion and is the deep-link target when the auth provider requires a separate completion screen (Task 15). Do not fold completion into the forgot-password route.
+
 ## Browse Requirements
 
 Route: `app/(tabs)/browse.tsx`
@@ -178,7 +199,7 @@ Fields:
 - Outfit: 1-10.
 - Value: 1-10.
 - Overall: 1-10.
-- Comment: optional.
+- Private note: optional (owner-only; not a public review). Max 500 characters once Task 16 connects the form.
 
 ### Task 9 mock behavior
 
@@ -189,11 +210,12 @@ During the fake-local-state phase:
 - Product Detail reflects the updated My Rating after submission.
 - Community Score and community category averages do not change.
 - App reload resets the mock rating fixtures.
+- The Rate/Edit optional text field may still be labeled **Comment** in mock UI until Task 16 renames the connected field to **Private note** (`privateNote`).
 - The real query invalidation behavior below applies after Supabase integration.
 
 After successful real submission:
 - Invalidate `['product', productId]`.
 - Invalidate `['products']`.
-- Invalidate `['userRating', productId]`.
-- Invalidate `['ratedProducts']`.
+- Invalidate `['userRating', userId, productId]`.
+- Invalidate `['ratedProducts', userId]`.
 - Navigate back to Product Detail.

@@ -27,7 +27,13 @@ export type RatingBreakdown = {
   outfit: number;
   value: number;
   overall: number;
+  /**
+   * Mock-era field name. Supabase / Task 16+ use `privateNote` mapped from
+   * `user_ratings.private_note` (owner-only; max 500 chars). Do not treat as a public review.
+   */
   comment?: string | null;
+  /** Preferred name once My Rating persistence lands (Task 16). */
+  privateNote?: string | null;
 };
 
 export type ProductRatingSummary = {
@@ -48,8 +54,11 @@ export type ProductOffer = {
   productId: string;
   websiteName: string;
   websiteLink: string;
+  /** Null when the offer has no size; DB rejects negatives and `'NaN'::numeric`. */
   size: number | null;
+  /** Required size system label; DB enforces non-null MVP whitelist (`US` only until expanded). */
   sizeRegion: string;
+  /** Required ISO 4217 code; DB enforces non-null MVP whitelist (`USD` only until expanded). */
   currency: string;
   price: number | null;
 };
@@ -117,7 +126,8 @@ Product Detail must not mix catalog card fields with detail aggregates. Use thes
 | Community Score | `detail.ratingSummary.communityScore` |
 | Review / rating count | `detail.ratingSummary.ratingCount` |
 | Purchase / price-by-size rows | `detail.offers` |
-| Lowest price | Min of non-null `detail.offers[].price` (use that offer's `currency`); if none, optional fallback to `detail.product.lowestPrice` treated as USD in mock/MVP catalog data (`Product.lowestPrice` has no currency field) |
+| Lowest price | Min of non-null prices among offers that share **one** currency for the product payload (use that currency). MVP: if offers mix currencies, keep only the dominant/seed currency set and omit or reject the rest — never take a raw numeric min across currencies. If no usable offer prices remain, optional fallback to `detail.product.lowestPrice` treated as USD in mock/MVP catalog data (`Product.lowestPrice` has no currency field) |
+| Card / Detail `imageUrl` | Primary `product_images` row: `sort_order ASC`, then `created_at ASC`, then `id ASC`. No images → `null`. |
 
 Do **not** bind Detail Community Score or review count to `product.communityScore` / `product.ratingCount` (those remain Browse/card convenience fields and can drift from the summary).
 
@@ -213,9 +223,36 @@ File: `src/features/ratings/api.ts`
 
 Functions:
 - `getUserRating(productId, userId)`
-- `upsertUserRating(input)`
+- `saveUserRating(input)` — **not** a single PostgREST `.upsert()` against `user_ratings`
 - `deleteUserRating(productId, userId)`
 - `getUserRatedProducts(userId)`
+
+### `saveUserRating` write pattern (required)
+
+Task 12 column-level grants allow `INSERT` of identity + scores +
+`private_note`, but `UPDATE` only of score columns + `private_note` (not
+`product_id` / `user_id` / `id` / timestamps). A natural PostgREST upsert with
+the full payload can therefore require forbidden identity-column update
+privileges before immutability or RLS checks run.
+
+Required behavior:
+
+1. Preferred: call a `SECURITY DEFINER` server function that performs the
+   insert-or-score-update atomically. It must derive ownership from
+   `auth.uid()`, reject unauthenticated calls and unpublished products, set
+   `product_id` + `auth.uid()` only on insert, update scores/`private_note`
+   only on conflict, validate score/note bounds, use
+   `SET search_path = ''` with fully qualified names, revoke execution from
+   `PUBLIC`/`anon`, and grant execution only to `authenticated`.
+2. Split path: insert identity + scores + optional note when no own rating
+   exists; update only scores + note for an existing own row.
+3. If split-path insert gets unique violation `23505` for
+   `(product_id, user_id)`, retry the permitted score/note-only update. Do not
+   surface the conflict as a failed save when the retry succeeds.
+
+Do not ship `supabase.from('user_ratings').upsert({ product_id, user_id, … })`.
+The historical name `upsertUserRating` meant “create or replace my rating,” not
+a PostgREST upsert.
 
 ## Product Query Hooks
 
@@ -231,8 +268,16 @@ Hooks:
 File: `src/features/ratings/queries.ts`
 
 Hooks:
-- `useUserRatingQuery(productId)`
-- `useUserRatedProductsQuery()`
+- `useUserRatingQuery(productId)` — enabled only when an authenticated `userId` is present
+- `useUserRatedProductsQuery()` — enabled only when an authenticated `userId` is present
+
+User-scoped keys must include the account id:
+
+- `['userRating', userId, productId]`
+- `['ratedProducts', userId]`
+
+On sign-out or account switch, remove or invalidate the prior user's scoped
+queries. Do not enable either query until `userId` is known.
 
 ## Ratings Mutations
 
@@ -245,8 +290,8 @@ Hooks:
 After rating mutation succeeds, invalidate:
 - `['product', productId]`
 - `['products']`
-- `['userRating', productId]`
-- `['ratedProducts']`
+- `['userRating', userId, productId]`
+- `['ratedProducts', userId]`
 
 ## Search And Filters
 
@@ -274,9 +319,35 @@ MVP sort options:
 - Lowest Price.
 - Recently Added.
 
+## Backend Field Naming (Tasks 11–16)
+
+| Concern | DB | Frontend |
+| --- | --- | --- |
+| Published catalog gate | `products.is_published` | filter/map only published rows for anonymous Browse |
+| Editorial Eazy Score | `eazy_assessments` where `is_current = true` | `product.eazyScore` / assessment adapter |
+| Community aggregate | `rating_aggregates` | `ProductRatingSummary` |
+| My Rating scores | `user_ratings` score columns | `RatingBreakdown` scores |
+| Optional personal text | `user_ratings.private_note` | `privateNote` (not a public comment) |
+
+Rules:
+
+- `private_note` / `privateNote` is owner-only and at most 500 characters
+  (database check plus connected form validation).
+- Public written reviews are not implemented.
+- Task 16 changes the optional-field label from **Comment** to
+  **Private note** and the property from `comment` to `privateNote` together.
+- Data API grants land only after Task 12 RLS policies.
+
+### Zero-rating / missing aggregate rows
+
+Every product insert creates a matching zero-count `rating_aggregates` row.
+Task 13 seeds must not leave published products without it. Task 14 adapters
+still normalize a missing join to `ratingCount: 0` with null averages and
+Community Score; they never invent client-side score math.
+
 ## Mock Data Contract
 
-Before Supabase:
+Before Supabase (Tasks 11–13 schema work does not require removing mocks):
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
 - Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Unmapped `mock-product://` URIs resolve to no image source so UI shows the "Image coming soon" placeholder. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
@@ -286,10 +357,16 @@ Before Supabase:
 `saveMockMyRating` semantics (session-only; not a backend write):
 
 - Confirms the product/detail fixture exists with the same rules as `getMockProductDetailById`; returns `false` if not.
-- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment is stored as `null`.
+- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment (mock alias for private note) is stored as `null`.
 - Returns `true` on success.
 - Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
 - Screens must call this API only — never import or mutate the private map.
+
+**Task 14 transitional note:** when Browse/Detail switch to Supabase UUIDs,
+Rate/Edit must not remain bound only to mock-product lookup. Load product
+context from the real Detail repository and keep temporary My Rating state
+keyed by viewer identity plus product ID until Task 16 replaces it. Clear or
+re-key on auth changes so accounts never share in-memory ratings.
 
 ```ts
 import type { Product } from '@/src/types/product';
