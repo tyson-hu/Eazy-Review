@@ -142,7 +142,8 @@ level-two heading of any name (so an empty `## Context` followed by
 `## Notes` does not false-pass) and must contain at least one substantive
 visible unfenced line (empty fenced blocks, HTML comments — including
 multi-line `<!-- … -->` — empty Markdown block markers such as `-`,
-`>`, `1.`, `> -`, or `- [ ]`, and link-reference definitions such as
+`>`, `1.`, `> -`, or `- [ ]`, thematic breaks such as `---`, `***`,
+`___`, or `* * *`, and link-reference definitions such as
 `[label]: https://example.invalid` alone do not count). Headings inside backtick or
 tilde fences (` ``` ` / `~~~`) and text inside HTML comments are ignored for
 both the title and required sections; a fence closes only with a compatible

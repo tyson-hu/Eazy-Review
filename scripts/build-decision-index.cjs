@@ -287,10 +287,11 @@ function forEachUnfencedLine(body, onVisibleUnfencedLine) {
 
 /**
  * True when a Markdown line still has visible text after stripping empty
- * structural markers (headings, bare list/blockquote/task markers, and
- * link-reference definitions).
+ * structural markers (headings, thematic breaks, bare list/blockquote/task
+ * markers, and link-reference definitions).
  *
- * Empty structures such as `-`, `>`, `1.`, `> -`, `- [ ]`, and
+ * Empty structures such as `-`, `>`, `1.`, `> -`, `- [ ]`, thematic breaks
+ * (`---`, `***`, `___`, `* * *`), and
  * `[label]: https://example.invalid` must not count as substantive section
  * content.
  *
@@ -308,6 +309,15 @@ function hasVisibleMarkdownContent(line) {
   }
   // Remove one or more empty blockquote markers.
   content = content.replace(/^(?:>\s*)+/, '');
+  content = content.trim();
+  if (content === '') {
+    return false;
+  }
+  // Thematic breaks render no visible text; detect before list-marker strip
+  // so `---` / `***` are not mistaken for a lone `-` / `*` plus leftovers.
+  if (/^(?:\*\s*){3,}$|^(?:-\s*){3,}$|^(?:_\s*){3,}$/.test(content)) {
+    return false;
+  }
   // Remove an unordered or ordered list marker.
   content = content.replace(/^(?:[-+*]|\d+[.)])\s*/, '');
   // An unchecked/checked task marker alone is also empty structure.
