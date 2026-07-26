@@ -360,28 +360,153 @@ Required scenarios:
 
 ### Task 13: Product Seed Data
 
-Status: Pending — seed a small representative catalog after Task 12.
+Status: Pending.
+
+Goal: seed one or two representative products first; expand toward the eight-product mock catalog only after the small seed is trusted.
+
+Acceptance:
+- Seed SQL (or approved script) loads into local reset and staging.
+- Every seeded product has a matching `rating_aggregates` row created by the
+  Task 11 product-insert trigger (zero-count when no ratings yet). Seed/import
+  code verifies that row but never inserts or updates aggregates directly. No
+  published product relies on a missing summary join.
+- Seeded / imported `product_offers.currency` and `product_offers.size_region` values are trimmed, uppercased, and inside each schema whitelist (MVP: `USD` / `US` only); never insert `NULL`, `''`, or arbitrary codes that bypass `default 'USD'` / `default 'US'`.
+- Image strategy decided: use approved HTTP(S) / Storage URLs in
+  `product_images`, or leave images absent so Task 14 maps `imageUrl: null` and
+  shows the existing placeholder. Do not persist the mock-only
+  `mock-product://` scheme as connected catalog data.
+- Seeded `product_images` use deliberate unique `sort_order` values per product (schema unique `(product_id, sort_order)`).
+- Populate only provenance/timing fields that exist in the Task 11 schema:
+  `eazy_assessments.methodology_version` and
+  `product_offers.last_checked_at` when applicable. A future `source_type` or
+  rights-provenance column requires its own schema-contract change; Task 13 must
+  not invent one.
 
 ### Task 14: Real Browse And Product Detail Reads
 
-Status: Pending — replace mock catalog reads and align frontend DB mappings
-after the seed is trusted.
+Status: Pending.
+
+Goal: replace mock product reads for Browse and Product Detail. Rating writes stay mock/session until Task 16. Skill: `skills/feature-slice-builder` in **connected-read** mode (no migrations/RLS — those stay in `skills/supabase-schema-change`).
+
+Deliverables:
+- Browse and Product Detail load published catalog rows from Supabase (not `mockProducts` / `getMockProductDetailById` for those screens).
+- **Primary image mapping:** flatten `product_images` to a single `imageUrl` using `sort_order ASC`, then `created_at ASC`, then `id ASC`; products with no images → `null`. Selection must be stable across repeated reads.
+- **Offer currency (MVP):** each product’s offer payload is single-currency. Omit or reject mismatched-currency offers before computing lowest price; never take a raw numeric minimum across currencies (`docs/API_CONTRACTS.md`). Browse `ProductCardData` must carry that same selected currency as `lowestPriceCurrency` (with `lowestPrice`) so cards do not hardcode `$`.
+- **Rate/Edit compatibility adapter (required in this task):** Detail will navigate with real product UUIDs, but rating persistence stays session-only until Task 16. Do **not** leave the rate route bound only to `getMockProductDetailById` / `saveMockMyRating` against `mockProducts` keys — that rejects every UUID and blocks Task 15’s “logged-in user reaches the form” path.
+  - Load rate-screen product context from the same real product/detail repository used by Detail (or a thin adapter over it).
+  - Keep connected catalog/detail reads viewer-independent as
+    `ProductDetailPublicData`; compose transitional My Rating state outside that
+    public payload.
+  - Keep My Rating in a temporary session map keyed by **viewer identity + product ID** (any product ID string, including UUIDs). A product-ID-only map is not enough once Task 15 adds auth in the same JS runtime — user B must not see or overwrite user A’s note.
+  - Clear or re-key the map on sign-in / sign-out / account switch (Task 15 must verify this if the map still exists then).
+  - Replace that session map with Supabase persistence in Task 16.
+- Detail/Browse mapping produces a non-null `ProductRatingSummary` even when the aggregate join is missing: normalize to the canonical empty summary (`ratingCount: 0`, null averages / Community Score). Prefer the DB zero-row from Task 11/13; normalization is the safety net.
+
+Acceptance:
+- Anonymous Browse and Detail work against Supabase public reads.
+- Canonical Detail field sources in `docs/API_CONTRACTS.md` still hold (including single-currency lowest price and deterministic primary `imageUrl`).
+- Browse cards show the selected offer currency correctly (`lowestPrice` + `lowestPriceCurrency`; no hardcoded `$`).
+- No client-trusted Community Score calculation.
+- Opening Rate/Edit for a seeded Supabase product UUID shows the form (product context loads); session save/load works for that UUID without requiring a mock catalog id.
+- A published product with zero ratings still yields `ratingSummary.ratingCount === 0` (never an undefined summary).
+- Repeated Browse/Detail reads for a multi-image product return the same primary `imageUrl`.
 
 ### Task 15: Authentication
 
-Status: Pending — email auth after real Browse/Detail reads; browsing remains
-public and rating requires login.
+Status: Pending.
+
+Goal: email auth first unless Apple Sign-In is required for the next TestFlight. Browse remains public; rating requires login. Own password recovery and account deletion so users are not locked out and the release gate can pass. Skill: `skills/feature-slice-builder` in **auth-connected** mode (implement the in-app delete-account product flow; never delete accounts via MCP — FORBIDDEN on every environment).
+
+Deliverables:
+- Sign up / sign in / sign out / session persistence.
+- **Password recovery:** `app/auth/forgot-password.tsx` (request) and `app/auth/reset-password.tsx` (completion / recovery deep-link target); Account logged-out Forgot Password entry point (`docs/DESIGN.md`); recovery-email submission with honest success/error states; recovery deep-link / session handling on Reset Password; new-password completion; verify new password works and old password does not.
+- **Delete account:** logged-in Account Delete Account action with destructive confirmation (and reauthentication if the provider requires it); protected server-side deletion (never a service-role key in the Expo bundle); defined cascade / anonymization / retention for `profiles`, `user_ratings`, and related rows; local session/cache cleanup. Supply a documented human-run end-to-end check that confirms the deleted account can no longer sign in. Coding agents and MCP/tools must not execute the destructive account-deletion step on any environment.
+- **Delete-current-user boundary:** the protected server verifies the bearer
+  session, derives the target id only from that caller (no authoritative
+  client-supplied user id), calls Auth Admin global sign-out with the verified
+  caller JWT, then hard-deletes that same auth user with a server-only secret.
+  Never write directly to `auth.sessions`; failed revocation aborts before
+  deletion. `profiles` and `user_ratings` cascade with no MVP retention copy;
+  affected `rating_aggregates` remain and are recomputed by the existing
+  trigger path.
+- **Session/JWT handling:** record a configured JWT expiry of at most one hour.
+  Session revocation stops refresh immediately but does not falsely claim to
+  invalidate already-issued JWTs before expiry; sensitive server endpoints
+  validate `session_id` against a live Auth session when immediate rejection is
+  required.
+
+Acceptance:
+- Sign up / sign in / sign out / session persistence.
+- Sign-up creates exactly one `public.profiles` row for the new `auth.users` id
+  (via Task 11 `handle_new_user`); the logged-in Account screen can read that
+  row. Optional mutable avatar / display name / username fields may be null
+  until edited; joined date maps from non-null `profiles.created_at`.
+- Logged-out Rate CTA becomes sign-in gate; logged-in user reaches the form.
+- Account screen reflects auth state without Feed/social scope growth (including Forgot Password when logged out and Delete Account when logged in).
+- Password recovery path works end-to-end for an email user (request →
+  email/deep-link → verified `PASSWORD_RECOVERY` session → new password →
+  sign-in with new password only). Direct route navigation, an ordinary
+  signed-in session, and expired/invalid links cannot update a password.
+- Delete-account implementation and non-destructive tests pass; a human performs
+  and records the destructive end-to-end check (delete → cleared local
+  session/cache → a second pre-existing session cannot refresh → deleted
+  credentials cannot sign in). The check records the configured residual JWT
+  lifetime and confirms protected access ends within that bound. An agent must
+  not self-complete this acceptance item by deleting an account through the
+  app, MCP, SQL, or an admin API. The client holds no service-role key.
+- Mocked non-destructive tests prove Auth Admin receives the verified caller
+  JWT with `global` scope and user deletion is not called when revocation fails.
+- The same human-run local/staging checklist proves the deleted user's profile
+  and ratings are gone, affected aggregates are recomputed correctly (including
+  last-rater removal), and unrelated users/products remain.
+- If the Task 14 transitional session rating map still exists, it is namespaced by signed-in user (and cleared or re-keyed on auth change) so one account cannot read or overwrite another’s in-memory My Rating.
 
 ### Task 16: My Rating Persistence And Rated Products
 
-Status: Pending — persist owner-only `private_note` ratings and ship the Rated
-Products path.
+Status: Pending.
+
+Goal: persist the signed-in user’s rating (`private_note` owner-only); ship Account → Rated Products so users can find and reopen products they rated. Do **not** use a direct PostgREST upsert that updates identity columns. Skill: `skills/feature-slice-builder` in **connected-write** mode. If a security-definer helper or other SQL/RLS work is still missing, run a scoped `skills/supabase-schema-change` sub-packet first, then return to connected-write for frontend integration.
+
+Deliverables:
+- `saveUserRating` / delete APIs using a **security-definer** helper **or** insert vs score-only update with unique-conflict retry (`23505` → score/private-note-only update) per `docs/API_CONTRACTS.md` — not `from('user_ratings').upsert(…)`. If the preferred definer helper is chosen, it must authorize inside the function (`auth.uid()` only, published-product check, insert with `product_id` + `auth.uid()` then conflict-update scores/`private_note` only, restricted `EXECUTE`) per that contract.
+- Frontend rename `comment` → `privateNote` and UI label **Private note** (retire “Comment” on the connected form).
+- Connected Rate/Edit enforces the 500-character `private_note` limit before submit.
+- Create `app/account/rated-products.tsx` (route already documented in `docs/USER_FLOWS.md`); wire Account → Rated Products → Product Detail.
+- `getUserRatedProducts` (and query hook if not deferred to Task 18) returns the signed-in user’s rated products for that list.
+
+Acceptance:
+- One rating per user per product enforced.
+- Concurrent first saves for the same user/product do not leave an unhandled unique-constraint failure; the final row contains one complete submitted rating (atomic helper or insert→`23505`→score-only update).
+- Private note never returned for other users.
+- Detail My Rating reflects persisted data after submit; mock session map retired for the connected path.
+- Frontend field rename `comment` → `privateNote` and visible **Private note** label land with this task (or an explicit tiny precede packet).
+- Connected Rate/Edit form enforces the 500-character `private_note` limit before submit (`maxLength` and/or explicit validation with a clear field error) so oversized notes fail in-form instead of only at the database check.
+- Logged-in user can open Rated Products from Account, see products they rated, and navigate to Detail.
+- Empty Rated Products state is handled.
 
 ### Task 17: Server-Owned Community Aggregates
 
-Status: Pending — verify and harden Task 11's trigger-owned mechanism; do not
-reselect the mechanism without a new decision.
+Status: Pending — **verification and hardening only** (Task 11 already selects and implements the trigger-based refresh mechanism).
+
+Goal: prove the Task 11 trigger-owned Community Score path stays correct under concurrency and forgery attempts; never client-written. Changing the mechanism requires a new superseding ADR and a forward migration — not a Task 17 mechanism re-selection.
+
+Acceptance:
+- Insert/update/delete rating refreshes `rating_aggregates` via the Task 11 triggers/helpers.
+- Concurrent ratings for the same product leave a correct final `rating_count` / averages (refresh serialized per product; cover concurrent writes in aggregate tests).
+- Tests prove clients cannot forge aggregates (no write grants; cannot execute refresh RPC).
+- Performance evaluation recorded if refresh cost is a concern; no new mechanism choice unless an ADR supersedes the Task 11 trigger decision.
 
 ### Task 18: TanStack Query And Cache Invalidation
 
-Status: Pending — add caching only after real reads and writes exist.
+Status: Pending — after real reads (Task 14+).
+
+Goal: query hooks, query-key factory, runtime validation for DB responses, structured loading/retry; invalidate product / user-rating keys after rating mutations.
+
+Acceptance:
+- Mock fetch paths replaced for connected screens (including Rated Products when present).
+- Invalidation list in `docs/API_CONTRACTS.md` is implemented (includes `['ratedProducts', userId]` after rating mutations).
+- User-scoped keys include the authenticated account id (`['userRating', userId, productId]`, `['ratedProducts', userId]`); queries stay disabled until `userId` is known; auth transitions clear prior user-scoped cache entries.
+- `['product', productId]` contains public `ProductDetailPublicData` only.
+  Product Detail composes `myRating` from the separate user-scoped query; no
+  viewer-owned rating or private note is cached under a shared product key.
+- No Redux/Zustand for server state; no optimistic rating mutations in the first backend version.

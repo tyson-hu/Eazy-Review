@@ -353,8 +353,8 @@ CTA logic:
 
 - Job: make it easy and satisfying to rate a product.
 - Focal point: rating input.
-- Show: product preview, overall rating emphasized first, supporting category rating rows, optional comment, submit button, progress feedback.
-- Keep single-line score inputs pill-shaped; use the 18px utility-card radius for the multiline Comment field so its taller shape does not become an oversized capsule.
+- Show: product preview, overall rating emphasized first, supporting category rating rows, optional private note, submit button, progress feedback.
+- Keep single-line score inputs pill-shaped; use the 18px utility-card radius for the multiline Private note field so its taller shape does not become an oversized capsule.
 - Avoid: long intimidating forms, too many required fields, confusing category names, no save/progress feedback.
 
 Form fields (keep the first rating form short):
@@ -364,12 +364,14 @@ Form fields (keep the first rating form short):
 - Outfit: 1-10.
 - Value: 1-10.
 - Overall: 1-10.
-- Comment: optional.
+- Private note: optional (owner-only; not a public comment). Max 500 characters on the connected form (Task 16).
 
 Validation:
 - Numeric fields are required.
 - Values must be between 1 and 10.
-- Comment is optional.
+- Private note is optional; when present, max 500 characters (Task 16+).
+
+Mock-era note: Task 9 screens may still label this field **Comment** until Task 16 renames UI + property to Private note / `privateNote`.
 
 ### Account
 
@@ -382,7 +384,7 @@ Logged-out state should show:
 - Short message.
 - Sign In button.
 - Create Account button.
-- Forgot Password link.
+- Forgot Password link (opens `app/auth/forgot-password.tsx`; recovery email deep links land on `app/auth/reset-password.tsx`).
 - Continue browsing message.
 
 Logged-in state should show:
@@ -396,7 +398,9 @@ Logged-in state should show:
 - Terms of Use link.
 - Privacy Policy link.
 - Log Out button.
-- Delete Account button.
+- Delete Account button with permanent-data explanation, destructive
+  confirmation, reauthentication when required, and honest loading/error
+  states.
 
 ## Accessibility
 

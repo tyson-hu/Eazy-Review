@@ -83,9 +83,12 @@ When two loops seem to apply, use these precedence rules. Each pair is also cros
 
 | Situation | Use | Not |
 | --- | --- | --- |
-| `docs/TASKS.md` feature spanning data + UI | `feature-slice-builder` | `ui-screen-builder` |
+| `docs/TASKS.md` feature spanning data + UI (mock-first Tasks 6–9; connected-read Task 14; auth-connected Task 15; connected-write Task 16) | `feature-slice-builder` | `ui-screen-builder` |
 | Purely one screen's visuals or layout | `ui-screen-builder` | `feature-slice-builder` |
-| Any change needing SQL, a migration, or RLS (includes syncing frontend types) | `supabase-schema-change` | `product-data-modeling` |
+| Any change needing SQL, a migration, or RLS (includes syncing frontend types) | `supabase-schema-change` | `product-data-modeling` / connected-read / auth-connected / connected-write `feature-slice-builder` |
+| Frontend catalog screens reading an already-shipped schema (no SQL) | `feature-slice-builder` (connected-read) | `supabase-schema-change` |
+| Auth / session / recovery / in-app delete-account feature (no schema invent) | `feature-slice-builder` (auth-connected) | MCP account deletion; inventing schema |
+| Authenticated rating persistence / Rated Products (schema already shipped) | `feature-slice-builder` (connected-write) | `supabase-schema-change` as the whole task |
 | Frontend-only shape, type, mock, or display change | `product-data-modeling` | `supabase-schema-change` |
 | Validation failure caused by the current change | Fix inside `test-and-validation-loop` (max 2 tries) | `bugfix-debug-loop` |
 | Run TypeScript, lint, Expo Doctor, dependency, or route checks | `test-and-validation-loop` | `interactive-preview-loop` |

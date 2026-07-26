@@ -385,6 +385,30 @@ Keep `private_note` on the owner-only row. Community Score reads come from
   aggregate trigger side effects. The service-role secret is never used by or
   bundled into Expo.
 
+## Task 15 Account-Deletion Consequences
+
+Task 15's protected self-deletion path hard-deletes only the verified current
+`auth.users` caller. The caller id is derived server-side from verified auth,
+never trusted from a request body. Before deletion, the server revokes all of
+that user's refresh sessions.
+
+The existing foreign keys define the data lifecycle:
+
+- `profiles.id on delete cascade` removes the profile. MVP retains no
+  display-name, username, or avatar-url copy.
+- `user_ratings.user_id on delete cascade` removes every My Rating row,
+  including `private_note`.
+- Each cascaded rating delete must execute the Task 11 aggregate-refresh path.
+  Product rows and `rating_aggregates` are retained and recomputed; a product
+  whose last rating was removed returns to count `0` with null averages/score.
+
+The human-run local/staging deletion checklist covers a user who rated multiple
+products and a user who shares a product with another rater. It proves
+profile/rating removal, correct retained aggregates, no orphan rows, and no
+stale Community Score. Coding agents may prepare this checklist and
+non-destructively validate the implementation, but they never execute an
+account deletion under Task 15's acceptance boundary in `docs/TASKS.md`.
+
 ## Admin Eazy Score Workflow
 
 For MVP, create Eazy assessments through trusted staging/admin tooling or seed

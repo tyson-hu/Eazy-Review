@@ -33,7 +33,7 @@ Eazy Review combines an app-curated product score with community ratings and the
 - Browse: product list with search, filters, sorting, infinite-scroll placeholder, and product detail navigation.
 - Account: logged-out auth entry points and logged-in profile/rated-products/settings flows.
 - Product Detail: product identity, scores, offers, breakdowns, My Rating, description, and rating CTA.
-- Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional comment.
+- Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional private note (not a public review).
 
 ## Core Product Flow
 
@@ -106,11 +106,11 @@ names follow `docs/DATA_MODEL.md` (`eazy_assessments` for editorial scoring).
 10. Build Account placeholder.
 11. Task 11 — create local/staging Supabase environments and the deny-by-default core schema.
 12. Task 12 — add RLS policies, explicit Data API grants, and authorization tests.
-13. Task 13 — seed a small representative catalog.
-14. Task 14 — connect Browse/Product Detail reads.
-15. Task 15 — add Supabase Auth.
-16. Task 16 — connect My Rating persistence and Rated Products.
-17. Task 17 — verify and harden server-owned Community Score aggregates.
+13. Task 13 — seed a small representative catalog (expand only after the small seed is trusted).
+14. Task 14 — connect published Browse/Product Detail reads with deterministic image and single-currency price mapping.
+15. Task 15 — add email-first Supabase Auth, password recovery, and protected account deletion.
+16. Task 16 — connect owner-only My Rating persistence and Rated Products (`private_note` / **Private note**).
+17. Task 17 — verify and harden server-owned Community Score aggregates under concurrency and forgery attempts.
 18. Task 18 — add TanStack Query and cache invalidation.
 19. Add real filtering/sorting/search.
 20. Add Feed sections.

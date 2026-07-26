@@ -111,13 +111,13 @@ Fields:
 - Outfit 1-10
 - Value 1-10
 - Overall 1-10
-- Optional comment
+- Optional private note (owner-only; not a public comment)
 
 Required structure:
 - Product preview
 - Overall rating emphasized
 - Category rating rows
-- Optional comment input
+- Optional private note input
 - Submit button
 - Save/progress feedback
 
@@ -148,7 +148,7 @@ Logged in:
 - Terms
 - Privacy
 - Log Out
-- Delete Account
+- Delete Account with permanent-data explanation and destructive confirmation
 
 Use the global visual system. Keep the screen calm, useful, and account-focused.
 ```

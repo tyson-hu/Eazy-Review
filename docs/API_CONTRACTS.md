@@ -27,7 +27,13 @@ export type RatingBreakdown = {
   outfit: number;
   value: number;
   overall: number;
+  /**
+   * Mock-era field name. Supabase / Task 16+ use `privateNote` mapped from
+   * `user_ratings.private_note` (owner-only; max 500 chars). Do not treat as a public review.
+   */
   comment?: string | null;
+  /** Preferred name once My Rating persistence lands (Task 16). */
+  privateNote?: string | null;
 };
 
 export type ProductRatingSummary = {
@@ -48,18 +54,34 @@ export type ProductOffer = {
   productId: string;
   websiteName: string;
   websiteLink: string;
+  /** Null when the offer has no size; DB rejects negatives and `'NaN'::numeric`. */
   size: number | null;
+  /** Required size system label; DB enforces non-null MVP whitelist (`US` only until expanded). */
   sizeRegion: string;
+  /** Required ISO 4217 code; DB enforces non-null MVP whitelist (`USD` only until expanded). */
   currency: string;
   price: number | null;
 };
 
-/** Composed Product Detail payload. My Rating is user-specific, not a catalog Product field. */
-export type ProductDetailData = {
+/** Public/cacheable Product Detail data; never contains viewer-owned state. */
+export type ProductDetailPublicData = {
   product: Product;
   offers: ProductOffer[];
   ratingSummary: ProductRatingSummary;
+};
+
+/** Screen composition. My Rating is loaded from a separate user-scoped source. */
+export type ProductDetailData = ProductDetailPublicData & {
   myRating: RatingBreakdown | null;
+};
+
+export type AccountProfile = {
+  id: string;
+  displayName: string | null;
+  username: string | null;
+  avatarUrl: string | null;
+  /** Maps from non-null profiles.created_at. */
+  joinedAt: string;
 };
 ```
 
@@ -75,6 +97,7 @@ add auth screens, or connect rating writes.
 | Current `eazy_assessments` row | Future source for `Product.eazyScore`; select `is_current = true` |
 | `rating_aggregates` | Future source for `ProductRatingSummary` and Community Score; clients never calculate or write it |
 | `user_ratings.private_note` | Future Task 16 `privateNote`; maximum 500 characters and owner-only |
+| `profiles.created_at` | Non-null `AccountProfile.joinedAt`; optional mutable profile fields may remain null |
 | Immutable `user_ratings.product_id` / `user_id` | Identity is set on insert and cannot appear in a client update |
 | `product_offers.size_region` / `currency` | Required strings; MVP database allowlists are `US` and `USD` |
 | `product_offers.size` / `price` | `null` means unavailable/unsized; otherwise finite and non-negative |
@@ -117,7 +140,8 @@ Product Detail must not mix catalog card fields with detail aggregates. Use thes
 | Community Score | `detail.ratingSummary.communityScore` |
 | Review / rating count | `detail.ratingSummary.ratingCount` |
 | Purchase / price-by-size rows | `detail.offers` |
-| Lowest price | Min of non-null `detail.offers[].price` (use that offer's `currency`); if none, optional fallback to `detail.product.lowestPrice` treated as USD in mock/MVP catalog data (`Product.lowestPrice` has no currency field) |
+| Lowest price | Min of non-null prices among offers that share **one** currency for the product payload (use that currency). MVP: if offers mix currencies, keep only the dominant/seed currency set and omit or reject the rest — never take a raw numeric min across currencies. If no usable offer prices remain, optional fallback to `detail.product.lowestPrice` treated as USD in mock/MVP catalog data (`Product.lowestPrice` has no currency field) |
+| Card / Detail `imageUrl` | Primary `product_images` row: `sort_order ASC`, then `created_at ASC`, then `id ASC`. No images → `null`. |
 
 Do **not** bind Detail Community Score or review count to `product.communityScore` / `product.ratingCount` (those remain Browse/card convenience fields and can drift from the summary).
 
@@ -202,10 +226,73 @@ File: `src/features/products/api.ts`
 
 Functions:
 - `getProducts(params)`
-- `getProductById(productId)`
+- `getProductById(productId)` — returns `ProductDetailPublicData`; never embeds
+  `myRating`
 - `searchProducts(query)`
 - `getProductOffers(productId)`
 - `getProductImages(productId)`
+
+## Auth API
+
+File: `src/features/auth/api.ts`
+
+Functions:
+- `requestPasswordReset(email)`
+- `updatePasswordFromRecovery(newPassword)`
+- `deleteCurrentUser()` — calls a protected server endpoint; no user id
+  parameter
+
+### Password-recovery completion (required)
+
+`app/auth/reset-password.tsx` is a recovery-only completion route. It may call
+`updatePasswordFromRecovery` only after the app has exchanged/verified the
+provider deep link and observed a valid `PASSWORD_RECOVERY` auth event/session.
+Direct navigation, an ordinary signed-in session, an expired link, or a
+replayed/invalid link must not expose a working password-update action; show a
+safe error and route back to a new recovery request instead.
+
+Tests cover a valid recovery session, direct navigation, an ordinary session,
+and expired/invalid recovery state. Successful completion proves the new
+password works and the old password does not.
+
+### Delete-current-user server contract (required)
+
+The client sends its current bearer session to a protected server endpoint and
+never sends an authoritative target user id. The server:
+
+1. verifies the caller with the Auth server and derives the target id only from
+   that verified user;
+2. enforces recent reauthentication when the selected provider flow requires
+   it;
+3. calls Supabase Auth Admin
+   [`signOut(callerJwt, 'global')`](https://supabase.com/docs/reference/javascript/auth-admin-signout)
+   with the verified caller JWT to revoke every refresh session; never write
+   directly to the managed `auth.sessions` table, and abort without deleting
+   the user if global revocation fails;
+4. uses a server-only secret/service-role client to hard-delete that same
+   `auth.users` row; and
+5. returns an honest success/error result so the client clears its local auth
+   state and all user-scoped cache only after confirmed deletion.
+
+Reject missing/invalid auth, any attempt to target another id, and any request
+whose verified caller no longer has a live session. The service-role secret
+never enters Expo.
+
+Non-destructive orchestration tests use mocked Auth Admin boundaries to prove
+the verified caller JWT is passed with `global` scope and `deleteUser` is not
+called when sign-out fails. They do not delete an account.
+
+Hard deletion cascades the user's `profiles` and `user_ratings` rows. Those
+rows, including `private_note`, have no MVP retention/anonymization copy.
+Affected products and `rating_aggregates` remain; the rating-delete trigger
+must recompute each aggregate, including the zero-count/null state when the
+deleted user was the last rater.
+
+Revoking sessions invalidates refresh tokens, but an already-issued JWT can
+remain cryptographically valid until its configured expiry. Record the
+project's configured JWT lifetime (MVP maximum: one hour) as the residual
+window. Sensitive server endpoints must validate the JWT `session_id` against
+a live Auth session when immediate post-revocation rejection is required.
 
 ## Ratings API
 
@@ -213,9 +300,36 @@ File: `src/features/ratings/api.ts`
 
 Functions:
 - `getUserRating(productId, userId)`
-- `upsertUserRating(input)`
+- `saveUserRating(input)` — **not** a single PostgREST `.upsert()` against `user_ratings`
 - `deleteUserRating(productId, userId)`
 - `getUserRatedProducts(userId)`
+
+### `saveUserRating` write pattern (required)
+
+Task 12 column-level grants allow `INSERT` of identity + scores +
+`private_note`, but `UPDATE` only of score columns + `private_note` (not
+`product_id` / `user_id` / `id` / timestamps). A natural PostgREST upsert with
+the full payload can therefore require forbidden identity-column update
+privileges before immutability or RLS checks run.
+
+Required behavior:
+
+1. Preferred: call a `SECURITY DEFINER` server function that performs the
+   insert-or-score-update atomically. It must derive ownership from
+   `auth.uid()`, reject unauthenticated calls and unpublished products, set
+   `product_id` + `auth.uid()` only on insert, update scores/`private_note`
+   only on conflict, validate score/note bounds, use
+   `SET search_path = ''` with fully qualified names, revoke execution from
+   `PUBLIC`/`anon`, and grant execution only to `authenticated`.
+2. Split path: insert identity + scores + optional note when no own rating
+   exists; update only scores + note for an existing own row.
+3. If split-path insert gets unique violation `23505` for
+   `(product_id, user_id)`, retry the permitted score/note-only update. Do not
+   surface the conflict as a failed save when the retry succeeds.
+
+Do not ship `supabase.from('user_ratings').upsert({ product_id, user_id, … })`.
+The historical name `upsertUserRating` meant “create or replace my rating,” not
+a PostgREST upsert.
 
 ## Product Query Hooks
 
@@ -223,7 +337,8 @@ File: `src/features/products/queries.ts`
 
 Hooks:
 - `useProductsQuery(params)`
-- `useProductQuery(productId)`
+- `useProductQuery(productId)` — public `ProductDetailPublicData` only, keyed
+  by `['product', productId]`
 - `useProductOffersQuery(productId)`
 
 ## Ratings Query Hooks
@@ -231,8 +346,19 @@ Hooks:
 File: `src/features/ratings/queries.ts`
 
 Hooks:
-- `useUserRatingQuery(productId)`
-- `useUserRatedProductsQuery()`
+- `useUserRatingQuery(productId)` — enabled only when an authenticated `userId` is present
+- `useUserRatedProductsQuery()` — enabled only when an authenticated `userId` is present
+
+User-scoped keys must include the account id:
+
+- `['userRating', userId, productId]`
+- `['ratedProducts', userId]`
+
+On sign-out or account switch, remove or invalidate the prior user's scoped
+queries. Do not enable either query until `userId` is known. Product Detail
+composes `ProductDetailData` from the public product query plus
+`useUserRatingQuery`; `myRating` must never be stored under the shared
+`['product', productId]` key.
 
 ## Ratings Mutations
 
@@ -245,8 +371,8 @@ Hooks:
 After rating mutation succeeds, invalidate:
 - `['product', productId]`
 - `['products']`
-- `['userRating', productId]`
-- `['ratedProducts']`
+- `['userRating', userId, productId]`
+- `['ratedProducts', userId]`
 
 ## Search And Filters
 
@@ -274,9 +400,35 @@ MVP sort options:
 - Lowest Price.
 - Recently Added.
 
+## Backend Field Naming (Tasks 11–16)
+
+| Concern | DB | Frontend |
+| --- | --- | --- |
+| Published catalog gate | `products.is_published` | filter/map only published rows for anonymous Browse |
+| Editorial Eazy Score | `eazy_assessments` where `is_current = true` | `product.eazyScore` / assessment adapter |
+| Community aggregate | `rating_aggregates` | `ProductRatingSummary` |
+| My Rating scores | `user_ratings` score columns | `RatingBreakdown` scores |
+| Optional personal text | `user_ratings.private_note` | `privateNote` (not a public comment) |
+
+Rules:
+
+- `private_note` / `privateNote` is owner-only and at most 500 characters
+  (database check plus connected form validation).
+- Public written reviews are not implemented.
+- Task 16 changes the optional-field label from **Comment** to
+  **Private note** and the property from `comment` to `privateNote` together.
+- Data API grants land only after Task 12 RLS policies.
+
+### Zero-rating / missing aggregate rows
+
+Every product insert creates a matching zero-count `rating_aggregates` row.
+Task 13 seeds must not leave published products without it. Task 14 adapters
+still normalize a missing join to `ratingCount: 0` with null averages and
+Community Score; they never invent client-side score math.
+
 ## Mock Data Contract
 
-Before Supabase:
+Before Supabase (Tasks 11–13 schema work does not require removing mocks):
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
 - Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Unmapped `mock-product://` URIs resolve to no image source so UI shows the "Image coming soon" placeholder. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
@@ -286,10 +438,16 @@ Before Supabase:
 `saveMockMyRating` semantics (session-only; not a backend write):
 
 - Confirms the product/detail fixture exists with the same rules as `getMockProductDetailById`; returns `false` if not.
-- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment is stored as `null`.
+- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment (mock alias for private note) is stored as `null`.
 - Returns `true` on success.
 - Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
 - Screens must call this API only — never import or mutate the private map.
+
+**Task 14 transitional note:** when Browse/Detail switch to Supabase UUIDs,
+Rate/Edit must not remain bound only to mock-product lookup. Load product
+context from the real Detail repository and keep temporary My Rating state
+keyed by viewer identity plus product ID until Task 16 replaces it. Clear or
+re-key on auth changes so accounts never share in-memory ratings.
 
 ```ts
 import type { Product } from '@/src/types/product';
