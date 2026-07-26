@@ -143,10 +143,14 @@ type ProductCardData = {
   communityScore: number | null;
   ratingCount: number;
   lowestPrice: number | null;
+  /** ISO 4217 code for `lowestPrice`; null when there is no displayable price. */
+  lowestPriceCurrency: string | null;
 };
 ```
 
 The database can store this data across relational tables. Frontend code should receive a convenient shape from Supabase select joins, a view, or an RPC function. Supabase select joins are acceptable for MVP. Later, create a view named `product_card_view`.
+
+Browse cards must format `lowestPrice` with `lowestPriceCurrency` (via `formatPrice` / `Intl.NumberFormat`). Do not hardcode a `$` prefix. When Task 14 maps a single-currency offer set into Browse, carry that same selected currency into `lowestPriceCurrency`. Mock catalog `Product.lowestPrice` has no currency field and is treated as USD until offer-backed mapping lands.
 
 ## Products API
 
