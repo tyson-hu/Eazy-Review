@@ -338,6 +338,11 @@ function extractLoopIndexSkills(content, manifestNames) {
     }
 
     const [triggerCell, skillCell] = cells;
+    if (triggerCell.trim() === '') {
+      errors.push(`${rowLabel}: Trigger cell must not be empty`);
+      continue;
+    }
+
     skillPathRe.lastIndex = 0;
     if (skillPathRe.test(triggerCell)) {
       errors.push(`${rowLabel}: Trigger cell must not contain a \`skills/<name>\` path`);

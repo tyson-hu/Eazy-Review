@@ -277,7 +277,7 @@ Deliverables:
   - `user_ratings` (scores + `private_note`, not `comment`; immutable `product_id` and `user_id`)
   - `rating_aggregates` (server-owned Community Score summary)
   - `product_offers` (required in Task 11 so Task 12 policies/grants and Task 14 Detail offers have a relation)
-- PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs.
+- PostgreSQL constraints: scores 1–10; `private_note` max 500 chars; one rating per user per product; required timestamps; valid FKs; `product_offers.price` null or `>= 0` (negative prices rejected; null remains unavailable).
 - **Enable RLS on every exposed table in the same migration as table creation** (deny-by-default: no client policies yet). Do **not** grant `anon` / `authenticated` table privileges in Task 11.
 - Optional: `service_role` tooling grants only (never ship service-role into Expo).
 - Aggregate helpers: **Task 11 owns the aggregation mechanism** — implement `refresh_rating_aggregates` + `handle_user_rating_change` / `user_ratings_refresh_aggregates_trigger` (trigger after insert/update/delete). Helpers are `SECURITY DEFINER` with `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated` (trigger-only); per-product serialized refresh before reading `user_ratings`; zero-count `rating_aggregates` row on every `products` INSERT (see `docs/DATA_MODEL.md`). Do not leave mechanism choice (RPC vs schedule vs trigger) to Task 17.
@@ -304,7 +304,7 @@ Task 11 contract checklist (fill before implementation):
   - secret-scanning CI/hook config
   - listed docs (`docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, `docs/SECURITY.md`, `docs/TASKS.md`; `docs/decisions/*.md` plus generated `docs/DECISIONS.md` only if a qualifying decision changes)
   - Do **not** expand into Browse/Detail/Rating UI, seed catalog, auth screens, or TanStack Query unless an explicit tiny companion packet says so
-- Required constraints, `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, per-product serialized aggregate refresh, and `auth.users` → `profiles` ensure trigger (see `docs/DATA_MODEL.md`).
+- Required constraints (including `product_offers.price` null or `>= 0`), `is_published`, RLS-on-create (deny-by-default), aggregate `REVOKE`s, per-product serialized aggregate refresh, and `auth.users` → `profiles` ensure trigger (see `docs/DATA_MODEL.md`).
 - Assessment history locked to the versioned model: `eazy_assessments.is_current boolean not null`, partial unique index `eazy_assessments_one_current_per_product`, and confirmation that Task 12 / Task 14 will select only `is_current = true` (overwrite-only is not allowed — `docs/DATA_MODEL.md` Resolved decisions).
 - Explicit confirmation that `anon` / `authenticated` table `GRANT`s are **deferred to Task 12** (and that clients never receive `profiles` INSERT).
 - Whether seed data is included (default: no full catalog).
@@ -454,7 +454,7 @@ Acceptance:
 Status: Done (2026-07-24).
 
 Added `scripts/check-skill-wrappers.cjs` / `npm run check:skill-wrappers`, wired into `npm run check` and Expo CI. Validates:
-- `skills/manifest.json` is the authoritative inventory; canonical `skills/`, both wrapper roots, the `AGENTS.md` Skill Index, and the `docs/LOOP_ENGINEERING.md` **Loop Index** Skill column must match it (Trigger-cell paths and prose outside the table do not count; each data row needs exactly one Skill-cell path);
+- `skills/manifest.json` is the authoritative inventory; canonical `skills/`, both wrapper roots, the `AGENTS.md` Skill Index, and the `docs/LOOP_ENGINEERING.md` **Loop Index** Skill column must match it (Trigger cells must be non-empty and must not carry skill paths; prose outside the table does not count; each data row needs exactly one Skill-cell path);
 - each `.agents/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md` has YAML front matter (`name`, `description`);
 - front matter is parsed as YAML; `name` / `description` must be non-empty **strings** after trim (rejects null, booleans, and every YAML numeric form including hex/octal/binary/`0x10`);
 - declared canonical `skills/<name>/SKILL.md` exists and is referenced;
