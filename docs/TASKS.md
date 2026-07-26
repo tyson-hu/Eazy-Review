@@ -271,14 +271,18 @@ Deliverables:
   `private_note` capped at 500 characters; deterministic image order; and
   non-negative, finite offer sizes/prices with MVP `US` / `USD` checks.
 - RLS enabled on every exposed table in the same migration as table creation.
-  The migration explicitly revokes any inherited `anon` / `authenticated`
-  table privileges, then adds no client policies or positive client grants.
-- Trigger-owned Community Score aggregation, the `auth.users` → `profiles`
-  creation trigger, immutable rating identity, and server-maintained
-  timestamps.
-- Any `SECURITY DEFINER` helper uses `SET search_path = ''`, fully qualified
-  relations, and explicit `REVOKE EXECUTE` from `PUBLIC`, `anon`, and
-  `authenticated` when it is trigger-only.
+  The migration explicitly revokes any inherited `PUBLIC`, `anon`, and
+  `authenticated` table privileges, then adds no client policies or positive
+  client grants.
+- Trigger-owned Community Score aggregation using the canonical formula in
+  `docs/DATA_MODEL.md`, the `auth.users` → `profiles` creation trigger,
+  immutable rating identity, and server-maintained timestamps.
+- `handle_new_user` and the aggregate-writing
+  `handle_user_rating_change` entrypoint are trigger-only
+  `SECURITY DEFINER` functions. They use `SET search_path = ''`, fully
+  qualified relations, and explicit `REVOKE EXECUTE` from `PUBLIC`, `anon`,
+  and `authenticated`. Timestamp and immutability helpers remain
+  `SECURITY INVOKER` unless elevation is proven necessary.
 - Expo configuration accepts only the project URL and publishable/legacy anon
   key; no secret or service-role key enters the mobile bundle.
 - Secret scanning is wired into the foundation workstream and fails on a safe
@@ -295,9 +299,15 @@ Acceptance:
   rating removal, concurrent writes to one product, and product deletion.
   Product deletion must complete without recreating a zero-count aggregate row
   for the deleting/deleted parent or failing its FK cascade.
+- Fixed-value tests prove two-decimal arithmetic category/overall averages and
+  `score = round(avg(overall) * 10)` from the unrounded mean. The documented
+  four-rating rounding-boundary fixture produces `overall_avg = 1.25` and
+  `score = 13`; zero ratings produce count `0` and null averages/score.
 - New products have a joinable zero-count aggregate row.
 - Aggregate/profile helpers are not callable by `PUBLIC`, `anon`, or
   `authenticated`.
+- Effective-privilege assertions prove `PUBLIC`, `anon`, and `authenticated`
+  have no table access, regardless of inherited defaults.
 - No Browse, Detail, Rating, auth-screen, full-seed, or TanStack Query work is
   included.
 
@@ -321,11 +331,13 @@ Deliverables:
   product, while an owner may still delete an existing rating after unpublish.
 - Public profile reads and owner-only updates of mutable profile fields; no
   client profile insert.
-- `REVOKE ALL PRIVILEGES` from `anon` / `authenticated` on each client-facing
-  table before rebuilding the explicit allowlist in `docs/DATA_MODEL.md`.
+- `REVOKE ALL PRIVILEGES` from `PUBLIC`, `anon`, and `authenticated` on each
+  client-facing table before rebuilding the explicit allowlist in
+  `docs/DATA_MODEL.md`.
 - Column-level profile and rating write grants. Rating identity and audit
   columns are never client-updatable; aggregate rows remain client read-only.
-- Authorization tests and privilege-inventory assertions.
+- Authorization tests and effective privilege-inventory assertions using
+  `has_table_privilege` / `has_column_privilege`.
 
 Required scenarios:
 
@@ -340,6 +352,11 @@ Required scenarios:
   aggregates, or execute trigger-only helpers.
 - Intended access fails without its explicit grant, proving grants and RLS are
   separate controls.
+- `PUBLIC` contributes no effective access; `anon` / `authenticated` match the
+  allowlist exactly.
+- A server-only `service_role` client has the exact positive table privileges
+  in `docs/DATA_MODEL.md`, can exercise rating writes and their aggregate
+  trigger side effects, and its secret never appears in the Expo bundle.
 
 ### Task 13: Product Seed Data
 

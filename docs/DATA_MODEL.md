@@ -218,6 +218,14 @@ minimum across mixed currencies.
 The client never calculates or persists Community Score. Task 11 owns a
 trigger-based, server-side aggregate mechanism with these acceptance criteria:
 
+- `rating_count` is the number of ratings for the product.
+- Each category average and `overall_avg` is the arithmetic mean of the
+  matching 1–10 rating column, rounded to two decimal places.
+- `score` is `round(avg(overall) * 10)` as an integer from 0–100. Calculate it
+  from the unrounded arithmetic mean, not from the stored two-decimal
+  `overall_avg`.
+- A zero-count aggregate keeps every category average, `overall_avg`, and
+  `score` null.
 - A product insert creates one zero-count `rating_aggregates` row.
 - Rating insert, score update, and delete refresh the matching product's count,
   category averages, overall average, score, and timestamp.
@@ -232,6 +240,12 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
 - The mechanism is tested locally for insert/update/delete, last-rating
   removal, same-product concurrency, and product deletion before Task 11 is
   called complete.
+- A fixed-value fixture with category/overall tuples
+  `(10, 8, 6, 4, 2, 1)` and `(2, 4, 6, 8, 10, 10)` must produce `6.00` for
+  every category average, `overall_avg = 5.50`, and `score = 55`.
+- A rounding-boundary fixture with four overall values `1, 1, 1, 2` must
+  produce `overall_avg = 1.25` and `score = 13`, and removing all four ratings
+  must restore the zero-count/null state.
 
 Expected names are `refresh_rating_aggregates`,
 `handle_user_rating_change`, and
@@ -242,10 +256,16 @@ not included in this planning PR.
 `public.profiles (id)`. It must produce exactly one profile row and clients
 never receive profile `INSERT`.
 
-Server-maintained timestamp triggers own mutable `updated_at` fields. A
-`BEFORE UPDATE` trigger rejects changes to both rating identity columns.
+`handle_new_user` and `handle_user_rating_change` are the required trigger-only
+`SECURITY DEFINER` entrypoints: the former crosses from `auth.users` to
+`public.profiles`, and the latter owns the aggregate-write privilege boundary.
+An inner `refresh_rating_aggregates` helper may remain `SECURITY INVOKER`
+because it executes inside the secured trigger entrypoint. Server-maintained
+timestamp and rating-identity helpers remain `SECURITY INVOKER` unless their
+implementation proves that elevation is required. A `BEFORE UPDATE` trigger
+rejects changes to both rating identity columns.
 
-Every trigger-only `SECURITY DEFINER` helper must:
+Every `SECURITY DEFINER` helper, including both required entrypoints, must:
 
 - declare `SET search_path = ''`;
 - fully qualify every relation;
@@ -270,27 +290,31 @@ alter table public.rating_aggregates enable row level security;
 alter table public.product_offers enable row level security;
 ```
 
-Task 11 explicitly revokes all table privileges for `anon` and
+Task 11 explicitly revokes all table privileges from `PUBLIC`, `anon`, and
 `authenticated` on each new exposed table, then adds no client policies or
-positive client grants. This keeps deny-by-default behavior independent of the
-project's inherited defaults. Optional explicit `service_role` grants are only
-for trusted staging/seed tooling and never place a service-role key in Expo.
+positive client grants. Revoking only the named login roles is insufficient
+because privileges inherited through `PUBLIC` are effective privileges. This
+keeps deny-by-default behavior independent of the project's inherited
+defaults. Optional explicit `service_role` grants are only for trusted
+staging/seed tooling and never place a service-role key in Expo.
 
 ## Task 12 Privileges And Data API Exposure
 
 Data API grants and RLS are separate layers: grants decide whether a role can
-reach an object; policies decide which rows that role may use. Supabase is
-moving new projects to explicit opt-in grants, so the migration must not depend
-on project defaults:
+reach an object; policies decide which rows that role may use. Supabase began
+making explicit opt-in grants the default for new projects on May 30, 2026,
+with enforcement for existing projects scheduled for October 30, 2026, so the
+migration must not depend on either old or new project defaults:
 [Securing your API](https://supabase.com/docs/guides/api/securing-your-api) and
 [the 2026 default-grant change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
 
 Task 12 is a new forward-only migration after Task 11 is applied and verified:
 
 1. Create the complete policies below.
-2. `REVOKE ALL PRIVILEGES` on every listed table from `anon` and
-   `authenticated`; PostgreSQL privileges are additive, so a later column grant
-   does not cancel an inherited table-wide grant.
+2. `REVOKE ALL PRIVILEGES` on every listed table from `PUBLIC`, `anon`, and
+   `authenticated`; PostgreSQL privileges are additive, privileges inherited
+   through `PUBLIC` are effective, and a later column grant does not cancel an
+   inherited table-wide grant.
 3. Rebuild this explicit allowlist.
 4. Run privilege-inventory and authorization tests.
 
@@ -315,6 +339,12 @@ Authenticated `user_ratings` column privileges:
 
 No client role receives profile `INSERT`, aggregate writes, or `EXECUTE` on
 trigger-only helpers.
+
+Privilege inventory must assert effective privileges with
+`has_table_privilege` and `has_column_privilege`, not only inspect direct grant
+rows. It must prove `PUBLIC` contributes no access, `anon` / `authenticated`
+match the client allowlist exactly, and `service_role` has every table
+privilege in the matrix above after the rebuild.
 
 ## Task 12 Row-Level Security
 
@@ -347,8 +377,13 @@ Keep `private_note` on the owner-only row. Community Score reads come from
 - One user cannot read another user's `private_note` or modify that rating.
 - Clients cannot write `rating_aggregates` or execute refresh helpers.
 - Privilege inventory proves no table-wide profile/rating write grant survived
-  the revoke-and-allowlist sequence.
+  the revoke-and-allowlist sequence, including access inherited through
+  `PUBLIC`.
 - A missing intended grant fails before RLS, proving both controls were tested.
+- A trusted server-only `service_role` connection can perform every operation
+  in its allowlist, including rating insert/update/delete with the expected
+  aggregate trigger side effects. The service-role secret is never used by or
+  bundled into Expo.
 
 ## Admin Eazy Score Workflow
 

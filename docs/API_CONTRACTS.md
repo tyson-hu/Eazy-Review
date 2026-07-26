@@ -79,11 +79,24 @@ add auth screens, or connect rating writes.
 | `product_offers.size_region` / `currency` | Required strings; MVP database allowlists are `US` and `USD` |
 | `product_offers.size` / `price` | `null` means unavailable/unsized; otherwise finite and non-negative |
 
-Task 11 enables RLS while leaving client policies and `anon` /
+Task 11 enables RLS while leaving client policies and `PUBLIC` / `anon` /
 `authenticated` grants absent. Task 12 adds policies first, revokes inherited
-table-wide privileges, then grants the least-privilege Data API allowlist in
-`docs/DATA_MODEL.md`. A successful policy test does not prove the required
-grant exists, and a grant does not replace a row policy.
+table-wide privileges from all three roles, then grants the least-privilege
+Data API allowlist in `docs/DATA_MODEL.md`. Effective privilege tests must
+include access inherited through `PUBLIC`. A successful policy test does not
+prove the required grant exists, and a grant does not replace a row policy.
+
+`rating_aggregates` stores the arithmetic mean of each 1–10 rating category
+rounded to two decimal places. `score` maps to Community Score and is
+`round(avg(overall) * 10)` from the unrounded overall mean. A zero-count row has
+null category averages, `overall_avg`, and `score`.
+
+The privileged trigger boundary is explicit: `handle_new_user` inserts the
+profile for a new auth user, and `handle_user_rating_change` owns aggregate
+writes. Both are trigger-only `SECURITY DEFINER` functions with an empty search
+path, fully qualified relations, and client execution revoked. Trusted
+`service_role` access is server-only and must be positively tested against its
+exact allowlist; its secret never enters Expo.
 
 Raw `user_ratings` rows are not a public review API while `private_note` shares
 the row. Community surfaces read `rating_aggregates`; My Rating reads only the

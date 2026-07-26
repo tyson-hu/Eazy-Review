@@ -55,6 +55,9 @@ Reason:
 
 Decision:
 - Trusted Community Score calculations belong in Supabase trigger/function or equivalent server-side logic.
+- Category and overall aggregates are two-decimal arithmetic means.
+  Community Score is `round(avg(overall) * 10)` from the unrounded mean; zero
+  ratings keep count `0` with null averages and score.
 
 Reason:
 - Client-calculated aggregate scores are not trustworthy for persisted product summaries.
@@ -696,11 +699,12 @@ Related files:
 
 What changed:
 - Task 11 creates the core schema with RLS enabled, no client policies,
-  inherited `anon` / `authenticated` privileges revoked, and no positive
-  client grants.
+  inherited `PUBLIC` / `anon` / `authenticated` privileges revoked, and no
+  positive client grants.
 - Task 12 is a separate forward-only migration that creates complete policies,
-  revokes inherited broad privileges, rebuilds explicit least-privilege Data
-  API grants, and proves the authorization matrix.
+  revokes inherited broad privileges (including access through `PUBLIC`),
+  rebuilds explicit least-privilege Data API grants, and proves the effective
+  authorization matrix plus the exact server-only `service_role` allowlist.
 
 Why:
 - Data API grants and RLS protect different layers. Separating the migrations
