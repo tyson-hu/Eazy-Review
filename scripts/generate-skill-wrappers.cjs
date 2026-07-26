@@ -100,6 +100,53 @@ function renderWrapper({ name, description }) {
   ].join('\n');
 }
 
+function resolveRepoRoot(repoRoot) {
+  const absoluteRepoRoot = path.resolve(repoRoot);
+  const rootStats = fs.lstatSync(absoluteRepoRoot, {
+    throwIfNoEntry: false,
+  });
+
+  if (!rootStats?.isDirectory() || rootStats.isSymbolicLink()) {
+    throw new Error(`Repository root must be a real directory: ${absoluteRepoRoot}`);
+  }
+
+  return fs.realpathSync(absoluteRepoRoot);
+}
+
+function assertOwnedPath(repoRoot, targetPath) {
+  const absoluteTarget = path.resolve(targetPath);
+  const relativeTarget = path.relative(repoRoot, absoluteTarget);
+  const isInsideRepo =
+    relativeTarget === '' ||
+    (!path.isAbsolute(relativeTarget) &&
+      relativeTarget !== '..' &&
+      !relativeTarget.startsWith(`..${path.sep}`));
+
+  if (!isInsideRepo) {
+    throw new Error(
+      `Generated skill path must stay inside the repository: ${absoluteTarget}`,
+    );
+  }
+
+  let currentPath = repoRoot;
+  for (const pathPart of relativeTarget.split(path.sep).filter(Boolean)) {
+    currentPath = path.join(currentPath, pathPart);
+    const pathStats = fs.lstatSync(currentPath, { throwIfNoEntry: false });
+
+    if (!pathStats) {
+      break;
+    }
+
+    if (pathStats.isSymbolicLink()) {
+      throw new Error(
+        `Refusing to follow symbolic link in generated skill path: ${currentPath}`,
+      );
+    }
+  }
+
+  return absoluteTarget;
+}
+
 function directoryNames(root) {
   if (!fs.existsSync(root)) {
     return [];
@@ -113,7 +160,7 @@ function directoryNames(root) {
 }
 
 function validateCanonicalInventory(repoRoot, skills) {
-  const canonicalRoot = path.join(repoRoot, 'skills');
+  const canonicalRoot = assertOwnedPath(repoRoot, path.join(repoRoot, 'skills'));
   const expectedNames = skills.map(({ name }) => name);
   const actualNames = directoryNames(canonicalRoot);
 
@@ -124,8 +171,11 @@ function validateCanonicalInventory(repoRoot, skills) {
   }
 
   for (const { name } of skills) {
-    const canonicalPath = path.join(canonicalRoot, name, 'SKILL.md');
-    if (!fs.statSync(canonicalPath, { throwIfNoEntry: false })?.isFile()) {
+    const canonicalPath = assertOwnedPath(
+      repoRoot,
+      path.join(canonicalRoot, name, 'SKILL.md'),
+    );
+    if (!fs.lstatSync(canonicalPath, { throwIfNoEntry: false })?.isFile()) {
       throw new Error(`Missing canonical skill file: skills/${name}/SKILL.md`);
     }
     if (fs.readFileSync(canonicalPath, 'utf8').trim().length === 0) {
@@ -134,12 +184,27 @@ function validateCanonicalInventory(repoRoot, skills) {
   }
 }
 
-function assertSafeGeneratedDirectory(skillDirectory) {
-  if (!fs.existsSync(skillDirectory)) {
+function assertSafeGeneratedDirectory(repoRoot, skillDirectory) {
+  assertOwnedPath(repoRoot, skillDirectory);
+  const directoryStats = fs.lstatSync(skillDirectory, {
+    throwIfNoEntry: false,
+  });
+
+  if (!directoryStats) {
     return;
   }
 
+  if (!directoryStats.isDirectory()) {
+    throw new Error(
+      `Refusing to replace non-directory generated path: ${skillDirectory}`,
+    );
+  }
+
   const entries = fs.readdirSync(skillDirectory, { withFileTypes: true });
+  for (const entry of entries) {
+    assertOwnedPath(repoRoot, path.join(skillDirectory, entry.name));
+  }
+
   const isSafe =
     entries.length === 1 &&
     entries[0].isFile() &&
@@ -152,19 +217,79 @@ function assertSafeGeneratedDirectory(skillDirectory) {
   }
 }
 
+function isGeneratedWrapperForName(content, name) {
+  if (!SKILL_NAME_PATTERN.test(name)) {
+    return false;
+  }
+
+  const lines = content.split('\n');
+  if (
+    lines.length !== 7 ||
+    lines[0] !== '---' ||
+    lines[1] !== `name: ${name}` ||
+    !lines[2].startsWith('description: ') ||
+    lines[3] !== '---' ||
+    lines[4] !== '' ||
+    lines[5] !==
+      `Follow the canonical workflow in \`skills/${name}/SKILL.md\`. Do not improvise a different routine.` ||
+    lines[6] !== ''
+  ) {
+    return false;
+  }
+
+  let description;
+  try {
+    description = JSON.parse(lines[2].slice('description: '.length));
+  } catch {
+    return false;
+  }
+
+  try {
+    const [skill] = validateManifest({
+      skills: [{ name, description }],
+    });
+    return renderWrapper(skill) === content;
+  } catch {
+    return false;
+  }
+}
+
+function assertGeneratedWrapperOwnership(repoRoot, skillDirectory, name) {
+  assertSafeGeneratedDirectory(repoRoot, skillDirectory);
+  const wrapperPath = assertOwnedPath(
+    repoRoot,
+    path.join(skillDirectory, 'SKILL.md'),
+  );
+  const content = fs.readFileSync(wrapperPath, 'utf8');
+
+  if (!isGeneratedWrapperForName(content, name)) {
+    throw new Error(
+      `Refusing to delete stale skill directory because SKILL.md is not a generated wrapper: ${skillDirectory}`,
+    );
+  }
+}
+
 function syncWrapperRoot(repoRoot, relativeRoot, skills, checkOnly) {
-  const wrapperRoot = path.join(repoRoot, relativeRoot);
+  const wrapperRoot = assertOwnedPath(
+    repoRoot,
+    path.join(repoRoot, relativeRoot),
+  );
   const expectedNames = new Set(skills.map(({ name }) => name));
 
-  if (!fs.existsSync(wrapperRoot)) {
+  if (!fs.lstatSync(wrapperRoot, { throwIfNoEntry: false })) {
     if (checkOnly) {
       throw new Error(`Missing generated wrapper root: ${relativeRoot}`);
     }
     fs.mkdirSync(wrapperRoot, { recursive: true });
+    assertOwnedPath(repoRoot, wrapperRoot);
   }
 
   const rootEntries = fs.readdirSync(wrapperRoot, { withFileTypes: true });
   for (const entry of rootEntries) {
+    const entryPath = assertOwnedPath(
+      repoRoot,
+      path.join(wrapperRoot, entry.name),
+    );
     if (!entry.isDirectory()) {
       throw new Error(
         `Unexpected non-directory in generated wrapper root: ${relativeRoot}/${entry.name}`,
@@ -172,24 +297,29 @@ function syncWrapperRoot(repoRoot, relativeRoot, skills, checkOnly) {
     }
 
     if (!expectedNames.has(entry.name)) {
-      const staleDirectory = path.join(wrapperRoot, entry.name);
       if (checkOnly) {
         throw new Error(
           `Unexpected generated skill directory: ${relativeRoot}/${entry.name}`,
         );
       }
-      assertSafeGeneratedDirectory(staleDirectory);
-      fs.rmSync(staleDirectory, { recursive: true });
+      assertGeneratedWrapperOwnership(repoRoot, entryPath, entry.name);
+      fs.rmSync(entryPath, { recursive: true });
     }
   }
 
   for (const skill of skills) {
-    const skillDirectory = path.join(wrapperRoot, skill.name);
-    const wrapperPath = path.join(skillDirectory, 'SKILL.md');
+    const skillDirectory = assertOwnedPath(
+      repoRoot,
+      path.join(wrapperRoot, skill.name),
+    );
+    const wrapperPath = assertOwnedPath(
+      repoRoot,
+      path.join(skillDirectory, 'SKILL.md'),
+    );
     const expectedContent = renderWrapper(skill);
 
     if (checkOnly) {
-      assertSafeGeneratedDirectory(skillDirectory);
+      assertSafeGeneratedDirectory(repoRoot, skillDirectory);
       if (!fs.existsSync(wrapperPath)) {
         throw new Error(
           `Missing generated wrapper: ${relativeRoot}/${skill.name}/SKILL.md`,
@@ -204,8 +334,9 @@ function syncWrapperRoot(repoRoot, relativeRoot, skills, checkOnly) {
       continue;
     }
 
-    assertSafeGeneratedDirectory(skillDirectory);
+    assertSafeGeneratedDirectory(repoRoot, skillDirectory);
     fs.mkdirSync(skillDirectory, { recursive: true });
+    assertOwnedPath(repoRoot, skillDirectory);
     fs.writeFileSync(wrapperPath, expectedContent);
   }
 }
@@ -221,12 +352,16 @@ function loadManifest(manifestPath) {
 }
 
 function runGenerator({ repoRoot, checkOnly = false }) {
-  const manifestPath = path.join(repoRoot, 'skills', 'manifest.json');
+  const resolvedRepoRoot = resolveRepoRoot(repoRoot);
+  const manifestPath = assertOwnedPath(
+    resolvedRepoRoot,
+    path.join(resolvedRepoRoot, 'skills', 'manifest.json'),
+  );
   const skills = loadManifest(manifestPath);
 
-  validateCanonicalInventory(repoRoot, skills);
+  validateCanonicalInventory(resolvedRepoRoot, skills);
   for (const wrapperRoot of WRAPPER_ROOTS) {
-    syncWrapperRoot(repoRoot, wrapperRoot, skills, checkOnly);
+    syncWrapperRoot(resolvedRepoRoot, wrapperRoot, skills, checkOnly);
   }
 
   return skills.length;

@@ -199,7 +199,13 @@ test('runGenerator writes identical deterministic wrapper trees', (t) => {
     'stale-skill',
   );
   fs.mkdirSync(staleDirectory, { recursive: true });
-  fs.writeFileSync(path.join(staleDirectory, 'SKILL.md'), 'stale\n');
+  fs.writeFileSync(
+    path.join(staleDirectory, 'SKILL.md'),
+    renderWrapper({
+      name: 'stale-skill',
+      description: 'Use when the stale workflow is required.',
+    }),
+  );
 
   assert.equal(runGenerator({ repoRoot }), 2);
   assert.equal(fs.existsSync(staleDirectory), false);
@@ -295,5 +301,99 @@ test('generator refuses to delete unexpected files from wrapper directories', (t
   assert.equal(
     fs.readFileSync(path.join(staleDirectory, 'notes.txt'), 'utf8'),
     'keep me\n',
+  );
+});
+
+test('generator refuses to delete an arbitrary lone SKILL.md from a stale directory', (t) => {
+  const repoRoot = createFixture(t);
+  const staleDirectory = path.join(
+    repoRoot,
+    '.agents',
+    'skills',
+    'stale-skill',
+  );
+  const staleSkillPath = path.join(staleDirectory, 'SKILL.md');
+  fs.mkdirSync(staleDirectory, { recursive: true });
+  fs.writeFileSync(staleSkillPath, '# User-owned skill\n\nKeep me.\n');
+
+  assert.throws(
+    () => runGenerator({ repoRoot }),
+    /not a generated wrapper/,
+  );
+  assert.equal(
+    fs.readFileSync(staleSkillPath, 'utf8'),
+    '# User-owned skill\n\nKeep me.\n',
+  );
+});
+
+test('generator rejects a symlinked wrapper root without touching its target', (t) => {
+  const repoRoot = createFixture(t);
+  const externalRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'eazy-review-wrapper-target-'),
+  );
+  t.after(() => fs.rmSync(externalRoot, { recursive: true, force: true }));
+
+  const sentinelPath = path.join(externalRoot, 'sentinel.txt');
+  fs.writeFileSync(sentinelPath, 'keep me\n');
+  fs.mkdirSync(path.join(repoRoot, '.agents'), { recursive: true });
+  fs.symlinkSync(
+    externalRoot,
+    path.join(repoRoot, '.agents', 'skills'),
+    'dir',
+  );
+
+  assert.throws(
+    () => runGenerator({ repoRoot }),
+    /symbolic link/,
+  );
+  assert.deepEqual(fs.readdirSync(externalRoot), ['sentinel.txt']);
+  assert.equal(fs.readFileSync(sentinelPath, 'utf8'), 'keep me\n');
+});
+
+test('generator rejects a symlinked wrapper ancestor without touching its target', (t) => {
+  const repoRoot = createFixture(t);
+  const externalRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'eazy-review-wrapper-ancestor-'),
+  );
+  t.after(() => fs.rmSync(externalRoot, { recursive: true, force: true }));
+
+  const sentinelPath = path.join(externalRoot, 'sentinel.txt');
+  fs.writeFileSync(sentinelPath, 'keep me\n');
+  fs.symlinkSync(externalRoot, path.join(repoRoot, '.agents'), 'dir');
+
+  assert.throws(
+    () => runGenerator({ repoRoot }),
+    /symbolic link/,
+  );
+  assert.deepEqual(fs.readdirSync(externalRoot), ['sentinel.txt']);
+  assert.equal(fs.readFileSync(sentinelPath, 'utf8'), 'keep me\n');
+});
+
+test('generator rejects a symlinked canonical SKILL.md without touching its target', (t) => {
+  const repoRoot = createFixture(t);
+  const externalRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'eazy-review-canonical-target-'),
+  );
+  t.after(() => fs.rmSync(externalRoot, { recursive: true, force: true }));
+
+  const sentinelPath = path.join(externalRoot, 'SKILL.md');
+  fs.writeFileSync(sentinelPath, '# External sentinel\n');
+
+  const canonicalPath = path.join(
+    repoRoot,
+    'skills',
+    'alpha-skill',
+    'SKILL.md',
+  );
+  fs.unlinkSync(canonicalPath);
+  fs.symlinkSync(sentinelPath, canonicalPath, 'file');
+
+  assert.throws(
+    () => runGenerator({ repoRoot }),
+    /symbolic link/,
+  );
+  assert.equal(
+    fs.readFileSync(sentinelPath, 'utf8'),
+    '# External sentinel\n',
   );
 });

@@ -66,7 +66,8 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 ## Memory step
 
 - Update the task's status in `docs/TASKS.md` (Done / Partial, plus newly discovered follow-ups).
-- Add or update a `docs/decisions/*.md` record only if work beyond the written task introduced a durable high-impact contract, route, or component decision under `docs/decisions/README.md`.
+- Add a `docs/DECISIONS.md` entry only if work beyond the written task
+  introduced a durable high-impact contract, route, or component decision.
 
 ## Common mistakes
 

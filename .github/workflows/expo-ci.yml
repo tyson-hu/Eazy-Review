@@ -23,13 +23,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test skill wrapper generator
-        run: npm run test:skill-wrappers
-
-      - name: Check generated skill wrappers
-        run: |
-          npm run skills:generate
-          git diff --exit-code -- .agents/skills .claude/skills
+      - name: Check skill wrapper contract
+        run: npm run check:skill-wrappers
 
       - name: Generate typed routes
         run: npm run generate:routes
