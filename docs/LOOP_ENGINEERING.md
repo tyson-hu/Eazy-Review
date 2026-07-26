@@ -55,10 +55,10 @@ These apply to debugging in any loop, from the first failure through a blocker n
 Loops record exactly three kinds of memory, nothing else:
 
 - **Task status** → `docs/TASKS.md` (completed work, newly discovered work).
-- **Decisions** → individual records under `docs/decisions/` only for durable high-impact choices that meet `docs/decisions/README.md`; regenerate `docs/DECISIONS.md`.
+- **Decisions** → `docs/DECISIONS.md`, using its entry template, for meaningful decisions only.
 - **Session state** → `docs/notes/handoff.md` (via `skills/session-handoff`) and `docs/notes/blocker-<topic>.md` (via `skills/blocker-note`). These are working state for the next session, not project documentation: chat is the workbench, files are the hard drive.
 
-Outside `docs/notes/`, no scratch files, no notes docs, no status comments in code. Routine fixes, validation results, and task progress are not decision records. If it is not task status, a qualifying decision, or session state, it does not get written down as project memory.
+Outside `docs/notes/`, no scratch files, no notes docs, no status comments in code. If it is not a task status, a decision, or session state, it does not get written down as project memory.
 
 ## Loop Index
 
