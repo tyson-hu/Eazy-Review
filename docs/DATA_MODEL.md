@@ -3,15 +3,17 @@
 Use relational Supabase/PostgreSQL tables. Do not store product identity,
 images, offers, ratings, and summaries inside one giant product JSON object.
 
-This document is the canonical contract for Tasks 11–12. Task 11 is **in
-progress**: its local schema and review hardening live in two forward-only
+This document is the canonical contract for Tasks 11–12. Task 11 is **Done**
+(2026-07-28): its schema and review hardening live in two forward-only
 migrations under `supabase/migrations/` (core tables/triggers/RLS, then
 complete internal-helper `EXECUTE` revocation; no client policies or positive
 grants). Exact aggregate SQL lives in the core migration, not here. The pgTAP
 suite plus two-session race harness run through `npm run test:db` /
 `npm run test:db:reset`; the clean local reset passed on 2026-07-27
-(176 pgTAP assertions plus the race). Staging is not configured, so Task 11 is
-not complete and Task 12 remains pending. Production was not touched.
+(176 pgTAP assertions plus the race). On 2026-07-28 the same two migrations
+were applied to the explicitly authorized staging target; migration history,
+RLS, privileges, helper execution, triggers, aggregate behavior, and linked
+database lint all passed. Task 12 remains pending. Production was not touched.
 
 Separate these concerns:
 
@@ -312,7 +314,11 @@ staging/seed tooling and never place a service-role key in Expo.
 Packet 6 SQL tests under `supabase/tests/database/security.test.sql` assert
 these effective table privileges, zero policies, and denied execution across
 all six internal helpers. The 176-assertion pgTAP suite passed on local reset
-2026-07-27.
+2026-07-27. Staging verification on 2026-07-28 confirmed 7/7 tables with RLS,
+zero policies, zero prohibited table privileges, all six internal helpers with
+zero prohibited executions, both required `SECURITY DEFINER` functions, all
+nine expected triggers, and seven transaction-rolled-back profile/aggregate
+behavior checks with no fixture residue.
 
 ## Task 12 Privileges And Data API Exposure
 

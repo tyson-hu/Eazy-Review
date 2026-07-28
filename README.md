@@ -52,7 +52,7 @@ npm run test:db:reset       # clean reset + pgTAP + two-session race
 supabase stop
 ```
 
-Expo must receive only the project URL and publishable/legacy anon key (see `.env.example`). Never put a service-role key in the mobile bundle (`docs/SECURITY.md`). Staging is human-controlled and not linked from this repo yet. Production database work is forbidden for agents.
+Expo must receive only the project URL and publishable/legacy anon key (see `.env.example`). Never put a service-role key in the mobile bundle (`docs/SECURITY.md`). The human-authorized staging target is linked through gitignored local CLI metadata; no project reference or credential is committed. Production database work is forbidden for agents.
 
 ## Documentation Discipline
 
@@ -61,7 +61,7 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 ## First Build Goal
 
 Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
-local Supabase core schema is implemented and verified, but Task 11 remains in
-progress until its human-controlled staging target exists. Task 12
-(policies/grants) remains pending behind that gate. Do not connect Expo to
-Supabase until Task 12 authorization is in place for the reads you need.
+local and staging Supabase core schema is implemented and verified. Task 12
+(policies/grants) is Pending — next; no Task 12 implementation has started.
+Do not connect Expo to Supabase until Task 12 authorization is in place for
+the reads you need.

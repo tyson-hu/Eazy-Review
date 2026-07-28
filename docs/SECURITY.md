@@ -85,8 +85,13 @@ Canonical security rules for all agent and human work in this repo, regardless o
   overlapping transactions, proves the second waits on the advisory lock, and
   checks the final aggregate. Run after `supabase start` (or use
   `npm run test:db:reset`). Local suite passed 2026-07-27 (176 pgTAP
-  assertions plus the race). Staging was not configured; production was not
-  touched.
+  assertions plus the race). The explicitly authorized staging target received
+  only the two Task 11 migrations on 2026-07-28. Its migration history,
+  7/7-table RLS state, zero policies, zero prohibited table/helper privileges,
+  nine expected triggers, seven transaction-rolled-back behavior checks,
+  linked lint, and zero test-fixture residue all passed. The local CLI link is
+  gitignored; no project reference or credential is committed. Production was
+  not touched.
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs
   `test:secrets` then scans allowlisted paths (`app/`, `src/`, `docs/`,
   `supabase/`, `scripts/`, `.github/`, root configs, root `.env` / `.env.*`

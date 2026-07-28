@@ -2,7 +2,7 @@
 
 ## Current Repo Status
 
-As of Task 11 local review hardening (2026-07-27):
+As of Task 11 completion (2026-07-28):
 - Expo project exists with Expo Router; NativeWind v4 configured.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
 - Reusable UI primitives exist under `src/components/ui/`.
@@ -11,8 +11,10 @@ As of Task 11 local review hardening (2026-07-27):
 - Local Supabase foundation is in place: core schema migration, deny-by-default
   RLS (no client policies/grants), internal-helper execution revocation, modern
   secret scanning, and passing pgTAP plus two-session concurrency tests.
-  Task 11 remains in progress because its human-controlled staging target is
-  not configured. Task 12 remains pending; production was not touched.
+- The explicitly authorized staging target contains the same two Task 11
+  migrations and passed migration-history, RLS, privilege, helper, trigger,
+  aggregate-behavior, residue, and database-lint checks. Task 11 is Done.
+  Task 12 is Pending — next; production was not touched.
 
 ## Definition Of Done
 
@@ -263,8 +265,8 @@ contract. Task 11 and Task 12 must use separate forward-only migrations.
 
 ### Task 11: Environments And Core Schema
 
-Status: **In progress** — local implementation verified 2026-07-27; staging
-target outstanding.
+Status: **Done 2026-07-28** — local and explicitly authorized staging
+acceptance passed.
 
 Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + two-session race), and `npm run check:secrets` all passed on branch
@@ -272,13 +274,13 @@ Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 and the two-session concurrency race pass locally. Review hardening adds modern
 `sb_secret_` detection, scans `.env.example` for privileged JWTs, revokes
 client execution across all six internal helpers, and proves overlapping
-aggregate writes. Staging was **not** configured; therefore Task 11 is not
-complete and Task 12 does not advance. Production was **not** touched. Expo
-client remains disconnected.
-
-Outstanding completion gate:
-- A human must create/approve and link the separate staging target, then apply
-  and verify the Task 11 migrations there. Agents do not infer that authority.
+aggregate writes. On 2026-07-28 the authorized staging target received exactly
+the two Task 11 migrations. Migration history matched; linked lint found no
+schema errors; the staging matrix confirmed 7/7 RLS tables, zero policies, zero
+prohibited table privileges, all six helpers with zero prohibited executions,
+both required `SECURITY DEFINER` functions, and all nine expected triggers.
+Seven transaction-rolled-back profile/aggregate behavior checks passed with no
+fixture residue. Production was **not** touched. Expo remains disconnected.
 
 Goal: create local and staging Supabase environments plus the smallest secure
 core schema. Do not connect the mobile UI, seed the full catalog, or touch a
@@ -287,12 +289,14 @@ production project.
 #### Packet 1 — Local Supabase CLI bootstrap (config only)
 
 Added: `supabase/config.toml` (local-only; `project_id = "eazy-review"` is a
-local Docker/CLI label, not a hosted project ref; no remote link),
+local Docker/CLI label, not a hosted project ref),
 `supabase/.gitignore`, and Expo-safe `.env.example` fake
 placeholders (URL + publishable/legacy anon key only). Pre-existing empty
 `supabase/migrations/`, `supabase/functions/`, and `supabase/seed/` placeholder
 dirs remain. Seed loading is disabled in config until Task 13. No migration
-SQL, tables, RLS, seed data, or mobile client in this packet.
+SQL, tables, RLS, seed data, or mobile client in this packet. The later
+human-authorized staging link lives only in gitignored `supabase/.temp/`
+metadata; no hosted project reference or credential is committed.
 
 Local CLI commands (Docker required for start/reset; do not run against a
 linked remote or production):
@@ -474,12 +478,24 @@ npm scripts: `test:db:pgtap` → `supabase test db --local`;
 layers. Local `project_id = "eazy-review"` is a CLI label only (not a remote
 link).
 
-**Runtime status (2026-07-27):** After Docker Desktop recovered,
+**Local runtime status (2026-07-27):** After Docker Desktop recovered,
 `DO_NOT_TRACK=1 supabase start` succeeded, both Task 11 migrations applied on
 reset, and `npm run test:db:reset` reported **All tests successful**
 (Files=6, Tests=176, Result: PASS) followed by a passing two-session race.
-Staging and production were not touched. Task 11 remains In progress; Task 12
-remains Pending.
+
+**Staging runtime status (2026-07-28):** After explicit authorization, CLI
+`--help` discovery preceded linking. `supabase db push --linked --dry-run`
+listed only the two Task 11 migrations and no seed/role files; the push and
+subsequent migration list succeeded. Linked lint reported no schema errors.
+Direct staging verification confirmed 7/7 RLS tables, zero policies, zero
+prohibited client table privileges, all six helpers with zero prohibited
+executions, both required `SECURITY DEFINER` functions, and all nine expected
+triggers. Seven transaction-rolled-back profile/aggregate behavior checks
+passed with zero fixture residue. The hosted `supabase test db --linked`
+runner could not resolve its temporary pgTAP functions and ran zero assertions,
+so the already-passing local 176-assertion suite was retained and staging was
+verified through the direct catalog/behavior matrix instead. Production was
+not contacted.
 
 #### Packet 7 — Review hardening
 
@@ -497,12 +513,12 @@ remains Pending.
 - `scripts/test-db-concurrency.cjs` opens two overlapping PostgreSQL sessions,
   confirms the second writer waits on `Lock:advisory`, commits the first, and
   asserts the final aggregate includes both ratings.
-- These corrections close the local review findings but do not satisfy the
-  outstanding staging deliverable or advance Task 12.
+- These corrections plus the staging evidence above complete Task 11. They do
+  not implement, plan, or otherwise begin Task 12.
 
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 
-Status: Pending — after Task 11 is complete.
+Status: **Pending — next.** Task 11 is complete; no Task 12 work has started.
 
 Goal: add complete RLS policies, then explicit least-privilege Data API grants,
 then prove unauthorized scenarios fail.
