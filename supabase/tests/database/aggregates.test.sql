@@ -337,8 +337,11 @@ select is(
 select ok(
   pg_get_functiondef(
     'public.refresh_rating_aggregates(uuid)'::regprocedure
-  ) ilike '%pg_advisory_xact_lock%',
-  'refresh_rating_aggregates retains the selected advisory-lock mechanism'
+  ) ilike '%pg_advisory_xact_lock%'
+    and pg_get_functiondef(
+      'public.refresh_rating_aggregates(uuid)'::regprocedure
+    ) ilike '%hashtextextended%',
+  'refresh_rating_aggregates uses the selected 64-bit advisory-lock mechanism'
 );
 
 select * from finish();

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(8);
+select plan(10);
 
 insert into public.products (id, brand, name)
 values (
@@ -25,6 +25,36 @@ select throws_ok(
   '23514',
   null,
   'negative offer price is rejected'
+);
+
+-- Precision-constrained numeric columns reject non-finite values before the
+-- table check constraints run.
+select throws_ok(
+  $$insert into public.product_offers (
+      product_id, website_name, website_link, price
+    ) values (
+      '66666666-6666-6666-6666-666666666661'::uuid,
+      'Shop',
+      'https://example.com/infinite-price',
+      'Infinity'::numeric
+    )$$,
+  '22003',
+  null,
+  'positive-infinite offer price is rejected'
+);
+
+select throws_ok(
+  $$insert into public.product_offers (
+      product_id, website_name, website_link, size
+    ) values (
+      '66666666-6666-6666-6666-666666666661'::uuid,
+      'Shop',
+      'https://example.com/infinite-size',
+      'Infinity'::numeric
+    )$$,
+  '22003',
+  null,
+  'positive-infinite offer size is rejected'
 );
 
 -- Invalid market (size_region) fails.

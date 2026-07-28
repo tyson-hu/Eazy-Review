@@ -93,11 +93,31 @@ test('shouldScanPath allows documented prefixes and skips noise', () => {
   assert.equal(shouldScanPath('app/assets/photo.png'), false);
 });
 
-test('dynamic Expo and EAS root configs are scanned for elevated keys', (t) => {
+test('gitignored Expo and EAS root configs are scanned for elevated keys', (t) => {
   const root = createTempRepo(t);
   const secret = modernSupabaseSecretKey();
+  write(root, '.gitignore', 'app.config.ts\neas.json\n');
+  write(root, 'docs/ok.md', 'tracked fixture\n');
   write(root, 'app.config.ts', `export default { extra: { key: "${secret}" } };\n`);
   write(root, 'eas.json', '{"build":{"preview":{"env":{"SAFE":"ok"}}}}\n');
+
+  const templateDir = path.join(root, '.empty-git-template');
+  fs.mkdirSync(templateDir);
+  runGit(root, ['init', `--template=${templateDir}`]);
+  runGit(root, ['config', 'user.email', 'secrets-test@example.com']);
+  runGit(root, ['config', 'user.name', 'secrets-test']);
+  runGit(root, ['add', '.gitignore', 'docs']);
+  runGit(root, [
+    '-c',
+    'commit.gpgsign=false',
+    'commit',
+    '-m',
+    'fixture',
+  ]);
+
+  const listed = listCandidateFiles(root);
+  assert.equal(listed.includes('app.config.ts'), true);
+  assert.equal(listed.includes('eas.json'), true);
 
   const findings = scanRepository(root);
   assert.equal(

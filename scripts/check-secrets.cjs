@@ -301,11 +301,11 @@ function shouldScanPath(relativePath) {
 }
 
 /**
- * Root `.env` / `.env.*` present on disk (may be gitignored).
+ * Recognized root text files present on disk (may be gitignored).
  * @param {string} root
  * @returns {string[]}
  */
-function listRootEnvFilesOnDisk(root) {
+function listRootScannableFilesOnDisk(root) {
   let entries;
   try {
     entries = fs.readdirSync(root, { withFileTypes: true });
@@ -313,13 +313,13 @@ function listRootEnvFilesOnDisk(root) {
     return [];
   }
   return entries
-    .filter((entry) => entry.isFile() && isRootEnvFile(entry.name))
+    .filter((entry) => entry.isFile() && shouldScanPath(entry.name))
     .map((entry) => entry.name);
 }
 
 /**
- * List tracked/untracked allowlisted files, plus on-disk root `.env` / `.env.*`
- * even when gitignored.
+ * List tracked/untracked allowlisted files, plus every recognized root text
+ * file on disk even when gitignored.
  * @param {string} root
  * @returns {string[]} relative paths
  */
@@ -369,8 +369,8 @@ function listCandidateFiles(root) {
     walk(root, '');
   }
 
-  for (const envFile of listRootEnvFilesOnDisk(root)) {
-    candidates.add(envFile);
+  for (const rootFile of listRootScannableFilesOnDisk(root)) {
+    candidates.add(rootFile);
   }
 
   return [...candidates].filter(shouldScanPath).sort();

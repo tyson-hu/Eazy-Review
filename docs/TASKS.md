@@ -10,11 +10,12 @@ As of PR #22 review remediation (2026-07-28):
   fake local rating state — Expo is **not** connected to Supabase yet.
 - Local Supabase foundation is in place: core schema migration, deny-by-default
   RLS (no client policies/grants), internal-helper execution revocation, modern
-  secret scanning, and passing pgTAP plus same-product insert and multi-product
-  delete concurrency tests.
-- All three Task 11 migrations passed explicitly authorized staging
-  acceptance, including the forward-only PR #22 lock-inversion remediation.
-  Task 11 is Done. Task 12 has not started; production was not touched.
+  secret scanning, and passing pgTAP plus same-product insert and fixture-only
+  multi-product rating-delete concurrency tests.
+- The first three Task 11 migrations passed explicitly authorized staging
+  acceptance. A fourth forward-only PR #22 review migration now orders actual
+  64-bit advisory-lock keys and passes locally; staging re-acceptance requires
+  separate authorization. Task 12 has not started; production was not touched.
 
 ## Definition Of Done
 
@@ -265,23 +266,26 @@ contract. Task 11 and Task 12 must use separate forward-only migrations.
 
 ### Task 11: Environments And Core Schema
 
-Status: **Done.**
+Status: **PR review remediation passes locally; staging re-acceptance pending.**
 
 Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + concurrency races), and `npm run check:secrets` all passed on branch
 `cursor/task-11-supabase-core-schema`. The current local gate has six pgTAP
-files, **180** assertions, a same-product insert race, a multi-product delete
-race, and 15 secret-scanner regressions. Review hardening detects modern
-  `sb_secret_` keys and privileged JWTs, covers recognized root text formats
-  including Expo/EAS configs,
+files, **183** assertions, a same-product insert race, a fixture-only
+multi-product rating-delete race, and 15 secret-scanner regressions. Review
+hardening detects modern `sb_secret_` keys and privileged JWTs, covers
+recognized root text files on disk even when gitignored (including Expo/EAS
+configs),
 revokes client execution across all six internal helpers, and processes
-statement transition tables in stable product order. On 2026-07-28 the
-authorized staging target received all three Task 11 migrations. The original
+statement transition tables in stable 64-bit advisory-lock-key order. On
+2026-07-28 the authorized staging target received the first three Task 11
+migrations. The original
 migration, security, trigger, behavior, residue, and lint matrix passed, then
 review-remediation re-acceptance confirmed three-migration parity, zero old row
-triggers, all three ordered transition-table statement triggers, continued
+triggers, all three transition-table statement triggers, continued
 helper execution denial, a passing transaction-rolled-back multi-product
-delete smoke, and linked lint with no schema errors. Production was **not**
+delete smoke, and linked lint with no schema errors. The fourth migration is
+locally accepted but not yet applied to staging. Production was **not**
 touched. Expo remains disconnected.
 
 Goal: create local and staging Supabase environments plus the smallest secure
@@ -360,10 +364,10 @@ Acceptance:
   or table privileges.
 - An auth-user insert creates exactly one matching profile row.
 - Aggregate behavior is locally tested for rating insert/update/delete, last
-  rating removal, concurrent writes to one product, concurrent multi-product
-  user-deletion cascades, and product deletion. Product deletion must complete
-  without recreating a zero-count aggregate row for the deleting/deleted parent
-  or failing its FK cascade.
+  rating removal, concurrent writes to one product, concurrent fixture-only
+  multi-product rating deletes, and product deletion. Product deletion must
+  complete without recreating a zero-count aggregate row for the
+  deleting/deleted parent or failing its FK cascade.
 - Fixed-value tests prove two-decimal arithmetic category/overall averages and
   `score = round(avg(overall) * 10)` from the unrounded mean. The documented
   four-rating rounding-boundary fixture produces `overall_avg = 1.25` and
@@ -416,7 +420,8 @@ Appended trigger/function SQL to the same migration
   row-level `user_ratings_refresh_aggregates_trigger` is historical; Packet 8
   replaces it with three event-specific statement triggers.
 - `refresh_rating_aggregates(product_id)` — inner `SECURITY INVOKER` helper;
-  `pg_advisory_xact_lock(hashtext(product_id))` before reading ratings;
+  originally used `pg_advisory_xact_lock(hashtext(product_id))` before reading
+  ratings; Packet 9 replaces this historical 32-bit mapping with a 64-bit key;
   UPDATEs only when the product row still exists (product-delete cascade
   safe); zero ratings → count 0 / null avgs / null score; category avgs
   `round(avg(col)::numeric, 2)`; `score = round(avg(overall) * 10)` from the
@@ -475,7 +480,7 @@ Added focused pgTAP tests under `supabase/tests/database/`:
 | `profiles.test.sql` | `auth.users` insert → one profile; `handle_new_user` EXECUTE denied |
 | `ratings.test.sql` | valid insert; range/unique/`private_note` failures; identity immutable; `updated_at` server-maintained |
 | `aggregates.test.sql` | zero row; insert/update/delete refresh; last-rating nulls; fixtures `1.25`/`13` and `6.00`/`5.50`/`55`; product-delete cascade; advisory-lock structural guard |
-| `offers_images.test.sql` | negative price; invalid market/currency; unique `sort_order`; cascades |
+| `offers_images.test.sql` | negative/non-finite offer values; invalid market/currency; unique `sort_order`; cascades |
 | `security.test.sql` | `has_table_privilege` deny for PUBLIC/anon/authenticated; no policies; all six internal helpers deny EXECUTE |
 
 npm scripts: `test:db:pgtap` → `supabase test db --local`;
@@ -534,14 +539,15 @@ left no residue.
 
 #### Packet 8 — PR #22 review remediation
 
-- Secret scanning now includes every recognized root-level text format, with
+- Secret scanning accepts every recognized root-level text format, with
   regressions for `app.config.ts`, `app.config.js`, and `eas.json`; current
   scanner suite: 15/15 pass.
 - CLI-created forward migration
   `supabase/migrations/20260728115256_prevent_rating_lock_inversion.sql`
   replaces the row-level aggregate refresh trigger with insert, update, and
   delete statement triggers. Transition tables provide every affected product;
-  `handle_user_rating_change` refreshes distinct IDs in stable UUID order.
+  `handle_user_rating_change` initially refreshed distinct IDs in stable UUID
+  order; Packet 9 corrects ordering to use the actual lock keys.
 - The concurrency harness retains the same-product insert race and adds two
   synchronized user-deletion cascades across two products. The old trigger
   reproduced a PostgreSQL advisory-lock deadlock; the new migration lets both
@@ -550,9 +556,32 @@ left no residue.
   focused scanner suite pass. Explicitly authorized staging application and
   re-acceptance passed as recorded in Packet 6. Production was not contacted.
 
+#### Packet 9 — PR #22 second review remediation
+
+- CLI-created forward migration
+  `supabase/migrations/20260728162303_order_rating_advisory_lock_keys.sql`
+  maps each affected product to the 64-bit `hashtextextended` key used by
+  `pg_advisory_xact_lock`, orders those actual keys, and keeps product ID only
+  as a deterministic collision tie-breaker. The first three applied migrations
+  remain unchanged.
+- The concurrency harness deletes only deterministic fixture
+  `public.user_ratings` rows; it never deletes `auth.users`, including cleanup.
+  Fixture users are reused with `ON CONFLICT DO NOTHING`.
+- Candidate enumeration supplements Git with every recognized root text file
+  present on disk, so gitignored `app.config.ts`, `app.config.js`, and
+  `eas.json` remain scanned.
+- PostgreSQL 17.6 directly rejects `Infinity` for the precision-constrained
+  `numeric(4,1)` size and `numeric(10,2)` price columns with SQLSTATE `22003`.
+  Two pgTAP regressions now preserve that finite-value contract; no redundant
+  constraint migration was added.
+- Local acceptance is 183 pgTAP assertions, both concurrency races, and 15/15
+  secret-scanner regressions. Staging application/re-acceptance is not
+  authorized by this packet; production was not contacted.
+
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 
-Status: **Pending.** Task 11 is accepted; no Task 12 work has started.
+Status: **Pending.** Task 11's latest review migration still awaits staging
+re-acceptance; no Task 12 work has started.
 
 Goal: add complete RLS policies, then explicit least-privilege Data API grants,
 then prove unauthorized scenarios fail.

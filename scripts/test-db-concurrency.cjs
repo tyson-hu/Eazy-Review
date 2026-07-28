@@ -204,13 +204,6 @@ const cleanupSql = `
     '${deleteProductAId}'::uuid,
     '${deleteProductBId}'::uuid
   );
-  delete from auth.users
-  where id in (
-    '${userAId}'::uuid,
-    '${userBId}'::uuid,
-    '${deleteUserAId}'::uuid,
-    '${deleteUserBId}'::uuid
-  );
 `;
 
 const setupSql = `
@@ -299,7 +292,8 @@ const setupSql = `
       '',
       '',
       ''
-    );
+    )
+  on conflict (id) do nothing;
   insert into public.products (id, brand, name)
   values
     ('${productId}'::uuid, 'Race Brand', 'Concurrent Aggregate Fixture'),
@@ -440,7 +434,8 @@ async function runMultiProductDeleteRace() {
     sessionA.stdin.end(`
       begin;
       select pg_advisory_xact_lock_shared(${deleteGateKey});
-      delete from auth.users where id = '${deleteUserAId}'::uuid;
+      delete from public.user_ratings
+      where user_id = '${deleteUserAId}'::uuid;
       select 'DELETE_A_COMPLETE';
       commit;
       \\q
@@ -451,7 +446,8 @@ async function runMultiProductDeleteRace() {
     sessionB.stdin.end(`
       begin;
       select pg_advisory_xact_lock_shared(${deleteGateKey});
-      delete from auth.users where id = '${deleteUserBId}'::uuid;
+      delete from public.user_ratings
+      where user_id = '${deleteUserBId}'::uuid;
       select 'DELETE_B_COMPLETE';
       commit;
       \\q
@@ -485,11 +481,11 @@ async function runMultiProductDeleteRace() {
     assert.equal(
       finalAggregates,
       `${deleteProductAId}|0|null,${deleteProductBId}|0|null`,
-      'both multi-product user deletes must commit with zeroed aggregates',
+      'both multi-product rating deletes must commit with zeroed aggregates',
     );
 
     process.stdout.write(
-      'test:db:concurrency — multi-product delete race pass (both deletes committed; aggregates zeroed)\n',
+      'test:db:concurrency — multi-product rating-delete race pass (both deletes committed; aggregates zeroed)\n',
     );
   } finally {
     for (const session of [gateSession, sessionA, sessionB]) {

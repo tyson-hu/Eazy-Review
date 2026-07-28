@@ -3,14 +3,17 @@
 Use relational Supabase/PostgreSQL tables. Do not store product identity,
 images, offers, ratings, and summaries inside one giant product JSON object.
 
-This document is the canonical contract for Tasks 11–12. Task 11 has three
+This document is the canonical contract for Tasks 11–12. Task 11 has four
 forward-only migrations under `supabase/migrations/`: core
 tables/triggers/RLS, complete internal-helper `EXECUTE` revocation, and
-statement-level aggregate refresh that prevents multi-product lock inversion.
-No migration adds client policies or positive grants. The local clean-reset
-gate is 180 pgTAP assertions plus same-product insert and multi-product delete
-concurrency races. All three migrations passed explicitly authorized staging
-acceptance on 2026-07-28. Task 12 remains pending. Production was not touched.
+statement-level aggregate refresh followed by 64-bit advisory-lock-key
+ordering that prevents multi-product lock inversion. No migration adds client
+policies or positive grants. The local clean-reset gate is 183 pgTAP assertions
+plus same-product insert and multi-product rating-delete concurrency races. The
+first three migrations passed explicitly authorized staging acceptance on
+2026-07-28; the fourth review migration is locally accepted and still requires
+separate staging authorization. Task 12 remains pending. Production was not
+touched.
 
 Separate these concerns:
 
@@ -236,9 +239,10 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
 - Refreshes for the same product are serialized before reading
   `user_ratings`, so concurrent commits cannot leave a stale aggregate.
 - Rating insert, update, and delete refresh once per statement from transition
-  tables. Distinct affected product IDs are processed in stable UUID order so
-  one multi-product statement cannot invert transaction advisory locks against
-  another.
+  tables. Each distinct affected product maps to a 64-bit advisory-lock key;
+  statements process the actual keys in stable order (with product ID as a
+  deterministic tie-breaker) so one multi-product statement cannot invert
+  transaction advisory locks against another.
 - Deleting the last rating leaves the existing product with a zero-count row
   and null averages/score.
 - `product_id` and `user_id` on `user_ratings` cannot change after insert.
@@ -249,10 +253,11 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   removal, same-product concurrency, multi-product delete concurrency, and
   product deletion before Task 11 is called complete.
   `supabase/tests/database/aggregates.test.sql` covers the aggregate cases and
-  retains a structural advisory-lock guard; `scripts/test-db-concurrency.cjs`
-  proves a same-product writer waits and sees both commits, then overlaps two
-  user-deletion cascades across two products and verifies both complete with
-  zeroed aggregates. Local suite pass: 2026-07-28.
+  retains a structural 64-bit advisory-lock guard;
+  `scripts/test-db-concurrency.cjs` proves a same-product writer waits and sees
+  both commits, then overlaps two fixture-only multi-product rating deletes
+  across two products and verifies both complete with zeroed aggregates. The
+  agent-run harness never deletes `auth.users`. Local suite pass: 2026-07-28.
 - A fixed-value fixture with category/overall tuples
   `(10, 8, 6, 4, 2, 1)` and `(2, 4, 6, 8, 10, 10)` must produce `6.00` for
   every category average, `overall_avg = 5.50`, and `score = 55`.
@@ -317,17 +322,20 @@ staging/seed tooling and never place a service-role key in Expo.
 
 Packet 6 SQL tests under `supabase/tests/database/security.test.sql` assert
 these effective table privileges, zero policies, and denied execution across
-all six internal helpers. The current 180-assertion pgTAP suite and both
+all six internal helpers. The current 183-assertion pgTAP suite and both
 concurrency races passed locally on 2026-07-28. Staging verification on
-2026-07-28 confirmed migration parity for all three migrations, 7/7 tables with
-RLS, zero policies, zero prohibited table privileges, all six internal helpers
-with zero prohibited executions, and both required `SECURITY DEFINER`
-functions. The original seven transaction-rolled-back profile/aggregate checks
+2026-07-28 confirmed migration parity for the first three migrations, 7/7
+tables with RLS, zero policies, zero prohibited table privileges, all six
+internal helpers with zero prohibited executions, and both required
+`SECURITY DEFINER` functions. The original seven transaction-rolled-back
+profile/aggregate checks
 left no fixture residue. Review-remediation re-acceptance then confirmed the
 old aggregate row trigger count is zero, all three statement triggers use
 transition tables, ordered product iteration is installed, client helper
 execution remains denied, and a transaction-rolled-back multi-product delete
 restores both aggregates to zero/null. Linked lint reported no schema errors.
+The fourth migration, which orders the actual 64-bit advisory-lock keys, has
+not been applied to staging.
 
 ## Task 12 Privileges And Data API Exposure
 

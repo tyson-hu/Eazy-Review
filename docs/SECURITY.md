@@ -82,27 +82,31 @@ Canonical security rules for all agent and human work in this repo, regardless o
   `anon` / `authenticated`), zero policies on the seven core tables, and
   `EXECUTE` revoked on all six internal helpers. `npm run test:db` runs those
   pgTAP checks and then `scripts/test-db-concurrency.cjs`, which proves
-  same-product writers serialize and overlapping multi-product deletion
-  cascades both commit. Statement triggers derive distinct affected products
-  from transition tables and acquire their advisory locks in stable UUID order.
-  Run after `supabase start` (or use `npm run test:db:reset`). The current local
-  gate passed 2026-07-28 with 180 pgTAP assertions and both races. The
-  explicitly authorized staging target received all three Task 11 migrations
+  same-product writers serialize and overlapping fixture-only multi-product
+  rating deletes both commit. The harness creates deterministic local fixture
+  users but never deletes `auth.users`. Statement triggers derive distinct
+  affected products from transition tables, map them to 64-bit advisory-lock
+  keys, and acquire the actual keys in stable order. Run after `supabase start`
+  (or use `npm run test:db:reset`). The current local gate passed 2026-07-28
+  with 183 pgTAP assertions and both races. The explicitly authorized staging
+  target received the first three Task 11 migrations
   on 2026-07-28. Migration parity, 7/7-table RLS state, zero policies, zero
   prohibited table/helper privileges, the original seven
   transaction-rolled-back behavior checks, linked lint, and zero test-fixture
   residue passed. Review-remediation re-acceptance additionally confirmed the
-  old row trigger is absent, all three ordered transition-table statement
+  old row trigger is absent, all three transition-table statement
   triggers are present, client helper execution remains denied, and a
   transaction-rolled-back multi-product delete restores both aggregates to
-  zero/null. The local CLI link is gitignored; no project reference or
-  credential is committed. Production was not touched.
+  zero/null. The fourth migration that orders actual 64-bit lock keys is local
+  only pending separate staging authorization. The local CLI link is
+  gitignored; no project reference or credential is committed. Production was
+  not touched.
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs
   `test:secrets` then scans allowlisted paths (`app/`, `src/`, `docs/`,
-  `supabase/`, `scripts/`, `.github/`, root `.env` / `.env.*` on disk even
-  when gitignored, all other root files with recognized text formats, plus
-  skill/agent trees). Root coverage includes dynamic Expo/EAS configuration
-  such as `app.config.ts`, `app.config.js`, and `eas.json`. It fails on the
+  `supabase/`, `scripts/`, `.github/`, all root files on disk with recognized
+  text formats even when gitignored, plus skill/agent trees). Root coverage
+  includes dynamic Expo/EAS configuration such as `app.config.ts`,
+  `app.config.js`, and `eas.json`. It fails on the
   deliberate test token (constant `TEST_TOKEN` in
   `scripts/check-secrets.cjs`),
   exact-shape modern `sb_secret_` keys, service-role key assignment forms with

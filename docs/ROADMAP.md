@@ -33,8 +33,9 @@ Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and
 
 ## Phase 4: Real Data
 
-1. **Task 11** — environments and deny-by-default core schema (**Done; all
-   three migrations passed local and human-authorized staging acceptance**).
+1. **Task 11** — environments and deny-by-default core schema (**PR review
+   remediation passes locally; the fourth migration still needs separately
+   authorized staging acceptance**).
 2. **Task 12** — policies, explicit Data API grants, authorization tests
    (**Pending; no implementation started**).
 3. **Task 13** — product seed data (small seed first).
@@ -108,16 +109,17 @@ Status: Done.
 ### Milestone 3: Supabase Security Foundation (Tasks 11–12)
 
 Deliverables:
-- Local + human-authorized staging environments. All three Task 11 migrations
-  passed staging acceptance on 2026-07-28.
+- Local + human-authorized staging environments. The first three Task 11
+  migrations passed staging acceptance on 2026-07-28; the fourth review
+  migration is local-only pending separate staging authorization.
 - Task 11 core schema and review-hardening migrations with RLS enabled,
   inherited client privileges and internal-helper execution revoked, and no
   positive client grants. `npm run test:db` / `npm run test:db:reset` run the
-  180-assertion pgTAP suite plus same-product insert and multi-product delete
-  concurrency races. The third migration replaces row refresh with
-  statement-level transition-table triggers that lock affected product IDs in
-  stable order. Local and staging verification passed 2026-07-28. Production
-  untouched.
+  183-assertion pgTAP suite plus same-product insert and fixture-only
+  multi-product rating-delete concurrency races. The third migration replaces
+  row refresh with statement-level transition-table triggers; the fourth maps
+  affected products to 64-bit advisory-lock keys and orders the actual keys.
+  Local verification passed 2026-07-28. Production untouched.
 - Separate Task 12 policies/grants migration plus authorization tests
   (**Pending**).
 

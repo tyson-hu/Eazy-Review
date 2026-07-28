@@ -54,12 +54,13 @@ export type ProductOffer = {
   productId: string;
   websiteName: string;
   websiteLink: string;
-  /** Null when the offer has no size; DB rejects negatives and `'NaN'::numeric`. */
+  /** Null when the offer has no size; DB rejects negative and non-finite values. */
   size: number | null;
   /** Required size system label; DB enforces non-null MVP whitelist (`US` only until expanded). */
   sizeRegion: string;
   /** Required ISO 4217 code; DB enforces non-null MVP whitelist (`USD` only until expanded). */
   currency: string;
+  /** Null when unavailable; DB rejects negative and non-finite values. */
   price: number | null;
 };
 
@@ -121,8 +122,9 @@ null category averages, `overall_avg`, and `score`.
 The privileged trigger boundary is explicit: `handle_new_user` inserts the
 profile for a new auth user, and `handle_user_rating_change` owns aggregate
 writes. Rating insert/update/delete statement triggers pass transition tables
-to that entrypoint, which refreshes distinct affected products in stable UUID
-order. Both privileged entrypoints are trigger-only `SECURITY DEFINER`
+to that entrypoint, which derives a 64-bit advisory-lock key for every distinct
+affected product and processes the actual keys in stable order. Both
+privileged entrypoints are trigger-only `SECURITY DEFINER`
 functions with an empty search path, fully qualified relations, and client
 execution revoked. Trusted
 `service_role` access is server-only and must be positively tested against its

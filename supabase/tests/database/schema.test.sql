@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(36);
+select plan(37);
 
 -- Seven Task 11 tables exist.
 select has_table('public', 'profiles', 'profiles exists');
@@ -191,6 +191,15 @@ select ok(
     where oid = 'public.refresh_rating_aggregates(uuid)'::regprocedure
   ),
   'refresh_rating_aggregates remains SECURITY INVOKER'
+);
+select ok(
+  pg_get_functiondef(
+    'public.handle_user_rating_change()'::regprocedure
+  ) ilike '%hashtextextended%'
+    and pg_get_functiondef(
+      'public.handle_user_rating_change()'::regprocedure
+    ) ~* 'order by[[:space:]]+(affected.lock_key|pg_catalog.hashtextextended)',
+  'aggregate refresh orders the actual advisory-lock keys'
 );
 
 -- RLS enabled on all seven exposed tables (not FORCE; Task 11 boundary).

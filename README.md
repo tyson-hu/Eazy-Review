@@ -41,8 +41,8 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
-includes every recognized root-level text format, including dynamic Expo and
-EAS configs.
+includes every recognized root-level text file present on disk, even when
+gitignored, including dynamic Expo and EAS configs.
 
 ## Local Supabase (Task 11)
 
@@ -63,7 +63,8 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 ## First Build Goal
 
 Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
-is complete: all three schema migrations passed local validation and
-human-authorized staging acceptance. Task 12 (policies/grants) has not started.
-Do not connect Expo to Supabase until Task 12 authorization is in place for
-the reads you need.
+PR review remediation passes locally: the first three schema migrations passed
+human-authorized staging acceptance, while the fourth forward-only lock-key
+ordering migration remains local pending separate staging authorization.
+Task 12 (policies/grants) has not started. Do not connect Expo to Supabase until
+Task 12 authorization is in place for the reads you need.

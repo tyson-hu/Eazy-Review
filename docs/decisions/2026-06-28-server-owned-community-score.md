@@ -32,11 +32,12 @@ Task 11 selects and implements the durable server mechanism:
 `handle_user_rating_change`, a trigger-only `SECURITY DEFINER` entrypoint
 invoked by statement-level `user_ratings` insert/update/delete triggers, plus
 zero-count row creation on `products` insert. Transition tables provide the
-complete affected row set; the entrypoint refreshes distinct product IDs in
-stable UUID order so multi-product statements cannot invert transaction
-advisory locks. The entrypoint uses an empty search path and fully qualified
-relations and is not executable by `PUBLIC`, `anon`, or `authenticated`; an
-inner refresh helper may remain `SECURITY INVOKER`.
+complete affected row set; the entrypoint derives a 64-bit advisory-lock key
+for every distinct product and processes the actual keys in stable order so
+multi-product statements cannot invert transaction advisory locks. The
+entrypoint uses an empty search path and fully qualified relations and is not
+executable by `PUBLIC`, `anon`, or `authenticated`; an inner refresh helper may
+remain `SECURITY INVOKER`.
 Task 17 verifies and hardens that path; it does not choose among trigger,
 RPC, or schedule.
 
@@ -48,9 +49,10 @@ RPC, or schedule.
   Score from the stored two-decimal overall average, including the
   `1, 1, 1, 2` boundary (`overall_avg = 1.25`, Community Score `13`).
 - Client roles cannot call the privileged aggregate entrypoint directly.
-- Multi-product rating statements acquire aggregate locks in stable product
+- Multi-product rating statements acquire aggregate locks in stable 64-bit key
   order; concurrency tests cover both a same-product insert race and
-  overlapping user-deletion cascades across two products.
+  overlapping fixture-only rating deletes across two products without deleting
+  auth accounts.
 - Task 11 ships the trigger-owned refresh helpers; Task 17 covers concurrent
   writes, insert/update/delete correctness, authorization/forgery tests, and
   performance evaluation without reopening mechanism selection.
