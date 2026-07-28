@@ -89,7 +89,10 @@ export type AccountProfile = {
 
 Tasks 11–12 establish database and authorization contracts only. They do not
 replace mock repositories, rename the current mock `comment` field in UI code,
-add auth screens, or connect rating writes.
+add auth screens, or connect rating writes. Task 11 local schema (tables,
+triggers, deny-by-default RLS with no client policies/grants) is applied and
+verified via `npm run test:db:reset` (2026-07-27). Task 12 adds policies and
+Data API grants.
 
 | Database contract | Frontend / API meaning |
 | --- | --- |

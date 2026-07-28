@@ -44,7 +44,14 @@
     "decisions:build": "node scripts/build-decision-index.cjs",
     "test:decisions": "node --test scripts/build-decision-index.test.cjs",
     "decisions:check": "node scripts/build-decision-index.cjs --check && npm run test:decisions",
-    "check": "npm run check:skill-wrappers && npm run decisions:check && npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
+    "check:secrets": "npm run test:secrets && node scripts/check-secrets.cjs",
+    "test:secrets": "node --test scripts/check-secrets.test.cjs",
+    "db:reset": "DO_NOT_TRACK=1 supabase db reset",
+    "test:db:pgtap": "DO_NOT_TRACK=1 supabase test db --local",
+    "test:db:concurrency": "node scripts/test-db-concurrency.cjs",
+    "test:db": "npm run test:db:pgtap && npm run test:db:concurrency",
+    "test:db:reset": "npm run db:reset && npm run test:db",
+    "check": "npm run check:skill-wrappers && npm run decisions:check && npm run check:secrets && npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
   },
   "private": true
 }

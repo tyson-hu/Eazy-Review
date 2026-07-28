@@ -2,12 +2,17 @@
 
 ## Current Repo Status
 
-As of this document setup:
-- Expo project exists with Expo Router.
-- NativeWind v4 is configured with Tailwind, Babel, and Metro.
+As of Task 11 local review hardening (2026-07-27):
+- Expo project exists with Expo Router; NativeWind v4 configured.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
-- Reusable UI primitives exist under `src/components/ui/` (Screen, AppText, Card, Button, ScoreBadge, LoadingState, EmptyState, ErrorState, Input, ProductCard, RatingRow, RatingInputRow).
-- Mock products, Product Detail, and Rating Form (Task 9) are implemented with session-only fake local rating state.
+- Reusable UI primitives exist under `src/components/ui/`.
+- Mock products, Product Detail, and Rating Form (Tasks 6–10) use session-only
+  fake local rating state — Expo is **not** connected to Supabase yet.
+- Local Supabase foundation is in place: core schema migration, deny-by-default
+  RLS (no client policies/grants), internal-helper execution revocation, modern
+  secret scanning, and passing pgTAP plus two-session concurrency tests.
+  Task 11 remains in progress because its human-controlled staging target is
+  not configured. Task 12 remains pending; production was not touched.
 
 ## Definition Of Done
 
@@ -258,11 +263,59 @@ contract. Task 11 and Task 12 must use separate forward-only migrations.
 
 ### Task 11: Environments And Core Schema
 
-Status: Pending — next.
+Status: **In progress** — local implementation verified 2026-07-27; staging
+target outstanding.
+
+Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
++ two-session race), and `npm run check:secrets` all passed on branch
+`cursor/task-11-supabase-core-schema`. Six pgTAP files, **176** assertions,
+and the two-session concurrency race pass locally. Review hardening adds modern
+`sb_secret_` detection, scans `.env.example` for privileged JWTs, revokes
+client execution across all six internal helpers, and proves overlapping
+aggregate writes. Staging was **not** configured; therefore Task 11 is not
+complete and Task 12 does not advance. Production was **not** touched. Expo
+client remains disconnected.
+
+Outstanding completion gate:
+- A human must create/approve and link the separate staging target, then apply
+  and verify the Task 11 migrations there. Agents do not infer that authority.
 
 Goal: create local and staging Supabase environments plus the smallest secure
 core schema. Do not connect the mobile UI, seed the full catalog, or touch a
 production project.
+
+#### Packet 1 — Local Supabase CLI bootstrap (config only)
+
+Added: `supabase/config.toml` (local-only; `project_id = "eazy-review"` is a
+local Docker/CLI label, not a hosted project ref; no remote link),
+`supabase/.gitignore`, and Expo-safe `.env.example` fake
+placeholders (URL + publishable/legacy anon key only). Pre-existing empty
+`supabase/migrations/`, `supabase/functions/`, and `supabase/seed/` placeholder
+dirs remain. Seed loading is disabled in config until Task 13. No migration
+SQL, tables, RLS, seed data, or mobile client in this packet.
+
+Local CLI commands (Docker required for start/reset; do not run against a
+linked remote or production):
+
+```bash
+# Start local stack (requires working Docker Desktop / docker.sock)
+supabase start
+
+# Stop local stack
+supabase stop
+
+# Reset local DB from committed migrations (+ seed when Task 13 enables it)
+supabase db reset
+# or: npm run db:reset
+
+# Packet 6/7 database tests (pgTAP + race; requires local stack up)
+npm run test:db
+# Fresh reset then tests:
+npm run test:db:reset
+```
+
+Install CLI if missing (Homebrew only; never `curl | bash`):
+`brew install supabase/tap/supabase`.
 
 Deliverables:
 
@@ -319,9 +372,137 @@ Acceptance:
 The exact aggregate SQL is intentionally deferred to Task 11 implementation and
 must not be copied from planning pseudocode without the local tests above.
 
+#### Packet 2 — Core table DDL
+
+Added one CLI-created core migration,
+`supabase/migrations/20260727213403_task_11_core_schema.sql`, containing the
+seven core tables — `profiles`, `products`, `product_images`,
+`eazy_assessments`, `user_ratings`, `rating_aggregates`, `product_offers` —
+with the checks, unique constraints, foreign keys, and indexes from the Task 11
+Schema Contract in `docs/DATA_MODEL.md`. The DDL is byte-identical to that
+contract. No extension is created: `gen_random_uuid()` is built into
+PostgreSQL 13+ and the product-name GIN index uses built-in full-text search.
+
+Triggers/functions were completed in Packet 3 on this same file. Deny-by-default
+RLS and privilege revocation were completed in Packet 4 on this same file.
+Secret scanning landed in Packet 5. Packet 6 SQL tests are under
+`supabase/tests/database/` and passed after local reset (see Packet 6). No
+seed data, no client policies or positive client grants, and no Expo app code
+in Task 11. Review hardening later added the separate forward-only migration
+`supabase/migrations/20260728001835_task_11_review_hardening.sql`; the applied
+core migration was not edited.
+
+#### Packet 3 — Triggers and functions
+
+Appended trigger/function SQL to the same migration
+`supabase/migrations/20260727213403_task_11_core_schema.sql`:
+
+- `handle_new_user` — `AFTER INSERT ON auth.users` → `public.profiles (id)`
+  only; trigger-only `SECURITY DEFINER`; `SET search_path = ''`; fully
+  qualified; `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated`.
+- `create_zero_rating_aggregate` — `AFTER INSERT ON products` inserts the
+  only zero-count `rating_aggregates` row (`rating_count` 0, null avgs/score);
+  direct execution is revoked in the review-hardening migration.
+- `handle_user_rating_change` — trigger-only `SECURITY DEFINER` entrypoint on
+  `user_ratings` INSERT/UPDATE/DELETE; empty search path; fully qualified;
+  `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated`. Trigger name:
+  `user_ratings_refresh_aggregates_trigger`.
+- `refresh_rating_aggregates(product_id)` — inner `SECURITY INVOKER` helper;
+  `pg_advisory_xact_lock(hashtext(product_id))` before reading ratings;
+  UPDATEs only when the product row still exists (product-delete cascade
+  safe); zero ratings → count 0 / null avgs / null score; category avgs
+  `round(avg(col)::numeric, 2)`; `score = round(avg(overall) * 10)` from the
+  unrounded mean; sets `updated_at`. Also `REVOKE EXECUTE` from client roles.
+- `reject_user_rating_identity_change` — `BEFORE UPDATE` rejects changes to
+  `product_id` / `user_id`; direct execution is revoked in the
+  review-hardening migration.
+- `set_updated_at` — `SECURITY INVOKER` timestamp helper on UPDATE for
+  `profiles`, `products`, `eazy_assessments`, `user_ratings`,
+  `product_offers` (aggregates via refresh); direct execution is revoked in the
+  review-hardening migration.
+
+All six internal functions are non-executable by `PUBLIC`, `anon`, and
+`authenticated`; see Packet 7.
+
+No RLS enable, table `REVOKE`/`GRANT`, or policies in this packet (Packet 4).
+
+#### Packet 4 — Deny-by-default RLS and privilege revocation
+
+Appended RLS enable + privilege revocation to the same migration
+`supabase/migrations/20260727213403_task_11_core_schema.sql` for all seven
+exposed tables (`profiles`, `products`, `product_images`, `eazy_assessments`,
+`user_ratings`, `rating_aggregates`, `product_offers`):
+
+- `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` on each table
+- `REVOKE ALL PRIVILEGES ON TABLE ... FROM PUBLIC`
+- `REVOKE ALL PRIVILEGES ON TABLE ... FROM anon, authenticated`
+
+No `CREATE POLICY` statements. No positive table `GRANT` to `PUBLIC`, `anon`,
+or `authenticated`. No optional `service_role` grants. Task 12 policies and
+Data API grants stay out of this packet. At Packet 4 close the migration was
+still unapplied locally; Packet 6 completed start/reset/test verification.
+No remote link.
+
+#### Packet 5 — Secret scanning (validation path)
+
+Added a zero-dependency Node scanner `scripts/check-secrets.cjs` plus
+`scripts/check-secrets.test.cjs`. Scripts: `npm run check:secrets` (wired into
+`npm run check`) and `npm run test:secrets` (temp-tree plant → fail → remove →
+pass). Expo CI runs `check:secrets`. Scans allowlisted tracked text paths;
+fails on the deliberate test token, service-role key assignments with values,
+exact-shape modern `sb_secret_` keys, and JWTs with a `service_role` role claim;
+JWT inspection includes `.env.example`. Findings redact matched values. No real
+credentials committed; `.env.example` stays fake placeholders only. At Packet
+5 close the migration was still unapplied; staging/production untouched.
+
+#### Packet 6 — SQL tests (authored and locally verified)
+
+Added focused pgTAP tests under `supabase/tests/database/`:
+
+| File | Covers |
+| --- | --- |
+| `schema.test.sql` | 7 tables; key indexes/constraints/triggers; RLS enabled |
+| `profiles.test.sql` | `auth.users` insert → one profile; `handle_new_user` EXECUTE denied |
+| `ratings.test.sql` | valid insert; range/unique/`private_note` failures; identity immutable; `updated_at` server-maintained |
+| `aggregates.test.sql` | zero row; insert/update/delete refresh; last-rating nulls; fixtures `1.25`/`13` and `6.00`/`5.50`/`55`; product-delete cascade; advisory-lock structural guard |
+| `offers_images.test.sql` | negative price; invalid market/currency; unique `sort_order`; cascades |
+| `security.test.sql` | `has_table_privilege` deny for PUBLIC/anon/authenticated; no policies; all six internal helpers deny EXECUTE |
+
+npm scripts: `test:db:pgtap` → `supabase test db --local`;
+`test:db:concurrency` → `scripts/test-db-concurrency.cjs`; `test:db` runs both;
+`db:reset` → `supabase db reset`; `test:db:reset` → reset then both test
+layers. Local `project_id = "eazy-review"` is a CLI label only (not a remote
+link).
+
+**Runtime status (2026-07-27):** After Docker Desktop recovered,
+`DO_NOT_TRACK=1 supabase start` succeeded, both Task 11 migrations applied on
+reset, and `npm run test:db:reset` reported **All tests successful**
+(Files=6, Tests=176, Result: PASS) followed by a passing two-session race.
+Staging and production were not touched. Task 11 remains In progress; Task 12
+remains Pending.
+
+#### Packet 7 — Review hardening
+
+- `scripts/check-secrets.cjs` detects the current
+  `sb_secret_<22-char-random>_<8-char-checksum>` format anywhere in scanned
+  text, including Expo/public assignments; fixtures construct synthetic values
+  at runtime and assert redaction.
+- `.env.example` receives the same decoded JWT inspection as every other
+  scanned file; the fake anon placeholder remains clean, while a synthetic JWT
+  whose payload claims `service_role` fails regardless of variable name.
+- CLI-created forward migration
+  `supabase/migrations/20260728001835_task_11_review_hardening.sql` revokes
+  `EXECUTE` from `PUBLIC`, `anon`, and `authenticated` on all six internal
+  functions. The security matrix covers every role/function pair.
+- `scripts/test-db-concurrency.cjs` opens two overlapping PostgreSQL sessions,
+  confirms the second writer waits on `Lock:advisory`, commits the first, and
+  asserts the final aggregate includes both ratings.
+- These corrections close the local review findings but do not satisfy the
+  outstanding staging deliverable or advance Task 12.
+
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 
-Status: Pending — after Task 11 is applied and verified.
+Status: Pending — after Task 11 is complete.
 
 Goal: add complete RLS policies, then explicit least-privilege Data API grants,
 then prove unauthorized scenarios fail.

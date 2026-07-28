@@ -64,6 +64,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
   entrypoint. Each uses
   `SET search_path = ''`, fully qualified relation names, and
   `REVOKE EXECUTE` from `PUBLIC`, `anon`, and `authenticated`.
+- All six Task 11 public-schema functions are internal helpers:
+  `set_updated_at`, `reject_user_rating_identity_change`, `handle_new_user`,
+  `create_zero_rating_aggregate`, `refresh_rating_aggregates`, and
+  `handle_user_rating_change`. None is executable by `PUBLIC`, `anon`, or
+  `authenticated`.
 - `service_role` is server-only. Task 12 positively tests its exact allowlist
   and aggregate-trigger side effects, while secret scanning proves its key is
   absent from Expo.
@@ -72,6 +77,29 @@ Canonical security rules for all agent and human work in this repo, regardless o
   `rating_aggregates`.
 - Secret scanning is a required Task 11 deliverable. Validate it with a safe
   deliberate test pattern; never use a real credential as the test.
+- Task 11 Packet 6 SQL tests under `supabase/tests/database/` assert
+  deny-by-default table privileges (`has_table_privilege` for `PUBLIC` /
+  `anon` / `authenticated`), zero policies on the seven core tables, and
+  `EXECUTE` revoked on all six internal helpers. `npm run test:db` runs those
+  pgTAP checks and then `scripts/test-db-concurrency.cjs`, which creates two
+  overlapping transactions, proves the second waits on the advisory lock, and
+  checks the final aggregate. Run after `supabase start` (or use
+  `npm run test:db:reset`). Local suite passed 2026-07-27 (176 pgTAP
+  assertions plus the race). Staging was not configured; production was not
+  touched.
+- Repo secret scan (zero new dependencies): `npm run check:secrets` runs
+  `test:secrets` then scans allowlisted paths (`app/`, `src/`, `docs/`,
+  `supabase/`, `scripts/`, `.github/`, root configs, root `.env` / `.env.*`
+  on disk even when gitignored, plus skill/agent trees). It fails on the
+  deliberate test token (constant `TEST_TOKEN` in `scripts/check-secrets.cjs`),
+  exact-shape modern `sb_secret_` keys, service-role key assignment forms with
+  a non-empty secret-like value, and JWTs whose payload claims
+  `role: service_role`. JWT inspection also applies to `.env.example`; only
+  genuinely non-secret fake placeholders pass. Findings print path, pattern
+  name, and a redacted snippet only — never the full matched value. Prose
+  mentions of `service_role` are allowed. Wired into `npm run check` and Expo
+  CI. Self-test alone: `npm run test:secrets`. Do not leave the deliberate
+  token in committed files.
 - Do not print Supabase project refs, keys, tokens, connection strings, or
   dashboard/MCP responses containing them. Report presence and validation
   status without echoing values.
