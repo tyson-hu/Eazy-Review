@@ -87,19 +87,23 @@ test('shouldScanPath allows documented prefixes and skips noise', () => {
   assert.equal(shouldScanPath('app.config.ts'), true);
   assert.equal(shouldScanPath('app.config.js'), true);
   assert.equal(shouldScanPath('eas.json'), true);
+  assert.equal(shouldScanPath('.npmrc'), true);
+  assert.equal(shouldScanPath('.editorconfig'), true);
   assert.equal(shouldScanPath('package-lock.json'), false);
   assert.equal(shouldScanPath('node_modules/foo/index.js'), false);
   assert.equal(shouldScanPath('dist/bundle.js'), false);
   assert.equal(shouldScanPath('app/assets/photo.png'), false);
 });
 
-test('gitignored Expo and EAS root configs are scanned for elevated keys', (t) => {
+test('gitignored root configs and dotfiles are scanned for elevated keys', (t) => {
   const root = createTempRepo(t);
   const secret = modernSupabaseSecretKey();
-  write(root, '.gitignore', 'app.config.ts\neas.json\n');
+  write(root, '.gitignore', 'app.config.ts\neas.json\n.npmrc\n.editorconfig\n');
   write(root, 'docs/ok.md', 'tracked fixture\n');
   write(root, 'app.config.ts', `export default { extra: { key: "${secret}" } };\n`);
   write(root, 'eas.json', '{"build":{"preview":{"env":{"SAFE":"ok"}}}}\n');
+  write(root, '.npmrc', `//registry.example.invalid/:_authToken=${secret}\n`);
+  write(root, '.editorconfig', 'root = true\n');
 
   const templateDir = path.join(root, '.empty-git-template');
   fs.mkdirSync(templateDir);
@@ -118,12 +122,22 @@ test('gitignored Expo and EAS root configs are scanned for elevated keys', (t) =
   const listed = listCandidateFiles(root);
   assert.equal(listed.includes('app.config.ts'), true);
   assert.equal(listed.includes('eas.json'), true);
+  assert.equal(listed.includes('.npmrc'), true);
+  assert.equal(listed.includes('.editorconfig'), true);
 
   const findings = scanRepository(root);
   assert.equal(
     findings.some(
       (finding) =>
         finding.file === 'app.config.ts' &&
+        finding.pattern === 'supabase-secret-key',
+    ),
+    true,
+  );
+  assert.equal(
+    findings.some(
+      (finding) =>
+        finding.file === '.npmrc' &&
         finding.pattern === 'supabase-secret-key',
     ),
     true,

@@ -106,7 +106,8 @@ Canonical security rules for all agent and human work in this repo, regardless o
   `supabase/`, `scripts/`, `.github/`, all root files on disk with recognized
   text formats even when gitignored, plus skill/agent trees). Root coverage
   includes dynamic Expo/EAS configuration such as `app.config.ts`,
-  `app.config.js`, and `eas.json`. It fails on the
+  `app.config.js`, and `eas.json`, plus text dotfiles such as `.npmrc` and
+  `.editorconfig`. It fails on the
   deliberate test token (constant `TEST_TOKEN` in
   `scripts/check-secrets.cjs`),
   exact-shape modern `sb_secret_` keys, service-role key assignment forms with

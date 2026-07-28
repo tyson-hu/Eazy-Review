@@ -73,6 +73,8 @@ const ROOT_CONFIG_BASENAMES = new Set([
   'nativewind-env.d.ts',
   '.env.example',
   '.gitignore',
+  '.npmrc',
+  '.editorconfig',
   'AGENTS.md',
   'CLAUDE.md',
   'README.md',

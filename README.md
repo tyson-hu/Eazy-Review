@@ -42,7 +42,8 @@ Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Valid
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
 includes every recognized root-level text file present on disk, even when
-gitignored, including dynamic Expo and EAS configs.
+gitignored, including dynamic Expo/EAS configs and dotfiles such as `.npmrc`
+and `.editorconfig`.
 
 ## Local Supabase (Task 11)
 

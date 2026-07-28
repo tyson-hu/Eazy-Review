@@ -567,8 +567,8 @@ left no residue.
   `public.user_ratings` rows; it never deletes `auth.users`, including cleanup.
   Fixture users are reused with `ON CONFLICT DO NOTHING`.
 - Candidate enumeration supplements Git with every recognized root text file
-  present on disk, so gitignored `app.config.ts`, `app.config.js`, and
-  `eas.json` remain scanned.
+  present on disk, so gitignored `app.config.ts`, `app.config.js`, `eas.json`,
+  `.npmrc`, and `.editorconfig` remain scanned.
 - PostgreSQL 17.6 directly rejects `Infinity` for the precision-constrained
   `numeric(4,1)` size and `numeric(10,2)` price columns with SQLSTATE `22003`.
   Two pgTAP regressions now preserve that finite-value contract; no redundant
