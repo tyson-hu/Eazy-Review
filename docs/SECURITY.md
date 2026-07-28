@@ -111,13 +111,15 @@ Canonical security rules for all agent and human work in this repo, regardless o
   deliberate test token (constant `TEST_TOKEN` in
   `scripts/check-secrets.cjs`),
   exact-shape modern `sb_secret_` keys, service-role key assignment forms with
-  a non-empty secret-like value, and JWTs whose payload claims
-  `role: service_role`. JWT inspection also applies to `.env.example`; only
-  genuinely non-secret fake placeholders pass. Findings print path, pattern
-  name, and a redacted snippet only — never the full matched value. Prose
-  mentions of `service_role` are allowed. Wired into `npm run check` and Expo
-  CI. Self-test alone: `npm run test:secrets`. Do not leave the deliberate
-  token in committed files.
+  a non-empty secret-like value, JWTs whose payload claims
+  `role: service_role`, direct PostgreSQL connection URIs, and
+  database-password assignments. Dependency lockfiles are scanned for the same
+  high-confidence patterns. JWT inspection also applies to
+  `.env.example`; only genuinely non-secret fake placeholders pass. Findings
+  print path, pattern name, and a redacted snippet only — never the full
+  matched value. Prose mentions of `service_role` are allowed. Wired into
+  `npm run check` and Expo CI. Self-test alone: `npm run test:secrets`. Do not
+  leave the deliberate token in committed files.
 - Do not print Supabase project refs, keys, tokens, connection strings, or
   dashboard/MCP responses containing them. Report presence and validation
   status without echoing values.

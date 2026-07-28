@@ -43,7 +43,8 @@ Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
 includes every recognized root-level text file present on disk, even when
 gitignored, including dynamic Expo/EAS configs and dotfiles such as `.npmrc`
-and `.editorconfig`.
+and `.editorconfig`. Dependency lockfiles are included, and direct PostgreSQL
+URLs or database-password assignments fail the scan.
 
 ## Local Supabase (Task 11)
 

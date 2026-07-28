@@ -43,6 +43,25 @@ function serviceRoleJwt() {
   return `${header}.${payload}.fakesignature`;
 }
 
+function postgresConnectionUrl() {
+  return [
+    ['postgres', 'ql'].join(''),
+    '://',
+    'fixture-user',
+    ':',
+    'fixture-password',
+    '@',
+    'example.invalid',
+    ':5432',
+    '/fixture-db',
+  ].join('');
+}
+
+function databasePasswordAssignmentLine(value) {
+  const name = ['SUPABASE', 'DB', 'PASSWORD'].join('_');
+  return `${name}=${value}\n`;
+}
+
 function createTempRepo(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'eazy-review-secrets-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -89,10 +108,28 @@ test('shouldScanPath allows documented prefixes and skips noise', () => {
   assert.equal(shouldScanPath('eas.json'), true);
   assert.equal(shouldScanPath('.npmrc'), true);
   assert.equal(shouldScanPath('.editorconfig'), true);
-  assert.equal(shouldScanPath('package-lock.json'), false);
+  assert.equal(shouldScanPath('package-lock.json'), true);
+  assert.equal(shouldScanPath('yarn.lock'), true);
+  assert.equal(shouldScanPath('pnpm-lock.yaml'), true);
   assert.equal(shouldScanPath('node_modules/foo/index.js'), false);
   assert.equal(shouldScanPath('dist/bundle.js'), false);
   assert.equal(shouldScanPath('app/assets/photo.png'), false);
+});
+
+test('dependency lockfiles are scanned for elevated keys', (t) => {
+  const root = createTempRepo(t);
+  const secret = modernSupabaseSecretKey();
+  write(root, 'package-lock.json', JSON.stringify({ resolved: secret }));
+  write(root, 'yarn.lock', `resolved "${secret}"\n`);
+  write(root, 'pnpm-lock.yaml', `resolution: ${secret}\n`);
+
+  const findings = scanRepository(root).filter(
+    (finding) => finding.pattern === 'supabase-secret-key',
+  );
+  assert.deepEqual(
+    new Set(findings.map((finding) => finding.file)),
+    new Set(['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock']),
+  );
 });
 
 test('gitignored root configs and dotfiles are scanned for elevated keys', (t) => {
@@ -299,6 +336,42 @@ test('JWT with service_role role claim fails outside .env.example', () => {
   for (const finding of findings) {
     assert.equal(finding.redacted.includes(jwt), false);
   }
+});
+
+test('direct PostgreSQL connection URLs fail with redacted output', () => {
+  const connectionUrl = postgresConnectionUrl();
+  const findings = scanContent(
+    'app.config.ts',
+    `EXPO_PUBLIC_DATABASE_URL=${connectionUrl}\n`,
+  );
+  assert.equal(
+    findings.some((finding) => finding.pattern === 'postgres-connection-uri'),
+    true,
+  );
+  for (const finding of findings) {
+    assert.equal(finding.redacted.includes(connectionUrl), false);
+  }
+});
+
+test('database password assignments fail while empty assignments pass', () => {
+  const password = 'fixture-database-password';
+  const findings = scanContent(
+    '.env.example',
+    databasePasswordAssignmentLine(password),
+  );
+  assert.equal(
+    findings.some(
+      (finding) => finding.pattern === 'database-password-assignment',
+    ),
+    true,
+  );
+  for (const finding of findings) {
+    assert.equal(finding.redacted.includes(password), false);
+  }
+  assert.deepEqual(
+    scanContent('.env.example', databasePasswordAssignmentLine('')),
+    [],
+  );
 });
 
 test('plant token then remove: fail then pass (temp tree)', (t) => {

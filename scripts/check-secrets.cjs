@@ -31,9 +31,6 @@ const SKIP_DIR_NAMES = new Set([
 ]);
 
 const SKIP_BASENAMES = new Set([
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
   '.DS_Store',
 ]);
 
@@ -60,6 +57,7 @@ const TEXT_EXTENSIONS = new Set([
   '.gitignore',
   '.npmrc',
   '.editorconfig',
+  '.lock',
 ]);
 
 const ROOT_CONFIG_BASENAMES = new Set([
@@ -120,6 +118,17 @@ const SERVICE_ROLE_ASSIGNMENT =
  */
 const SERVICE_ROLE_SECRET_VALUE =
   /(?:["']?service_role["']?\s*:\s*)(?:"(eyJ[^"\n]+)"|'(eyJ[^'\n]+)'|(eyJ[A-Za-z0-9._\-]+))/gi;
+
+/** Direct PostgreSQL connection URI, which must never enter Expo or Git. */
+const POSTGRES_CONNECTION_URI =
+  /\bpostgres(?:ql)?:\/\/[^\s"'<>]+/gi;
+
+/**
+ * High-confidence database-password assignment names. Quoted values may use
+ * any non-empty content; unquoted values must be at least eight characters.
+ */
+const DATABASE_PASSWORD_ASSIGNMENT =
+  /(?:SUPABASE_DB_PASSWORD|DATABASE_PASSWORD|DB_PASSWORD|POSTGRES(?:QL)?_PASSWORD|PGPASSWORD)\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
 
 function isBinaryBuffer(buffer) {
   const sample = buffer.subarray(0, Math.min(buffer.length, 8000));
@@ -225,6 +234,20 @@ function scanContent(relativePath, content) {
       continue;
     }
     push('service-role-secret-value', match.index, raw);
+  }
+
+  POSTGRES_CONNECTION_URI.lastIndex = 0;
+  while ((match = POSTGRES_CONNECTION_URI.exec(content)) !== null) {
+    push('postgres-connection-uri', match.index, match[0]);
+  }
+
+  DATABASE_PASSWORD_ASSIGNMENT.lastIndex = 0;
+  while ((match = DATABASE_PASSWORD_ASSIGNMENT.exec(content)) !== null) {
+    const raw = match[1] ?? match[2] ?? match[3] ?? '';
+    if (!raw || raw === '""' || raw === "''") {
+      continue;
+    }
+    push('database-password-assignment', match.index, raw);
   }
 
   JWT_LIKE.lastIndex = 0;

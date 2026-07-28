@@ -540,7 +540,7 @@ left no residue.
 
 - Secret scanning accepts every recognized root-level text format, with
   regressions for `app.config.ts`, `app.config.js`, and `eas.json`; current
-  scanner suite: 15/15 pass.
+  scanner suite: 18/18 pass.
 - CLI-created forward migration
   `supabase/migrations/20260728115256_prevent_rating_lock_inversion.sql`
   replaces the row-level aggregate refresh trigger with insert, update, and
@@ -569,11 +569,14 @@ left no residue.
 - Candidate enumeration supplements Git with every recognized root text file
   present on disk, so gitignored `app.config.ts`, `app.config.js`, `eas.json`,
   `.npmrc`, and `.editorconfig` remain scanned.
+- Dependency lockfiles are scanned for high-confidence credentials. Direct
+  PostgreSQL connection strings and database-password assignments also fail
+  with redacted findings, preserving the permanent Expo credential boundary.
 - PostgreSQL 17.6 directly rejects `Infinity` for the precision-constrained
   `numeric(4,1)` size and `numeric(10,2)` price columns with SQLSTATE `22003`.
   Two pgTAP regressions now preserve that finite-value contract; no redundant
   constraint migration was added.
-- Local acceptance is 183 pgTAP assertions, both concurrency races, and 15/15
+- Local acceptance is 183 pgTAP assertions, both concurrency races, and 18/18
   secret-scanner regressions. Explicitly authorized staging
   application/re-acceptance passed on 2026-07-28 with migration parity,
   catalog/security checks, transaction-rolled-back multi-product behavior,
