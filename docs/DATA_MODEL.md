@@ -10,10 +10,8 @@ statement-level aggregate refresh followed by 64-bit advisory-lock-key
 ordering that prevents multi-product lock inversion. No migration adds client
 policies or positive grants. The local clean-reset gate is 183 pgTAP assertions
 plus same-product insert and multi-product rating-delete concurrency races. The
-first three migrations passed explicitly authorized staging acceptance on
-2026-07-28; the fourth review migration is locally accepted and still requires
-separate staging authorization. Task 12 remains pending. Production was not
-touched.
+four migrations passed explicitly authorized staging acceptance on 2026-07-28.
+Task 12 remains pending. Production was not touched.
 
 Separate these concerns:
 
@@ -324,18 +322,17 @@ Packet 6 SQL tests under `supabase/tests/database/security.test.sql` assert
 these effective table privileges, zero policies, and denied execution across
 all six internal helpers. The current 183-assertion pgTAP suite and both
 concurrency races passed locally on 2026-07-28. Staging verification on
-2026-07-28 confirmed migration parity for the first three migrations, 7/7
-tables with RLS, zero policies, zero prohibited table privileges, all six
-internal helpers with zero prohibited executions, and both required
-`SECURITY DEFINER` functions. The original seven transaction-rolled-back
-profile/aggregate checks
-left no fixture residue. Review-remediation re-acceptance then confirmed the
-old aggregate row trigger count is zero, all three statement triggers use
-transition tables, ordered product iteration is installed, client helper
-execution remains denied, and a transaction-rolled-back multi-product delete
-restores both aggregates to zero/null. Linked lint reported no schema errors.
-The fourth migration, which orders the actual 64-bit advisory-lock keys, has
-not been applied to staging.
+2026-07-28 confirmed migration parity for all four migrations, 7/7 tables with
+RLS, zero policies, zero prohibited table privileges, all six internal helpers
+with zero prohibited executions, and both required `SECURITY DEFINER`
+functions. The original seven transaction-rolled-back profile/aggregate checks
+left no fixture residue. Review-remediation re-acceptance confirmed the old
+aggregate row trigger count is zero, all three statement triggers use
+transition tables, affected products are processed in actual 64-bit lock-key
+order, and client helper execution remains denied. A transaction-rolled-back
+multi-product insert/update/delete smoke restored both aggregates to zero/null
+after delete and left no fixture residue. Linked lint reported no schema
+errors.
 
 ## Task 12 Privileges And Data API Exposure
 

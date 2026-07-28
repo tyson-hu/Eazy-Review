@@ -89,16 +89,16 @@ Canonical security rules for all agent and human work in this repo, regardless o
   keys, and acquire the actual keys in stable order. Run after `supabase start`
   (or use `npm run test:db:reset`). The current local gate passed 2026-07-28
   with 183 pgTAP assertions and both races. The explicitly authorized staging
-  target received the first three Task 11 migrations
+  target received all four Task 11 migrations
   on 2026-07-28. Migration parity, 7/7-table RLS state, zero policies, zero
   prohibited table/helper privileges, the original seven
   transaction-rolled-back behavior checks, linked lint, and zero test-fixture
   residue passed. Review-remediation re-acceptance additionally confirmed the
   old row trigger is absent, all three transition-table statement
-  triggers are present, client helper execution remains denied, and a
-  transaction-rolled-back multi-product delete restores both aggregates to
-  zero/null. The fourth migration that orders actual 64-bit lock keys is local
-  only pending separate staging authorization. The local CLI link is
+  triggers are present, actual 64-bit lock-key ordering is installed, and
+  client helper execution remains denied. A transaction-rolled-back
+  multi-product insert/update/delete smoke restored both aggregates to
+  zero/null after delete and left no fixture residue. The local CLI link is
   gitignored; no project reference or credential is committed. Production was
   not touched.
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs

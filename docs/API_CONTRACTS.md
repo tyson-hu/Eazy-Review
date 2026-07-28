@@ -92,8 +92,9 @@ Tasks 11–12 establish database and authorization contracts only. They do not
 replace mock repositories, rename the current mock `comment` field in UI code,
 add auth screens, or connect rating writes. Task 11 schema (tables, triggers,
 deny-by-default RLS with no client policies/grants) is applied locally. Its
-three forward-only migrations passed human-authorized staging acceptance on
-2026-07-28, including the PR-review lock-order remediation. Task 12 adds
+four forward-only migrations passed human-authorized staging acceptance on
+2026-07-28, including the PR-review statement-trigger and 64-bit lock-key
+ordering remediations. Task 12 adds
 policies and Data API grants; it remains pending.
 
 | Database contract | Frontend / API meaning |

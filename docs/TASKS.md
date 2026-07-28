@@ -12,10 +12,9 @@ As of PR #22 review remediation (2026-07-28):
   RLS (no client policies/grants), internal-helper execution revocation, modern
   secret scanning, and passing pgTAP plus same-product insert and fixture-only
   multi-product rating-delete concurrency tests.
-- The first three Task 11 migrations passed explicitly authorized staging
-  acceptance. A fourth forward-only PR #22 review migration now orders actual
-  64-bit advisory-lock keys and passes locally; staging re-acceptance requires
-  separate authorization. Task 12 has not started; production was not touched.
+- All four Task 11 migrations passed explicitly authorized staging acceptance.
+  The fourth forward-only PR #22 review migration orders actual 64-bit
+  advisory-lock keys. Task 12 has not started; production was not touched.
 
 ## Definition Of Done
 
@@ -266,7 +265,7 @@ contract. Task 11 and Task 12 must use separate forward-only migrations.
 
 ### Task 11: Environments And Core Schema
 
-Status: **PR review remediation passes locally; staging re-acceptance pending.**
+Status: **Done.**
 
 Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + concurrency races), and `npm run check:secrets` all passed on branch
@@ -278,15 +277,15 @@ recognized root text files on disk even when gitignored (including Expo/EAS
 configs),
 revokes client execution across all six internal helpers, and processes
 statement transition tables in stable 64-bit advisory-lock-key order. On
-2026-07-28 the authorized staging target received the first three Task 11
-migrations. The original
+2026-07-28 the authorized staging target received all four Task 11 migrations.
+The original
 migration, security, trigger, behavior, residue, and lint matrix passed, then
-review-remediation re-acceptance confirmed three-migration parity, zero old row
-triggers, all three transition-table statement triggers, continued
-helper execution denial, a passing transaction-rolled-back multi-product
-delete smoke, and linked lint with no schema errors. The fourth migration is
-locally accepted but not yet applied to staging. Production was **not**
-touched. Expo remains disconnected.
+review-remediation re-acceptance confirmed four-migration parity, zero old row
+triggers, all three transition-table statement triggers, actual 64-bit
+lock-key ordering, continued helper execution denial, a passing
+transaction-rolled-back multi-product insert/update/delete smoke, zero fixture
+residue, and linked lint with no schema errors. Production was **not** touched.
+Expo remains disconnected.
 
 Goal: create local and staging Supabase environments plus the smallest secure
 core schema. Do not connect the mobile UI, seed the full catalog, or touch a
@@ -575,13 +574,14 @@ left no residue.
   Two pgTAP regressions now preserve that finite-value contract; no redundant
   constraint migration was added.
 - Local acceptance is 183 pgTAP assertions, both concurrency races, and 15/15
-  secret-scanner regressions. Staging application/re-acceptance is not
-  authorized by this packet; production was not contacted.
+  secret-scanner regressions. Explicitly authorized staging
+  application/re-acceptance passed on 2026-07-28 with migration parity,
+  catalog/security checks, transaction-rolled-back multi-product behavior,
+  zero fixture residue, and linked lint. Production was not contacted.
 
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 
-Status: **Pending.** Task 11's latest review migration still awaits staging
-re-acceptance; no Task 12 work has started.
+Status: **Pending.** Task 11 is accepted; no Task 12 work has started.
 
 Goal: add complete RLS policies, then explicit least-privilege Data API grants,
 then prove unauthorized scenarios fail.
