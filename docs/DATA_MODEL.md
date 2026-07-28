@@ -9,10 +9,8 @@ tables/triggers/RLS, complete internal-helper `EXECUTE` revocation, and
 statement-level aggregate refresh that prevents multi-product lock inversion.
 No migration adds client policies or positive grants. The local clean-reset
 gate is 180 pgTAP assertions plus same-product insert and multi-product delete
-concurrency races. The first two migrations passed explicitly authorized
-staging acceptance on 2026-07-28; the third is locally verified and pending
-staging parity/re-acceptance. Task 12 remains pending. Production was not
-touched.
+concurrency races. All three migrations passed explicitly authorized staging
+acceptance on 2026-07-28. Task 12 remains pending. Production was not touched.
 
 Separate these concerns:
 
@@ -320,13 +318,16 @@ staging/seed tooling and never place a service-role key in Expo.
 Packet 6 SQL tests under `supabase/tests/database/security.test.sql` assert
 these effective table privileges, zero policies, and denied execution across
 all six internal helpers. The current 180-assertion pgTAP suite and both
-concurrency races passed locally on 2026-07-28. Historical staging verification
-of the first two migrations on 2026-07-28 confirmed 7/7 tables with RLS, zero
-policies, zero prohibited table privileges, all six internal helpers with zero
-prohibited executions, both required `SECURITY DEFINER` functions, nine
-then-expected triggers, and seven transaction-rolled-back profile/aggregate
-behavior checks with no fixture residue. The third migration still needs
-staging parity/re-acceptance.
+concurrency races passed locally on 2026-07-28. Staging verification on
+2026-07-28 confirmed migration parity for all three migrations, 7/7 tables with
+RLS, zero policies, zero prohibited table privileges, all six internal helpers
+with zero prohibited executions, and both required `SECURITY DEFINER`
+functions. The original seven transaction-rolled-back profile/aggregate checks
+left no fixture residue. Review-remediation re-acceptance then confirmed the
+old aggregate row trigger count is zero, all three statement triggers use
+transition tables, ordered product iteration is installed, client helper
+execution remains denied, and a transaction-rolled-back multi-product delete
+restores both aggregates to zero/null. Linked lint reported no schema errors.
 
 ## Task 12 Privileges And Data API Exposure
 

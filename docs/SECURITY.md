@@ -87,14 +87,16 @@ Canonical security rules for all agent and human work in this repo, regardless o
   from transition tables and acquire their advisory locks in stable UUID order.
   Run after `supabase start` (or use `npm run test:db:reset`). The current local
   gate passed 2026-07-28 with 180 pgTAP assertions and both races. The
-  explicitly authorized staging target received the first two Task 11
-  migrations on 2026-07-28; its then-current migration history, 7/7-table RLS
-  state, zero policies, zero prohibited table/helper privileges, nine expected
-  triggers, seven transaction-rolled-back behavior checks, linked lint, and
-  zero test-fixture residue all passed. The third review-remediation migration
-  remains local pending staging parity/re-acceptance. The local CLI link is
-  gitignored; no project reference or credential is committed. Production was
-  not touched.
+  explicitly authorized staging target received all three Task 11 migrations
+  on 2026-07-28. Migration parity, 7/7-table RLS state, zero policies, zero
+  prohibited table/helper privileges, the original seven
+  transaction-rolled-back behavior checks, linked lint, and zero test-fixture
+  residue passed. Review-remediation re-acceptance additionally confirmed the
+  old row trigger is absent, all three ordered transition-table statement
+  triggers are present, client helper execution remains denied, and a
+  transaction-rolled-back multi-product delete restores both aggregates to
+  zero/null. The local CLI link is gitignored; no project reference or
+  credential is committed. Production was not touched.
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs
   `test:secrets` then scans allowlisted paths (`app/`, `src/`, `docs/`,
   `supabase/`, `scripts/`, `.github/`, root `.env` / `.env.*` on disk even

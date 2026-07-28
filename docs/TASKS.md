@@ -12,10 +12,9 @@ As of PR #22 review remediation (2026-07-28):
   RLS (no client policies/grants), internal-helper execution revocation, modern
   secret scanning, and passing pgTAP plus same-product insert and multi-product
   delete concurrency tests.
-- The first two Task 11 migrations passed explicitly authorized staging
-  acceptance. A third forward-only migration fixes PR #22 lock inversion and
-  passes locally; staging parity/re-acceptance is still pending. Task 12 has
-  not started; production was not touched.
+- All three Task 11 migrations passed explicitly authorized staging
+  acceptance, including the forward-only PR #22 lock-inversion remediation.
+  Task 11 is Done. Task 12 has not started; production was not touched.
 
 ## Definition Of Done
 
@@ -266,7 +265,7 @@ contract. Task 11 and Task 12 must use separate forward-only migrations.
 
 ### Task 11: Environments And Core Schema
 
-Status: **Local PR-review remediation passed; staging parity pending.**
+Status: **Done.**
 
 Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + concurrency races), and `npm run check:secrets` all passed on branch
@@ -277,11 +276,13 @@ race, and 15 secret-scanner regressions. Review hardening detects modern
   including Expo/EAS configs,
 revokes client execution across all six internal helpers, and processes
 statement transition tables in stable product order. On 2026-07-28 the
-authorized staging target received the first two Task 11 migrations and passed
-the original migration, security, trigger, behavior, residue, and lint matrix.
-The third review-remediation migration has not been applied remotely; staging
-parity/re-acceptance is required before Task 11 returns to Done. Production was
-**not** touched. Expo remains disconnected.
+authorized staging target received all three Task 11 migrations. The original
+migration, security, trigger, behavior, residue, and lint matrix passed, then
+review-remediation re-acceptance confirmed three-migration parity, zero old row
+triggers, all three ordered transition-table statement triggers, continued
+helper execution denial, a passing transaction-rolled-back multi-product
+delete smoke, and linked lint with no schema errors. Production was **not**
+touched. Expo remains disconnected.
 
 Goal: create local and staging Supabase environments plus the smallest secure
 core schema. Do not connect the mobile UI, seed the full catalog, or touch a
@@ -502,6 +503,16 @@ so the already-passing local 176-assertion suite was retained and staging was
 verified through the direct catalog/behavior matrix instead. Production was
 not contacted.
 
+After PR #22 review remediation, a second explicitly authorized dry run listed
+only `20260728115256_prevent_rating_lock_inversion.sql` and no seed/role files.
+The push completed and remote history matched all three local migrations.
+Catalog re-acceptance found zero old aggregate row triggers, all three expected
+statement triggers with transition tables, ordered product iteration in the
+trigger helper, and denied `anon`/`authenticated` helper execution. A
+transaction-rolled-back two-product rating/delete smoke restored both
+aggregates to zero/null; linked lint reported no schema errors and the fixture
+left no residue.
+
 #### Packet 7 — Review hardening
 
 - `scripts/check-secrets.cjs` detects the current
@@ -536,13 +547,12 @@ not contacted.
   reproduced a PostgreSQL advisory-lock deadlock; the new migration lets both
   deletes commit and leaves both aggregate rows at zero/null.
 - Local migration apply, 180 pgTAP assertions, both concurrency races, and the
-  focused scanner suite pass. Staging/production were not contacted; the third
-  migration still needs explicitly authorized staging parity/re-acceptance.
+  focused scanner suite pass. Explicitly authorized staging application and
+  re-acceptance passed as recorded in Packet 6. Production was not contacted.
 
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 
-Status: **Pending.** Task 11 staging parity is still open; no Task 12 work has
-started.
+Status: **Pending.** Task 11 is accepted; no Task 12 work has started.
 
 Goal: add complete RLS policies, then explicit least-privilege Data API grants,
 then prove unauthorized scenarios fail.

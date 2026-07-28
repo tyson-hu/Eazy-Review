@@ -63,7 +63,7 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 ## First Build Goal
 
 Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
-has a locally verified PR-review migration pending staging parity and
-re-acceptance. Task 12 (policies/grants) has not started.
+is complete: all three schema migrations passed local validation and
+human-authorized staging acceptance. Task 12 (policies/grants) has not started.
 Do not connect Expo to Supabase until Task 12 authorization is in place for
 the reads you need.
