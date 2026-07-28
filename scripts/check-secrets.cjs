@@ -292,8 +292,8 @@ function shouldScanPath(relativePath) {
     return true;
   }
 
-  // Root-level config / docs only (no nested path)
-  if (!normalized.includes('/') && ROOT_CONFIG_BASENAMES.has(base)) {
+  // Any root-level textual file, including dynamic Expo/EAS configuration.
+  if (!normalized.includes('/')) {
     return true;
   }
 

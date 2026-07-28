@@ -40,7 +40,9 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
-Secret scanning: `npm run check:secrets` (also part of `npm run check`).
+Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
+includes every recognized root-level text format, including dynamic Expo and
+EAS configs.
 
 ## Local Supabase (Task 11)
 
@@ -48,7 +50,7 @@ Requires Docker Desktop and the Supabase CLI (`brew install supabase/tap/supabas
 
 ```bash
 supabase start              # once per machine session
-npm run test:db:reset       # clean reset + pgTAP + two-session race
+npm run test:db:reset       # clean reset + pgTAP + concurrency races
 supabase stop
 ```
 
@@ -61,7 +63,7 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 ## First Build Goal
 
 Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
-local and staging Supabase core schema is implemented and verified. Task 12
-(policies/grants) is Pending — next; no Task 12 implementation has started.
+has a locally verified PR-review migration pending staging parity and
+re-acceptance. Task 12 (policies/grants) has not started.
 Do not connect Expo to Supabase until Task 12 authorization is in place for
 the reads you need.

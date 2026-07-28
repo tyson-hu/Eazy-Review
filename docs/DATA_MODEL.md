@@ -3,17 +3,16 @@
 Use relational Supabase/PostgreSQL tables. Do not store product identity,
 images, offers, ratings, and summaries inside one giant product JSON object.
 
-This document is the canonical contract for Tasks 11–12. Task 11 is **Done**
-(2026-07-28): its schema and review hardening live in two forward-only
-migrations under `supabase/migrations/` (core tables/triggers/RLS, then
-complete internal-helper `EXECUTE` revocation; no client policies or positive
-grants). Exact aggregate SQL lives in the core migration, not here. The pgTAP
-suite plus two-session race harness run through `npm run test:db` /
-`npm run test:db:reset`; the clean local reset passed on 2026-07-27
-(176 pgTAP assertions plus the race). On 2026-07-28 the same two migrations
-were applied to the explicitly authorized staging target; migration history,
-RLS, privileges, helper execution, triggers, aggregate behavior, and linked
-database lint all passed. Task 12 remains pending. Production was not touched.
+This document is the canonical contract for Tasks 11–12. Task 11 has three
+forward-only migrations under `supabase/migrations/`: core
+tables/triggers/RLS, complete internal-helper `EXECUTE` revocation, and
+statement-level aggregate refresh that prevents multi-product lock inversion.
+No migration adds client policies or positive grants. The local clean-reset
+gate is 180 pgTAP assertions plus same-product insert and multi-product delete
+concurrency races. The first two migrations passed explicitly authorized
+staging acceptance on 2026-07-28; the third is locally verified and pending
+staging parity/re-acceptance. Task 12 remains pending. Production was not
+touched.
 
 Separate these concerns:
 
@@ -238,6 +237,10 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   category averages, overall average, score, and timestamp.
 - Refreshes for the same product are serialized before reading
   `user_ratings`, so concurrent commits cannot leave a stale aggregate.
+- Rating insert, update, and delete refresh once per statement from transition
+  tables. Distinct affected product IDs are processed in stable UUID order so
+  one multi-product statement cannot invert transaction advisory locks against
+  another.
 - Deleting the last rating leaves the existing product with a zero-count row
   and null averages/score.
 - `product_id` and `user_id` on `user_ratings` cannot change after insert.
@@ -245,12 +248,13 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   attempting to recreate an aggregate for the deleting/deleted product and
   without an FK error.
 - The mechanism is tested locally for insert/update/delete, last-rating
-  removal, same-product concurrency, and product deletion before Task 11 is
-  called complete. `supabase/tests/database/aggregates.test.sql` covers the
-  aggregate cases and retains a structural advisory-lock guard;
-  `scripts/test-db-concurrency.cjs` creates overlapping transactions, proves
-  the second writer waits on that lock, then verifies both commits are visible
-  in the final aggregate. Local suite pass: 2026-07-27.
+  removal, same-product concurrency, multi-product delete concurrency, and
+  product deletion before Task 11 is called complete.
+  `supabase/tests/database/aggregates.test.sql` covers the aggregate cases and
+  retains a structural advisory-lock guard; `scripts/test-db-concurrency.cjs`
+  proves a same-product writer waits and sees both commits, then overlaps two
+  user-deletion cascades across two products and verifies both complete with
+  zeroed aggregates. Local suite pass: 2026-07-28.
 - A fixed-value fixture with category/overall tuples
   `(10, 8, 6, 4, 2, 1)` and `(2, 4, 6, 8, 10, 10)` must produce `6.00` for
   every category average, `overall_avg = 5.50`, and `score = 55`.
@@ -259,10 +263,11 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   must restore the zero-count/null state.
 
 Expected names are `refresh_rating_aggregates`,
-`handle_user_rating_change`, and
-`user_ratings_refresh_aggregates_trigger`. Exact function SQL is drafted in
-the Task 11 migration (Packet 3) and is deliberately not
-duplicated here.
+`handle_user_rating_change`, and the three event-specific statement triggers:
+`user_ratings_refresh_aggregates_insert_trigger`,
+`user_ratings_refresh_aggregates_update_trigger`, and
+`user_ratings_refresh_aggregates_delete_trigger`. Exact function SQL lives in
+the Task 11 migrations and is deliberately not duplicated here.
 
 `handle_new_user` runs after `auth.users` insert and inserts only
 `public.profiles (id)`. It must produce exactly one profile row and clients
@@ -270,12 +275,13 @@ never receive profile `INSERT`.
 
 `handle_new_user` and `handle_user_rating_change` are the required trigger-only
 `SECURITY DEFINER` entrypoints: the former crosses from `auth.users` to
-`public.profiles`, and the latter owns the aggregate-write privilege boundary.
-An inner `refresh_rating_aggregates` helper may remain `SECURITY INVOKER`
-because it executes inside the secured trigger entrypoint. Server-maintained
-timestamp and rating-identity helpers remain `SECURITY INVOKER` unless their
-implementation proves that elevation is required. A `BEFORE UPDATE` trigger
-rejects changes to both rating identity columns.
+`public.profiles`, and the latter owns the aggregate-write privilege boundary
+for the three statement triggers. An inner `refresh_rating_aggregates` helper
+may remain `SECURITY INVOKER` because it executes inside the secured trigger
+entrypoint. Server-maintained timestamp and rating-identity helpers remain
+`SECURITY INVOKER` unless their implementation proves that elevation is
+required. A `BEFORE UPDATE` trigger rejects changes to both rating identity
+columns.
 
 Every Task 11 public-schema function is internal to a trigger path and must
 revoke `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`. In addition, every
@@ -313,12 +319,14 @@ staging/seed tooling and never place a service-role key in Expo.
 
 Packet 6 SQL tests under `supabase/tests/database/security.test.sql` assert
 these effective table privileges, zero policies, and denied execution across
-all six internal helpers. The 176-assertion pgTAP suite passed on local reset
-2026-07-27. Staging verification on 2026-07-28 confirmed 7/7 tables with RLS,
-zero policies, zero prohibited table privileges, all six internal helpers with
-zero prohibited executions, both required `SECURITY DEFINER` functions, all
-nine expected triggers, and seven transaction-rolled-back profile/aggregate
-behavior checks with no fixture residue.
+all six internal helpers. The current 180-assertion pgTAP suite and both
+concurrency races passed locally on 2026-07-28. Historical staging verification
+of the first two migrations on 2026-07-28 confirmed 7/7 tables with RLS, zero
+policies, zero prohibited table privileges, all six internal helpers with zero
+prohibited executions, both required `SECURITY DEFINER` functions, nine
+then-expected triggers, and seven transaction-rolled-back profile/aggregate
+behavior checks with no fixture residue. The third migration still needs
+staging parity/re-acceptance.
 
 ## Task 12 Privileges And Data API Exposure
 

@@ -84,10 +84,30 @@ test('shouldScanPath allows documented prefixes and skips noise', () => {
   assert.equal(shouldScanPath('.env.local'), true);
   assert.equal(shouldScanPath('.env.staging'), true);
   assert.equal(shouldScanPath('package.json'), true);
+  assert.equal(shouldScanPath('app.config.ts'), true);
+  assert.equal(shouldScanPath('app.config.js'), true);
+  assert.equal(shouldScanPath('eas.json'), true);
   assert.equal(shouldScanPath('package-lock.json'), false);
   assert.equal(shouldScanPath('node_modules/foo/index.js'), false);
   assert.equal(shouldScanPath('dist/bundle.js'), false);
   assert.equal(shouldScanPath('app/assets/photo.png'), false);
+});
+
+test('dynamic Expo and EAS root configs are scanned for elevated keys', (t) => {
+  const root = createTempRepo(t);
+  const secret = modernSupabaseSecretKey();
+  write(root, 'app.config.ts', `export default { extra: { key: "${secret}" } };\n`);
+  write(root, 'eas.json', '{"build":{"preview":{"env":{"SAFE":"ok"}}}}\n');
+
+  const findings = scanRepository(root);
+  assert.equal(
+    findings.some(
+      (finding) =>
+        finding.file === 'app.config.ts' &&
+        finding.pattern === 'supabase-secret-key',
+    ),
+    true,
+  );
 });
 
 test('gitignored root .env files on disk are still scanned', (t) => {

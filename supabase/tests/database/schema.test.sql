@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(32);
+select plan(36);
 
 -- Seven Task 11 tables exist.
 select has_table('public', 'profiles', 'profiles exists');
@@ -81,11 +81,48 @@ select ok(
 );
 
 -- Required triggers.
-select has_trigger(
+select hasnt_trigger(
   'public',
   'user_ratings',
   'user_ratings_refresh_aggregates_trigger',
-  'aggregate refresh trigger exists'
+  'row-level aggregate refresh trigger was replaced'
+);
+select has_trigger(
+  'public',
+  'user_ratings',
+  'user_ratings_refresh_aggregates_insert_trigger',
+  'statement-level aggregate insert trigger exists'
+);
+select has_trigger(
+  'public',
+  'user_ratings',
+  'user_ratings_refresh_aggregates_update_trigger',
+  'statement-level aggregate update trigger exists'
+);
+select has_trigger(
+  'public',
+  'user_ratings',
+  'user_ratings_refresh_aggregates_delete_trigger',
+  'statement-level aggregate delete trigger exists'
+);
+select is(
+  (
+    select count(*)::int
+    from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'user_ratings'
+      and t.tgname in (
+        'user_ratings_refresh_aggregates_insert_trigger',
+        'user_ratings_refresh_aggregates_update_trigger',
+        'user_ratings_refresh_aggregates_delete_trigger'
+      )
+      and (t.tgtype & 1) = 0
+      and (t.tgoldtable is not null or t.tgnewtable is not null)
+  ),
+  3,
+  'aggregate refresh triggers are statement-level with transition tables'
 );
 select has_trigger(
   'public',

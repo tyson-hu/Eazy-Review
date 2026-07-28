@@ -33,10 +33,10 @@ Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and
 
 ## Phase 4: Real Data
 
-1. **Task 11** — environments and deny-by-default core schema (**Done
-   2026-07-28**; local and human-authorized staging acceptance passed).
+1. **Task 11** — environments and deny-by-default core schema (**PR review
+   remediation locally passed; third migration staging parity pending**).
 2. **Task 12** — policies, explicit Data API grants, authorization tests
-   (**Pending — next; no implementation started**).
+   (**Pending; no implementation started**).
 3. **Task 13** — product seed data (small seed first).
 4. **Task 14** — real Browse and Product Detail reads.
 5. **Task 15** — authentication (email first, including recovery and deletion).
@@ -108,18 +108,18 @@ Status: Done.
 ### Milestone 3: Supabase Security Foundation (Tasks 11–12)
 
 Deliverables:
-- Local + human-authorized staging environments (Task 11 complete 2026-07-28;
-  both forward-only migrations applied and verified without production
-  access).
+- Local + human-authorized staging environments. The first two Task 11
+  migrations passed staging acceptance on 2026-07-28; the locally verified
+  third review-remediation migration is pending staging parity.
 - Task 11 core schema and review-hardening migrations with RLS enabled,
   inherited client privileges and internal-helper execution revoked, and no
   positive client grants. `npm run test:db` / `npm run test:db:reset` run the
-  176-assertion pgTAP suite plus the two-session concurrency race. Local reset
-  passed 2026-07-27; staging migration parity, security/trigger inventory,
-  transaction-rolled-back aggregate behavior, and linked lint passed
-  2026-07-28. Production untouched.
+  180-assertion pgTAP suite plus same-product insert and multi-product delete
+  concurrency races. The third migration replaces row refresh with
+  statement-level transition-table triggers that lock affected product IDs in
+  stable order. Local verification passed 2026-07-28. Production untouched.
 - Separate Task 12 policies/grants migration plus authorization tests
-  (**Pending — next**).
+  (**Pending**).
 
 Acceptance:
 - Published catalog access and owner-only private rating access pass the

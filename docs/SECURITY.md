@@ -81,22 +81,28 @@ Canonical security rules for all agent and human work in this repo, regardless o
   deny-by-default table privileges (`has_table_privilege` for `PUBLIC` /
   `anon` / `authenticated`), zero policies on the seven core tables, and
   `EXECUTE` revoked on all six internal helpers. `npm run test:db` runs those
-  pgTAP checks and then `scripts/test-db-concurrency.cjs`, which creates two
-  overlapping transactions, proves the second waits on the advisory lock, and
-  checks the final aggregate. Run after `supabase start` (or use
-  `npm run test:db:reset`). Local suite passed 2026-07-27 (176 pgTAP
-  assertions plus the race). The explicitly authorized staging target received
-  only the two Task 11 migrations on 2026-07-28. Its migration history,
-  7/7-table RLS state, zero policies, zero prohibited table/helper privileges,
-  nine expected triggers, seven transaction-rolled-back behavior checks,
-  linked lint, and zero test-fixture residue all passed. The local CLI link is
+  pgTAP checks and then `scripts/test-db-concurrency.cjs`, which proves
+  same-product writers serialize and overlapping multi-product deletion
+  cascades both commit. Statement triggers derive distinct affected products
+  from transition tables and acquire their advisory locks in stable UUID order.
+  Run after `supabase start` (or use `npm run test:db:reset`). The current local
+  gate passed 2026-07-28 with 180 pgTAP assertions and both races. The
+  explicitly authorized staging target received the first two Task 11
+  migrations on 2026-07-28; its then-current migration history, 7/7-table RLS
+  state, zero policies, zero prohibited table/helper privileges, nine expected
+  triggers, seven transaction-rolled-back behavior checks, linked lint, and
+  zero test-fixture residue all passed. The third review-remediation migration
+  remains local pending staging parity/re-acceptance. The local CLI link is
   gitignored; no project reference or credential is committed. Production was
   not touched.
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs
   `test:secrets` then scans allowlisted paths (`app/`, `src/`, `docs/`,
-  `supabase/`, `scripts/`, `.github/`, root configs, root `.env` / `.env.*`
-  on disk even when gitignored, plus skill/agent trees). It fails on the
-  deliberate test token (constant `TEST_TOKEN` in `scripts/check-secrets.cjs`),
+  `supabase/`, `scripts/`, `.github/`, root `.env` / `.env.*` on disk even
+  when gitignored, all other root files with recognized text formats, plus
+  skill/agent trees). Root coverage includes dynamic Expo/EAS configuration
+  such as `app.config.ts`, `app.config.js`, and `eas.json`. It fails on the
+  deliberate test token (constant `TEST_TOKEN` in
+  `scripts/check-secrets.cjs`),
   exact-shape modern `sb_secret_` keys, service-role key assignment forms with
   a non-empty secret-like value, and JWTs whose payload claims
   `role: service_role`. JWT inspection also applies to `.env.example`; only

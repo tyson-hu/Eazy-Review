@@ -1,7 +1,7 @@
 ---
 id: decision-server-owned-community-score
 date: 2026-06-28
-updated: 2026-07-26
+updated: 2026-07-28
 status: accepted
 area: data-supabase
 tasks: [11, 12, 13, 14, 16, 17]
@@ -30,8 +30,11 @@ averages and Community Score null.
 
 Task 11 selects and implements the durable server mechanism:
 `handle_user_rating_change`, a trigger-only `SECURITY DEFINER` entrypoint
-invoked on `user_ratings` insert/update/delete, plus zero-count row creation on
-`products` insert. The entrypoint uses an empty search path and fully qualified
+invoked by statement-level `user_ratings` insert/update/delete triggers, plus
+zero-count row creation on `products` insert. Transition tables provide the
+complete affected row set; the entrypoint refreshes distinct product IDs in
+stable UUID order so multi-product statements cannot invert transaction
+advisory locks. The entrypoint uses an empty search path and fully qualified
 relations and is not executable by `PUBLIC`, `anon`, or `authenticated`; an
 inner refresh helper may remain `SECURITY INVOKER`.
 Task 17 verifies and hardens that path; it does not choose among trigger,
@@ -45,6 +48,9 @@ RPC, or schedule.
   Score from the stored two-decimal overall average, including the
   `1, 1, 1, 2` boundary (`overall_avg = 1.25`, Community Score `13`).
 - Client roles cannot call the privileged aggregate entrypoint directly.
+- Multi-product rating statements acquire aggregate locks in stable product
+  order; concurrency tests cover both a same-product insert race and
+  overlapping user-deletion cascades across two products.
 - Task 11 ships the trigger-owned refresh helpers; Task 17 covers concurrent
   writes, insert/update/delete correctness, authorization/forgery tests, and
   performance evaluation without reopening mechanism selection.

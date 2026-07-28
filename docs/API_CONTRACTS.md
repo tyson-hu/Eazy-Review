@@ -90,9 +90,11 @@ export type AccountProfile = {
 Tasks 11–12 establish database and authorization contracts only. They do not
 replace mock repositories, rename the current mock `comment` field in UI code,
 add auth screens, or connect rating writes. Task 11 schema (tables, triggers,
-deny-by-default RLS with no client policies/grants) is applied and verified
-locally and on the human-authorized staging target (completed 2026-07-28).
-Task 12 adds policies and Data API grants; it remains pending.
+deny-by-default RLS with no client policies/grants) is applied locally. Its
+first two migrations passed human-authorized staging acceptance on 2026-07-28;
+the third, forward-only PR-review migration is locally verified and pending
+staging parity/re-acceptance. Task 12 adds policies and Data API grants; it
+remains pending.
 
 | Database contract | Frontend / API meaning |
 | --- | --- |
@@ -119,8 +121,11 @@ null category averages, `overall_avg`, and `score`.
 
 The privileged trigger boundary is explicit: `handle_new_user` inserts the
 profile for a new auth user, and `handle_user_rating_change` owns aggregate
-writes. Both are trigger-only `SECURITY DEFINER` functions with an empty search
-path, fully qualified relations, and client execution revoked. Trusted
+writes. Rating insert/update/delete statement triggers pass transition tables
+to that entrypoint, which refreshes distinct affected products in stable UUID
+order. Both privileged entrypoints are trigger-only `SECURITY DEFINER`
+functions with an empty search path, fully qualified relations, and client
+execution revoked. Trusted
 `service_role` access is server-only and must be positively tested against its
 exact allowlist; its secret never enters Expo.
 

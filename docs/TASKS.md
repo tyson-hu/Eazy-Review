@@ -2,7 +2,7 @@
 
 ## Current Repo Status
 
-As of Task 11 completion (2026-07-28):
+As of PR #22 review remediation (2026-07-28):
 - Expo project exists with Expo Router; NativeWind v4 configured.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
 - Reusable UI primitives exist under `src/components/ui/`.
@@ -10,11 +10,12 @@ As of Task 11 completion (2026-07-28):
   fake local rating state — Expo is **not** connected to Supabase yet.
 - Local Supabase foundation is in place: core schema migration, deny-by-default
   RLS (no client policies/grants), internal-helper execution revocation, modern
-  secret scanning, and passing pgTAP plus two-session concurrency tests.
-- The explicitly authorized staging target contains the same two Task 11
-  migrations and passed migration-history, RLS, privilege, helper, trigger,
-  aggregate-behavior, residue, and database-lint checks. Task 11 is Done.
-  Task 12 is Pending — next; production was not touched.
+  secret scanning, and passing pgTAP plus same-product insert and multi-product
+  delete concurrency tests.
+- The first two Task 11 migrations passed explicitly authorized staging
+  acceptance. A third forward-only migration fixes PR #22 lock inversion and
+  passes locally; staging parity/re-acceptance is still pending. Task 12 has
+  not started; production was not touched.
 
 ## Definition Of Done
 
@@ -265,22 +266,22 @@ contract. Task 11 and Task 12 must use separate forward-only migrations.
 
 ### Task 11: Environments And Core Schema
 
-Status: **Done 2026-07-28** — local and explicitly authorized staging
-acceptance passed.
+Status: **Local PR-review remediation passed; staging parity pending.**
 
 Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
-+ two-session race), and `npm run check:secrets` all passed on branch
-`cursor/task-11-supabase-core-schema`. Six pgTAP files, **176** assertions,
-and the two-session concurrency race pass locally. Review hardening adds modern
-`sb_secret_` detection, scans `.env.example` for privileged JWTs, revokes
-client execution across all six internal helpers, and proves overlapping
-aggregate writes. On 2026-07-28 the authorized staging target received exactly
-the two Task 11 migrations. Migration history matched; linked lint found no
-schema errors; the staging matrix confirmed 7/7 RLS tables, zero policies, zero
-prohibited table privileges, all six helpers with zero prohibited executions,
-both required `SECURITY DEFINER` functions, and all nine expected triggers.
-Seven transaction-rolled-back profile/aggregate behavior checks passed with no
-fixture residue. Production was **not** touched. Expo remains disconnected.
++ concurrency races), and `npm run check:secrets` all passed on branch
+`cursor/task-11-supabase-core-schema`. The current local gate has six pgTAP
+files, **180** assertions, a same-product insert race, a multi-product delete
+race, and 15 secret-scanner regressions. Review hardening detects modern
+  `sb_secret_` keys and privileged JWTs, covers recognized root text formats
+  including Expo/EAS configs,
+revokes client execution across all six internal helpers, and processes
+statement transition tables in stable product order. On 2026-07-28 the
+authorized staging target received the first two Task 11 migrations and passed
+the original migration, security, trigger, behavior, residue, and lint matrix.
+The third review-remediation migration has not been applied remotely; staging
+parity/re-acceptance is required before Task 11 returns to Done. Production was
+**not** touched. Expo remains disconnected.
 
 Goal: create local and staging Supabase environments plus the smallest secure
 core schema. Do not connect the mobile UI, seed the full catalog, or touch a
@@ -358,9 +359,10 @@ Acceptance:
   or table privileges.
 - An auth-user insert creates exactly one matching profile row.
 - Aggregate behavior is locally tested for rating insert/update/delete, last
-  rating removal, concurrent writes to one product, and product deletion.
-  Product deletion must complete without recreating a zero-count aggregate row
-  for the deleting/deleted parent or failing its FK cascade.
+  rating removal, concurrent writes to one product, concurrent multi-product
+  user-deletion cascades, and product deletion. Product deletion must complete
+  without recreating a zero-count aggregate row for the deleting/deleted parent
+  or failing its FK cascade.
 - Fixed-value tests prove two-decimal arithmetic category/overall averages and
   `score = round(avg(overall) * 10)` from the unrounded mean. The documented
   four-rating rounding-boundary fixture produces `overall_avg = 1.25` and
@@ -409,8 +411,9 @@ Appended trigger/function SQL to the same migration
   direct execution is revoked in the review-hardening migration.
 - `handle_user_rating_change` — trigger-only `SECURITY DEFINER` entrypoint on
   `user_ratings` INSERT/UPDATE/DELETE; empty search path; fully qualified;
-  `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated`. Trigger name:
-  `user_ratings_refresh_aggregates_trigger`.
+  `REVOKE EXECUTE` from `PUBLIC` / `anon` / `authenticated`. Packet 3's
+  row-level `user_ratings_refresh_aggregates_trigger` is historical; Packet 8
+  replaces it with three event-specific statement triggers.
 - `refresh_rating_aggregates(product_id)` — inner `SECURITY INVOKER` helper;
   `pg_advisory_xact_lock(hashtext(product_id))` before reading ratings;
   UPDATEs only when the product row still exists (product-delete cascade
@@ -452,7 +455,9 @@ No remote link.
 Added a zero-dependency Node scanner `scripts/check-secrets.cjs` plus
 `scripts/check-secrets.test.cjs`. Scripts: `npm run check:secrets` (wired into
 `npm run check`) and `npm run test:secrets` (temp-tree plant → fail → remove →
-pass). Expo CI runs `check:secrets`. Scans allowlisted tracked text paths;
+pass). Expo CI runs `check:secrets`. Scans allowlisted tracked text paths plus
+every recognized root-level text format, including dynamic Expo/EAS
+configuration;
 fails on the deliberate test token, service-role key assignments with values,
 exact-shape modern `sb_secret_` keys, and JWTs with a `service_role` role claim;
 JWT inspection includes `.env.example`. Findings redact matched values. No real
@@ -513,12 +518,31 @@ not contacted.
 - `scripts/test-db-concurrency.cjs` opens two overlapping PostgreSQL sessions,
   confirms the second writer waits on `Lock:advisory`, commits the first, and
   asserts the final aggregate includes both ratings.
-- These corrections plus the staging evidence above complete Task 11. They do
-  not implement, plan, or otherwise begin Task 12.
+- These corrections plus the staging evidence above completed the initial Task
+  11 acceptance. They do not implement, plan, or otherwise begin Task 12.
+
+#### Packet 8 — PR #22 review remediation
+
+- Secret scanning now includes every recognized root-level text format, with
+  regressions for `app.config.ts`, `app.config.js`, and `eas.json`; current
+  scanner suite: 15/15 pass.
+- CLI-created forward migration
+  `supabase/migrations/20260728115256_prevent_rating_lock_inversion.sql`
+  replaces the row-level aggregate refresh trigger with insert, update, and
+  delete statement triggers. Transition tables provide every affected product;
+  `handle_user_rating_change` refreshes distinct IDs in stable UUID order.
+- The concurrency harness retains the same-product insert race and adds two
+  synchronized user-deletion cascades across two products. The old trigger
+  reproduced a PostgreSQL advisory-lock deadlock; the new migration lets both
+  deletes commit and leaves both aggregate rows at zero/null.
+- Local migration apply, 180 pgTAP assertions, both concurrency races, and the
+  focused scanner suite pass. Staging/production were not contacted; the third
+  migration still needs explicitly authorized staging parity/re-acceptance.
 
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 
-Status: **Pending — next.** Task 11 is complete; no Task 12 work has started.
+Status: **Pending.** Task 11 staging parity is still open; no Task 12 work has
+started.
 
 Goal: add complete RLS policies, then explicit least-privilege Data API grants,
 then prove unauthorized scenarios fail.
