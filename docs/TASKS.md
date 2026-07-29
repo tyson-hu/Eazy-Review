@@ -2,7 +2,7 @@
 
 ## Current Repo Status
 
-As of PR #22 review remediation (2026-07-28):
+As of PR #22 review remediation (2026-07-29):
 - Expo project exists with Expo Router; NativeWind v4 configured.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
 - Reusable UI primitives exist under `src/components/ui/`.
@@ -10,8 +10,9 @@ As of PR #22 review remediation (2026-07-28):
   fake local rating state — Expo is **not** connected to Supabase yet.
 - Local Supabase foundation is in place: core schema migration, deny-by-default
   RLS (no client policies/grants), internal-helper execution revocation, modern
-  secret scanning, and passing pgTAP plus same-product insert and fixture-only
-  multi-product rating-delete concurrency tests.
+  secret scanning with 26 synthetic regressions, and passing pgTAP plus
+  same-product insert and fixture-only multi-product rating-delete concurrency
+  tests.
 - All four Task 11 migrations passed explicitly authorized staging acceptance.
   The fourth forward-only PR #22 review migration orders actual 64-bit
   advisory-lock keys. Task 12 has not started; production was not touched.
@@ -629,6 +630,25 @@ left no residue.
 - Binary assets remain excluded, and a synthetic repository regression covers
   all three bundled trees plus the binary exclusion. The current scanner suite
   passes 24/24.
+- This review correction changes no migration, database environment, Expo
+  runtime, client policy, or Data API grant. Task 12 remains pending, and
+  staging/production were not contacted.
+
+#### Packet 14 — PR #22 final scanner-boundary remediation
+
+- Explicit service-role, database-password, JWT-signing-secret, and Supabase
+  management-token assignment names reject every non-empty value regardless of
+  length; empty assignments remain allowed.
+- Gitignored recognized root and Expo-bundled text-file symlinks are scanned
+  when their targets are regular files. Directory symlinks are not followed,
+  and existing path, extension, and binary exclusions remain in force.
+- Synthetic regressions cover short unquoted assignments, ignored `.env` and
+  bundled-file symlinks, redaction, and directory-symlink exclusion. The
+  scanner suite passes 26/26.
+- This is the final agreed PR #22 P2 remediation batch. After one final review
+  cycle and at most one correction round, only P0/P1 findings or a reproducible
+  ordinary-path secret leak/data-integrity defect block closeout; later P2/P3
+  defense-in-depth findings move to a follow-up task.
 - This review correction changes no migration, database environment, Expo
   runtime, client policy, or Data API grant. Task 12 remains pending, and
   staging/production were not contacted.

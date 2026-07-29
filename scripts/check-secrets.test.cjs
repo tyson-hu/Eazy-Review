@@ -319,6 +319,45 @@ test('gitignored root .env files on disk are still scanned', (t) => {
   );
 });
 
+test('gitignored symlinked root and bundled text files are scanned safely', (t) => {
+  const root = createTempRepo(t);
+  write(
+    root,
+    '.gitignore',
+    '.env\napp/linked-config.ts\napp/linked-directory.ts\nprivate/\n',
+  );
+  write(root, 'private/env-target', `LEAK=${TEST_TOKEN}\n`);
+  write(root, 'private/app-target', `export default '${TEST_TOKEN}';\n`);
+  fs.mkdirSync(path.join(root, 'private', 'directory-target'));
+  fs.symlinkSync('private/env-target', path.join(root, '.env'));
+  fs.symlinkSync(
+    '../private/app-target',
+    path.join(root, 'app', 'linked-config.ts'),
+  );
+  fs.symlinkSync(
+    '../private/directory-target',
+    path.join(root, 'app', 'linked-directory.ts'),
+    'dir',
+  );
+
+  const templateDir = path.join(root, '.empty-git-template');
+  fs.mkdirSync(templateDir);
+  runGit(root, ['init', `--template=${templateDir}`]);
+
+  const listed = listCandidateFiles(root);
+  assert.equal(listed.includes('.env'), true);
+  assert.equal(listed.includes('app/linked-config.ts'), true);
+  assert.equal(listed.includes('app/linked-directory.ts'), false);
+
+  const findings = scanRepository(root).filter(
+    (finding) => finding.pattern === 'deliberate-test-token',
+  );
+  assert.deepEqual(
+    new Set(findings.map((finding) => finding.file)),
+    new Set(['.env', 'app/linked-config.ts']),
+  );
+});
+
 test('redactValue never returns the full secret', () => {
   const secret = 'super-secret-value-12345';
   const redacted = redactValue(secret);
@@ -484,6 +523,47 @@ test('database password assignments fail while empty assignments pass', () => {
     scanContent('.env.example', databasePasswordAssignmentLine('')),
     [],
   );
+});
+
+test('explicit forbidden assignments reject short unquoted non-empty values', () => {
+  const shortValue = ['a', 'b', 'c', '1', '2', '3'].join('');
+  const publicDatabasePasswordName = [
+    'EXPO',
+    'PUBLIC',
+    'SUPABASE',
+    'DB',
+    'PASSWORD',
+  ].join('_');
+  const cases = [
+    {
+      content: serviceRoleAssignmentLine(shortValue),
+      pattern: 'service-role-key-assignment',
+    },
+    {
+      content: `${publicDatabasePasswordName}=${shortValue}\n`,
+      pattern: 'database-password-assignment',
+    },
+    {
+      content: managementTokenAssignmentLine(shortValue),
+      pattern: 'supabase-management-token-assignment',
+    },
+    {
+      content: jwtSigningSecretAssignmentLine(shortValue),
+      pattern: 'jwt-signing-secret-assignment',
+    },
+  ];
+
+  for (const { content, pattern } of cases) {
+    const findings = scanContent('.env', content);
+    assert.equal(
+      findings.some((finding) => finding.pattern === pattern),
+      true,
+      `${pattern} must reject a short non-empty assignment`,
+    );
+    for (const finding of findings) {
+      assert.equal(finding.redacted.includes(shortValue), false);
+    }
+  }
 });
 
 test('quoted JSON database password assignments fail with redaction', () => {

@@ -106,21 +106,22 @@ Canonical security rules for all agent and human work in this repo, regardless o
   `test:secrets` then scans allowlisted paths (`app/`, `assets/`, `src/`,
   `docs/`, `supabase/`, `scripts/`, `.github/`, plus skill/agent trees).
   Recognized text files under bundled `app/`, `assets/`, and `src/` and all
-  recognized root text files are enumerated from disk even when gitignored.
-  Bundled coverage excludes images, fonts, and other binary assets. Root
-  coverage includes dynamic Expo/EAS configuration such as `app.config.ts`,
+  recognized root text files are enumerated from disk even when gitignored or
+  symlinked to regular files. Directory symlinks are not followed. Bundled
+  coverage excludes images, fonts, and other binary assets. Root coverage
+  includes dynamic Expo/EAS configuration such as `app.config.ts`,
   `app.config.js`, and `eas.json`, plus text dotfiles such as `.npmrc` and
   `.editorconfig`. It fails on the
   deliberate test token (constant `TEST_TOKEN` in
   `scripts/check-secrets.cjs`),
-  exact-shape modern `sb_secret_` keys, service-role key assignment forms with
-  a non-empty secret-like value, JWTs whose payload claims
+  exact-shape modern `sb_secret_` keys, explicit service-role key assignment
+  forms with any non-empty value, JWTs whose payload claims
   `role: service_role`, direct PostgreSQL connection URIs, and
-  database-password, JWT-signing-secret, or Supabase management-token
-  assignments. Quoted JSON/EAS database-password keys are covered. Dependency
-  lockfiles are scanned for the same high-confidence patterns. JWT inspection
-  also applies to `.env.example`; only genuinely non-secret fake placeholders
-  pass.
+  database-password, JWT-signing-secret, or Supabase management-token assignment
+  names with any non-empty value regardless of length. Quoted JSON/EAS
+  database-password keys are covered. Dependency lockfiles are scanned for the
+  same high-confidence patterns. JWT inspection also applies to `.env.example`;
+  only genuinely non-secret fake placeholders pass.
   Findings print path, pattern name, and a redacted snippet only — never the
   full matched value. Prose mentions of `service_role` are allowed. Wired into
   `npm run check` and Expo CI. Self-test alone: `npm run test:secrets`. Do not

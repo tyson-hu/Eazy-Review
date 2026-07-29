@@ -109,11 +109,11 @@ const SUPABASE_SECRET_KEY =
 
 /**
  * High-risk assignment forms only — prose mentions of `service_role` are fine.
- * Requires a non-empty secret-like value after `=` / `:` (quoted any non-empty,
- * or unquoted length >= 8). Bare `KEY=` / `KEY=` docs punctuation is ignored.
+ * Requires a non-empty value after `=` / `:`. Bare `KEY=` assignments are
+ * ignored.
  */
 const SERVICE_ROLE_ASSIGNMENT =
-  /(?:SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE_KEY|service_role_key)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([A-Za-z0-9._\-+/=]{8,}))/gi;
+  /(?:SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE_KEY|service_role_key)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([A-Za-z0-9._\-+/=]+))/gi;
 
 /**
  * JSON/YAML-ish `service_role: <secret-looking value>` (JWT or long token).
@@ -127,25 +127,24 @@ const POSTGRES_CONNECTION_URI =
   /\bpostgres(?:ql)?:\/\/[^\s"'<>]+/gi;
 
 /**
- * High-confidence database-password assignment names. Quoted values may use
- * any non-empty content; unquoted values must be at least eight characters.
+ * High-confidence database-password assignment names with any non-empty value.
  */
 const DATABASE_PASSWORD_ASSIGNMENT =
-  /(?:SUPABASE_DB_PASSWORD|DATABASE_PASSWORD|DB_PASSWORD|POSTGRES(?:QL)?_PASSWORD|PGPASSWORD)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
+  /(?:SUPABASE_DB_PASSWORD|DATABASE_PASSWORD|DB_PASSWORD|POSTGRES(?:QL)?_PASSWORD|PGPASSWORD)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]+))/gi;
 
 /**
  * Supabase CLI/dashboard management tokens. These are never valid in Expo,
  * including when an Expo-public prefix is added accidentally.
  */
 const SUPABASE_MANAGEMENT_TOKEN_ASSIGNMENT =
-  /(?:EXPO_PUBLIC_)?SUPABASE_(?:ACCESS|MANAGEMENT)_TOKEN["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
+  /(?:EXPO_PUBLIC_)?SUPABASE_(?:ACCESS|MANAGEMENT)_TOKEN["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]+))/gi;
 
 /**
  * High-confidence JWT signing-secret assignment names. Matching is deliberately
  * limited to established secret variable names so prose about JWTs stays valid.
  */
 const JWT_SIGNING_SECRET_ASSIGNMENT =
-  /(?:SUPABASE_JWT_(?:SIGNING_)?SECRET|GOTRUE_JWT_SECRET|JWT_(?:SIGNING_)?SECRET)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
+  /(?:SUPABASE_JWT_(?:SIGNING_)?SECRET|GOTRUE_JWT_SECRET|JWT_(?:SIGNING_)?SECRET)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]+))/gi;
 
 function isBinaryBuffer(buffer) {
   const sample = buffer.subarray(0, Math.min(buffer.length, 8000));
@@ -362,8 +361,22 @@ function shouldScanPath(relativePath) {
   return false;
 }
 
+function isFileEntryOrSymlinkToFile(absolutePath, entry) {
+  if (entry.isFile()) {
+    return true;
+  }
+  if (!entry.isSymbolicLink()) {
+    return false;
+  }
+  try {
+    return fs.statSync(absolutePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Recognized root text files present on disk (may be gitignored).
+ * Recognized root text files present on disk (may be gitignored or symlinked).
  * @param {string} root
  * @returns {string[]}
  */
@@ -375,13 +388,18 @@ function listRootScannableFilesOnDisk(root) {
     return [];
   }
   return entries
-    .filter((entry) => entry.isFile() && shouldScanPath(entry.name))
+    .filter(
+      (entry) =>
+        isFileEntryOrSymlinkToFile(path.join(root, entry.name), entry) &&
+        shouldScanPath(entry.name),
+    )
     .map((entry) => entry.name);
 }
 
 /**
  * Recognized text files in Expo-bundled source directories, including
- * gitignored files omitted by `git ls-files --exclude-standard`.
+ * gitignored or symlinked files omitted by
+ * `git ls-files --exclude-standard`.
  * @param {string} root
  * @returns {string[]}
  */
@@ -404,7 +422,10 @@ function listBundledScannableFilesOnDisk(root) {
       const abs = path.join(absDir, entry.name);
       if (entry.isDirectory()) {
         walk(abs, rel);
-      } else if (entry.isFile() && shouldScanPath(rel)) {
+      } else if (
+        isFileEntryOrSymlinkToFile(abs, entry) &&
+        shouldScanPath(rel)
+      ) {
         files.push(rel);
       }
     }

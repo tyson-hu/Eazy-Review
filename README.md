@@ -42,11 +42,12 @@ Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Valid
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
 includes recognized text files under bundled `app/`, `assets/`, and `src/`,
-even when gitignored, plus every recognized root-level text file present on
-disk, including dynamic Expo/EAS configs and dotfiles such as `.npmrc` and
-`.editorconfig`. Dependency lockfiles are included, and direct PostgreSQL URLs,
+even when gitignored or symlinked to regular files, plus every recognized
+root-level text file present on disk, including dynamic Expo/EAS configs and
+dotfiles such as `.npmrc` and `.editorconfig`. Dependency lockfiles are
+included, and direct PostgreSQL URLs plus non-empty service-role,
 database-password, JWT-signing-secret, or Supabase management-token assignments
-fail the scan.
+fail the scan regardless of value length.
 
 ## Local Supabase (Task 11)
 
