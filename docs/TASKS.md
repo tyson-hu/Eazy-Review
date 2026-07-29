@@ -271,7 +271,7 @@ Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + concurrency races), and `npm run check:secrets` all passed on branch
 `cursor/task-11-supabase-core-schema`. The current local gate has six pgTAP
 files, **183** assertions, a same-product insert race, a fixture-only
-multi-product rating-delete race, and 22 secret-scanner regressions. Review
+multi-product rating-delete race, and 23 secret-scanner regressions. Review
 hardening detects modern `sb_secret_` keys and privileged JWTs, covers
 recognized root and bundled-asset text files (including gitignored root
 Expo/EAS configs),
@@ -605,8 +605,18 @@ left no residue.
   accidentally Expo-public variable names, including quoted JSON/EAS keys.
 - Recognized text files under bundled `assets/` are scanned while image, font,
   and other binary extensions remain excluded.
-- Each confirmed review finding has a synthetic redaction regression; the
-  current scanner suite passes 22/22.
+- Each confirmed review finding has a synthetic redaction regression; at Packet
+  11 close, the scanner suite passed 22/22.
+- This review correction changes no migration, database environment, Expo
+  runtime, client policy, or Data API grant. Task 12 remains pending, and
+  staging/production were not contacted.
+
+#### Packet 12 — PR #22 quoted service-role JSON remediation
+
+- Service-role key assignment detection covers canonical quoted JSON/EAS keys
+  in addition to `.env` and JavaScript assignment forms.
+- A synthetic quoted-key regression asserts detection and value redaction; the
+  current scanner suite passes 23/23.
 - This review correction changes no migration, database environment, Expo
   runtime, client policy, or Data API grant. Task 12 remains pending, and
   staging/production were not contacted.

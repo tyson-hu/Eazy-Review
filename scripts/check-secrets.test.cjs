@@ -360,6 +360,24 @@ test('SERVICE_ROLE_KEY assignment with value fails', () => {
   }
 });
 
+test('quoted JSON service-role key assignments fail with redaction', () => {
+  const secret = 'fixture-json-service-role-value';
+  const name = ['SUPABASE', 'SERVICE', 'ROLE', 'KEY'].join('_');
+  const findings = scanContent(
+    'eas.json',
+    JSON.stringify({ [name]: secret }),
+  );
+  assert.equal(
+    findings.some(
+      (finding) => finding.pattern === 'service-role-key-assignment',
+    ),
+    true,
+  );
+  for (const finding of findings) {
+    assert.equal(finding.redacted.includes(secret), false);
+  }
+});
+
 test('empty SERVICE_ROLE_KEY assignment does not fail', () => {
   const name = ['SUPABASE', 'SERVICE', 'ROLE', 'KEY'].join('_');
   assert.deepEqual(scanContent('src/empty.env', `${name}=\n`), []);

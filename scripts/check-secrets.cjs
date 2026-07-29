@@ -111,7 +111,7 @@ const SUPABASE_SECRET_KEY =
  * or unquoted length >= 8). Bare `KEY=` / `KEY=` docs punctuation is ignored.
  */
 const SERVICE_ROLE_ASSIGNMENT =
-  /(?:SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE_KEY|service_role_key)\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([A-Za-z0-9._\-+/=]{8,}))/gi;
+  /(?:SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE_KEY|service_role_key)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([A-Za-z0-9._\-+/=]{8,}))/gi;
 
 /**
  * JSON/YAML-ish `service_role: <secret-looking value>` (JWT or long token).
