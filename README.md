@@ -69,6 +69,8 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 
 Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
 core schema and PR review remediation passed local and human-authorized staging
-acceptance across all four forward-only migrations.
-Task 12 (policies/grants) has not started. Do not connect Expo to Supabase until
-Task 12 authorization is in place for the reads you need.
+acceptance across all four forward-only migrations. Task 12 policies, grants,
+and authorization tests are complete locally in the fifth forward-only
+migration, but have not been applied to staging. Expo remains disconnected;
+the real read and write integrations stay owned by their later tasks and
+require the matching accepted environment state.

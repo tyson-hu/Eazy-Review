@@ -48,6 +48,9 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 - No Supabase service-role key in client code.
 - Environment variables are documented.
+- The compatible Expo/ESLint advisory follow-up in `docs/TASKS.md` has been
+  re-checked against current upstream releases; no force-fix, dependency
+  override, or unsupported SDK/toolchain change was used.
 - RLS is enabled on public tables.
 - Delete-account flow is confirmed before release (owned by Task 15):
   protected server derives the target from the verified caller, revokes all

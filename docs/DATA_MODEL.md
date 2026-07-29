@@ -8,10 +8,11 @@ forward-only migrations under `supabase/migrations/`: core
 tables/triggers/RLS, complete internal-helper `EXECUTE` revocation, and
 statement-level aggregate refresh followed by 64-bit advisory-lock-key
 ordering that prevents multi-product lock inversion. No migration adds client
-policies or positive grants. The local clean-reset gate is 183 pgTAP assertions
-plus same-product insert and multi-product rating-delete concurrency races. The
-four migrations passed explicitly authorized staging acceptance on 2026-07-28.
-Task 12 remains pending. Production was not touched.
+policies or positive grants. The Task 11 local clean-reset gate is 183 pgTAP
+assertions plus same-product insert and multi-product rating-delete concurrency
+races. The four Task 11 migrations passed explicitly authorized staging
+acceptance on 2026-07-28. Task 12 is accepted locally in one fifth
+forward-only migration; staging is unchanged and production was not touched.
 
 Separate these concerns:
 
@@ -25,8 +26,8 @@ UI names remain `Eazy Score`, `Community Score`, and `My Rating`.
 
 ## Task 11 Core Tables
 
-- `profiles`: public profile fields; one row per `auth.users` row, created by a
-  trusted trigger rather than a client insert.
+- `profiles`: owner-readable profile fields; one row per `auth.users` row,
+  created by a trusted trigger rather than a client insert.
 - `products`: catalog identity; `is_published` gates all anonymous catalog
   access.
 - `product_images`: ordered images; unique `(product_id, sort_order)` makes the
@@ -361,7 +362,7 @@ Task 12 is a new forward-only migration after Task 11 is accepted:
 | `eazy_assessments` | `SELECT` | `SELECT` | `SELECT, INSERT, UPDATE, DELETE` |
 | `rating_aggregates` | `SELECT` | `SELECT` only | `SELECT, INSERT, UPDATE, DELETE` |
 | `product_offers` | `SELECT` | `SELECT` | `SELECT, INSERT, UPDATE, DELETE` |
-| `profiles` | `SELECT` | `SELECT`; `UPDATE (display_name, username, avatar_url)` | `SELECT, INSERT, UPDATE, DELETE` |
+| `profiles` | none | `SELECT`; `UPDATE (display_name, username, avatar_url)` | `SELECT, INSERT, UPDATE, DELETE` |
 | `user_ratings` | none | `SELECT, DELETE`; column-level `INSERT` / `UPDATE` below | `SELECT, INSERT, UPDATE, DELETE` |
 
 Authenticated `user_ratings` column privileges:
@@ -390,7 +391,7 @@ Policies must use explicit target roles and enforce:
 | --- | --- |
 | `products SELECT` | Only `is_published = true` |
 | Related catalog `SELECT` | Image, current Eazy assessment, aggregate, or offer is visible only when its product is published; assessments also require `is_current = true` |
-| `profiles SELECT` | Public |
+| `profiles SELECT` | Authenticated owner only (`auth.uid() = id`); anonymous users receive no profile grant or policy |
 | `profiles UPDATE` | Authenticated owner only (`auth.uid() = id`) with the same ownership check after update |
 | `user_ratings SELECT` | Authenticated owner only; raw ratings are not community content |
 | `user_ratings INSERT` | `auth.uid() = user_id` and referenced product is published |
@@ -404,8 +405,10 @@ Keep `private_note` on the owner-only row. Community Score reads come from
 ### Required Authorization Scenarios
 
 - Anonymous can read published products and only their related catalog rows.
-- Anonymous cannot read drafts or create ratings.
+- Anonymous cannot read drafts, profiles, or raw ratings and cannot create
+  ratings.
 - An authenticated user can read/create/update/delete only their own rating.
+- An authenticated user can read only their own profile.
 - Insert/update against an unpublished product fails; owner delete still works.
 - Rating identity and audit columns cannot be rewritten through the Data API.
 - Clients cannot insert arbitrary profiles; an owner can update only mutable
@@ -420,6 +423,18 @@ Keep `private_note` on the owner-only row. Community Score reads come from
   in its allowlist, including rating insert/update/delete with the expected
   aggregate trigger side effects. The service-role secret is never used by or
   bundled into Expo.
+
+Local acceptance on 2026-07-29 applies
+`20260729214448_task_12_least_privilege_rls_grants.sql` after the four Task 11
+migrations. Seven pgTAP files pass 418 assertions, including 268 exact policy /
+privilege / helper checks and 70 authorization behavior scenarios, followed by
+both Task 11 concurrency races. The local public schema lint, secret scan,
+typecheck, lint, decision checks, and skill-wrapper checks pass. A separately
+scoped Expo SDK 57 patch alignment cleared the final dependency check; Expo
+Doctor passes 20/20 checks and the full repository gate passes. The Task 12 SQL
+packet adds no application runtime integration, and Expo remains disconnected
+from Supabase. Staging has not received the Task 12 migration; production was
+not touched.
 
 ## Task 15 Account-Deletion Consequences
 
