@@ -80,6 +80,7 @@ const ROOT_CONFIG_BASENAMES = new Set([
 
 const SCAN_PREFIXES = [
   'app/',
+  'assets/',
   'src/',
   'docs/',
   'supabase/',
@@ -128,7 +129,14 @@ const POSTGRES_CONNECTION_URI =
  * any non-empty content; unquoted values must be at least eight characters.
  */
 const DATABASE_PASSWORD_ASSIGNMENT =
-  /(?:SUPABASE_DB_PASSWORD|DATABASE_PASSWORD|DB_PASSWORD|POSTGRES(?:QL)?_PASSWORD|PGPASSWORD)\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
+  /(?:SUPABASE_DB_PASSWORD|DATABASE_PASSWORD|DB_PASSWORD|POSTGRES(?:QL)?_PASSWORD|PGPASSWORD)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
+
+/**
+ * Supabase CLI/dashboard management tokens. These are never valid in Expo,
+ * including when an Expo-public prefix is added accidentally.
+ */
+const SUPABASE_MANAGEMENT_TOKEN_ASSIGNMENT =
+  /(?:EXPO_PUBLIC_)?SUPABASE_(?:ACCESS|MANAGEMENT)_TOKEN["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
 
 /**
  * High-confidence JWT signing-secret assignment names. Matching is deliberately
@@ -255,6 +263,17 @@ function scanContent(relativePath, content) {
       continue;
     }
     push('database-password-assignment', match.index, raw);
+  }
+
+  SUPABASE_MANAGEMENT_TOKEN_ASSIGNMENT.lastIndex = 0;
+  while (
+    (match = SUPABASE_MANAGEMENT_TOKEN_ASSIGNMENT.exec(content)) !== null
+  ) {
+    const raw = match[1] ?? match[2] ?? match[3] ?? '';
+    if (!raw || raw === '""' || raw === "''") {
+      continue;
+    }
+    push('supabase-management-token-assignment', match.index, raw);
   }
 
   JWT_SIGNING_SECRET_ASSIGNMENT.lastIndex = 0;

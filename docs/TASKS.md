@@ -271,10 +271,10 @@ Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + concurrency races), and `npm run check:secrets` all passed on branch
 `cursor/task-11-supabase-core-schema`. The current local gate has six pgTAP
 files, **183** assertions, a same-product insert race, a fixture-only
-multi-product rating-delete race, and 19 secret-scanner regressions. Review
+multi-product rating-delete race, and 22 secret-scanner regressions. Review
 hardening detects modern `sb_secret_` keys and privileged JWTs, covers
-recognized root text files on disk even when gitignored (including Expo/EAS
-configs),
+recognized root and bundled-asset text files (including gitignored root
+Expo/EAS configs),
 revokes client execution across all six internal helpers, and processes
 statement transition tables in stable 64-bit advisory-lock-key order. On
 2026-07-28 the authorized staging target received all four Task 11 migrations.
@@ -460,16 +460,16 @@ No remote link.
 Added a zero-dependency Node scanner `scripts/check-secrets.cjs` plus
 `scripts/check-secrets.test.cjs`. Scripts: `npm run check:secrets` (wired into
 `npm run check`) and `npm run test:secrets` (temp-tree plant → fail → remove →
-pass). Expo CI runs `check:secrets`. Scans allowlisted tracked text paths plus
-every recognized root-level text format, including dynamic Expo/EAS
-configuration;
+pass). Expo CI runs `check:secrets`. Scans allowlisted tracked text paths,
+recognized bundled-asset text formats, plus every recognized root-level text
+format, including dynamic Expo/EAS configuration;
 fails on the deliberate test token, service-role key assignments with values,
 exact-shape modern `sb_secret_` keys, JWTs with a `service_role` role claim,
 direct PostgreSQL URLs, database-password assignments, and JWT-signing-secret
-assignments; JWT inspection includes `.env.example`. Findings redact matched
-values. No real credentials committed; `.env.example` stays fake placeholders
-only. At Packet 5 close the migration was still unapplied; staging/production
-untouched.
+or Supabase management-token assignments; JWT inspection includes
+`.env.example`. Findings redact matched values. No real credentials committed;
+`.env.example` stays fake placeholders only. At Packet 5 close the migration
+was still unapplied; staging/production untouched.
 
 #### Packet 6 — SQL tests (authored and locally verified)
 
@@ -591,7 +591,22 @@ left no residue.
   GoTrue, and generic JWT signing-secret variable names across `.env`
   assignments, JavaScript object properties, and quoted JSON/EAS keys.
 - Empty assignments remain allowed, findings redact matched values, and all
-  fixtures remain synthetic. The current scanner suite passes 19/19.
+  fixtures remain synthetic. At Packet 10 close, the scanner suite passed
+  19/19.
+- This review correction changes no migration, database environment, Expo
+  runtime, client policy, or Data API grant. Task 12 remains pending, and
+  staging/production were not contacted.
+
+#### Packet 11 — PR #22 third secret-scanner review remediation
+
+- Database-password detection covers quoted JSON/EAS keys in addition to
+  `.env` and JavaScript assignment forms.
+- Supabase access/management-token assignments fail for private and
+  accidentally Expo-public variable names, including quoted JSON/EAS keys.
+- Recognized text files under bundled `assets/` are scanned while image, font,
+  and other binary extensions remain excluded.
+- Each confirmed review finding has a synthetic redaction regression; the
+  current scanner suite passes 22/22.
 - This review correction changes no migration, database environment, Expo
   runtime, client policy, or Data API grant. Task 12 remains pending, and
   staging/production were not contacted.

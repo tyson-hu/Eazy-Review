@@ -69,6 +69,13 @@ function jwtSigningSecretAssignmentLine(value, prefix = '') {
   return `${name}=${value}\n`;
 }
 
+function managementTokenAssignmentLine(value, prefix = '') {
+  const name = [prefix, 'SUPABASE', 'ACCESS', 'TOKEN']
+    .filter(Boolean)
+    .join('_');
+  return `${name}=${value}\n`;
+}
+
 function createTempRepo(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'eazy-review-secrets-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -100,6 +107,8 @@ function runGit(root, args) {
 
 test('shouldScanPath allows documented prefixes and skips noise', () => {
   assert.equal(shouldScanPath('app/index.tsx'), true);
+  assert.equal(shouldScanPath('assets/config.json'), true);
+  assert.equal(shouldScanPath('assets/config.js'), true);
   assert.equal(shouldScanPath('src/lib/client.ts'), true);
   assert.equal(shouldScanPath('docs/SECURITY.md'), true);
   assert.equal(shouldScanPath('supabase/config.toml'), true);
@@ -121,6 +130,28 @@ test('shouldScanPath allows documented prefixes and skips noise', () => {
   assert.equal(shouldScanPath('node_modules/foo/index.js'), false);
   assert.equal(shouldScanPath('dist/bundle.js'), false);
   assert.equal(shouldScanPath('app/assets/photo.png'), false);
+  assert.equal(shouldScanPath('assets/images/photo.png'), false);
+  assert.equal(shouldScanPath('assets/fonts/font.ttf'), false);
+});
+
+test('bundled textual assets are scanned while binary assets stay skipped', (t) => {
+  const root = createTempRepo(t);
+  write(root, 'assets/config.json', JSON.stringify({ value: TEST_TOKEN }));
+  write(root, 'assets/images/photo.png', TEST_TOKEN);
+
+  const listed = listCandidateFiles(root);
+  assert.equal(listed.includes('assets/config.json'), true);
+  assert.equal(listed.includes('assets/images/photo.png'), false);
+
+  const findings = scanRepository(root);
+  assert.equal(
+    findings.some(
+      (finding) =>
+        finding.file === 'assets/config.json' &&
+        finding.pattern === 'deliberate-test-token',
+    ),
+    true,
+  );
 });
 
 test('dependency lockfiles are scanned for elevated keys', (t) => {
@@ -377,6 +408,61 @@ test('database password assignments fail while empty assignments pass', () => {
   }
   assert.deepEqual(
     scanContent('.env.example', databasePasswordAssignmentLine('')),
+    [],
+  );
+});
+
+test('quoted JSON database password assignments fail with redaction', () => {
+  const password = 'fixture-json-database-password';
+  const name = ['EXPO', 'PUBLIC', 'SUPABASE', 'DB', 'PASSWORD'].join('_');
+  const findings = scanContent(
+    'eas.json',
+    JSON.stringify({ [name]: password }),
+  );
+  assert.equal(
+    findings.some(
+      (finding) => finding.pattern === 'database-password-assignment',
+    ),
+    true,
+  );
+  for (const finding of findings) {
+    assert.equal(finding.redacted.includes(password), false);
+  }
+});
+
+test('Supabase management token assignments fail while empty values pass', () => {
+  const token = 'fixture-management-token';
+  const privateFindings = scanContent(
+    '.env.example',
+    managementTokenAssignmentLine(token),
+  );
+  const publicFindings = scanContent(
+    'app.config.ts',
+    managementTokenAssignmentLine(token, 'EXPO_PUBLIC'),
+  );
+  const managementName = ['SUPABASE', 'MANAGEMENT', 'TOKEN'].join('_');
+  const jsonFindings = scanContent(
+    'eas.json',
+    JSON.stringify({ [managementName]: token }),
+  );
+  for (const findings of [
+    privateFindings,
+    publicFindings,
+    jsonFindings,
+  ]) {
+    assert.equal(
+      findings.some(
+        (finding) =>
+          finding.pattern === 'supabase-management-token-assignment',
+      ),
+      true,
+    );
+    for (const finding of findings) {
+      assert.equal(finding.redacted.includes(token), false);
+    }
+  }
+  assert.deepEqual(
+    scanContent('.env.example', managementTokenAssignmentLine('')),
     [],
   );
 });

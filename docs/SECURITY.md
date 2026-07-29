@@ -53,7 +53,8 @@ Canonical security rules for all agent and human work in this repo, regardless o
   explicit task authorization.
 - The Expo bundle may contain only the project URL and a publishable key (or
   legacy anon key for compatibility). It must never contain a secret key,
-  service-role key, database password, or direct connection string.
+  service-role key, database password, JWT signing secret, Supabase management
+  token, or direct connection string.
 - Treat RLS policies and Data API grants as separate controls. Task 11 enables
   RLS, revokes inherited `PUBLIC` / `anon` / `authenticated` privileges, and
   adds no positive client grants. Task 12 adds complete policies before
@@ -102,9 +103,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
   gitignored; no project reference or credential is committed. Production was
   not touched.
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs
-  `test:secrets` then scans allowlisted paths (`app/`, `src/`, `docs/`,
-  `supabase/`, `scripts/`, `.github/`, all root files on disk with recognized
-  text formats even when gitignored, plus skill/agent trees). Root coverage
+  `test:secrets` then scans allowlisted paths (`app/`, `assets/`, `src/`,
+  `docs/`, `supabase/`, `scripts/`, `.github/`, all root files on disk with
+  recognized text formats even when gitignored, plus skill/agent trees).
+  Bundled `assets/` coverage is limited to recognized text formats; images,
+  fonts, and other binary assets remain excluded. Root coverage
   includes dynamic Expo/EAS configuration such as `app.config.ts`,
   `app.config.js`, and `eas.json`, plus text dotfiles such as `.npmrc` and
   `.editorconfig`. It fails on the
@@ -113,9 +116,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
   exact-shape modern `sb_secret_` keys, service-role key assignment forms with
   a non-empty secret-like value, JWTs whose payload claims
   `role: service_role`, direct PostgreSQL connection URIs, and
-  database-password or JWT-signing-secret assignments. Dependency lockfiles are
-  scanned for the same high-confidence patterns. JWT inspection also applies
-  to `.env.example`; only genuinely non-secret fake placeholders pass.
+  database-password, JWT-signing-secret, or Supabase management-token
+  assignments. Quoted JSON/EAS database-password keys are covered. Dependency
+  lockfiles are scanned for the same high-confidence patterns. JWT inspection
+  also applies to `.env.example`; only genuinely non-secret fake placeholders
+  pass.
   Findings print path, pattern name, and a redacted snippet only — never the
   full matched value. Prose mentions of `service_role` are allowed. Wired into
   `npm run check` and Expo CI. Self-test alone: `npm run test:secrets`. Do not
