@@ -33,8 +33,10 @@ Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and
 
 ## Phase 4: Real Data
 
-1. **Task 11** — environments and deny-by-default core schema.
-2. **Task 12** — policies, explicit Data API grants, authorization tests.
+1. **Task 11** — environments and deny-by-default core schema (**PR review
+   remediation accepted locally and on human-authorized staging; Done**).
+2. **Task 12** — policies, explicit Data API grants, authorization tests
+   (**Pending; no implementation started**).
 3. **Task 13** — product seed data (small seed first).
 4. **Task 14** — real Browse and Product Detail reads.
 5. **Task 15** — authentication (email first, including recovery and deletion).
@@ -106,10 +108,18 @@ Status: Done.
 ### Milestone 3: Supabase Security Foundation (Tasks 11–12)
 
 Deliverables:
-- Local + staging environments.
-- Task 11 core schema migration with RLS enabled, inherited client privileges
-  revoked, and no positive client grants.
-- Separate Task 12 policies/grants migration plus authorization tests.
+- Local + human-authorized staging environments. All four Task 11 migrations
+  passed staging acceptance on 2026-07-28.
+- Task 11 core schema and review-hardening migrations with RLS enabled,
+  inherited client privileges and internal-helper execution revoked, and no
+  positive client grants. `npm run test:db` / `npm run test:db:reset` run the
+  183-assertion pgTAP suite plus same-product insert and fixture-only
+  multi-product rating-delete concurrency races. The third migration replaces
+  row refresh with statement-level transition-table triggers; the fourth maps
+  affected products to 64-bit advisory-lock keys and orders the actual keys.
+  Local and staging verification passed 2026-07-28. Production untouched.
+- Separate Task 12 policies/grants migration plus authorization tests
+  (**Pending**).
 
 Acceptance:
 - Published catalog access and owner-only private rating access pass the

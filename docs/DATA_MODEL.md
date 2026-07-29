@@ -3,10 +3,15 @@
 Use relational Supabase/PostgreSQL tables. Do not store product identity,
 images, offers, ratings, and summaries inside one giant product JSON object.
 
-This document is the planning contract for Tasks 11–12. No migration has been
-implemented or applied yet. Table DDL below defines the intended Task 11 shape;
-aggregate-function SQL stays out of this planning PR until it can be exercised
-against a local database, including the product-delete cascade case.
+This document is the canonical contract for Tasks 11–12. Task 11 has four
+forward-only migrations under `supabase/migrations/`: core
+tables/triggers/RLS, complete internal-helper `EXECUTE` revocation, and
+statement-level aggregate refresh followed by 64-bit advisory-lock-key
+ordering that prevents multi-product lock inversion. No migration adds client
+policies or positive grants. The local clean-reset gate is 183 pgTAP assertions
+plus same-product insert and multi-product rating-delete concurrency races. The
+four migrations passed explicitly authorized staging acceptance on 2026-07-28.
+Task 12 remains pending. Production was not touched.
 
 Separate these concerns:
 
@@ -231,6 +236,11 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   category averages, overall average, score, and timestamp.
 - Refreshes for the same product are serialized before reading
   `user_ratings`, so concurrent commits cannot leave a stale aggregate.
+- Rating insert, update, and delete refresh once per statement from transition
+  tables. Each distinct affected product maps to a 64-bit advisory-lock key;
+  statements process the actual keys in stable order (with product ID as a
+  deterministic tie-breaker) so one multi-product statement cannot invert
+  transaction advisory locks against another.
 - Deleting the last rating leaves the existing product with a zero-count row
   and null averages/score.
 - `product_id` and `user_id` on `user_ratings` cannot change after insert.
@@ -238,8 +248,14 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   attempting to recreate an aggregate for the deleting/deleted product and
   without an FK error.
 - The mechanism is tested locally for insert/update/delete, last-rating
-  removal, same-product concurrency, and product deletion before Task 11 is
-  called complete.
+  removal, same-product concurrency, multi-product delete concurrency, and
+  product deletion before Task 11 is called complete.
+  `supabase/tests/database/aggregates.test.sql` covers the aggregate cases and
+  retains a structural 64-bit advisory-lock guard;
+  `scripts/test-db-concurrency.cjs` proves a same-product writer waits and sees
+  both commits, then overlaps two fixture-only multi-product rating deletes
+  across two products and verifies both complete with zeroed aggregates. The
+  agent-run harness never deletes `auth.users`. Local suite pass: 2026-07-28.
 - A fixed-value fixture with category/overall tuples
   `(10, 8, 6, 4, 2, 1)` and `(2, 4, 6, 8, 10, 10)` must produce `6.00` for
   every category average, `overall_avg = 5.50`, and `score = 55`.
@@ -248,9 +264,11 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   must restore the zero-count/null state.
 
 Expected names are `refresh_rating_aggregates`,
-`handle_user_rating_change`, and
-`user_ratings_refresh_aggregates_trigger`. Exact function SQL is deliberately
-not included in this planning PR.
+`handle_user_rating_change`, and the three event-specific statement triggers:
+`user_ratings_refresh_aggregates_insert_trigger`,
+`user_ratings_refresh_aggregates_update_trigger`, and
+`user_ratings_refresh_aggregates_delete_trigger`. Exact function SQL lives in
+the Task 11 migrations and is deliberately not duplicated here.
 
 `handle_new_user` runs after `auth.users` insert and inserts only
 `public.profiles (id)`. It must produce exactly one profile row and clients
@@ -258,18 +276,20 @@ never receive profile `INSERT`.
 
 `handle_new_user` and `handle_user_rating_change` are the required trigger-only
 `SECURITY DEFINER` entrypoints: the former crosses from `auth.users` to
-`public.profiles`, and the latter owns the aggregate-write privilege boundary.
-An inner `refresh_rating_aggregates` helper may remain `SECURITY INVOKER`
-because it executes inside the secured trigger entrypoint. Server-maintained
-timestamp and rating-identity helpers remain `SECURITY INVOKER` unless their
-implementation proves that elevation is required. A `BEFORE UPDATE` trigger
-rejects changes to both rating identity columns.
+`public.profiles`, and the latter owns the aggregate-write privilege boundary
+for the three statement triggers. An inner `refresh_rating_aggregates` helper
+may remain `SECURITY INVOKER` because it executes inside the secured trigger
+entrypoint. Server-maintained timestamp and rating-identity helpers remain
+`SECURITY INVOKER` unless their implementation proves that elevation is
+required. A `BEFORE UPDATE` trigger rejects changes to both rating identity
+columns.
 
-Every `SECURITY DEFINER` helper, including both required entrypoints, must:
+Every Task 11 public-schema function is internal to a trigger path and must
+revoke `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`. In addition, every
+`SECURITY DEFINER` helper, including both required entrypoints, must:
 
 - declare `SET search_path = ''`;
 - fully qualify every relation;
-- revoke `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`; and
 - expose no Data API RPC path to client roles.
 
 Supabase's current function guidance explains both the empty-search-path rule
@@ -298,6 +318,22 @@ keeps deny-by-default behavior independent of the project's inherited
 defaults. Optional explicit `service_role` grants are only for trusted
 staging/seed tooling and never place a service-role key in Expo.
 
+Packet 6 SQL tests under `supabase/tests/database/security.test.sql` assert
+these effective table privileges, zero policies, and denied execution across
+all six internal helpers. The current 183-assertion pgTAP suite and both
+concurrency races passed locally on 2026-07-28. Staging verification on
+2026-07-28 confirmed migration parity for all four migrations, 7/7 tables with
+RLS, zero policies, zero prohibited table privileges, all six internal helpers
+with zero prohibited executions, and both required `SECURITY DEFINER`
+functions. The original seven transaction-rolled-back profile/aggregate checks
+left no fixture residue. Review-remediation re-acceptance confirmed the old
+aggregate row trigger count is zero, all three statement triggers use
+transition tables, affected products are processed in actual 64-bit lock-key
+order, and client helper execution remains denied. A transaction-rolled-back
+multi-product insert/update/delete smoke restored both aggregates to zero/null
+after delete and left no fixture residue. Linked lint reported no schema
+errors.
+
 ## Task 12 Privileges And Data API Exposure
 
 Data API grants and RLS are separate layers: grants decide whether a role can
@@ -308,7 +344,7 @@ migration must not depend on either old or new project defaults:
 [Securing your API](https://supabase.com/docs/guides/api/securing-your-api) and
 [the 2026 default-grant change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
 
-Task 12 is a new forward-only migration after Task 11 is applied and verified:
+Task 12 is a new forward-only migration after Task 11 is accepted:
 
 1. Create the complete policies below.
 2. `REVOKE ALL PRIVILEGES` on every listed table from `PUBLIC`, `anon`, and

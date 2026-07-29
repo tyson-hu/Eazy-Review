@@ -40,6 +40,26 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
+Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
+includes recognized text files under bundled `app/`, `assets/`, and `src/`,
+even when gitignored or symlinked to regular files, plus every recognized
+root-level text file present on disk, including dynamic Expo/EAS configs and
+dotfiles such as `.npmrc` and `.editorconfig`. Dependency lockfiles are
+included, and direct PostgreSQL URLs plus non-empty service-role,
+database-password, JWT-signing-secret, or Supabase management-token assignments
+fail the scan regardless of value length.
+
+## Local Supabase (Task 11)
+
+Requires Docker Desktop and the Supabase CLI (`brew install supabase/tap/supabase`).
+
+```bash
+supabase start              # once per machine session
+npm run test:db:reset       # clean reset + pgTAP + concurrency races
+supabase stop
+```
+
+Expo must receive only the project URL and publishable/legacy anon key (see `.env.example`). Never put a service-role key in the mobile bundle (`docs/SECURITY.md`). The human-authorized staging target is linked through gitignored local CLI metadata; no project reference or credential is committed. Production database work is forbidden for agents.
 
 ## Documentation Discipline
 
@@ -47,4 +67,8 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 
 ## First Build Goal
 
-The first successful version should let a user browse mock products, open a product detail page, understand Eazy Score and Community Score, submit a local My Rating, and review the full UX flow before Supabase is added.
+Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
+core schema and PR review remediation passed local and human-authorized staging
+acceptance across all four forward-only migrations.
+Task 12 (policies/grants) has not started. Do not connect Expo to Supabase until
+Task 12 authorization is in place for the reads you need.

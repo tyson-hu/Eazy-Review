@@ -29,6 +29,9 @@ jobs:
       - name: Check decision records and generated index
         run: npm run decisions:check
 
+      - name: Secret scan and self-test
+        run: npm run check:secrets
+
       - name: Generate typed routes
         run: npm run generate:routes
 

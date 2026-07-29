@@ -53,7 +53,8 @@ Canonical security rules for all agent and human work in this repo, regardless o
   explicit task authorization.
 - The Expo bundle may contain only the project URL and a publishable key (or
   legacy anon key for compatibility). It must never contain a secret key,
-  service-role key, database password, or direct connection string.
+  service-role key, database password, JWT signing secret, Supabase management
+  token, or direct connection string.
 - Treat RLS policies and Data API grants as separate controls. Task 11 enables
   RLS, revokes inherited `PUBLIC` / `anon` / `authenticated` privileges, and
   adds no positive client grants. Task 12 adds complete policies before
@@ -64,6 +65,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
   entrypoint. Each uses
   `SET search_path = ''`, fully qualified relation names, and
   `REVOKE EXECUTE` from `PUBLIC`, `anon`, and `authenticated`.
+- All six Task 11 public-schema functions are internal helpers:
+  `set_updated_at`, `reject_user_rating_identity_change`, `handle_new_user`,
+  `create_zero_rating_aggregate`, `refresh_rating_aggregates`, and
+  `handle_user_rating_change`. None is executable by `PUBLIC`, `anon`, or
+  `authenticated`.
 - `service_role` is server-only. Task 12 positively tests its exact allowlist
   and aggregate-trigger side effects, while secret scanning proves its key is
   absent from Expo.
@@ -72,6 +78,54 @@ Canonical security rules for all agent and human work in this repo, regardless o
   `rating_aggregates`.
 - Secret scanning is a required Task 11 deliverable. Validate it with a safe
   deliberate test pattern; never use a real credential as the test.
+- Task 11 Packet 6 SQL tests under `supabase/tests/database/` assert
+  deny-by-default table privileges (`has_table_privilege` for `PUBLIC` /
+  `anon` / `authenticated`), zero policies on the seven core tables, and
+  `EXECUTE` revoked on all six internal helpers. `npm run test:db` runs those
+  pgTAP checks and then `scripts/test-db-concurrency.cjs`, which proves
+  same-product writers serialize and overlapping fixture-only multi-product
+  rating deletes both commit. The harness creates deterministic local fixture
+  users but never deletes `auth.users`. Statement triggers derive distinct
+  affected products from transition tables, map them to 64-bit advisory-lock
+  keys, and acquire the actual keys in stable order. Run after `supabase start`
+  (or use `npm run test:db:reset`). The current local gate passed 2026-07-28
+  with 183 pgTAP assertions and both races. The explicitly authorized staging
+  target received all four Task 11 migrations
+  on 2026-07-28. Migration parity, 7/7-table RLS state, zero policies, zero
+  prohibited table/helper privileges, the original seven
+  transaction-rolled-back behavior checks, linked lint, and zero test-fixture
+  residue passed. Review-remediation re-acceptance additionally confirmed the
+  old row trigger is absent, all three transition-table statement
+  triggers are present, actual 64-bit lock-key ordering is installed, and
+  client helper execution remains denied. A transaction-rolled-back
+  multi-product insert/update/delete smoke restored both aggregates to
+  zero/null after delete and left no fixture residue. The local CLI link is
+  gitignored; no project reference or credential is committed. Production was
+  not touched.
+- Repo secret scan (zero new dependencies): `npm run check:secrets` runs
+  `test:secrets` then scans allowlisted paths (`app/`, `assets/`, `src/`,
+  `docs/`, `supabase/`, `scripts/`, `.github/`, plus skill/agent trees).
+  Recognized text files under bundled `app/`, `assets/`, and `src/` and all
+  recognized root text files are enumerated from disk even when gitignored or
+  symlinked to regular files. Directory symlinks are not followed. Bundled
+  coverage excludes images, fonts, and other binary assets. Root coverage
+  includes dynamic Expo/EAS configuration such as `app.config.ts`,
+  `app.config.js`, and `eas.json`, plus text dotfiles such as `.npmrc` and
+  `.editorconfig`. It fails on the
+  deliberate test token (constant `TEST_TOKEN` in
+  `scripts/check-secrets.cjs`),
+  exact-shape modern `sb_secret_` keys, explicit service-role key assignment
+  forms with any non-empty value, JWTs whose payload claims
+  `role: service_role`, direct PostgreSQL connection URIs, and
+  database-password, JWT-signing-secret, or Supabase management-token assignment
+  names with any non-empty value regardless of length. Quoted JSON/EAS
+  database-password keys are covered. Dependency lockfiles are scanned for the
+  same high-confidence patterns. JWT inspection also applies to `.env.example`;
+  only genuinely non-secret fake placeholders pass.
+  Findings print path, pattern name, and a redacted snippet only — never the
+  full matched value. Prose mentions of `service_role` are allowed. Wired into
+  `npm run check` and Expo CI. Self-test alone: `npm run test:secrets`. Do not
+  leave the deliberate token in committed files.
 - Do not print Supabase project refs, keys, tokens, connection strings, or
   dashboard/MCP responses containing them. Report presence and validation
   status without echoing values.
