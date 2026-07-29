@@ -130,6 +130,13 @@ const POSTGRES_CONNECTION_URI =
 const DATABASE_PASSWORD_ASSIGNMENT =
   /(?:SUPABASE_DB_PASSWORD|DATABASE_PASSWORD|DB_PASSWORD|POSTGRES(?:QL)?_PASSWORD|PGPASSWORD)\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
 
+/**
+ * High-confidence JWT signing-secret assignment names. Matching is deliberately
+ * limited to established secret variable names so prose about JWTs stays valid.
+ */
+const JWT_SIGNING_SECRET_ASSIGNMENT =
+  /(?:SUPABASE_JWT_(?:SIGNING_)?SECRET|GOTRUE_JWT_SECRET|JWT_(?:SIGNING_)?SECRET)["']?\s*[=:]\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#,;]{8,}))/gi;
+
 function isBinaryBuffer(buffer) {
   const sample = buffer.subarray(0, Math.min(buffer.length, 8000));
   return sample.includes(0);
@@ -248,6 +255,15 @@ function scanContent(relativePath, content) {
       continue;
     }
     push('database-password-assignment', match.index, raw);
+  }
+
+  JWT_SIGNING_SECRET_ASSIGNMENT.lastIndex = 0;
+  while ((match = JWT_SIGNING_SECRET_ASSIGNMENT.exec(content)) !== null) {
+    const raw = match[1] ?? match[2] ?? match[3] ?? '';
+    if (!raw || raw === '""' || raw === "''") {
+      continue;
+    }
+    push('jwt-signing-secret-assignment', match.index, raw);
   }
 
   JWT_LIKE.lastIndex = 0;

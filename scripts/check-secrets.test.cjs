@@ -62,6 +62,13 @@ function databasePasswordAssignmentLine(value) {
   return `${name}=${value}\n`;
 }
 
+function jwtSigningSecretAssignmentLine(value, prefix = '') {
+  const name = [prefix, 'SUPABASE', 'JWT', 'SECRET']
+    .filter(Boolean)
+    .join('_');
+  return `${name}=${value}\n`;
+}
+
 function createTempRepo(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'eazy-review-secrets-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -370,6 +377,39 @@ test('database password assignments fail while empty assignments pass', () => {
   }
   assert.deepEqual(
     scanContent('.env.example', databasePasswordAssignmentLine('')),
+    [],
+  );
+});
+
+test('JWT signing-secret assignments fail while empty assignments pass', () => {
+  const secret = 'fixture-jwt-signing-secret';
+  const envFindings = scanContent(
+    'app.config.ts',
+    jwtSigningSecretAssignmentLine(secret, 'EXPO_PUBLIC'),
+  );
+  const gotrueName = ['GOTRUE', 'JWT', 'SECRET'].join('_');
+  const jsonFindings = scanContent(
+    'eas.json',
+    `"${gotrueName}": "${secret}"\n`,
+  );
+  const genericName = ['JWT', 'SIGNING', 'SECRET'].join('_');
+  const jsFindings = scanContent(
+    'app.config.ts',
+    `${genericName}: '${secret}'\n`,
+  );
+  for (const findings of [envFindings, jsonFindings, jsFindings]) {
+    assert.equal(
+      findings.some(
+        (finding) => finding.pattern === 'jwt-signing-secret-assignment',
+      ),
+      true,
+    );
+    for (const finding of findings) {
+      assert.equal(finding.redacted.includes(secret), false);
+    }
+  }
+  assert.deepEqual(
+    scanContent('.env.example', jwtSigningSecretAssignmentLine('')),
     [],
   );
 });

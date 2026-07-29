@@ -271,7 +271,7 @@ Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + concurrency races), and `npm run check:secrets` all passed on branch
 `cursor/task-11-supabase-core-schema`. The current local gate has six pgTAP
 files, **183** assertions, a same-product insert race, a fixture-only
-multi-product rating-delete race, and 15 secret-scanner regressions. Review
+multi-product rating-delete race, and 19 secret-scanner regressions. Review
 hardening detects modern `sb_secret_` keys and privileged JWTs, covers
 recognized root text files on disk even when gitignored (including Expo/EAS
 configs),
@@ -464,10 +464,12 @@ pass). Expo CI runs `check:secrets`. Scans allowlisted tracked text paths plus
 every recognized root-level text format, including dynamic Expo/EAS
 configuration;
 fails on the deliberate test token, service-role key assignments with values,
-exact-shape modern `sb_secret_` keys, and JWTs with a `service_role` role claim;
-JWT inspection includes `.env.example`. Findings redact matched values. No real
-credentials committed; `.env.example` stays fake placeholders only. At Packet
-5 close the migration was still unapplied; staging/production untouched.
+exact-shape modern `sb_secret_` keys, JWTs with a `service_role` role claim,
+direct PostgreSQL URLs, database-password assignments, and JWT-signing-secret
+assignments; JWT inspection includes `.env.example`. Findings redact matched
+values. No real credentials committed; `.env.example` stays fake placeholders
+only. At Packet 5 close the migration was still unapplied; staging/production
+untouched.
 
 #### Packet 6 — SQL tests (authored and locally verified)
 
@@ -539,8 +541,8 @@ left no residue.
 #### Packet 8 — PR #22 review remediation
 
 - Secret scanning accepts every recognized root-level text format, with
-  regressions for `app.config.ts`, `app.config.js`, and `eas.json`; current
-  scanner suite: 18/18 pass.
+  regressions for `app.config.ts`, `app.config.js`, and `eas.json`; at Packet 8
+  close, the scanner suite passed 18/18.
 - CLI-created forward migration
   `supabase/migrations/20260728115256_prevent_rating_lock_inversion.sql`
   replaces the row-level aggregate refresh trigger with insert, update, and
@@ -576,11 +578,23 @@ left no residue.
   `numeric(4,1)` size and `numeric(10,2)` price columns with SQLSTATE `22003`.
   Two pgTAP regressions now preserve that finite-value contract; no redundant
   constraint migration was added.
-- Local acceptance is 183 pgTAP assertions, both concurrency races, and 18/18
-  secret-scanner regressions. Explicitly authorized staging
+- At Packet 9 close, local acceptance was 183 pgTAP assertions, both
+  concurrency races, and 18/18 secret-scanner regressions. Explicitly
+  authorized staging
   application/re-acceptance passed on 2026-07-28 with migration parity,
   catalog/security checks, transaction-rolled-back multi-product behavior,
   zero fixture residue, and linked lint. Production was not contacted.
+
+#### Packet 10 — PR #22 JWT signing-secret review remediation
+
+- Secret scanning rejects non-empty assignments to established Supabase,
+  GoTrue, and generic JWT signing-secret variable names across `.env`
+  assignments, JavaScript object properties, and quoted JSON/EAS keys.
+- Empty assignments remain allowed, findings redact matched values, and all
+  fixtures remain synthetic. The current scanner suite passes 19/19.
+- This review correction changes no migration, database environment, Expo
+  runtime, client policy, or Data API grant. Task 12 remains pending, and
+  staging/production were not contacted.
 
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 

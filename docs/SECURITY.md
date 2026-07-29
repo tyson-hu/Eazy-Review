@@ -113,11 +113,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
   exact-shape modern `sb_secret_` keys, service-role key assignment forms with
   a non-empty secret-like value, JWTs whose payload claims
   `role: service_role`, direct PostgreSQL connection URIs, and
-  database-password assignments. Dependency lockfiles are scanned for the same
-  high-confidence patterns. JWT inspection also applies to
-  `.env.example`; only genuinely non-secret fake placeholders pass. Findings
-  print path, pattern name, and a redacted snippet only — never the full
-  matched value. Prose mentions of `service_role` are allowed. Wired into
+  database-password or JWT-signing-secret assignments. Dependency lockfiles are
+  scanned for the same high-confidence patterns. JWT inspection also applies
+  to `.env.example`; only genuinely non-secret fake placeholders pass.
+  Findings print path, pattern name, and a redacted snippet only — never the
+  full matched value. Prose mentions of `service_role` are allowed. Wired into
   `npm run check` and Expo CI. Self-test alone: `npm run test:secrets`. Do not
   leave the deliberate token in committed files.
 - Do not print Supabase project refs, keys, tokens, connection strings, or
