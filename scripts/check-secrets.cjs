@@ -92,6 +92,8 @@ const SCAN_PREFIXES = [
   '.claude/',
 ];
 
+const BUNDLED_DISK_DIRS = ['app', 'assets', 'src'];
+
 /** JWT-shaped token (three base64url segments). */
 const JWT_LIKE =
   /\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g;
@@ -378,8 +380,46 @@ function listRootScannableFilesOnDisk(root) {
 }
 
 /**
- * List tracked/untracked allowlisted files, plus every recognized root text
- * file on disk even when gitignored.
+ * Recognized text files in Expo-bundled source directories, including
+ * gitignored files omitted by `git ls-files --exclude-standard`.
+ * @param {string} root
+ * @returns {string[]}
+ */
+function listBundledScannableFilesOnDisk(root) {
+  /** @type {string[]} */
+  const files = [];
+
+  function walk(absDir, relDir) {
+    let entries;
+    try {
+      entries = fs.readdirSync(absDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (SKIP_DIR_NAMES.has(entry.name)) {
+        continue;
+      }
+      const rel = `${relDir}/${entry.name}`;
+      const abs = path.join(absDir, entry.name);
+      if (entry.isDirectory()) {
+        walk(abs, rel);
+      } else if (entry.isFile() && shouldScanPath(rel)) {
+        files.push(rel);
+      }
+    }
+  }
+
+  for (const directory of BUNDLED_DISK_DIRS) {
+    walk(path.join(root, directory), directory);
+  }
+
+  return files;
+}
+
+/**
+ * List tracked/untracked allowlisted files, plus recognized root and bundled
+ * source text files on disk even when gitignored.
  * @param {string} root
  * @returns {string[]} relative paths
  */
@@ -431,6 +471,9 @@ function listCandidateFiles(root) {
 
   for (const rootFile of listRootScannableFilesOnDisk(root)) {
     candidates.add(rootFile);
+  }
+  for (const bundledFile of listBundledScannableFilesOnDisk(root)) {
+    candidates.add(bundledFile);
   }
 
   return [...candidates].filter(shouldScanPath).sort();

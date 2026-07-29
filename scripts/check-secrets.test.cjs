@@ -154,6 +154,62 @@ test('bundled textual assets are scanned while binary assets stay skipped', (t) 
   );
 });
 
+test('gitignored bundled text files on disk are scanned', (t) => {
+  const root = createTempRepo(t);
+  write(
+    root,
+    '.gitignore',
+    [
+      'app/ignored-config.ts',
+      'assets/ignored-config.json',
+      'assets/images/ignored-photo.png',
+      'src/ignored-config.ts',
+      '',
+    ].join('\n'),
+  );
+  write(root, 'docs/ok.md', 'tracked fixture\n');
+  write(root, 'app/ignored-config.ts', `export default '${TEST_TOKEN}';\n`);
+  write(
+    root,
+    'assets/ignored-config.json',
+    JSON.stringify({ value: TEST_TOKEN }),
+  );
+  write(root, 'assets/images/ignored-photo.png', TEST_TOKEN);
+  write(root, 'src/ignored-config.ts', `export const value = '${TEST_TOKEN}';\n`);
+
+  const templateDir = path.join(root, '.empty-git-template');
+  fs.mkdirSync(templateDir);
+  runGit(root, ['init', `--template=${templateDir}`]);
+  runGit(root, ['config', 'user.email', 'secrets-test@example.com']);
+  runGit(root, ['config', 'user.name', 'secrets-test']);
+  runGit(root, ['add', '.gitignore', 'docs']);
+  runGit(root, [
+    '-c',
+    'commit.gpgsign=false',
+    'commit',
+    '-m',
+    'fixture',
+  ]);
+
+  const listed = listCandidateFiles(root);
+  assert.equal(listed.includes('app/ignored-config.ts'), true);
+  assert.equal(listed.includes('assets/ignored-config.json'), true);
+  assert.equal(listed.includes('src/ignored-config.ts'), true);
+  assert.equal(listed.includes('assets/images/ignored-photo.png'), false);
+
+  const findings = scanRepository(root).filter(
+    (finding) => finding.pattern === 'deliberate-test-token',
+  );
+  assert.deepEqual(
+    new Set(findings.map((finding) => finding.file)),
+    new Set([
+      'app/ignored-config.ts',
+      'assets/ignored-config.json',
+      'src/ignored-config.ts',
+    ]),
+  );
+});
+
 test('dependency lockfiles are scanned for elevated keys', (t) => {
   const root = createTempRepo(t);
   const secret = modernSupabaseSecretKey();

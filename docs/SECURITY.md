@@ -104,11 +104,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
   not touched.
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs
   `test:secrets` then scans allowlisted paths (`app/`, `assets/`, `src/`,
-  `docs/`, `supabase/`, `scripts/`, `.github/`, all root files on disk with
-  recognized text formats even when gitignored, plus skill/agent trees).
-  Bundled `assets/` coverage is limited to recognized text formats; images,
-  fonts, and other binary assets remain excluded. Root coverage
-  includes dynamic Expo/EAS configuration such as `app.config.ts`,
+  `docs/`, `supabase/`, `scripts/`, `.github/`, plus skill/agent trees).
+  Recognized text files under bundled `app/`, `assets/`, and `src/` and all
+  recognized root text files are enumerated from disk even when gitignored.
+  Bundled coverage excludes images, fonts, and other binary assets. Root
+  coverage includes dynamic Expo/EAS configuration such as `app.config.ts`,
   `app.config.js`, and `eas.json`, plus text dotfiles such as `.npmrc` and
   `.editorconfig`. It fails on the
   deliberate test token (constant `TEST_TOKEN` in

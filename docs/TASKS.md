@@ -271,10 +271,10 @@ Local `supabase start`, `npm run test:db:reset` (clean migration apply + pgTAP
 + concurrency races), and `npm run check:secrets` all passed on branch
 `cursor/task-11-supabase-core-schema`. The current local gate has six pgTAP
 files, **183** assertions, a same-product insert race, a fixture-only
-multi-product rating-delete race, and 23 secret-scanner regressions. Review
+multi-product rating-delete race, and 24 secret-scanner regressions. Review
 hardening detects modern `sb_secret_` keys and privileged JWTs, covers
-recognized root and bundled-asset text files (including gitignored root
-Expo/EAS configs),
+recognized root and bundled-asset text files (including gitignored bundled
+files and root Expo/EAS configs),
 revokes client execution across all six internal helpers, and processes
 statement transition tables in stable 64-bit advisory-lock-key order. On
 2026-07-28 the authorized staging target received all four Task 11 migrations.
@@ -617,6 +617,18 @@ left no residue.
   in addition to `.env` and JavaScript assignment forms.
 - A synthetic quoted-key regression asserts detection and value redaction; the
   current scanner suite passes 23/23.
+- This review correction changes no migration, database environment, Expo
+  runtime, client policy, or Data API grant. Task 12 remains pending, and
+  staging/production were not contacted.
+
+#### Packet 13 — PR #22 gitignored bundled-file remediation
+
+- Candidate enumeration supplements Git with recognized text files found
+  directly under bundled `app/`, `assets/`, and `src/` trees, so gitignored
+  source/config assets cannot bypass the scanner.
+- Binary assets remain excluded, and a synthetic repository regression covers
+  all three bundled trees plus the binary exclusion. The current scanner suite
+  passes 24/24.
 - This review correction changes no migration, database environment, Expo
   runtime, client policy, or Data API grant. Task 12 remains pending, and
   staging/production were not contacted.

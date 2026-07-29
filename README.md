@@ -41,11 +41,12 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
-includes recognized text files under bundled `assets/` plus every recognized
-root-level text file present on disk, even when gitignored, including dynamic
-Expo/EAS configs and dotfiles such as `.npmrc` and `.editorconfig`. Dependency
-lockfiles are included, and direct PostgreSQL URLs, database-password,
-JWT-signing-secret, or Supabase management-token assignments fail the scan.
+includes recognized text files under bundled `app/`, `assets/`, and `src/`,
+even when gitignored, plus every recognized root-level text file present on
+disk, including dynamic Expo/EAS configs and dotfiles such as `.npmrc` and
+`.editorconfig`. Dependency lockfiles are included, and direct PostgreSQL URLs,
+database-password, JWT-signing-secret, or Supabase management-token assignments
+fail the scan.
 
 ## Local Supabase (Task 11)
 
