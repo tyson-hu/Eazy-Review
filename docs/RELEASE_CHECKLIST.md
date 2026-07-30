@@ -48,6 +48,8 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 - No Supabase service-role key in client code.
 - Environment variables are documented.
+- CI uses the package-manager version declared in `package.json`, and
+  `npm ci` passes with strict install-script allowlist enforcement.
 - RLS is enabled on public tables.
 - Delete-account flow is confirmed before release (owned by Task 15):
   protected server derives the target from the verified caller, revokes all

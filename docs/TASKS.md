@@ -767,7 +767,11 @@ Resolved validation blocker (separate dependency alignment):
 - After inspecting both packages and proving they load, the user approved
   version-pinned install-script entries for `fsevents@2.3.3` and
   `unrs-resolver@1.12.2`. `npm approve-scripts --allow-scripts-pending --json`
-  now reports no pending package.
+  now reports no pending package. Review remediation pins CI to npm `11.17.0`,
+  rejects npm versions outside `>=11.16.0 <12`, and enables strict
+  install-script enforcement so an unreviewed dependency script fails
+  installation instead of running under an npm version that ignores the
+  allowlist.
 - Expo and React Native compatibility stay covered by Expo Doctor and
   `expo install --check` in the repository gate; future dependency changes
   still require the normal version-pinned install-script review.

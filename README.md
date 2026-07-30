@@ -40,6 +40,9 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
+Use npm `>=11.16.0 <12` (CI pins `11.17.0`). The repository rejects unsupported
+npm versions and fails dependency installs when a lifecycle script is not
+covered by the version-pinned `package.json#allowScripts` policy.
 Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
 includes recognized text files under bundled `app/`, `assets/`, and `src/`,
 even when gitignored or symlinked to regular files, plus every recognized

@@ -12,6 +12,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Prefer documented project scripts from this repo over ad hoc remote installers.
 - When `package-lock.json` exists, prefer `npm ci` over `npm install` for reproducible installs.
 - Avoid `npm install --force`, `npm install --legacy-peer-deps`, and similar override flags unless the user approves after you explain the risk and why the lockfile or peer-deps conflict cannot be resolved normally.
+- Use npm `>=11.16.0 <12`; `package.json#devEngines` rejects unsupported
+  package-manager versions and CI pins npm `11.17.0`.
+- The repository `.npmrc` sets `strict-allow-scripts=true`, so installs fail
+  when a dependency lifecycle script is not covered by the reviewed
+  `package.json#allowScripts` policy.
 - Dependency install-script approvals in `package.json#allowScripts` must be
   version-pinned after inspecting the exact script. The current reviewed
   approvals are `fsevents@2.3.3` (optional macOS watcher; packaged native

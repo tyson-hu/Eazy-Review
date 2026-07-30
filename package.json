@@ -54,6 +54,14 @@
     "check": "npm run check:skill-wrappers && npm run decisions:check && npm run check:secrets && npm run generate:routes && npm run typecheck && npm run lint && npx expo-doctor && npx expo install --check"
   },
   "private": true,
+  "packageManager": "npm@11.17.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.16.0 <12",
+      "onFail": "error"
+    }
+  },
   "allowScripts": {
     "fsevents@2.3.3": true,
     "unrs-resolver@1.12.2": true
