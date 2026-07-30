@@ -11,8 +11,9 @@ ordering that prevents multi-product lock inversion. No migration adds client
 policies or positive grants. The Task 11 local clean-reset gate is 183 pgTAP
 assertions plus same-product insert and multi-product rating-delete concurrency
 races. The four Task 11 migrations passed explicitly authorized staging
-acceptance on 2026-07-28. Task 12 is accepted locally in one fifth
-forward-only migration; staging is unchanged and production was not touched.
+acceptance on 2026-07-28. The fifth forward-only Task 12 migration passed local
+and explicitly authorized staging acceptance on 2026-07-29. Production was not
+touched.
 
 Separate these concerns:
 
@@ -433,8 +434,17 @@ typecheck, lint, decision checks, and skill-wrapper checks pass. A separately
 scoped Expo SDK 57 patch alignment cleared the final dependency check; Expo
 Doctor passes 20/20 checks and the full repository gate passes. The Task 12 SQL
 packet adds no application runtime integration, and Expo remains disconnected
-from Supabase. Staging has not received the Task 12 migration; production was
-not touched.
+from Supabase.
+
+Staging acceptance on 2026-07-29 applied only the Task 12 migration to the
+healthy `eazy-review-staging` project, with no seeds or roles. All five
+migrations are in parity; a post-apply dry run is empty; linked security
+advisors and public-schema lint report no issues. Hosted pgTAP functions were
+not available to the linked runner, so the approved fallback used direct,
+transaction-rolled-back assertions for all 16 policies, the effective table /
+column privilege allowlists, helper execution denial, anonymous and owner
+behavior, unpublished-product rules, `service_role` aggregate side effects,
+and zero fixture residue. Production was not touched.
 
 ## Task 15 Account-Deletion Consequences
 

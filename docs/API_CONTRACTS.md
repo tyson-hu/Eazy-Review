@@ -95,8 +95,8 @@ deny-by-default RLS with no client policies/grants) is applied locally. Its
 four forward-only migrations passed human-authorized staging acceptance on
 2026-07-28, including the PR-review statement-trigger and 64-bit lock-key
 ordering remediations. Task 12 policies and Data API grants are accepted
-locally in the fifth forward-only migration. They expose profile rows only to
-their authenticated owner. Staging has not received Task 12.
+locally and on staging in the fifth forward-only migration. They expose profile
+rows only to their authenticated owner.
 
 | Database contract | Frontend / API meaning |
 | --- | --- |

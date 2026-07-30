@@ -93,8 +93,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
   separately scoped Expo SDK 57 patch alignment cleared the final dependency
   check; Expo Doctor passes 20/20 checks and the full repository gate passes.
   The Task 12 SQL packet adds no client integration, and Expo remains
-  disconnected from Supabase. Staging has not received Task 12; production was
-  not touched.
+  disconnected from Supabase. The fifth migration passed explicitly authorized
+  staging acceptance on 2026-07-29: migration parity, empty post-apply dry run,
+  security advisors, linked lint, direct transaction-rolled-back catalog /
+  authorization behavior, `service_role` aggregate side effects, and zero
+  fixture residue all passed. Production was not touched.
 - Secret scanning is a required Task 11 deliverable. Validate it with a safe
   deliberate test pattern; never use a real credential as the test.
 - Task 11 Packet 6 SQL tests under `supabase/tests/database/` assert
