@@ -34,11 +34,15 @@ Product scope, positioning, MVP boundaries, or success criteria:
 - `docs/decisions/*.md` only for a qualifying durable product decision
 
 UI design, visual system, components, screen layouts, or Stitch direction:
-- `docs/DESIGN.md` (product UI/UX and app-canonical Visual System)
-- `docs/UI_STYLE.md` (visual style language)
-- `docs/STITCH_PROMPTS.md` (keeps copy-paste token values; update when tokens change)
-- `docs/USER_FLOWS.md`
+- `docs/DESIGN.md` (sole product UI source of truth)
+- `tailwind.config.js` when configured token values change
+- `docs/STITCH_PROMPTS.md` only when reusable prompt copy or its deliberately
+  inlined token values change
+- `docs/USER_FLOWS.md` only when navigation or screen behavior changes
 - `docs/decisions/*.md` only for a qualifying durable design-system decision
+
+`docs/research/*` is historical/non-authoritative and is not a routine
+implementation sync target. `docs/UI_STYLE.md` is a migration pointer only.
 
 Navigation, routes, user flows, auth gates, or screen behavior:
 - `docs/USER_FLOWS.md`

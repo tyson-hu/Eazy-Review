@@ -55,7 +55,7 @@ Canonical security rules for all agent and human work in this repo, regardless o
   agents and MCP tools, not as high-impact actions that chat approval can
   authorize.
 - The product may implement the protected in-app account-deletion flow owned by
-  Task 15. Coding agents may implement and non-destructively validate that flow
+  Task 19. Coding agents may implement and non-destructively validate that flow
   and prepare its manual verification checklist. An actual deletion must be
   initiated and executed manually by a human, never through an
   agent-controlled browser, MCP, SQL, or admin tool. Account deletion on local,

@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "eazy-review",
+    "name": "Eazy Review",
     "slug": "eazy-review",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "eazyreview",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {

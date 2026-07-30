@@ -11,6 +11,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Logged-in users can submit My Rating.
 - Logged-in users can edit My Rating.
 - Rated Products list opens rated product details.
+- Feed contains real, non-duplicative sections or the Feed tab is removed.
 
 ## UI States
 
@@ -20,6 +21,8 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Rating form validation messages are clear (including Private note max length when connected).
 - Account logged-out and logged-in states both work.
 - Rated Products empty and populated states both work.
+- Offline/reconnect and retry states are understandable.
+- Root-level errors offer a recovery path.
 
 ## Data And Auth
 
@@ -38,11 +41,25 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 ## Mobile QA
 
-- Feed, Browse, Account, Product Detail, and Rating Form work on small phone widths.
+- Feed, Browse, Account, Product Detail, and Rating Form work on supported
+  phone widths.
 - Text does not overflow buttons/cards.
 - Touch targets are comfortable.
 - Navigation back behavior is predictable.
 - Keyboard does not block rating inputs or the Private note field.
+- VoiceOver labels/reading order and Dynamic Type behavior are verified.
+- Light-only appearance is explicit and no unreviewed dark-mode surface ships.
+- iPad support remains disabled unless an iPad QA matrix is completed.
+- Release candidate passes on a real iPhone plus one Android smoke device.
+
+## Automated Verification
+
+- Frontend unit/integration tests pass.
+- Database migrations, pgTAP authorization/behavior tests, and concurrency
+  races pass in the documented CI path.
+- The critical Browse → Detail → auth → Rate/Edit journey passes its small E2E
+  smoke.
+- Account-switch tests prove prior user-scoped cache data is removed.
 
 ## Security
 
@@ -51,7 +68,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - CI uses the package-manager version declared in `package.json`, and
   `npm ci` passes with strict install-script allowlist enforcement.
 - RLS is enabled on public tables.
-- Delete-account flow is confirmed before release (owned by Task 15):
+- Delete-account flow is confirmed before release (owned by Task 19):
   protected server derives the target from the verified caller, revokes all
   refresh sessions, and keeps the service-role secret out of the client.
 - Human-run deletion evidence covers a second pre-existing session failing to
@@ -64,10 +81,22 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 ## Store Readiness
 
 - App icon and splash assets are final.
-- Terms and Privacy pages exist.
+- Final Terms, Privacy, and support/contact surfaces exist and have public
+  metadata URLs.
+- App Store privacy answers match the actual email/profile/rating/private-note
+  data inventory and any diagnostics SDKs.
 - App Store screenshots are current.
+- App display name, bundle/package identifiers, version, and build number are
+  final.
+- Development, preview, and production EAS profiles are isolated; preview
+  points only to staging.
+- Production Supabase configuration/migration/seed steps have a
+  human-controlled runbook and approval record.
 - TestFlight build is tested.
+- Clean-install and upgrade paths are tested.
+- App Review notes explain sign-in, recovery, and in-app account deletion.
 - Known limitations are documented.
+- Rollback and staged/manual release choice are documented.
 
 ## Documentation
 

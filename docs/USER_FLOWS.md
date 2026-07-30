@@ -60,9 +60,9 @@ Rating Form opens from Product Detail.
 
 ```txt
 User opens app
--> User taps Browse tab
+-> Browse is the initial tab
 -> User sees product list
--> User searches or filters
+-> User searches by brand, name, or SKU
 -> User taps product
 -> User views Product Detail
 ```
@@ -149,7 +149,10 @@ Logged-out user opens Account
 -> User signs in with the new password only (old password fails)
 ```
 
-`forgot-password.tsx` owns the recovery-request UI only. `reset-password.tsx` owns new-password completion and is the deep-link target when the auth provider requires a separate completion screen (Task 15). Do not fold completion into the forgot-password route.
+`forgot-password.tsx` owns the recovery-request UI only. `reset-password.tsx`
+owns new-password completion and is the deep-link target when the auth provider
+requires a separate completion screen (Task 18). Do not fold completion into
+the forgot-password route.
 
 Reset Password enables its completion form only for a verified recovery
 session. Direct navigation, an ordinary signed-in session, or an
@@ -172,10 +175,11 @@ Logged-in user opens Account
 ```
 
 The client never chooses a target user id and never contains a service-role
-secret. A human—not a coding agent or agent-controlled browser/MCP/SQL/admin
-tool—runs the destructive verification, including a second pre-existing
-session that can no longer refresh. Already-issued JWTs may remain valid until
-the configured expiry; the verification records that bounded lifetime.
+secret. Task 19 owns this flow. A human—not a coding agent or agent-controlled
+browser/MCP/SQL/admin tool—runs the destructive verification, including a
+second pre-existing session that can no longer refresh. Already-issued JWTs
+may remain valid until the configured expiry; the verification records that
+bounded lifetime.
 
 ## Browse Requirements
 
@@ -184,13 +188,14 @@ Route: `app/(tabs)/browse.tsx`
 Features:
 - Search input.
 - Product list.
-- Infinite scroll placeholder.
-- Filter button.
-- Sort button.
 - Product cards.
 - Empty state.
 - Loading state.
 - Error state.
+
+Task 15 uses client-side search for the small connected catalog. Filter, sort,
+and pagination controls belong to conditional Task 20 only after measured
+catalog scale justifies them; do not keep disabled placeholders.
 
 MVP local search should search:
 - Brand.
@@ -226,7 +231,7 @@ Fields:
 - Outfit: 1-10.
 - Value: 1-10.
 - Overall: 1-10.
-- Private note: optional (owner-only; not a public review). Max 500 characters once Task 16 connects the form.
+- Private note: optional (owner-only; not a public review). Max 500 characters once Task 17 connects the form.
 
 ### Task 9 mock behavior
 
@@ -237,7 +242,7 @@ During the fake-local-state phase:
 - Product Detail reflects the updated My Rating after submission.
 - Community Score and community category averages do not change.
 - App reload resets the mock rating fixtures.
-- The Rate/Edit optional text field may still be labeled **Comment** in mock UI until Task 16 renames the connected field to **Private note** (`privateNote`).
+- The Rate/Edit optional text field may still be labeled **Comment** in mock UI until Task 17 renames the connected field to **Private note** (`privateNote`).
 - The real query invalidation behavior below applies after Supabase integration.
 
 After successful real submission:

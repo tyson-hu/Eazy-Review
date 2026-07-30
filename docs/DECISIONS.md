@@ -10,19 +10,19 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Area | Decision | Status | Tasks | Updated |
 | --- | --- | --- | --- | --- |
-| Product and UX | [Separate visual style language from product UX rules](decisions/2026-07-19-separate-style-language-from-product-ux.md) | Accepted | — | 2026-07-19 |
-| Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 14, 16 | 2026-06-28 |
-| Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 14, 16, 17 | 2026-07-28 |
-| Data and Supabase | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Accepted | 12, 16 | 2026-07-26 |
-| Data and Supabase | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Accepted | 11, 13, 14 | 2026-07-25 |
-| Data and Supabase | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Accepted | 11, 12, 14 | 2026-07-25 |
-| Data and Supabase | [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Accepted | 11, 12, 13, 14, 15, 16, 17, 18 | 2026-07-24 |
-| Authentication and security | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Accepted | 11, 12, 15 | 2026-07-29 |
+| Product and UX | [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Accepted | — | 2026-07-30 |
+| Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 15, 17 | 2026-07-30 |
+| Data and Supabase | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Accepted | 12, 17 | 2026-07-30 |
+| Data and Supabase | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Accepted | 11, 13, 15 | 2026-07-30 |
+| Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 15, 17 | 2026-07-30 |
+| Data and Supabase | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Accepted | 11, 12, 15 | 2026-07-30 |
+| Authentication and security | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Accepted | 11, 12, 16 | 2026-07-30 |
+| Authentication and security | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | 19, 25, 26 | 2026-07-30 |
+| Authentication and security | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Accepted | 19 | 2026-07-30 |
 | Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-26 |
-| Authentication and security | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | 15 | 2026-07-26 |
-| Authentication and security | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Accepted | 15 | 2026-07-26 |
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
-| Architecture | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Accepted | 14, 15, 16, 18 | 2026-07-26 |
+| Architecture | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Accepted | 13, 14, 15, 16, 17, 18, 19 | 2026-07-30 |
+| Architecture | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Accepted | 14, 15, 16, 17 | 2026-07-30 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
 | Agent workflow | [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) | Accepted | — | 2026-07-26 |
 | Agent workflow | [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) | Accepted | — | 2026-07-25 |
@@ -35,43 +35,43 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
-| [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-29 |
-| [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Data and Supabase | Accepted | 2026-07-28 |
-| [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) | Agent workflow | Accepted | 2026-07-26 |
-| [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-07-26 |
-| [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-07-26 |
-| [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-07-26 |
-| [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Authentication and security | Accepted | 2026-07-26 |
-| [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-26 |
-| [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Data and Supabase | Accepted | 2026-07-25 |
-| [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) | Agent workflow | Accepted | 2026-07-25 |
+| [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Architecture | Accepted | 2026-07-30 |
+| [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Product and UX | Accepted | 2026-07-30 |
+| [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-07-30 |
+| [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-07-30 |
+| [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-30 |
+| [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-07-30 |
+| [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Data and Supabase | Accepted | 2026-07-30 |
+| [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Data and Supabase | Accepted | 2026-07-30 |
+| [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-30 |
+| [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) | Data and Supabase | Superseded | 2026-07-30 |
 
 ## Browse by area
 
 ### Product and UX
 
-- [Separate visual style language from product UX rules](decisions/2026-07-19-separate-style-language-from-product-ux.md) — Accepted.
-- [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) — Accepted; Tasks 8, 9, 10, 14, 16.
+- [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) — Accepted.
+- [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) — Accepted; Tasks 8, 9, 10, 15, 17.
 
 ### Data and Supabase
 
-- [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) — Accepted; Tasks 11, 12, 13, 14, 16, 17.
-- [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) — Accepted; Tasks 12, 16.
-- [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) — Accepted; Tasks 11, 13, 14.
-- [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) — Accepted; Tasks 11, 12, 14.
-- [Sequence Supabase work as security-first milestones](decisions/2026-07-24-security-first-supabase-task-sequencing.md) — Accepted; Tasks 11, 12, 13, 14, 15, 16, 17, 18.
+- [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) — Accepted; Tasks 12, 17.
+- [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) — Accepted; Tasks 11, 13, 15.
+- [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) — Accepted; Tasks 11, 12, 13, 15, 17.
+- [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) — Accepted; Tasks 11, 12, 15.
 
 ### Authentication and security
 
-- [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) — Accepted; Tasks 11, 12, 15.
+- [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) — Accepted; Tasks 11, 12, 16.
+- [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) — Accepted; Tasks 19, 25, 26.
+- [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) — Accepted; Tasks 19.
 - [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) — Accepted; Tasks 11, 12.
-- [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) — Accepted; Tasks 15.
-- [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) — Accepted; Tasks 15.
 - [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) — Accepted.
 
 ### Architecture
 
-- [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) — Accepted; Tasks 14, 15, 16, 18.
+- [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) — Accepted; Tasks 13, 14, 15, 16, 17, 18, 19.
+- [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) — Accepted; Tasks 14, 15, 16, 17.
 
 ### Tooling and CI
 

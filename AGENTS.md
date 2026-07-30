@@ -2,7 +2,8 @@
 
 Eazy Review is a mobile-first sneaker/product review and discovery app.
 Core flow: Browse -> Product Detail -> Eazy Score / Community Score -> My Rating.
-Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase, TanStack Query.
+Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase;
+the Expo Supabase client and TanStack Query are planned for Task 14.
 
 ## Non-Negotiable Product Rules
 
@@ -33,7 +34,7 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 
 | Task type | Read |
 | --- | --- |
-| Screen UI | `docs/DESIGN.md`, `docs/UI_STYLE.md`, `docs/USER_FLOWS.md` |
+| Screen UI | `docs/DESIGN.md`, `docs/USER_FLOWS.md` |
 | Feature slice | `docs/TASKS.md` task, `docs/USER_FLOWS.md`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md` |
 | Schema / Supabase / RLS | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` |
 | Frontend types / mock data | `docs/API_CONTRACTS.md` |

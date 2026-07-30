@@ -46,7 +46,7 @@ export type ProductRatingSummary = {
   outfitAvg: number | null;
   valueAvg: number | null;
   overallAvg: number | null;
-  /** Community aggregate; maps from DB rating_summaries.score. */
+  /** Community aggregate; maps from DB rating_aggregates.score. */
   communityScore: number | null;
 };
 

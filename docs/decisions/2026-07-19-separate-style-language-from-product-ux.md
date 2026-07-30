@@ -1,7 +1,9 @@
 ---
 id: decision-separate-style-language-from-product-ux
 date: 2026-07-19
-status: accepted
+updated: 2026-07-30
+status: superseded
+superseded_by: decision-make-design-the-only-app-ui-authority
 area: product-ux
 tasks: []
 pr: null

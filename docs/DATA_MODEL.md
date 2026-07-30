@@ -57,7 +57,7 @@ My Rating fields:
 - `private_note` (optional, owner-only, maximum 500 characters)
 
 `private_note` is not a public review. Keep the mock UI's existing `comment`
-field until Task 16 owns the connected rename.
+field until Task 17 owns the connected rename.
 
 Eazy Score assessment fields:
 
@@ -212,7 +212,7 @@ create index product_offers_size_idx
   on public.product_offers (size);
 ```
 
-Task 14 will select the primary image by `sort_order ASC`, then
+Task 15 will select the primary image by `sort_order ASC`, then
 `created_at ASC`, then `id ASC`. No image maps to `imageUrl: null`.
 
 MVP offer rows accept `US` and `USD` only. Seed/import code must trim and
@@ -446,9 +446,9 @@ column privilege allowlists, helper execution denial, anonymous and owner
 behavior, unpublished-product rules, `service_role` aggregate side effects,
 and zero fixture residue. Production was not touched.
 
-## Task 15 Account-Deletion Consequences
+## Task 19 Account-Deletion Consequences
 
-Task 15's protected self-deletion path hard-deletes only the verified current
+Task 19's protected self-deletion path hard-deletes only the verified current
 `auth.users` caller. The caller id is derived server-side from verified auth,
 never trusted from a request body. Before deletion, the server revokes all of
 that user's refresh sessions.
@@ -468,7 +468,7 @@ products and a user who shares a product with another rater. It proves
 profile/rating removal, correct retained aggregates, no orphan rows, and no
 stale Community Score. Coding agents may prepare this checklist and
 non-destructively validate the implementation, but they never execute an
-account deletion under Task 15's acceptance boundary in `docs/TASKS.md`.
+account deletion under Task 19's acceptance boundary in `docs/TASKS.md`.
 
 ## Admin Eazy Score Workflow
 

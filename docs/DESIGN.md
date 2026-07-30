@@ -1,8 +1,13 @@
 # Eazy Review Design System
 
-Product UI/UX source of truth: identity, design principles, component rules, screen-level rules, AI-prompt guardrails, and the design quality checklist. Visual style language (full token prose, typography ladder, elevation) lives in `docs/UI_STYLE.md`. The Visual System section below is the app-canonical token subset adapted from that style for NativeWind and UI implementation.
+This is the sole product UI source of truth: identity, design principles,
+app-canonical tokens, typography, elevation, component rules, screen-level
+rules, AI-prompt guardrails, and the design quality checklist.
 
-Use this file before generating screens in Stitch, implementing React Native UI, or reviewing visual output; read `docs/UI_STYLE.md` when applying visual language detail.
+Use this file before generating screens in Stitch, implementing React Native
+UI, or reviewing visual output. `tailwind.config.js` is the configured token
+consumer. The former Apple website study is archived at
+`docs/research/apple-visual-analysis.md` as non-authoritative research.
 
 ## Product Identity
 
@@ -188,7 +193,9 @@ Secondary actions can exist, but they should not visually overpower the main act
 
 ## Visual System
 
-App-canonical values adapted from `docs/UI_STYLE.md`. Token changes must also update `docs/STITCH_PROMPTS.md` (copy-paste values inline by design) and `tailwind.config.js`.
+These are the app-canonical values. Token changes must update
+`tailwind.config.js`; update `docs/STITCH_PROMPTS.md` only when its deliberately
+inlined prompt values change.
 
 Colors:
 
@@ -206,7 +213,7 @@ Warning / Markup: #b45309
 Negative / Risky: #b91c1c
 ```
 
-Score semantics (positive / warning / negative) are product-only; they are not part of the Apple style palette in `docs/UI_STYLE.md`.
+Score semantics (positive / warning / negative) are product-specific.
 
 Layout:
 
@@ -226,7 +233,8 @@ Safe-area aware layout
 - Do **not** adopt Apple homepage full-bleed marketing tiles, black global nav, or 80px marketing section pads on app product surfaces.
 
 Typography:
-- Prefer SF Pro / system stack (`system-ui`, `-apple-system`); align with `docs/UI_STYLE.md`. Inter is an acceptable off-platform substitute.
+- Prefer SF Pro / system stack (`system-ui`, `-apple-system`). Inter is an
+  acceptable off-platform substitute.
 - Body ~17px at weight 400; headlines and strong emphasis at weight 600. Do not use weight 500 — the ladder is 400 + 600 (weight 300 only where UI style explicitly calls for airy display).
 - Use large weight-600 numbers for scores and prices.
 - Use weight-600 product names, readable over decorative typography.
@@ -323,8 +331,11 @@ Keep these components small. Add abstractions only when they remove real duplica
 ### Feed / Discover
 
 - Job: help users find interesting products worth checking.
-- Focal point: featured sneaker or trending review.
-- MVP Feed can be simple. Use horizontal product-card sections: Today's Pick, Trending Now, Best Eazy Scores, Best Community Scores, Newly Added.
+- Focal point: one useful real-data discovery section.
+- MVP Feed uses no more than three non-duplicative sections: Newly Added, Best
+  Eazy Scores, and Most Rated or Best Community Scores only when data supports
+  it. Hide empty sections; do not label a section “Trending” without a real
+  time-based activity signal.
 - Later, when community text is in scope: category chips and review snippets.
 - Avoid: too many product grids, too many banners, marketplace discount feeling, overloaded homepage.
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
@@ -333,7 +344,9 @@ Keep these components small. Add abstractions only when they remove real duplica
 
 - Job: help users quickly find a product, brand, or category.
 - Focal point: search bar and product results.
-- Show: large search bar, useful filters, product cards, sorting options, popular searches.
+- Show now: large search bar, product cards, and brand/name/SKU search.
+- Add filters, sorting, pagination, or popular searches only when conditional
+  Task 20 has measured evidence that the catalog needs them.
 - Avoid: tiny filters, crowded product cards, unclear score badges, random recommendations.
 
 ### Product Detail
@@ -364,14 +377,14 @@ Form fields (keep the first rating form short):
 - Outfit: 1-10.
 - Value: 1-10.
 - Overall: 1-10.
-- Private note: optional (owner-only; not a public comment). Max 500 characters on the connected form (Task 16).
+- Private note: optional (owner-only; not a public comment). Max 500 characters on the connected form (Task 17).
 
 Validation:
 - Numeric fields are required.
 - Values must be between 1 and 10.
-- Private note is optional; when present, max 500 characters (Task 16+).
+- Private note is optional; when present, max 500 characters (Task 17+).
 
-Mock-era note: Task 9 screens may still label this field **Comment** until Task 16 renames UI + property to Private note / `privateNote`.
+Mock-era note: Task 9 screens may still label this field **Comment** until Task 17 renames UI + property to Private note / `privateNote`.
 
 ### Account
 

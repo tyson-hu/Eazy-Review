@@ -1,6 +1,9 @@
 # Stitch Prompts
 
-Use these prompts for visual exploration. Stitch output is not a source of truth; selected directions must be captured in `docs/DESIGN.md` (and visual language in `docs/UI_STYLE.md` when style tokens change) before implementation.
+Use these prompts for visual exploration. Stitch output is not a source of
+truth; selected directions must be captured in `docs/DESIGN.md` before
+implementation. Update this file only when reusable prompt copy or its
+deliberately inlined token values change.
 
 ## Prompting Rules
 

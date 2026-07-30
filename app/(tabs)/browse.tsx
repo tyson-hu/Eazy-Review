@@ -29,7 +29,7 @@ function toCardData(product: Product): ProductCardData {
     ratingCount: product.ratingCount ?? 0,
     lowestPrice,
     // Mock catalog `Product.lowestPrice` has no currency field; treat as USD.
-    // Task 14 Browse mapping must carry the single selected offer currency instead.
+    // Task 15 Browse mapping must carry the single selected offer currency instead.
     lowestPriceCurrency: lowestPrice == null ? null : 'USD',
   };
 }

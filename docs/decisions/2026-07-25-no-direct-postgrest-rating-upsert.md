@@ -1,10 +1,10 @@
 ---
 id: decision-no-direct-postgrest-rating-upsert
 date: 2026-07-25
-updated: 2026-07-26
+updated: 2026-07-30
 status: accepted
 area: data-supabase
-tasks: [12, 16]
+tasks: [12, 17]
 pr: 14
 tags: [postgrest, privacy, ratings, supabase, writes]
 supersedes: []
@@ -57,7 +57,7 @@ no-identity-upsert rule.
 - A user's private note cannot leak through public Community Score reads.
 - Concurrent first-save races do not drop the later submission: conflict
   recovery or an atomic helper leaves one complete rating row.
-- Task 16 must test concurrent first saves and prove neither request ends as an
+- Task 17 must test concurrent first saves and prove neither request ends as an
   unhandled unique-constraint failure.
 
 ## Revisit when

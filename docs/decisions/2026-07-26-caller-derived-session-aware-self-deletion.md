@@ -1,9 +1,10 @@
 ---
 id: decision-caller-derived-session-aware-self-deletion
 date: 2026-07-26
+updated: 2026-07-30
 status: accepted
 area: auth-security
-tasks: [15]
+tasks: [19]
 pr: 19
 tags: [account-deletion, auth, sessions, supabase]
 supersedes: []
