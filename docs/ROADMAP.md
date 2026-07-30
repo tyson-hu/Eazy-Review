@@ -29,14 +29,16 @@ All phases follow the doc-update gate in `docs/DOCUMENTATION_POLICY.md`.
 5. Account placeholder.
 6. Rated products list (deferred until auth + real ratings).
 
-Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and Account remain placeholders. Do not expand mock UI while Supabase foundation is open.
+Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and
+Account remain placeholders. Do not expand mock UI; proceed through the real
+data tasks in order.
 
 ## Phase 4: Real Data
 
 1. **Task 11** — environments and deny-by-default core schema (**PR review
    remediation accepted locally and on human-authorized staging; Done**).
 2. **Task 12** — policies, explicit Data API grants, authorization tests
-   (**Pending; no implementation started**).
+   (**complete locally and accepted on human-authorized staging; Done**).
 3. **Task 13** — product seed data (small seed first).
 4. **Task 14** — real Browse and Product Detail reads.
 5. **Task 15** — authentication (email first, including recovery and deletion).
@@ -118,8 +120,10 @@ Deliverables:
   row refresh with statement-level transition-table triggers; the fourth maps
   affected products to 64-bit advisory-lock keys and orders the actual keys.
   Local and staging verification passed 2026-07-28. Production untouched.
-- Separate Task 12 policies/grants migration plus authorization tests
-  (**Pending**).
+- The separate Task 12 policies/grants migration, 418-assertion pgTAP suite,
+  both Task 11 concurrency races, and direct authorization acceptance passed
+  locally and on human-authorized staging on 2026-07-29. Production remained
+  untouched.
 
 Acceptance:
 - Published catalog access and owner-only private rating access pass the

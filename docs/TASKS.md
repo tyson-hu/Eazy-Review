@@ -2,20 +2,22 @@
 
 ## Current Repo Status
 
-As of PR #22 review remediation (2026-07-29):
+As of Task 12 local and staging acceptance (2026-07-29):
 - Expo project exists with Expo Router; NativeWind v4 configured.
 - Bottom tabs are Feed, Browse, and Account with placeholder screens.
 - Reusable UI primitives exist under `src/components/ui/`.
 - Mock products, Product Detail, and Rating Form (Tasks 6–10) use session-only
   fake local rating state — Expo is **not** connected to Supabase yet.
-- Local Supabase foundation is in place: core schema migration, deny-by-default
-  RLS (no client policies/grants), internal-helper execution revocation, modern
-  secret scanning with 26 synthetic regressions, and passing pgTAP plus
-  same-product insert and fixture-only multi-product rating-delete concurrency
-  tests.
+- Local Supabase foundation is in place: core schema migrations, complete
+  least-privilege RLS policies and Data API grants, internal-helper execution
+  revocation, modern secret scanning with 26 synthetic regressions, and passing
+  pgTAP plus same-product insert and fixture-only multi-product rating-delete
+  concurrency tests.
 - All four Task 11 migrations passed explicitly authorized staging acceptance.
   The fourth forward-only PR #22 review migration orders actual 64-bit
-  advisory-lock keys. Task 12 has not started; production was not touched.
+  advisory-lock keys. Task 12 passed local and explicitly authorized staging
+  acceptance, and the full repository gate passes after a separately scoped
+  Expo SDK 57 patch alignment. Production was not touched.
 
 ## Definition Of Done
 
@@ -655,10 +657,28 @@ left no residue.
 
 ### Task 12: Policies, Data API Grants, And Authorization Tests
 
-Status: **Pending.** Task 11 is accepted; no Task 12 work has started.
+Status: **Complete locally and accepted on staging.** The forward-only Task 12
+migration, 418-assertion pgTAP suite, both Task 11 concurrency races, secret
+scan, schema lint, typecheck, lint, decision checks, skill-wrapper checks, Expo
+Doctor, dependency alignment, and full `npm run check` gate pass. The fifth
+migration and direct transaction-rolled-back authorization acceptance also
+pass on staging. Production is forbidden.
 
 Goal: add complete RLS policies, then explicit least-privilege Data API grants,
 then prove unauthorized scenarios fail.
+
+Policy matrix accepted for implementation:
+
+| Role | Public catalog | Profiles | User ratings | Helpers |
+| --- | --- | --- | --- | --- |
+| `PUBLIC` | none | none | none | no `EXECUTE` |
+| `anon` | `SELECT` published products and only their images, offers, current Eazy assessment, and aggregate | none | none | no `EXECUTE` |
+| `authenticated` | same published-catalog `SELECT` | `SELECT` own row; `UPDATE` own `display_name`, `username`, `avatar_url` only | `SELECT` / `DELETE` own rows; column-level published-product `INSERT`; score/private-note-only published-product `UPDATE` | no `EXECUTE` |
+| `service_role` | table `SELECT`, `INSERT`, `UPDATE`, `DELETE` | table `SELECT`, `INSERT`, `UPDATE`, `DELETE` | table `SELECT`, `INSERT`, `UPDATE`, `DELETE` | unchanged; server-only and never a client authorization path |
+
+`PUBLIC` / `anon` receive no profile read. This owner-only profile boundary
+supersedes the earlier Task 12 planning text that described profile rows as
+publicly readable.
 
 Deliverables:
 
@@ -668,8 +688,8 @@ Deliverables:
   assessments, aggregates, and offers.
 - Owner-only `user_ratings` policies; insert/update also require a published
   product, while an owner may still delete an existing rating after unpublish.
-- Public profile reads and owner-only updates of mutable profile fields; no
-  client profile insert.
+- Owner-only authenticated profile reads and owner-only updates of mutable
+  profile fields; no anonymous profile read and no client profile insert.
 - `REVOKE ALL PRIVILEGES` from `PUBLIC`, `anon`, and `authenticated` on each
   client-facing table before rebuilding the explicit allowlist in
   `docs/DATA_MODEL.md`.
@@ -683,8 +703,11 @@ Required scenarios:
 - Anonymous users can read published catalog rows and cannot read unpublished
   products or their related rows.
 - Anonymous users cannot create ratings.
+- Anonymous users cannot read profiles or raw rating rows.
 - An authenticated user can read/create/update/delete only their own rating and
   cannot rate an unpublished product.
+- An authenticated user can read only their own profile and update only its
+  approved mutable columns.
 - A user cannot read another user's `private_note` or change another user's
   rating.
 - Clients cannot insert profiles, rewrite identity/audit columns, write
@@ -696,6 +719,62 @@ Required scenarios:
 - A server-only `service_role` client has the exact positive table privileges
   in `docs/DATA_MODEL.md`, can exercise rating writes and their aggregate
   trigger side effects, and its secret never appears in the Expo bundle.
+
+Local implementation evidence (2026-07-29):
+
+- Added
+  `supabase/migrations/20260729214448_task_12_least_privilege_rls_grants.sql`
+  with 16 descriptive policies followed by an explicit revoke-and-allowlist
+  grant rebuild. No schema, aggregate architecture, or RPC changed.
+- `supabase/tests/database/security.test.sql` now runs 268 exact policy,
+  effective table/column privilege, helper-execution, and service-role
+  assertions.
+- `supabase/tests/database/authorization.test.sql` adds 70 transaction-rolled-
+  back anonymous, owner, cross-user, private-note, missing/malformed-claim,
+  unpublished-product, and service-role behavior scenarios.
+- `npm run test:db:reset` passed all 7 files / 418 pgTAP assertions and both
+  concurrency races. The repository secret scan and local public-schema lint
+  pass.
+- A separately scoped Expo SDK 57 patch alignment updated the seven packages
+  below without changing application source or the SDK major/minor.
+  `npx expo install --check` reports dependencies up to date, Expo Doctor
+  passes 20/20 checks, and the unrestricted `npm run check` passes end to end.
+- One bounded security review found no Critical or High defect and required no
+  SQL correction. Expo remains disconnected.
+- Explicitly authorized staging acceptance applied only
+  `20260729214448_task_12_least_privilege_rls_grants.sql` to the healthy
+  `eazy-review-staging` target, with no seeds or roles. Migration parity, an
+  empty post-apply dry run, security advisors, linked public-schema lint,
+  direct catalog / authorization behavior, `service_role` aggregate side
+  effects, and zero fixture residue all pass. Hosted pgTAP functions were not
+  available to the linked runner, so the direct assertions ran inside a caught
+  subtransaction that rolled back every fixture. Production was not touched.
+
+Resolved validation blocker (separate dependency alignment):
+
+- Expo's canonical install workflow aligned `expo` (`57.0.8` → `57.0.9`),
+  `expo-constants` (`57.0.7` → `57.0.8`), `expo-router`
+  (`57.0.8` → `57.0.9`), `react-native` (`0.86.0` → `0.86.2`),
+  `react-native-reanimated` (`4.5.0` → `4.5.1`),
+  `react-native-worklets` (`0.10.0` → `0.10.1`), and
+  `eslint-config-expo` (`57.0.0` → `57.0.1`). The compatible
+  `expo-constants` manifest range remains `~57.0.6`; its lockfile resolution is
+  the expected `57.0.8`. No application source changed.
+- A live npm audit review applied only non-breaking transitive fixes:
+  production `brace-expansion` `5.0.6` → `5.0.8`, `postcss` `8.5.15` →
+  `8.5.25`, `shell-quote` `1.8.4` → `1.10.0`, and PostCSS's `nanoid`
+  `3.3.15` → `3.3.16`. No direct dependency or Expo SDK version changed.
+- After inspecting both packages and proving they load, the user approved
+  version-pinned install-script entries for `fsevents@2.3.3` and
+  `unrs-resolver@1.12.2`. `npm approve-scripts --allow-scripts-pending --json`
+  now reports no pending package. Review remediation pins CI to npm `11.17.0`,
+  rejects npm versions outside `>=11.16.0 <12`, and enables strict
+  install-script enforcement so an unreviewed dependency script fails
+  installation instead of running under an npm version that ignores the
+  allowlist.
+- Expo and React Native compatibility stay covered by Expo Doctor and
+  `expo install --check` in the repository gate; future dependency changes
+  still require the normal version-pinned install-script review.
 
 ### Task 13: Product Seed Data
 

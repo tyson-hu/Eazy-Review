@@ -94,8 +94,9 @@ add auth screens, or connect rating writes. Task 11 schema (tables, triggers,
 deny-by-default RLS with no client policies/grants) is applied locally. Its
 four forward-only migrations passed human-authorized staging acceptance on
 2026-07-28, including the PR-review statement-trigger and 64-bit lock-key
-ordering remediations. Task 12 adds
-policies and Data API grants; it remains pending.
+ordering remediations. Task 12 policies and Data API grants are accepted
+locally and on staging in the fifth forward-only migration. They expose profile
+rows only to their authenticated owner.
 
 | Database contract | Frontend / API meaning |
 | --- | --- |
@@ -134,6 +135,11 @@ exact allowlist; its secret never enters Expo.
 Raw `user_ratings` rows are not a public review API while `private_note` shares
 the row. Community surfaces read `rating_aggregates`; My Rating reads only the
 authenticated owner's row.
+
+Raw `profiles` rows are also not public catalog data. Anonymous clients receive
+no profile grant or policy; authenticated clients select only the row whose
+`profiles.id` matches `auth.uid()`. Profile updates remain limited to
+`display_name`, `username`, and `avatar_url`.
 
 Task 12 intentionally grants rating `UPDATE` only for score columns and
 `private_note`. The later persistence implementation must use a write pattern

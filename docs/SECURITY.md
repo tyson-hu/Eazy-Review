@@ -12,6 +12,18 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Prefer documented project scripts from this repo over ad hoc remote installers.
 - When `package-lock.json` exists, prefer `npm ci` over `npm install` for reproducible installs.
 - Avoid `npm install --force`, `npm install --legacy-peer-deps`, and similar override flags unless the user approves after you explain the risk and why the lockfile or peer-deps conflict cannot be resolved normally.
+- Use npm `>=11.16.0 <12`; `package.json#devEngines` rejects unsupported
+  package-manager versions and CI pins npm `11.17.0`.
+- The repository `.npmrc` sets `strict-allow-scripts=true`, so installs fail
+  when a dependency lifecycle script is not covered by the reviewed
+  `package.json#allowScripts` policy.
+- Dependency install-script approvals in `package.json#allowScripts` must be
+  version-pinned after inspecting the exact script. The current reviewed
+  approvals are `fsevents@2.3.3` (optional macOS watcher; packaged native
+  binary) and `unrs-resolver@1.12.2` (ESLint resolver; postinstall repairs a
+  missing platform binding). Future versions remain unapproved until reviewed.
+  List pending entries read-only with
+  `npm approve-scripts --allow-scripts-pending`.
 
 ## Shell Execution
 
@@ -76,6 +88,21 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - `user_ratings.private_note` is owner-only. Do not expose raw rating rows as
   public community content; Community Score comes from server-owned
   `rating_aggregates`.
+- `profiles` is owner-only client data. `anon` receives no table privilege or
+  policy, and `authenticated` may select only `profiles.id = auth.uid()` and
+  update only `display_name`, `username`, and `avatar_url`.
+- Task 12 local acceptance (2026-07-29) adds 16 positive policies and rebuilds
+  the exact client / `service_role` table and column allowlists in one
+  forward-only migration. Seven pgTAP files pass 418 assertions, both Task 11
+  concurrency races still pass, and local schema lint reports no errors. A
+  separately scoped Expo SDK 57 patch alignment cleared the final dependency
+  check; Expo Doctor passes 20/20 checks and the full repository gate passes.
+  The Task 12 SQL packet adds no client integration, and Expo remains
+  disconnected from Supabase. The fifth migration passed explicitly authorized
+  staging acceptance on 2026-07-29: migration parity, empty post-apply dry run,
+  security advisors, linked lint, direct transaction-rolled-back catalog /
+  authorization behavior, `service_role` aggregate side effects, and zero
+  fixture residue all passed. Production was not touched.
 - Secret scanning is a required Task 11 deliverable. Validate it with a safe
   deliberate test pattern; never use a real credential as the test.
 - Task 11 Packet 6 SQL tests under `supabase/tests/database/` assert

@@ -40,6 +40,9 @@ Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/v
 
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
+Use npm `>=11.16.0 <12` (CI pins `11.17.0`). The repository rejects unsupported
+npm versions and fails dependency installs when a lifecycle script is not
+covered by the version-pinned `package.json#allowScripts` policy.
 Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
 includes recognized text files under bundled `app/`, `assets/`, and `src/`,
 even when gitignored or symlinked to regular files, plus every recognized
@@ -69,6 +72,7 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 
 Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
 core schema and PR review remediation passed local and human-authorized staging
-acceptance across all four forward-only migrations.
-Task 12 (policies/grants) has not started. Do not connect Expo to Supabase until
-Task 12 authorization is in place for the reads you need.
+acceptance across all four forward-only migrations. Task 12 policies, grants,
+and authorization tests passed local and human-authorized staging acceptance
+in the fifth forward-only migration. Expo remains disconnected; the real read
+and write integrations stay owned by their later tasks.

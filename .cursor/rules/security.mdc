@@ -13,7 +13,12 @@ Hard lines (full detail in `docs/SECURITY.md`):
   without explicit user approval; production database operations are
   FORBIDDEN; no `sudo` unless the user asks.
 - Never print, commit, or expose secret values (`.env` contents, API keys, tokens, service-role keys); describe presence only.
-- Prefer `npm ci` when `package-lock.json` exists; no override install flags without approval.
+- Prefer `npm ci` when `package-lock.json` exists; use npm
+  `>=11.16.0 <12`, keep `.npmrc` strict install-script enforcement enabled,
+  and use no override install flags without approval.
+- Keep dependency install-script approvals version-pinned in
+  `package.json#allowScripts`; inspect each exact script before approval, and
+  leave future versions unapproved until separately reviewed.
 - Supabase: local/approved staging only for agents; production DB
   reads/writes/drops/deletes/migrations/credentials and agent/MCP account
   deletion on every environment are FORBIDDEN, not approvable; no service-role
