@@ -113,8 +113,10 @@ User opens connected Product Detail
 -> No mock save is claimed for the Supabase product
 ```
 
-Task 16 owns the logged-out Sign In gate and return-to-product behavior. Task
-17 owns the durable Rate/Edit form, save, and My Rating refresh.
+Task 16 owns the logged-out Sign In gate and return-to-product behavior. After
+sign-in during Task 16, the user returns to Product Detail, where rating remains
+honestly unavailable. Task 17 owns the durable Rate/Edit form, save, and My
+Rating refresh.
 
 ## Flow 3: Edit Own Rating
 

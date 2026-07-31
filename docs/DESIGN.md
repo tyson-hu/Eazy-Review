@@ -87,7 +87,7 @@ Use spacing to separate:
 - Product identity.
 - Rating summary.
 - Price data.
-- Community reviews.
+- Community rating breakdowns.
 - User actions.
 
 Avoid filling every empty space with badges, chips, icons, or labels. If everything is visible, nothing is important. Avoid overloaded cards, and preserve enough spacing for thumb-friendly touch targets.
@@ -100,7 +100,7 @@ Show data in layers:
 - Layer 1: overall score.
 - Layer 2: top strengths and weaknesses.
 - Layer 3: category breakdown.
-- Layer 4: detailed reviews.
+- Layer 4: price and product details.
 
 The full rating system should be easy to access, but not visually overwhelming. Keep dense product information scannable.
 
@@ -304,7 +304,9 @@ Do not add description, long metadata, comments, likes, or social UI to MVP prod
 - Category breakdowns use a label, numeric average, and a simple horizontal score bar.
 - Prefer compact category rows, expandable detail sections, and top strengths/weaknesses.
 - User rating categories are look, comfort, quality, outfit, value, and overall.
-- Prefer layered data: overall score first, top strengths/weaknesses second, category breakdown third, detailed reviews later.
+- Prefer layered data: overall score first, top strengths/weaknesses second,
+  category breakdown third, and public written reviews only in post-MVP social
+  work.
 - Avoid complex charts unless they remain clear on mobile.
 
 ### Reusable UI Components
@@ -336,7 +338,8 @@ Keep these components small. Add abstractions only when they remove real duplica
   Eazy Scores, and Most Rated or Best Community Scores only when data supports
   it. Hide empty sections; do not label a section “Trending” without a real
   time-based activity signal.
-- Later, when community text is in scope: category chips and review snippets.
+- Post-MVP, when community text is in scope: category chips and public review
+  snippets.
 - Avoid: too many product grids, too many banners, marketplace discount feeling, overloaded homepage.
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
 
@@ -353,8 +356,10 @@ Keep these components small. Add abstractions only when they remove real duplica
 
 - Job: help users decide whether this product is worth buying.
 - Focal point: sneaker image plus score summary.
-- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), rating breakdown, price/purchase section (price by size), review previews, My Rating section, description, Rate/Edit CTA.
+- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), community category breakdown and rating count, price/purchase section (price by size), My Rating section, description, Rate/Edit CTA.
 - Image empty state: missing or unmapped mock `mock-product://` assets show "Image coming soon"; HTTP(S) product URLs still load normally.
+- Post-MVP only: public written-review snippets or previews are social content and
+  must not appear in the MVP Product Detail structure.
 - Avoid: showing all data at the same visual weight, too many badges, crowded charts, marketplace-first layout.
 
 Phased CTA ownership:
@@ -363,6 +368,8 @@ Phased CTA ownership:
   `Sign in to rate` route or claim a mock save for a Supabase product.
 - Task 16: connect the logged-out `Sign in to rate` gate and
   return-to-product behavior. Do not claim durable rating persistence yet.
+  After sign-in, return to Product Detail, where rating remains honestly
+  unavailable until Task 17 connects durable My Rating persistence.
 - Task 17 final state: logged in without a rating shows `Rate this product`;
   logged in with an existing rating shows `Edit my rating`.
 
@@ -444,7 +451,7 @@ Design a sneaker review app.
 Prompt like:
 
 ```txt
-Design a premium iOS product detail screen for Eazy Review, a sneaker review intelligence app. The screen should help users decide whether a sneaker is worth buying. Make the sneaker image and Eazy Score / Community Score comparison the main focal point. Show rating strengths, price-by-size data, and community review previews in separate clean sections. Use premium white space, clear hierarchy, and consistent score badges. Avoid generic ecommerce UI and crowded charts.
+Design a premium iOS product detail screen for Eazy Review, a sneaker review intelligence app. The screen should help users decide whether a sneaker is worth buying. Make the sneaker image and Eazy Score / Community Score comparison the main focal point. Show rating strengths, a community category breakdown and rating count, and price-by-size data in separate clean sections. Use premium white space, clear hierarchy, and consistent score badges. Avoid generic ecommerce UI, public written-review previews, and crowded charts.
 ```
 
 Reusable full prompts live in `docs/STITCH_PROMPTS.md`.

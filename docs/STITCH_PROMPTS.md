@@ -75,14 +75,16 @@ Required sections:
 4. Top strengths and weaknesses
 5. Category rating breakdown using compact score bars
 6. Lowest price / price-by-size module
-7. Community review previews
+7. Community rating count
 8. My Rating state
 9. Sticky Rate/Edit CTA
 10. Description
 
 Use premium white space, clear hierarchy, consistent score badges, and the global visual system.
 
-Avoid generic ecommerce UI, crowded charts, excessive badges, social clutter, dark mode, and admin UI.
+Public written-review previews are post-MVP social work; do not include them in
+this MVP prompt. Avoid generic ecommerce UI, crowded charts, excessive badges,
+social clutter, dark mode, and admin UI.
 ```
 
 ## Browse Page Prompt

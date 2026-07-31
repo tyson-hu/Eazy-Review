@@ -293,6 +293,8 @@ Acceptance:
 - A signed-in user can read only their own profile.
 - Logged-out Rate action opens sign-in.
 - Successful sign-in returns to the intended product.
+- After sign-in, rating remains honestly unavailable on Product Detail until
+  Task 17 connects durable My Rating persistence.
 - Sign-out/account switching cannot expose the prior user’s profile or rating
   cache.
 - Session restoration works after app restart.
