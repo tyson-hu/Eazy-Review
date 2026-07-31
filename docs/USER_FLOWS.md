@@ -27,9 +27,9 @@ app/
 
   account/
     rated-products.tsx
-    settings.tsx
     terms.tsx
     privacy.tsx
+    support.tsx
 ```
 
 Bottom tabs:
@@ -45,9 +45,9 @@ Non-tab screens:
 - Forgot Password.
 - Reset Password.
 - Rated Products.
-- Settings.
 - Terms.
 - Privacy.
+- Support / Contact.
 
 Product Detail opens from:
 - Feed product card.
@@ -55,6 +55,12 @@ Product Detail opens from:
 - Rated Products list.
 
 Rating Form opens from Product Detail.
+
+Route ownership is phased: Task 16 adds core auth routes and Account states;
+Task 17 adds Rated Products; Task 18 adds recovery routes; Task 19 adds the
+Delete Account action and protected server boundary; Task 24 adds direct Terms,
+Privacy, and support/contact routes. No generic Settings route is planned for
+the MVP.
 
 ## Flow 1: Browse Without Login
 
@@ -71,7 +77,7 @@ Users should be allowed to browse without logging in.
 
 ## Flow 2: Rate Product
 
-Target backend path (after auth + Supabase):
+Target backend path (Tasks 16–17):
 
 ```txt
 User opens Product Detail
@@ -97,6 +103,18 @@ User opens Product Detail
 -> User returns to Product Detail
 -> Honest alert: not saved to a server; resets on reload
 ```
+
+Task 15 connected-read interim:
+
+```txt
+User opens connected Product Detail
+-> Rating is honestly shown as temporarily unavailable
+-> No Sign In or Rating Form route is opened
+-> No mock save is claimed for the Supabase product
+```
+
+Task 16 owns the logged-out Sign In gate and return-to-product behavior. Task
+17 owns the durable Rate/Edit form, save, and My Rating refresh.
 
 ## Flow 3: Edit Own Rating
 

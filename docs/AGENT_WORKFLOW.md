@@ -8,9 +8,13 @@ Every working session follows the same three steps:
 
 1. Run `git status --short`. Do not overwrite unrelated uncommitted changes.
 2. Read the current task in `docs/TASKS.md`.
-3. Pick the matching skill from the loop index in `docs/LOOP_ENGINEERING.md` (skill routines live in `skills/<name>/SKILL.md`) and follow its routine.
+3. Select the matching route from the loop index in
+   `docs/LOOP_ENGINEERING.md`: follow the named `skills/<name>/SKILL.md`
+   routine, or use its explicit no-skill workflow.
 
-If no skill matches, work directly but still apply the context map, definition of done, and handoff format below.
+If no skill matches, use the explicit value "None — follow the canonical
+workflow and task contract"; work directly while still applying the context
+map, definition of done, and handoff format below.
 
 When continuing work from a previous session: read `AGENTS.md`, the spec, and `docs/notes/handoff.md` (plus any linked `docs/notes/blocker-*.md`), then restate the plan before editing anything.
 
@@ -114,7 +118,7 @@ Every implementation delegation is one bounded task packet containing all eleven
 3. **Non-goals** — behavior explicitly excluded from this packet.
 4. **Starting state** — expected branch/base and prerequisite packets.
 5. **Read** — the exact documents to read, per the Context Map.
-6. **Skill** — mandatory: a skill path, or the explicit value "None — follow the implementer definition and the canonical workflow". An absent field is invalid.
+6. **Skill** — mandatory: a skill path, or the explicit value "None — follow the canonical workflow and task contract". An absent field is invalid.
 7. **Allowed edit scope** — the exact files that may be modified. Reading more is allowed; editing is not. Documentation is editable only when explicitly listed. New files only when named here.
 8. **Validation** — the commands to run, per Validation Commands below.
 9. **User flow** — the flow to exercise, when applicable.

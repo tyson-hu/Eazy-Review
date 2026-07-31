@@ -137,6 +137,8 @@ Dependencies:
 Deliverables:
 
 - Committed SQL, preferably `supabase/seed.sql`, loaded by local reset.
+- Enable `[db.seed]` in `supabase/config.toml` while preserving
+  `sql_paths = ["./seed.sql"]`.
 - Exactly two products with deterministic UUIDs:
   - one complete published product with metadata, one approved HTTPS image, one
     current Eazy assessment, and two or three verified USD/US offers;
@@ -151,8 +153,10 @@ Deliverables:
 
 Acceptance:
 
-- Local database reset loads the seed.
-- Running the seed twice creates no duplicates.
+- `npm run test:db:reset` applies every migration, loads the configured seed,
+  and passes the database suites.
+- Applying the seed twice to the same existing local database creates no
+  duplicates; two independent fresh resets do not prove idempotency.
 - Each product has exactly one trigger-created zero-count
   `rating_aggregates` row.
 - Anonymous reads return both published products.
@@ -185,6 +189,10 @@ Deliverables:
 - `@supabase/supabase-js`, one supported React Native session-storage adapter,
   and a URL polyfill only where required.
 - `@tanstack/react-query` and React Native NetInfo integration.
+- Minimal frontend test foundation: `jest-expo`,
+  `@testing-library/react-native`, the `expo-router/testing-library` utilities
+  when route behavior needs them, and a stable `npm test` script.
+- One smoke test outside `app/` proving the frontend harness runs.
 - Reproducibly generated Supabase database types.
 - One initialized Supabase client and one Query client.
 - Root providers in `app/_layout.tsx`.
@@ -207,6 +215,7 @@ Acceptance:
 - Query focus follows foreground/background state and online state follows
   NetInfo.
 - Auth transitions can remove prior user-scoped data.
+- `npm test` runs the harness smoke test successfully.
 - Existing mock screens still run at task completion.
 
 Non-goals:
@@ -235,6 +244,7 @@ Deliverables:
 - Client-side brand/name/SKU search for the small connected catalog.
 - Honest Rate action during the short transition: sign-in/rating unavailable;
   no mock save claim for a Supabase UUID.
+- Focused adapter tests for sparse and ambiguous catalog joins.
 
 Remove in this task:
 
@@ -274,6 +284,7 @@ Deliverables:
 - Auth-gated Rate route with return-to-product behavior.
 - User-scoped Query cache clearing on sign-out or account switch.
 - Explicit email-confirmation state when sign-up returns no active session.
+- Focused auth, session-restoration, Rate-gate, and cache-isolation tests.
 
 Acceptance:
 
@@ -322,6 +333,7 @@ Deliverables:
 - Empty Rated Products state.
 - App-level verification that server-owned aggregates reflect real saves and
   edits; do not reopen the aggregate mechanism.
+- Focused rating mutation, invalidation, and Rated Products behavior tests.
 
 Acceptance:
 
@@ -357,6 +369,8 @@ Deliverables:
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
 - Physical-device deep-link verification in a development or preview build.
+- Focused recovery-state tests for verified, ordinary-session, direct,
+  expired, replayed, and malformed states.
 
 Acceptance:
 
@@ -386,6 +400,8 @@ Deliverables:
 - Existing FK cascades remove profile/ratings and accepted triggers preserve
   aggregates.
 - Local session and user-scoped Query cleanup.
+- Mocked deletion-client orchestration tests that perform no destructive
+  account action.
 - Human-run staging destructive-test checklist.
 
 Acceptance:
@@ -461,18 +477,22 @@ was met.
 
 Deliverables:
 
-- `jest-expo`, React Native Testing Library, and Expo Router test utilities.
-- Adapter, auth-gate, rating form/mutation, account-switch cache-isolation,
-  recovery-state, and mocked deletion-client tests.
+- Missing cross-feature regression coverage across catalog adapters, auth
+  gates, rating mutations, recovery, and the mocked deletion client.
+- Account-switch integration coverage proving profile and rating cache
+  isolation across a real multi-feature transition.
 - Tests outside the app route directory.
 - Path-filtered database CI job.
 - One small Maestro smoke flow for the critical journey, run on demand or by
   deliberate PR trigger rather than every minor change.
+- Coverage review, redundant-test removal, and test-suite cleanup.
 
 Acceptance:
 
 - Frontend tests and database CI run in documented commands/workflows.
-- Critical auth/rating/cache boundaries have behavior tests.
+- Focused tests from Tasks 15–19 remain green and missing cross-feature gaps
+  are covered without broad snapshot duplication.
+- Account switching cannot expose the prior user’s profile or rating cache.
 - E2E verifies the main journey without relying on broad snapshot coverage.
 
 ## Task 23: Reliability, Accessibility, And Device QA
@@ -512,7 +532,9 @@ Dependencies: Product data collection behavior through Task 23 is stable.
 Deliverables:
 
 - Final Privacy Policy, Terms of Use, and support/contact route.
-- In-app Privacy/Terms links and public URLs for store metadata.
+- Direct in-app Privacy, Terms, and support/contact links plus public URLs for
+  store metadata. Do not add a generic Settings route unless concrete settings
+  receive explicit task ownership.
 - Data inventory covering email, profile fields, ratings, private note, and any
   diagnostics actually enabled.
 - Retention/deletion explanation and App Store privacy answers.

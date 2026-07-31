@@ -4,7 +4,7 @@ date: 2026-07-30
 status: accepted
 area: product-ux
 tasks: []
-pr: null
+pr: 24
 tags: [design, documentation, visual-system]
 supersedes: [decision-separate-style-language-from-product-ux]
 ---

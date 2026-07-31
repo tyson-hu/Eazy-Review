@@ -4,7 +4,7 @@ date: 2026-07-30
 status: accepted
 area: architecture
 tasks: [13, 14, 15, 16, 17, 18, 19]
-pr: null
+pr: 24
 tags: [authentication, caching, integration, task-sequencing]
 supersedes: [decision-security-first-supabase-task-sequencing]
 ---

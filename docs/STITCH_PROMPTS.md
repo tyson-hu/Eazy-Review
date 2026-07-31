@@ -88,18 +88,16 @@ Avoid generic ecommerce UI, crowded charts, excessive badges, social clutter, da
 ## Browse Page Prompt
 
 ```txt
-Design a premium mobile Browse / Explore screen for Eazy Review. The screen should help users quickly find a sneaker, brand, or category and understand which products are worth opening.
+Design a premium mobile Browse / Explore screen for Eazy Review. The screen should help users quickly find a sneaker by brand, name, or SKU and understand which products are worth opening.
 
 Required elements:
-- Large rounded search bar with placeholder "Search sneakers, brands, models"
-- Horizontal filter chips for Brand, Size, Price, Rating, Style, Material
-- Sort control for Highest Eazy Score, Highest Community Score, Lowest Price, Recently Added
+- Large rounded search bar with placeholder "Search sneakers, brands, or SKU"
 - Product list
 - Product cards showing image, brand, name, SKU, Eazy Score, Community Score, and lowest price
 - Empty, loading, and error states
-- Popular searches empty-state suggestions
 
 Use the global visual system. Product cards should feel editorial and data-rich without being crowded.
+Do not add filters, sorting, or pagination unless Task 20 catalog evidence requires them.
 ```
 
 ## Rating Flow Prompt
@@ -132,6 +130,10 @@ Avoid long intimidating forms, extra required fields, confusing category names, 
 ```txt
 Design the Eazy Review Account tab with logged-out and logged-in states. The screen should show user identity, credibility, and rating history without becoming overly social.
 
+Generate only the controls owned by the current task in `docs/DESIGN.md`; the
+list below describes the final planned Account state, not one implementation
+packet.
+
 Logged out:
 - App name
 - Short message
@@ -147,9 +149,9 @@ Logged in:
 - Joined date
 - Number of rated products
 - Rated Products
-- Settings
 - Terms
 - Privacy
+- Support / Contact
 - Log Out
 - Delete Account with permanent-data explanation and destructive confirmation
 
@@ -159,18 +161,20 @@ Use the global visual system. Keep the screen calm, useful, and account-focused.
 ## Feed Page Prompt
 
 ```txt
-Design a premium mobile Feed / Discover tab for Eazy Review. The screen should help users find interesting products worth checking and surface useful community taste.
+Design a premium mobile Feed / Discover tab for Eazy Review. The screen should
+help users find interesting products through truthful real-data groupings.
 
-Sections:
-- Today's Pick
-- Trending Now
-- Best Eazy Scores
-- Best Community Scores
+Use at most three non-duplicative sections selected from:
 - Newly Added
-- Optional review snippets for later exploration only
+- Best Eazy Scores
+- Most Rated
+- Best Community Scores, only when enough rating data makes the label honest
 
 Use the same ProductCard design from Browse.
-Make the featured product the main focal point. Do not make Feed more complex than Browse or Product Detail. Do not add comments, likes, or social reactions to the MVP implementation.
+Hide empty or duplicate sections. Do not use “Trending” without a real
+time-based activity signal. Do not make Feed more complex than Browse or
+Product Detail. Do not add comments, likes, or social reactions to the MVP
+implementation.
 ```
 
 ## Refinement Prompt

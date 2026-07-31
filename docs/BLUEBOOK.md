@@ -29,9 +29,13 @@ Eazy Review combines an app-curated product score with community ratings and the
 
 ## Main Screens
 
-- Feed: daily recommended products, trending products, and curated discovery sections.
-- Browse: product list with search, filters, sorting, infinite-scroll placeholder, and product detail navigation.
-- Account: logged-out auth entry points and logged-in profile/rated-products/settings flows.
+- Feed: a small set of truthful, real-data discovery sections; do not claim
+  “Trending” without a real time-based activity signal.
+- Browse: a product list with brand/name/SKU search and product detail
+  navigation; add filters, sorting, or pagination only when catalog evidence
+  requires them.
+- Account: logged-out auth entry points and logged-in profile, rated-products,
+  deletion, and required legal/support actions.
 - Product Detail: product identity, scores, offers, breakdowns, My Rating, description, and rating CTA.
 - Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional private note (not a public review).
 
@@ -107,7 +111,7 @@ names follow `docs/DATA_MODEL.md` (`eazy_assessments` for editorial scoring).
 11. Task 11 — create local/staging Supabase environments and the deny-by-default core schema.
 12. Task 12 — add RLS policies, explicit Data API grants, and authorization tests.
 13. Task 13 — seed exactly two deterministic products: one complete and one sparse.
-14. Task 14 — establish the Supabase client, generated types, TanStack Query, query keys, and React Native lifecycle/online integration.
+14. Task 14 — establish the Supabase client, generated types, TanStack Query, query keys, React Native lifecycle/online integration, and the minimal frontend test harness.
 15. Task 15 — connect anonymous published Browse/Product Detail reads; do not build a temporary UUID rating map.
 16. Task 16 — add core email/password auth, session restoration, Account state, and the Rate gate.
 17. Task 17 — persist owner-only My Rating, add Rated Products, and verify the accepted server-owned aggregate behavior end to end.
@@ -115,7 +119,7 @@ names follow `docs/DATA_MODEL.md` (`eazy_assessments` for editorial scoring).
 19. Task 19 — add caller-derived protected account deletion through a server-only boundary.
 20. Task 20 — scale Browse search/filter/sort/pagination only when measured catalog size requires it.
 21. Task 21 — replace the placeholder with a small real Feed.
-22. Task 22 — add automated app tests and database CI.
+22. Task 22 — close cross-feature test gaps, add path-filtered database CI and one small E2E smoke, and clean up the test suite.
 23. Task 23 — complete reliability, accessibility, and device QA.
 24. Task 24 — finish privacy, legal, support, and store disclosures.
 25. Task 25 — configure isolated EAS environments and produce a TestFlight candidate.

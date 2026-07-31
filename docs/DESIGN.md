@@ -71,7 +71,7 @@ Product image
 Each screen must have one clear focal point.
 
 Examples:
-- Feed: featured product or trending review.
+- Feed: one useful real-data discovery section.
 - Browse: search bar and product results.
 - Product Detail: sneaker image plus score summary.
 - Rating Screen: rating input.
@@ -357,10 +357,14 @@ Keep these components small. Add abstractions only when they remove real duplica
 - Image empty state: missing or unmapped mock `mock-product://` assets show "Image coming soon"; HTTP(S) product URLs still load normally.
 - Avoid: showing all data at the same visual weight, too many badges, crowded charts, marketplace-first layout.
 
-CTA logic:
-- Logged out: `Sign in to rate`.
-- Logged in without rating: `Rate this product`.
-- Logged in with existing rating: `Edit my rating`.
+Phased CTA ownership:
+- Task 15 connected-read interim: show an honest unavailable rating state.
+  Authentication is not connected yet, so do not show a broken
+  `Sign in to rate` route or claim a mock save for a Supabase product.
+- Task 16: connect the logged-out `Sign in to rate` gate and
+  return-to-product behavior. Do not claim durable rating persistence yet.
+- Task 17 final state: logged in without a rating shows `Rate this product`;
+  logged in with an existing rating shows `Edit my rating`.
 
 ### Rating Submission
 
@@ -392,28 +396,23 @@ Mock-era note: Task 9 screens may still label this field **Comment** until Task 
 - Focal point: user stats and reviewed products.
 - Avoid: overly social profile treatment, too many personal details, empty profile with no value.
 
-Logged-out state should show:
-- App logo/name.
-- Short message.
-- Sign In button.
-- Create Account button.
-- Forgot Password link (opens `app/auth/forgot-password.tsx`; recovery email deep links land on `app/auth/reset-password.tsx`).
-- Continue browsing message.
+Render only the controls owned by the current accepted task:
 
-Logged-in state should show:
-- Avatar.
-- Display name.
-- Username.
-- Joined date.
-- Number of rated products.
-- Rated Products link.
-- Settings link.
-- Terms of Use link.
-- Privacy Policy link.
-- Log Out button.
-- Delete Account button with permanent-data explanation, destructive
+- Task 16 logged out: app logo/name, short message, Sign In, Create Account,
+  and continue-browsing message.
+- Task 16 logged in: current profile identity (avatar when available, display
+  name, and username), joined date, and Log Out.
+- Task 17 adds the number of rated products and Rated Products link.
+- Task 18 adds Forgot Password
+  (`app/auth/forgot-password.tsx`; recovery links land on
+  `app/auth/reset-password.tsx`).
+- Task 19 adds Delete Account with permanent-data explanation, destructive
   confirmation, reauthentication when required, and honest loading/error
   states.
+- Task 24 adds direct Terms of Use, Privacy Policy, and support/contact links.
+
+No generic Settings route is planned for the MVP. Add one only when concrete
+settings have explicit task ownership.
 
 ## Accessibility
 

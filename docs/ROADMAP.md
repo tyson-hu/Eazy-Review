@@ -40,7 +40,8 @@ Complete in order:
    - SQL-only local seed and focused acceptance.
 2. **Task 14 — Connected Client And Query Foundation**
    - Supabase client, generated types, Query client, lifecycle/online
-     integration, query keys, and environment validation.
+     integration, query keys, environment validation, and the minimal frontend
+     test harness required by connected tasks.
 3. **Task 15 — Real Public Catalog Reads**
    - Published Browse/Detail reads and removal of mock-only mechanics.
    - No temporary UUID rating map.
@@ -70,8 +71,8 @@ Why this order:
 2. **Task 21 — Real Feed MVP**
    - At most three truthful, non-duplicative sections.
 3. **Task 22 — Automated App Tests And Database CI**
-   - Frontend behavior tests, path-filtered database CI, and one small E2E
-     smoke.
+   - Cross-feature regression and account-switch coverage, test-suite cleanup,
+     path-filtered database CI, and one small E2E smoke.
 4. **Task 23 — Reliability, Accessibility, And Device QA**
    - Retry/offline behavior, VoiceOver/Dynamic Type, phone QA, iPhone
      validation, and Android smoke.
