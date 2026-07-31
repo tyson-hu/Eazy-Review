@@ -139,32 +139,57 @@ Deliverables:
 - Committed SQL, preferably `supabase/seed.sql`, loaded by local reset.
 - Enable `[db.seed]` in `supabase/config.toml` while preserving
   `sql_paths = ["./seed.sql"]`.
-- Exactly two products with deterministic UUIDs:
-  - one complete published product with metadata, one approved HTTPS image, one
-    current Eazy assessment, and two or three verified USD/US offers;
-  - one sparse published product with no image, offer, or Eazy assessment and
-    zero community ratings.
+- Exactly two published products with deterministic UUIDs:
+  - one complete product with valid metadata, exactly one approved HTTPS image
+    with deliberate `sort_order`, exactly one current Eazy assessment, and two
+    or three verified USD/US offers;
+  - one sparse product with valid required metadata and no image, offer, Eazy
+    assessment, or user rating rows. Its product insert must still create one
+    zero-count `rating_aggregates` row through the accepted trigger.
+- The complete Eazy assessment must populate `look`, `comfort`, `quality`,
+  `outfit`, `value`, `maintenance`, `material`, `details`, `collection`,
+  `overall`, `score`, and `methodology_version`, with `is_current = true`.
+- Every complete-product offer must use a deterministic UUID, non-empty
+  `website_name`, an HTTPS `website_link`, a non-null price greater than zero,
+  uppercase `USD` / `US`, and a non-null `last_checked_at` based on actual
+  verification. `size` may be null only when the source is not size-specific.
 - Deterministic IDs for every product, image, assessment, and offer.
-- One transaction with idempotent `INSERT ... ON CONFLICT` behavior.
+- One transaction with conflict-aware inserts that are truly idempotent: when
+  existing fixture data already matches, a second application must add no rows
+  and change no values or timestamps.
 - Explicit `is_published`, deliberate image `sort_order`, uppercase `USD` /
   `US`, and `last_checked_at` only for an actually verified offer.
 - One focused seed acceptance test.
-- A short Task 13 status update; update README only if local reset changes.
+- Use the Task 13 implementation PR description as the short status/evidence
+  record. It must include stable IDs, image source and rights/permission basis,
+  image review date, retailer/source links, verified price/currency/region and
+  check time, relevant offer exclusions, and first-run versus second-run row
+  counts. Do not create another evidence directory unless the existing
+  workflow requires it. Update README only if local reset behavior changes.
 
 Acceptance:
 
 - `npm run test:db:reset` applies every migration, loads the configured seed,
   and passes the database suites.
-- Applying the seed twice to the same existing local database creates no
-  duplicates; two independent fresh resets do not prove idempotency.
-- Each product has exactly one trigger-created zero-count
-  `rating_aggregates` row.
-- Anonymous reads return both published products.
-- The complete product has deterministic image and offer data.
-- The sparse product maps cleanly to `imageUrl: null`, no price, no Eazy Score,
-  and zero Community ratings.
+- Apply the seed twice to the same existing local database. The second
+  application creates no duplicates and changes no fixture values or
+  timestamps; two independent fresh resets do not prove idempotency.
+- Each product has exactly one trigger-created `rating_aggregates` row with
+  `rating_count = 0` and all average and score fields null.
+- Seed code never inserts into or updates `rating_aggregates` directly.
+- Anonymous reads return both published products under the accepted Task 12
+  authorization rules.
+- The complete product has exactly one deterministic image, one fully populated
+  current Eazy assessment, and two or three deterministic verified offers that
+  satisfy the required HTTPS, price, currency, region, and verification fields.
+- The sparse product has no `product_images`, `product_offers`,
+  `eazy_assessments`, or `user_ratings` rows; only its trigger-created empty
+  aggregate exists. Task 15 owns app normalization to `imageUrl: null`, no
+  price, no Eazy Score, and an empty Community Score.
 - No `auth.users`, `profiles`, or `user_ratings` fixtures are created.
-- Seed code never inserts or updates `rating_aggregates`.
+- The Task 13 PR description contains the required image/offer provenance and
+  same-database idempotency evidence.
+- `npm run check` and `git diff --check` pass.
 - Staging seed application remains a separate explicit human-approved action.
 - Production remains untouched.
 
