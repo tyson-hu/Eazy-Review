@@ -37,7 +37,7 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 | Task type | Read |
 | --- | --- |
 | Screen UI | `docs/DESIGN.md`, `docs/USER_FLOWS.md` |
-| Feature slice | `docs/TASKS.md` task, `docs/USER_FLOWS.md`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md` |
+| Feature slice | `docs/TASKS.md` task, `docs/USER_FLOWS.md`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md`; for Tasks 15–19, also the task-specific data, security, and tool-policy documents required by `skills/feature-slice-builder` |
 | Schema / Supabase / RLS | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` |
 | Frontend types / mock data | `docs/API_CONTRACTS.md` |
 | Product scope change | `docs/BLUEBOOK.md`, `docs/ROADMAP.md` |

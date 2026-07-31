@@ -57,7 +57,7 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 | Task type | Read | Do not read |
 | --- | --- | --- |
 | Build or redesign one screen's UI | `docs/DESIGN.md` (Visual System, Component Rules, and that screen's section in Screen-Level Rules), `docs/USER_FLOWS.md` (that screen's flow) | `docs/BLUEBOOK.md`, `docs/DATA_MODEL.md`, `docs/research/*` |
-| Feature slice spanning data + UI (a `docs/TASKS.md` task) | The task in `docs/TASKS.md`, `docs/USER_FLOWS.md` (relevant flow), `docs/API_CONTRACTS.md` (types and functions), `docs/DESIGN.md` (component rules for its screens) | `docs/BLUEBOOK.md`, `docs/MCP_WORKFLOW.md` |
+| Feature slice spanning data + UI (a `docs/TASKS.md` task) | The task in `docs/TASKS.md`, `docs/USER_FLOWS.md` (relevant flow), `docs/API_CONTRACTS.md` (types and functions), `docs/DESIGN.md` (component rules for its screens); for Tasks 15–19, also read the task-specific data, security, and tool-policy documents required by `skills/feature-slice-builder` | `docs/BLUEBOOK.md` |
 | Schema, Supabase, RLS, migrations, rating summaries | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` (affected contracts) | `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md` |
 | Frontend data shape, types, mock data, folder structure | `docs/API_CONTRACTS.md`; `docs/DATA_MODEL.md` only if a database contract changes | `docs/DESIGN.md` screen sections, `docs/BLUEBOOK.md` |
 | Bug fix | The failing flow in `docs/USER_FLOWS.md`, plus the doc for the layer the bug lives in (`docs/DESIGN.md` for UI, `docs/API_CONTRACTS.md` for data, `docs/DATA_MODEL.md` for database) | Everything else |
