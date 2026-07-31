@@ -1,8 +1,13 @@
 # Eazy Review Design System
 
-Product UI/UX source of truth: identity, design principles, component rules, screen-level rules, AI-prompt guardrails, and the design quality checklist. Visual style language (full token prose, typography ladder, elevation) lives in `docs/UI_STYLE.md`. The Visual System section below is the app-canonical token subset adapted from that style for NativeWind and UI implementation.
+This is the sole product UI source of truth: identity, design principles,
+app-canonical tokens, typography, elevation, component rules, screen-level
+rules, AI-prompt guardrails, and the design quality checklist.
 
-Use this file before generating screens in Stitch, implementing React Native UI, or reviewing visual output; read `docs/UI_STYLE.md` when applying visual language detail.
+Use this file before generating screens in Stitch, implementing React Native
+UI, or reviewing visual output. `tailwind.config.js` is the configured token
+consumer. The former Apple website study is archived at
+`docs/research/apple-visual-analysis.md` as non-authoritative research.
 
 ## Product Identity
 
@@ -66,7 +71,7 @@ Product image
 Each screen must have one clear focal point.
 
 Examples:
-- Feed: featured product or trending review.
+- Feed: one useful real-data discovery section.
 - Browse: search bar and product results.
 - Product Detail: sneaker image plus score summary.
 - Rating Screen: rating input.
@@ -82,7 +87,7 @@ Use spacing to separate:
 - Product identity.
 - Rating summary.
 - Price data.
-- Community reviews.
+- Community rating breakdowns.
 - User actions.
 
 Avoid filling every empty space with badges, chips, icons, or labels. If everything is visible, nothing is important. Avoid overloaded cards, and preserve enough spacing for thumb-friendly touch targets.
@@ -95,7 +100,7 @@ Show data in layers:
 - Layer 1: overall score.
 - Layer 2: top strengths and weaknesses.
 - Layer 3: category breakdown.
-- Layer 4: detailed reviews.
+- Layer 4: price and product details.
 
 The full rating system should be easy to access, but not visually overwhelming. Keep dense product information scannable.
 
@@ -188,7 +193,9 @@ Secondary actions can exist, but they should not visually overpower the main act
 
 ## Visual System
 
-App-canonical values adapted from `docs/UI_STYLE.md`. Token changes must also update `docs/STITCH_PROMPTS.md` (copy-paste values inline by design) and `tailwind.config.js`.
+These are the app-canonical values. Token changes must update
+`tailwind.config.js`; update `docs/STITCH_PROMPTS.md` only when its deliberately
+inlined prompt values change.
 
 Colors:
 
@@ -206,7 +213,7 @@ Warning / Markup: #b45309
 Negative / Risky: #b91c1c
 ```
 
-Score semantics (positive / warning / negative) are product-only; they are not part of the Apple style palette in `docs/UI_STYLE.md`.
+Score semantics (positive / warning / negative) are product-specific.
 
 Layout:
 
@@ -226,7 +233,8 @@ Safe-area aware layout
 - Do **not** adopt Apple homepage full-bleed marketing tiles, black global nav, or 80px marketing section pads on app product surfaces.
 
 Typography:
-- Prefer SF Pro / system stack (`system-ui`, `-apple-system`); align with `docs/UI_STYLE.md`. Inter is an acceptable off-platform substitute.
+- Prefer SF Pro / system stack (`system-ui`, `-apple-system`). Inter is an
+  acceptable off-platform substitute.
 - Body ~17px at weight 400; headlines and strong emphasis at weight 600. Do not use weight 500 — the ladder is 400 + 600 (weight 300 only where UI style explicitly calls for airy display).
 - Use large weight-600 numbers for scores and prices.
 - Use weight-600 product names, readable over decorative typography.
@@ -296,7 +304,9 @@ Do not add description, long metadata, comments, likes, or social UI to MVP prod
 - Category breakdowns use a label, numeric average, and a simple horizontal score bar.
 - Prefer compact category rows, expandable detail sections, and top strengths/weaknesses.
 - User rating categories are look, comfort, quality, outfit, value, and overall.
-- Prefer layered data: overall score first, top strengths/weaknesses second, category breakdown third, detailed reviews later.
+- Prefer layered data: overall score first, top strengths/weaknesses second,
+  category breakdown third, and public written reviews only in post-MVP social
+  work.
 - Avoid complex charts unless they remain clear on mobile.
 
 ### Reusable UI Components
@@ -323,9 +333,13 @@ Keep these components small. Add abstractions only when they remove real duplica
 ### Feed / Discover
 
 - Job: help users find interesting products worth checking.
-- Focal point: featured sneaker or trending review.
-- MVP Feed can be simple. Use horizontal product-card sections: Today's Pick, Trending Now, Best Eazy Scores, Best Community Scores, Newly Added.
-- Later, when community text is in scope: category chips and review snippets.
+- Focal point: one useful real-data discovery section.
+- MVP Feed uses no more than three non-duplicative sections: Newly Added, Best
+  Eazy Scores, and Most Rated or Best Community Scores only when data supports
+  it. Hide empty sections; do not label a section “Trending” without a real
+  time-based activity signal.
+- Post-MVP, when community text is in scope: category chips and public review
+  snippets.
 - Avoid: too many product grids, too many banners, marketplace discount feeling, overloaded homepage.
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
 
@@ -333,21 +347,31 @@ Keep these components small. Add abstractions only when they remove real duplica
 
 - Job: help users quickly find a product, brand, or category.
 - Focal point: search bar and product results.
-- Show: large search bar, useful filters, product cards, sorting options, popular searches.
+- Show now: large search bar, product cards, and brand/name/SKU search.
+- Add filters, sorting, pagination, or popular searches only when conditional
+  Task 20 has measured evidence that the catalog needs them.
 - Avoid: tiny filters, crowded product cards, unclear score badges, random recommendations.
 
 ### Product Detail
 
 - Job: help users decide whether this product is worth buying.
 - Focal point: sneaker image plus score summary.
-- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), rating breakdown, price/purchase section (price by size), review previews, My Rating section, description, Rate/Edit CTA.
+- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), community category breakdown and rating count, price/purchase section (price by size), My Rating section, description, Rate/Edit CTA.
 - Image empty state: missing or unmapped mock `mock-product://` assets show "Image coming soon"; HTTP(S) product URLs still load normally.
+- Post-MVP only: public written-review snippets or previews are social content and
+  must not appear in the MVP Product Detail structure.
 - Avoid: showing all data at the same visual weight, too many badges, crowded charts, marketplace-first layout.
 
-CTA logic:
-- Logged out: `Sign in to rate`.
-- Logged in without rating: `Rate this product`.
-- Logged in with existing rating: `Edit my rating`.
+Phased CTA ownership:
+- Task 15 connected-read interim: show an honest unavailable rating state.
+  Authentication is not connected yet, so do not show a broken
+  `Sign in to rate` route or claim a mock save for a Supabase product.
+- Task 16: connect the logged-out `Sign in to rate` gate and
+  return-to-product behavior. Do not claim durable rating persistence yet.
+  After sign-in, return to Product Detail, where rating remains honestly
+  unavailable until Task 17 connects durable My Rating persistence.
+- Task 17 final state: logged in without a rating shows `Rate this product`;
+  logged in with an existing rating shows `Edit my rating`.
 
 ### Rating Submission
 
@@ -364,14 +388,14 @@ Form fields (keep the first rating form short):
 - Outfit: 1-10.
 - Value: 1-10.
 - Overall: 1-10.
-- Private note: optional (owner-only; not a public comment). Max 500 characters on the connected form (Task 16).
+- Private note: optional (owner-only; not a public comment). Max 500 characters on the connected form (Task 17).
 
 Validation:
 - Numeric fields are required.
 - Values must be between 1 and 10.
-- Private note is optional; when present, max 500 characters (Task 16+).
+- Private note is optional; when present, max 500 characters (Task 17+).
 
-Mock-era note: Task 9 screens may still label this field **Comment** until Task 16 renames UI + property to Private note / `privateNote`.
+Mock-era note: Task 9 screens may still label this field **Comment** until Task 17 renames UI + property to Private note / `privateNote`.
 
 ### Account
 
@@ -379,28 +403,23 @@ Mock-era note: Task 9 screens may still label this field **Comment** until Task 
 - Focal point: user stats and reviewed products.
 - Avoid: overly social profile treatment, too many personal details, empty profile with no value.
 
-Logged-out state should show:
-- App logo/name.
-- Short message.
-- Sign In button.
-- Create Account button.
-- Forgot Password link (opens `app/auth/forgot-password.tsx`; recovery email deep links land on `app/auth/reset-password.tsx`).
-- Continue browsing message.
+Render only the controls owned by the current accepted task:
 
-Logged-in state should show:
-- Avatar.
-- Display name.
-- Username.
-- Joined date.
-- Number of rated products.
-- Rated Products link.
-- Settings link.
-- Terms of Use link.
-- Privacy Policy link.
-- Log Out button.
-- Delete Account button with permanent-data explanation, destructive
+- Task 16 logged out: app logo/name, short message, Sign In, Create Account,
+  and continue-browsing message.
+- Task 16 logged in: current profile identity (avatar when available, display
+  name, and username), joined date, and Log Out.
+- Task 17 adds the number of rated products and Rated Products link.
+- Task 18 adds Forgot Password
+  (`app/auth/forgot-password.tsx`; recovery links land on
+  `app/auth/reset-password.tsx`).
+- Task 19 adds Delete Account with permanent-data explanation, destructive
   confirmation, reauthentication when required, and honest loading/error
   states.
+- Task 24 adds direct Terms of Use, Privacy Policy, and support/contact links.
+
+No generic Settings route is planned for the MVP. Add one only when concrete
+settings have explicit task ownership.
 
 ## Accessibility
 
@@ -432,7 +451,7 @@ Design a sneaker review app.
 Prompt like:
 
 ```txt
-Design a premium iOS product detail screen for Eazy Review, a sneaker review intelligence app. The screen should help users decide whether a sneaker is worth buying. Make the sneaker image and Eazy Score / Community Score comparison the main focal point. Show rating strengths, price-by-size data, and community review previews in separate clean sections. Use premium white space, clear hierarchy, and consistent score badges. Avoid generic ecommerce UI and crowded charts.
+Design a premium iOS product detail screen for Eazy Review, a sneaker review intelligence app. The screen should help users decide whether a sneaker is worth buying. Make the sneaker image and Eazy Score / Community Score comparison the main focal point. Show rating strengths, a community category breakdown and rating count, and price-by-size data in separate clean sections. Use premium white space, clear hierarchy, and consistent score badges. Avoid generic ecommerce UI, public written-review previews, and crowded charts.
 ```
 
 Reusable full prompts live in `docs/STITCH_PROMPTS.md`.

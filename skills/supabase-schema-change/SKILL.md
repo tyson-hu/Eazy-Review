@@ -15,6 +15,9 @@ inside the skill.
 - Frontend-only types or mock data: use `skills/product-data-modeling`.
 - A screen that only consumes an existing contract: use the matching UI or
   feature skill.
+- Seed-only SQL, local seed configuration, and seed tests that do not change
+  schema, RLS, grants, or database-backed contracts: follow the named task and
+  canonical workflow directly.
 - Remote production database work: agents never perform it.
 
 ## Inputs expected

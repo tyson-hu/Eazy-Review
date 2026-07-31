@@ -1,10 +1,10 @@
 ---
 id: decision-forbid-agent-production-database-access
 date: 2026-07-24
-updated: 2026-07-26
+updated: 2026-07-30
 status: accepted
 area: auth-security
-tasks: [15]
+tasks: [19, 25, 26]
 pr: 14
 tags: [account-deletion, agents, mcp, production, security, supabase]
 supersedes: []
@@ -53,7 +53,7 @@ wins.
 - An approval cannot turn a production database action into an allowed agent
   action.
 - Environment identity must be confirmed before database tooling runs.
-- Task 15 must separate implementation/non-destructive checks from the
+- Task 19 must separate implementation/non-destructive checks from the
   human-owned destructive deletion check.
 - A coding agent cannot self-certify the Delete Account acceptance item by
   deleting a fixture account.

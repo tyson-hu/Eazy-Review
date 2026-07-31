@@ -12,8 +12,8 @@ export default function NotFoundScreen() {
       <Screen contentClassName="items-center justify-center">
         <AppText variant="title">This screen does not exist.</AppText>
         <View className="mt-6">
-          <Link href="/feed" asChild>
-            <Button label="Go to Feed" variant="secondary" className="px-6" />
+          <Link href="/browse" asChild>
+            <Button label="Go to Browse" variant="secondary" className="px-6" />
           </Link>
         </View>
       </Screen>

@@ -1,9 +1,10 @@
 ---
 id: decision-keep-mvp-offer-payloads-single-currency
 date: 2026-07-25
+updated: 2026-07-30
 status: accepted
 area: data-supabase
-tasks: [11, 13, 14]
+tasks: [11, 13, 15]
 pr: 14
 tags: [currency, offers, pricing, supabase]
 supersedes: []
@@ -21,7 +22,7 @@ USD offers only.
 ## Decision
 
 Keep each product's MVP offer payload single-currency. The Task 11 schema
-allowlists `USD`, and Task 13 normalizes seed values before insert. Task 14
+allowlists `USD`, and Task 13 normalizes seed values before insert. Task 15
 adapters omit or reject mismatched-currency rows before calculating a lowest
 price; they never take a numeric minimum across currencies.
 

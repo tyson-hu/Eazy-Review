@@ -8,9 +8,13 @@ Every working session follows the same three steps:
 
 1. Run `git status --short`. Do not overwrite unrelated uncommitted changes.
 2. Read the current task in `docs/TASKS.md`.
-3. Pick the matching skill from the loop index in `docs/LOOP_ENGINEERING.md` (skill routines live in `skills/<name>/SKILL.md`) and follow its routine.
+3. Select the matching route from the loop index in
+   `docs/LOOP_ENGINEERING.md`: follow the named `skills/<name>/SKILL.md`
+   routine, or use its explicit no-skill workflow.
 
-If no skill matches, work directly but still apply the context map, definition of done, and handoff format below.
+If no skill matches, use the explicit value "None — follow the canonical
+workflow and task contract"; work directly while still applying the context
+map, definition of done, and handoff format below.
 
 When continuing work from a previous session: read `AGENTS.md`, the spec, and `docs/notes/handoff.md` (plus any linked `docs/notes/blocker-*.md`), then restate the plan before editing anything.
 
@@ -52,8 +56,8 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 
 | Task type | Read | Do not read |
 | --- | --- | --- |
-| Build or redesign one screen's UI | `docs/DESIGN.md` (Visual System, Component Rules, and that screen's section in Screen-Level Rules), `docs/UI_STYLE.md` (visual language), `docs/USER_FLOWS.md` (that screen's flow) | `docs/BLUEBOOK.md`, `docs/DATA_MODEL.md` |
-| Feature slice spanning data + UI (a `docs/TASKS.md` task) | The task in `docs/TASKS.md`, `docs/USER_FLOWS.md` (relevant flow), `docs/API_CONTRACTS.md` (types and functions), `docs/DESIGN.md` (component rules for its screens) | `docs/BLUEBOOK.md`, `docs/MCP_WORKFLOW.md` |
+| Build or redesign one screen's UI | `docs/DESIGN.md` (Visual System, Component Rules, and that screen's section in Screen-Level Rules), `docs/USER_FLOWS.md` (that screen's flow) | `docs/BLUEBOOK.md`, `docs/DATA_MODEL.md`, `docs/research/*` |
+| Feature slice spanning data + UI (a `docs/TASKS.md` task) | The task in `docs/TASKS.md`, `docs/USER_FLOWS.md` (relevant flow), `docs/API_CONTRACTS.md` (types and functions), `docs/DESIGN.md` (component rules for its screens); for Tasks 15–19, also read the task-specific data, security, and tool-policy documents required by `skills/feature-slice-builder` | `docs/BLUEBOOK.md` |
 | Schema, Supabase, RLS, migrations, rating summaries | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` (affected contracts) | `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md` |
 | Frontend data shape, types, mock data, folder structure | `docs/API_CONTRACTS.md`; `docs/DATA_MODEL.md` only if a database contract changes | `docs/DESIGN.md` screen sections, `docs/BLUEBOOK.md` |
 | Bug fix | The failing flow in `docs/USER_FLOWS.md`, plus the doc for the layer the bug lives in (`docs/DESIGN.md` for UI, `docs/API_CONTRACTS.md` for data, `docs/DATA_MODEL.md` for database) | Everything else |
@@ -114,7 +118,7 @@ Every implementation delegation is one bounded task packet containing all eleven
 3. **Non-goals** — behavior explicitly excluded from this packet.
 4. **Starting state** — expected branch/base and prerequisite packets.
 5. **Read** — the exact documents to read, per the Context Map.
-6. **Skill** — mandatory: a skill path, or the explicit value "None — follow the implementer definition and the canonical workflow". An absent field is invalid.
+6. **Skill** — mandatory: a skill path, or the explicit value "None — follow the canonical workflow and task contract". An absent field is invalid.
 7. **Allowed edit scope** — the exact files that may be modified. Reading more is allowed; editing is not. Documentation is editable only when explicitly listed. New files only when named here.
 8. **Validation** — the commands to run, per Validation Commands below.
 9. **User flow** — the flow to exercise, when applicable.
@@ -300,8 +304,8 @@ One home per instruction; everywhere else points, never restates.
 | --- | --- |
 | Product direction, MVP scope, success criteria | `docs/BLUEBOOK.md` |
 | Non-negotiable operating rules, task discipline, skill index | `AGENTS.md` |
-| Visual style language (full token prose, typography, elevation) | `docs/UI_STYLE.md` |
-| Product UI/UX, design principles, component and screen rules, app Visual System | `docs/DESIGN.md` |
+| Product UI/UX, design principles, tokens, typography, elevation, component and screen rules | `docs/DESIGN.md` |
+| Historical visual research (non-authoritative) | `docs/research/` |
 | Schema, RLS, triggers, rating summary logic | `docs/DATA_MODEL.md` |
 | Frontend types, API functions, query keys, folder structure | `docs/API_CONTRACTS.md` |
 | Routes, user journeys, auth gates | `docs/USER_FLOWS.md` |

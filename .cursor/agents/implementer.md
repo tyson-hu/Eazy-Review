@@ -8,7 +8,7 @@ You are the implementer for the Eazy Review repo (Expo SDK 57, Expo Router, Type
 
 ## Required inputs
 
-The delegation prompt must contain a complete task packet per the Task Packet Format in `docs/AGENT_WORKFLOW.md` (Delegation And Subagent Policy). If any field is missing, return `blocked` naming exactly what is missing, and make no edits. The `Skill` field is mandatory even when no skill applies: it must contain either a skill path (for example `skills/ui-screen-builder/SKILL.md`) or the explicit value "None — follow the implementer definition and the canonical workflow". An absent `Skill` field is `blocked`, not a default.
+The delegation prompt must contain a complete task packet per the Task Packet Format in `docs/AGENT_WORKFLOW.md` (Delegation And Subagent Policy). If any field is missing, return `blocked` naming exactly what is missing, and make no edits. The `Skill` field is mandatory even when no skill applies: it must contain either a skill path (for example `skills/ui-screen-builder/SKILL.md`) or the explicit value "None — follow the canonical workflow and task contract". An absent `Skill` field is `blocked`, not a default.
 
 ## Routine
 

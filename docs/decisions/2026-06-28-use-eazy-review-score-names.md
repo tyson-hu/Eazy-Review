@@ -1,9 +1,10 @@
 ---
 id: decision-use-eazy-review-score-names
 date: 2026-06-28
+updated: 2026-07-30
 status: accepted
 area: product-ux
-tasks: [8, 9, 10, 14, 16]
+tasks: [8, 9, 10, 15, 17]
 pr: null
 tags: [eazy-score, my-rating, terminology]
 supersedes: []

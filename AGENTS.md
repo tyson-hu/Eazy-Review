@@ -2,7 +2,8 @@
 
 Eazy Review is a mobile-first sneaker/product review and discovery app.
 Core flow: Browse -> Product Detail -> Eazy Score / Community Score -> My Rating.
-Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase, TanStack Query.
+Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase;
+the Expo Supabase client and TanStack Query are planned for Task 14.
 
 ## Non-Negotiable Product Rules
 
@@ -18,7 +19,9 @@ Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase,
 ## Task Discipline
 
 - Work one task at a time; keep changes scoped to the requested task.
-- Start each session: `git status --short` -> current task in `docs/TASKS.md` -> pick a skill.
+- Start each session: `git status --short` -> current task in `docs/TASKS.md`
+  -> select the route in `docs/LOOP_ENGINEERING.md` (a matching skill or its
+  explicit no-skill workflow).
 - Use the generated `docs/DECISIONS.md` index to find the current task or area, then open only the linked decision records; use the legacy archive only for historical reasoning.
 - Do not redesign product flows unless explicitly asked.
 - Do not add unrelated dependencies.
@@ -33,8 +36,8 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 
 | Task type | Read |
 | --- | --- |
-| Screen UI | `docs/DESIGN.md`, `docs/UI_STYLE.md`, `docs/USER_FLOWS.md` |
-| Feature slice | `docs/TASKS.md` task, `docs/USER_FLOWS.md`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md` |
+| Screen UI | `docs/DESIGN.md`, `docs/USER_FLOWS.md` |
+| Feature slice | `docs/TASKS.md` task, `docs/USER_FLOWS.md`, `docs/API_CONTRACTS.md`, `docs/DESIGN.md`; for Tasks 15–19, also the task-specific data, security, and tool-policy documents required by `skills/feature-slice-builder` |
 | Schema / Supabase / RLS | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` |
 | Frontend types / mock data | `docs/API_CONTRACTS.md` |
 | Product scope change | `docs/BLUEBOOK.md`, `docs/ROADMAP.md` |

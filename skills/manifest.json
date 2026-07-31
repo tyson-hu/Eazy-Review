@@ -14,7 +14,7 @@
     },
     {
       "name": "feature-slice-builder",
-      "description": "Use when implementing one user-visible feature from docs/TASKS.md that spans data and UI (mock-first, connected-read, auth-connected, or connected-write)."
+      "description": "Use when implementing one user-visible feature from docs/TASKS.md that spans data and UI (mock-first, connected-read, core-auth, connected-write, recovery, or protected deletion)."
     },
     {
       "name": "interactive-preview-loop",
@@ -38,7 +38,7 @@
     },
     {
       "name": "supabase-schema-change",
-      "description": "Use for any change needing SQL, a migration, or RLS — schema, triggers, rating summaries, or database-backed contracts."
+      "description": "Use for schema, migration, RLS, grant, database function or trigger, rating-summary, or other database-backed contract changes; not seed-only data."
     },
     {
       "name": "test-and-validation-loop",

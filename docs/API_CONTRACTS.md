@@ -28,11 +28,11 @@ export type RatingBreakdown = {
   value: number;
   overall: number;
   /**
-   * Mock-era field name. Supabase / Task 16+ use `privateNote` mapped from
+   * Mock-era field name. Supabase / Task 17+ use `privateNote` mapped from
    * `user_ratings.private_note` (owner-only; max 500 chars). Do not treat as a public review.
    */
   comment?: string | null;
-  /** Preferred name once My Rating persistence lands (Task 16). */
+  /** Preferred name once My Rating persistence lands (Task 17). */
   privateNote?: string | null;
 };
 
@@ -103,7 +103,7 @@ rows only to their authenticated owner.
 | `products.is_published` | Anonymous Browse/Detail adapters must eventually select published products only; Tasks 11–12 add no runtime adapter |
 | Current `eazy_assessments` row | Future source for `Product.eazyScore`; select `is_current = true` |
 | `rating_aggregates` | Future source for `ProductRatingSummary` and Community Score; clients never calculate or write it |
-| `user_ratings.private_note` | Future Task 16 `privateNote`; maximum 500 characters and owner-only |
+| `user_ratings.private_note` | Future Task 17 `privateNote`; maximum 500 characters and owner-only |
 | `profiles.created_at` | Non-null `AccountProfile.joinedAt`; optional mutable profile fields may remain null |
 | Immutable `user_ratings.product_id` / `user_id` | Identity is set on insert and cannot appear in a client update |
 | `product_offers.size_region` / `currency` | Required strings; MVP database allowlists are `US` and `USD` |
@@ -234,7 +234,11 @@ type ProductCardData = {
 
 The database can store this data across relational tables. Frontend code should receive a convenient shape from Supabase select joins, a view, or an RPC function. Supabase select joins are acceptable for MVP. Later, create a view named `product_card_view`.
 
-Browse cards must format `lowestPrice` with `lowestPriceCurrency` (via `formatPrice` / `Intl.NumberFormat`). Do not hardcode a `$` prefix. When Task 14 maps a single-currency offer set into Browse, carry that same selected currency into `lowestPriceCurrency`. Mock catalog `Product.lowestPrice` has no currency field and is treated as USD until offer-backed mapping lands.
+Browse cards must format `lowestPrice` with `lowestPriceCurrency` (via
+`formatPrice` / `Intl.NumberFormat`). Do not hardcode a `$` prefix. When Task 15
+maps a single-currency offer set into Browse, carry that same selected currency
+into `lowestPriceCurrency`. Mock catalog `Product.lowestPrice` has no currency
+field and is treated as USD until offer-backed mapping lands.
 
 ## Products API
 
@@ -416,7 +420,7 @@ MVP sort options:
 - Lowest Price.
 - Recently Added.
 
-## Backend Field Naming (Tasks 11–16)
+## Backend Field Naming (Tasks 11–17)
 
 | Concern | DB | Frontend |
 | --- | --- | --- |
@@ -431,20 +435,20 @@ Rules:
 - `private_note` / `privateNote` is owner-only and at most 500 characters
   (database check plus connected form validation).
 - Public written reviews are not implemented.
-- Task 16 changes the optional-field label from **Comment** to
+- Task 17 changes the optional-field label from **Comment** to
   **Private note** and the property from `comment` to `privateNote` together.
 - Data API grants land only after Task 12 RLS policies.
 
 ### Zero-rating / missing aggregate rows
 
 Every product insert creates a matching zero-count `rating_aggregates` row.
-Task 13 seeds must not leave published products without it. Task 14 adapters
+Task 13 seeds must not leave published products without it. Task 15 adapters
 still normalize a missing join to `ratingCount: 0` with null averages and
 Community Score; they never invent client-side score math.
 
 ## Mock Data Contract
 
-Before Supabase (Tasks 11–13 schema work does not require removing mocks):
+Before connected reads (Tasks 11–14 do not require removing mocks):
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
 - Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Unmapped `mock-product://` URIs resolve to no image source so UI shows the "Image coming soon" placeholder. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
@@ -459,11 +463,11 @@ Before Supabase (Tasks 11–13 schema work does not require removing mocks):
 - Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
 - Screens must call this API only — never import or mutate the private map.
 
-**Task 14 transitional note:** when Browse/Detail switch to Supabase UUIDs,
-Rate/Edit must not remain bound only to mock-product lookup. Load product
-context from the real Detail repository and keep temporary My Rating state
-keyed by viewer identity plus product ID until Task 16 replaces it. Clear or
-re-key on auth changes so accounts never share in-memory ratings.
+When Task 15 switches Browse/Detail to Supabase UUIDs, it does not adapt
+session-only My Rating persistence to connected products. The Rate action stays
+honestly unavailable/gated until Tasks 16–17 provide identity and durable
+persistence; no temporary viewer/product map is part of the connected
+contract.
 
 ```ts
 import type { Product } from '@/src/types/product';

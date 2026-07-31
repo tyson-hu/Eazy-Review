@@ -1,7 +1,9 @@
 ---
 id: decision-security-first-supabase-task-sequencing
 date: 2026-07-24
-status: accepted
+updated: 2026-07-30
+status: superseded
+superseded_by: decision-sequence-connected-client-before-screen-integration
 area: data-supabase
 tasks: [11, 12, 13, 14, 15, 16, 17, 18]
 pr: 14

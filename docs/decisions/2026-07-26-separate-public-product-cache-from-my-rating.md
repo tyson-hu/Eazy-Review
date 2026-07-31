@@ -1,9 +1,10 @@
 ---
 id: decision-separate-public-product-cache-from-my-rating
 date: 2026-07-26
+updated: 2026-07-30
 status: accepted
 area: architecture
-tasks: [14, 15, 16, 18]
+tasks: [14, 15, 16, 17]
 pr: 19
 tags: [caching, my-rating, privacy, tanstack-query]
 supersedes: []

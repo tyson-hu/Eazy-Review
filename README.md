@@ -7,8 +7,10 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 ## Documentation Map
 
 - `docs/BLUEBOOK.md`: master product and engineering plan.
-- `docs/DESIGN.md`: product UI/UX (identity, principles, component and screen rules; app Visual System).
-- `docs/UI_STYLE.md`: visual style language (full token prose, typography, elevation).
+- `docs/DESIGN.md`: sole product UI source of truth (principles, tokens,
+  typography, elevation, components, and screen rules).
+- `docs/research/apple-visual-analysis.md`: archived, non-authoritative visual
+  research.
 - `docs/DOCUMENTATION_POLICY.md`: required doc-update rules for future changes.
 - `docs/SECURITY.md`: security rules for install, shell, and secrets handling (all agents and humans).
 - `docs/AGENT_WORKFLOW.md`: agent session flow, context map, definition of done, handoff and PR formats.
@@ -31,8 +33,8 @@ The repo currently starts from an Expo Router app shell. The project infrastruct
 - React Native
 - TypeScript
 - NativeWind
-- Supabase
-- TanStack Query
+- Supabase (schema/authorization shipped; Expo client planned in Task 14)
+- TanStack Query (planned in Task 14)
 
 Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 
@@ -75,4 +77,6 @@ core schema and PR review remediation passed local and human-authorized staging
 acceptance across all four forward-only migrations. Task 12 policies, grants,
 and authorization tests passed local and human-authorized staging acceptance
 in the fifth forward-only migration. Expo remains disconnected; the real read
-and write integrations stay owned by their later tasks.
+and write integrations stay owned by their later tasks. The post–Task 12
+review revised the connected sequence; Task 13's two-product deterministic SQL
+seed is next.

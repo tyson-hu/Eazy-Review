@@ -1,214 +1,120 @@
 # Eazy Review Roadmap
 
-## Phase 1: Foundation
+Task detail, dependencies, acceptance, and current status live in
+`docs/TASKS.md`. This file describes milestone order only.
 
-1. Confirm `docs/BLUEBOOK.md`.
-2. Confirm `docs/DESIGN.md`.
-3. Confirm `docs/DATA_MODEL.md`.
-4. Set up `AGENTS.md`.
-5. Set up `.cursor/rules`.
-6. Set up local + staging Supabase through Tasks 11–12.
+## Current Position
 
-All phases follow the doc-update gate in `docs/DOCUMENTATION_POLICY.md`.
+- Tasks 1–10: app shell and mock Browse → Detail → Rate journey accepted.
+- Tasks 11–12: secure Supabase schema/authorization foundation accepted
+  locally and on explicitly authorized staging; production untouched.
+- Post–Task 12 review: **GO with roadmap revision**.
+- Next task: **Task 13 — Product Seed Data**.
 
-## Phase 2: UI Shell
+The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
+and no-social MVP boundary are locked unless a reproducible defect appears.
+Do not expand agent/process infrastructure while the connected application and
+release path remain unfinished.
 
-1. App navigation.
-2. Design tokens / theme.
-3. Shared components.
-4. Product card.
-5. Rating display components.
-6. Empty/loading/error components.
+## Phase 1: Accepted Foundation
 
-## Phase 3: Core Screens (mock)
+Tasks 1–12 delivered:
 
-1. Feed placeholder.
-2. Browse/search.
-3. Product detail.
-4. Rating flow.
-5. Account placeholder.
-6. Rated products list (deferred until auth + real ratings).
+- Expo Router, NativeWind, app tabs, and reusable UI primitives.
+- Accepted mock Browse, Product Detail, and session-only Rate/Edit UX.
+- Seven-table Supabase schema.
+- Trigger-owned Community Score and one rating per user/product.
+- Least-privilege RLS, explicit Data API grants, and owner-only private notes.
+- Local and explicitly authorized staging acceptance.
 
-Status: Browse / Detail / Rate mock journey Done (Tasks 6–10 **GO**). Feed and
-Account remain placeholders. Do not expand mock UI; proceed through the real
-data tasks in order.
+Historical packet detail is archived from the active task plan; accepted
+contracts remain in `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md`, and the
+current decision records.
 
-## Phase 4: Real Data
+## Phase 2: Connected Critical Path
 
-1. **Task 11** — environments and deny-by-default core schema (**PR review
-   remediation accepted locally and on human-authorized staging; Done**).
-2. **Task 12** — policies, explicit Data API grants, authorization tests
-   (**complete locally and accepted on human-authorized staging; Done**).
-3. **Task 13** — product seed data (small seed first).
-4. **Task 14** — real Browse and Product Detail reads.
-5. **Task 15** — authentication (email first, including recovery and deletion).
-6. **Task 16** — owner-only My Rating persistence and Rated Products.
-7. **Task 17** — server-owned aggregate verification/hardening; no mechanism re-selection.
-8. **Task 18** — TanStack Query and cache invalidation.
+Complete in order:
 
-Task detail and acceptance live in `docs/TASKS.md`. Do not connect UI before
-Task 14 or place auth before real catalog reads.
+1. **Task 13 — Product Seed Data**
+   - Two deterministic products: one complete and one sparse.
+   - SQL-only local seed and focused acceptance.
+2. **Task 14 — Connected Client And Query Foundation**
+   - Supabase client, generated types, Query client, lifecycle/online
+     integration, query keys, environment validation, and the minimal frontend
+     test harness required by connected tasks.
+3. **Task 15 — Real Public Catalog Reads**
+   - Published Browse/Detail reads and removal of mock-only mechanics.
+   - No temporary UUID rating map.
+4. **Task 16 — Core Authentication And Account State**
+   - Sign-up, sign-in, sign-out, restoration, profile, and Rate gate.
+5. **Task 17 — My Rating Persistence And Rated Products**
+   - Direct RLS-protected save path, cache invalidation, Rated Products, and
+     app-level aggregate verification.
+6. **Task 18 — Password Recovery And Deep Links**
+   - Recovery-only reset state and real-device deep-link verification.
+7. **Task 19 — Protected Account Deletion**
+   - Caller-derived Edge Function boundary and human-run destructive
+     acceptance.
 
-Companion: generated skill discovery is owned by replacement PR #17.
+Why this order:
 
-## Phase 5: Social Layer
+- The durable client/query layer exists before connected screens.
+- Public reads never depend on a short-lived session-rating bridge.
+- Core auth, recovery, and deletion remain independently reviewable.
+- Aggregate architecture is not reopened; the app verifies the accepted
+  server-owned behavior when real rating writes land.
 
-Future only, after core app works:
-- Comments / public written reviews.
-- Likes.
-- Shares.
-- Reports/moderation.
-- Activity feed.
+## Phase 3: Product Completeness And Verification
 
-Do not start during Tasks 11–18.
+1. **Task 20 — Browse Scale-Up (conditional)**
+   - Begin only after catalog size/query plans prove a need.
+2. **Task 21 — Real Feed MVP**
+   - At most three truthful, non-duplicative sections.
+3. **Task 22 — Automated App Tests And Database CI**
+   - Cross-feature regression and account-switch coverage, test-suite cleanup,
+     path-filtered database CI, and one small E2E smoke.
+4. **Task 23 — Reliability, Accessibility, And Device QA**
+   - Retry/offline behavior, VoiceOver/Dynamic Type, phone QA, iPhone
+     validation, and Android smoke.
 
-## Phase 6: Polish And Release
+Task 21 must replace or remove the primary Feed placeholder before beta. Task
+20 does not start merely because Filter/Sort existed in the mock design.
 
-1. Performance cleanup.
-2. Error states.
-3. Auth edge cases.
-4. TestFlight QA.
-5. App Store assets.
-6. Release checklist.
+## Phase 4: Release Boundary
 
-## MVP Milestones
+1. **Task 24 — Privacy, Legal, And Store Disclosures**
+2. **Task 25 — EAS Environments And TestFlight Candidate**
+3. **Task 26 — Release Candidate And App Store Submission**
+4. **Task 27 — Post-Launch Operations**
 
-### Milestone 1: App Shell
+This phase owns privacy/terms/support, App Store disclosures, isolated build
+environments, production runbooks, TestFlight, release-candidate QA, App
+Review submission, rollback, and post-launch operating checks.
 
-Deliverables:
-- Expo app created.
-- Expo Router working.
-- Bottom tabs working.
-- NativeWind working.
-- Basic reusable UI components created.
+Production Supabase setup, migrations, seeds, account deletion, and release
+remain deliberate human-controlled actions under `docs/SECURITY.md`.
 
-Acceptance:
-- User can open Feed, Browse, and Account tabs.
-- App runs on iOS/Android simulator or physical device.
-- Docs and tasks reflect the completed app-shell state.
+## Post-MVP Workstreams
 
-Status: Done.
+- **Task 28 — Catalog Import And Admin Pipeline**
+  - Add provenance, external IDs, idempotent server-side imports, freshness,
+    rights review, and minimal admin review only after manual catalog behavior
+    is stable.
+- **Task 29 — Public Publishing And Project Journal**
+  - Optional read-only publishing/case-study work outside the mobile critical
+    path; never another score/catalog source of truth.
 
-### Milestone 2: Mock Product Experience
+## Explicit Deferrals
 
-Deliverables:
-- Mock products.
-- Browse screen.
-- Product cards.
-- Product detail screen.
-- Rating form with fake local update.
+Until post-MVP evidence justifies them:
 
-Acceptance:
-- User can browse fake products.
-- User can open a product.
-- User can submit a fake rating.
-- UI flow feels understandable.
-- Docs and tasks reflect any route/component/type decisions made during the mock flow.
-
-Status: Done.
-
-### Milestone 3: Supabase Security Foundation (Tasks 11–12)
-
-Deliverables:
-- Local + human-authorized staging environments. All four Task 11 migrations
-  passed staging acceptance on 2026-07-28.
-- Task 11 core schema and review-hardening migrations with RLS enabled,
-  inherited client privileges and internal-helper execution revoked, and no
-  positive client grants. `npm run test:db` / `npm run test:db:reset` run the
-  183-assertion pgTAP suite plus same-product insert and fixture-only
-  multi-product rating-delete concurrency races. The third migration replaces
-  row refresh with statement-level transition-table triggers; the fourth maps
-  affected products to 64-bit advisory-lock keys and orders the actual keys.
-  Local and staging verification passed 2026-07-28. Production untouched.
-- The separate Task 12 policies/grants migration, 418-assertion pgTAP suite,
-  both Task 11 concurrency races, and direct authorization acceptance passed
-  locally and on human-authorized staging on 2026-07-29. Production remained
-  untouched.
-
-Acceptance:
-- Published catalog access and owner-only private rating access pass the
-  `docs/DATA_MODEL.md` scenarios.
-- No production project is touched and no service-role key enters Expo.
-
-### Milestone 4: Real Product Data (Tasks 13–14)
-
-Deliverables:
-- Small trusted seed.
-- Browse and Product Detail read published Supabase rows.
-- Deterministic primary `imageUrl` mapping.
-- Single-currency offer and lowest-price mapping.
-
-Acceptance:
-- Connected catalog browsing no longer requires mock product reads.
-- Only published products are visible anonymously.
-- Primary-image and lowest-price rules in `docs/API_CONTRACTS.md` hold.
-
-### Milestone 5: Auth (Task 15)
-
-Deliverables:
-- Sign up, sign in, sign out, session persistence, and auth-aware Account.
-- Forgot-password request and recovery-session-gated reset completion/deep-link
-  routes.
-- Caller-derived protected account deletion with global refresh-session
-  revocation, documented JWT-expiry bounds, cascade/aggregate tests, and no
-  service-role key in Expo.
-
-Acceptance:
-- Logged-out browsing stays public; rating requires login.
-- Sign-up creates exactly one readable profile row.
-- Recovery rejects non-recovery/expired route state.
-- Human-run account deletion proves a second session cannot refresh, deleted
-  credentials cannot sign in, profile/ratings cascade, and Community
-  aggregates remain correct.
-
-### Milestone 6: Real Rating System (Tasks 16–18)
-
-Deliverables:
-- My Rating persistence using the controlled insert/update path, not an identity-column PostgREST upsert.
-- Rated Products route and Account navigation.
-- Server-owned aggregate verification.
-- Query caching and invalidation.
-
-Acceptance:
-- One owner-only rating per user/product and trusted Community Score refresh.
-- Private notes stay owner-only and the connected form says **Private note**.
-- Rated Products opens the signed-in user's rated product details.
-
-### Milestone 7: Feed
-
-Deliverables:
-- Today's Pick.
-- Trending Now.
-- Best Eazy Scores.
-- Best Community Scores.
-- Newly Added.
-
-Acceptance:
-- Feed uses real product data.
-- Product cards open Product Detail.
-
-Defer until after Milestone 6.
-
-### Milestone 8: Polish
-
-Deliverables:
-- Loading states.
-- Empty states.
-- Error states.
-- Form validation.
-- Better spacing.
-- Basic settings pages.
-- Terms and privacy placeholders.
-
-Acceptance:
-- App feels stable and usable.
-
-## Explicit deferrals (post Task 10)
-
-Do not pull these into Phase 4 foundation work:
-
-- Fit profiles, ownership duration, experience labels.
-- Price-history snapshots, advanced taxonomy, comparison features.
-- Public AI-readable product pages, Sentry, product analytics.
-- Custom MCP server (reassess after the 2026-07-28 MCP spec final).
-- Agent-role expansion or blanket Cursor Router default changes without measured trials.
+- Dark mode and iPad optimization.
+- Social reviews, comments, likes, follows, and activity systems.
+- Editable public profiles.
+- Advanced filters and recommendation systems.
+- Scraping/import automation and admin dashboard.
+- Persistent offline Query cache.
+- Sentry/product analytics.
+- Additional RLS or aggregate redesign without a reproducible defect.
+- Expanded agent roles, skills, evidence systems, or security tooling without
+  explicit approval and a concrete project need.

@@ -1,10 +1,10 @@
 ---
 id: decision-server-owned-community-score
 date: 2026-06-28
-updated: 2026-07-28
+updated: 2026-07-30
 status: accepted
 area: data-supabase
-tasks: [11, 12, 13, 14, 16, 17]
+tasks: [11, 12, 13, 15, 17]
 pr: null
 tags: [aggregates, community-score, integrity, supabase]
 supersedes: []
@@ -37,9 +37,9 @@ for every distinct product and processes the actual keys in stable order so
 multi-product statements cannot invert transaction advisory locks. The
 entrypoint uses an empty search path and fully qualified relations and is not
 executable by `PUBLIC`, `anon`, or `authenticated`; an inner refresh helper may
-remain `SECURITY INVOKER`.
-Task 17 verifies and hardens that path; it does not choose among trigger,
-RPC, or schedule.
+remain `SECURITY INVOKER`. Tasks 11–12 already verify and harden this path.
+Task 17 proves through real app mutations that the accepted path remains in
+effect; it does not choose among trigger, RPC, or schedule.
 
 ## Consequences
 
@@ -53,9 +53,10 @@ RPC, or schedule.
   order; concurrency tests cover both a same-product insert race and
   overlapping fixture-only rating deletes across two products without deleting
   auth accounts.
-- Task 11 ships the trigger-owned refresh helpers; Task 17 covers concurrent
-  writes, insert/update/delete correctness, authorization/forgery tests, and
-  performance evaluation without reopening mechanism selection.
+- Tasks 11–12 ship and verify the trigger-owned refresh helpers, concurrency,
+  insert/update/delete correctness, and authorization/forgery boundaries.
+  Task 17 keeps those suites passing and adds app-level save/edit verification
+  without reopening mechanism selection.
 - Changing the mechanism later requires a superseding ADR and a forward
   migration.
 

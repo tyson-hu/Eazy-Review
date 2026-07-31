@@ -1,10 +1,10 @@
 ---
 id: decision-profile-row-on-auth-user-insert
 date: 2026-07-25
-updated: 2026-07-29
+updated: 2026-07-30
 status: accepted
 area: auth-security
-tasks: [11, 12, 15]
+tasks: [11, 12, 16]
 pr: 14
 tags: [auth, profiles, supabase, triggers]
 supersedes: []

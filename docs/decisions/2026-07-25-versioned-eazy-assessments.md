@@ -1,10 +1,10 @@
 ---
 id: decision-versioned-eazy-assessments
 date: 2026-07-25
-updated: 2026-07-25
+updated: 2026-07-30
 status: accepted
 area: data-supabase
-tasks: [11, 12, 14]
+tasks: [11, 12, 15]
 pr: 14
 tags: [assessments, eazy-score, schema, supabase]
 supersedes: []
@@ -27,7 +27,7 @@ Task 11 ships versioned `eazy_assessments` rows with required
 `eazy_assessments_one_current_per_product` so each product has at most one
 current row. Overwrite-only storage is rejected for MVP.
 
-Task 12’s public SELECT policy and Task 14’s assessment adapter must filter
+Task 12’s public SELECT policy and Task 15’s assessment adapter must filter
 `is_current = true` (and published products). Historical rows may exist with
 `is_current = false` for audit; they are not catalog-readable.
 
