@@ -57,7 +57,8 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 ## Automated Verification
 
-- Frontend unit/integration tests pass.
+- Frontend unit/integration tests pass in the documented path-filtered CI
+  workflow for relevant application changes; they are not local-only.
 - Database migrations, pgTAP authorization/behavior tests, and concurrency
   races pass in the documented CI path.
 - The critical Browse → Detail → auth → Rate/Edit journey passes its small E2E
@@ -77,7 +78,8 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Human-run deletion evidence covers a second pre-existing session failing to
   refresh, deleted credentials failing to sign in, profile/rating cascades,
   correct retained Community aggregates, local cache cleanup, and the
-  configured residual JWT-expiry bound.
+  configured residual JWT-expiry bound, which is no more than one hour for the
+  MVP.
 - Reset Password updates credentials only from a verified recovery session;
   direct navigation and expired/invalid links fail safely.
 

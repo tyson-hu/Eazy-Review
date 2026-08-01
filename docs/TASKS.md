@@ -265,8 +265,10 @@ Deliverables:
 
 - `ProductDetailPublicData` plus focused product repository/query functions.
 - `ProductDetailPublicData` contains only public catalog, assessment, offer,
-  and Community Score data. `myRating` and every other viewer-owned field are
-  fetched through a structurally separate user-scoped query.
+  and Community Score data. Task 15 excludes `myRating` and every other
+  viewer-owned field from that public payload and cache. Later tasks fetch
+  viewer-owned state separately after authenticated identity is available;
+  Task 17 owns the user-scoped My Rating query and Product Detail composition.
 - Browse and Product Detail queries/adapters.
 - Deterministic primary-image selection:
   `sort_order ASC`, `created_at ASC`, then `id ASC`.
@@ -461,8 +463,8 @@ Acceptance:
   configured expiry, it cannot establish a new authenticated application
   session.
 - Already-issued access tokens are tested and documented against the
-  configured JWT-expiry bound; the app does not claim immediate cryptographic
-  invalidation.
+  configured JWT-expiry bound, which must be no more than one hour for the MVP;
+  the app does not claim immediate cryptographic invalidation.
 - A human records the staging destructive test.
 - Production deletion is never performed by a coding agent or tool.
 
