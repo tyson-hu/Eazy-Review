@@ -8,6 +8,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const {
+  advanceRegexIndex,
   extractTaskReferences,
   reportImpactedDocuments,
   runCheck,
@@ -231,6 +232,64 @@ test('runCheck allows an explicitly optional document to be absent', (t) => {
   assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
 });
 
+test('declared paths stay inside the real repository root', (t) => {
+  const root = createFixture(t);
+
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config: baseConfig() }));
+
+  const directLinkConfig = baseConfig();
+  directLinkConfig.documents.push({
+    path: 'direct-link.md',
+    lifecycle: 'evergreen',
+    owner: 'parent-agent',
+  });
+  fs.symlinkSync('canonical-a.md', path.join(root, 'direct-link.md'));
+  assert.throws(
+    () => runCheck({ repoRoot: root, config: directLinkConfig }),
+    /must not be a symbolic link: direct-link\.md/,
+  );
+
+  const externalRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'eazy-review-agent-infrastructure-external-'),
+  );
+  t.after(() => fs.rmSync(externalRoot, { recursive: true, force: true }));
+  write(externalRoot, 'record.md', 'External record.\n');
+  write(externalRoot, 'records/nested.md', 'External nested record.\n');
+  fs.symlinkSync(externalRoot, path.join(root, 'external'));
+
+  for (const escapedPath of ['external/record.md', 'external/records']) {
+    const escapedConfig = baseConfig();
+    escapedConfig.documents.push({
+      path: escapedPath,
+      lifecycle: 'evergreen',
+      owner: 'parent-agent',
+    });
+    assert.throws(
+      () => runCheck({ repoRoot: root, config: escapedConfig }),
+      new RegExp(`resolves outside the repository: ${escapedPath}`),
+    );
+  }
+
+  write(root, 'contained/record.md', 'Contained record.\n');
+  fs.symlinkSync('contained', path.join(root, 'contained-alias'));
+  const containedConfig = baseConfig();
+  containedConfig.documents.push({
+    path: 'contained-alias/record.md',
+    lifecycle: 'evergreen',
+    owner: 'parent-agent',
+  });
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config: containedConfig }));
+
+  const optionalConfig = baseConfig();
+  optionalConfig.documents.push({
+    path: 'missing/optional.md',
+    lifecycle: 'status',
+    owner: 'parent-agent',
+    requiredOnDisk: false,
+  });
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config: optionalConfig }));
+});
+
 test('validateConfig rejects document dependency cycles', () => {
   const config = baseConfig();
   config.dependencies.push({
@@ -419,6 +478,174 @@ test('active document directories scan current ADRs but exclude registered archi
   );
 });
 
+test('session notes are active while the transient handoff remains optional', (t) => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === 'docs/notes'
+    ),
+    {
+      path: 'docs/notes',
+      lifecycle: 'status',
+      owner: 'parent-agent',
+    },
+  );
+  assert.equal(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === 'docs/notes/handoff.md'
+    )?.requiredOnDisk,
+    false,
+  );
+  const report = reportImpactedDocuments(
+    repositoryConfig,
+    ['docs/notes/README.md'],
+    REPO_ROOT,
+  );
+  assert.ok(report.documents.includes('docs/notes'));
+
+  const root = createFixture(t);
+  const config = baseConfig();
+  config.documents.push(
+    {
+      path: 'docs/notes',
+      lifecycle: 'status',
+      owner: 'parent-agent',
+    },
+    {
+      path: 'docs/notes/handoff.md',
+      lifecycle: 'status',
+      owner: 'parent-agent',
+      requiredOnDisk: false,
+    },
+  );
+  write(root, 'docs/notes/README.md', '# Session notes\n');
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
+
+  write(root, 'docs/notes/blocker-example.md', 'Use Expo SDK 50.\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /docs\/notes\/blocker-example\.md:1: \[old-expo-sdk\]/,
+  );
+
+  fs.unlinkSync(path.join(root, 'docs/notes/blocker-example.md'));
+  fs.symlinkSync(
+    path.join(root, 'canonical-a.md'),
+    path.join(root, 'docs/notes/blocker-example.md'),
+  );
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /Active document traversal must not include a symbolic link: docs\/notes\/blocker-example\.md/,
+  );
+});
+
+test('historical evidence directories are registered, required, and excluded from stale scans', (t) => {
+  const historicalPaths = [
+    'docs/evidence/pr-24-review-correction',
+    'docs/evidence/ui-audit-remediation-20260719',
+    'docs/evidence/ui-audit-remediation-20260719-attempt1',
+    'docs/evidence/ui-audit-remediation-20260719-attempt2',
+  ];
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  for (const historicalPath of historicalPaths) {
+    assert.deepEqual(
+      repositoryConfig.documents.find(({ path: documentPath }) =>
+        documentPath === historicalPath
+      ),
+      {
+        path: historicalPath,
+        lifecycle: 'historical',
+        owner: 'historical-record',
+      },
+    );
+    assert.ok(
+      repositoryConfig.staleTerms.historicalAllowlist.includes(historicalPath),
+    );
+    assert.ok(
+      repositoryConfig.staleTerms.historicalAllowlist.includes(`${historicalPath}/**`),
+    );
+  }
+
+  const root = createFixture(t);
+  const config = baseConfig();
+  for (const historicalPath of historicalPaths) {
+    config.documents.push({
+      path: historicalPath,
+      lifecycle: 'historical',
+      owner: 'historical-record',
+    });
+    config.staleTerms.historicalAllowlist.push(
+      historicalPath,
+      `${historicalPath}/**`,
+    );
+    write(root, `${historicalPath}/RESULT.md`, 'Use Expo SDK 50.\n');
+  }
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
+
+  fs.rmSync(path.join(root, historicalPaths[0]), { recursive: true });
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /Missing document: docs\/evidence\/pr-24-review-correction/,
+  );
+});
+
+test('zero-width regex advancement follows Unicode code points and always progresses', (t) => {
+  assert.equal(advanceRegexIndex('😀', 0, true), 2);
+  assert.equal(advanceRegexIndex('A', 0, true), 1);
+  assert.equal(advanceRegexIndex('😀', 0, false), 1);
+  assert.equal(advanceRegexIndex('', 0, true), 1);
+
+  const root = createFixture(t);
+  const config = baseConfig();
+  config.staleTerms.rules[0] = {
+    id: 'unicode-zero-width',
+    pattern: '(?=😀)',
+    flags: 'u',
+    allowlist: [],
+  };
+  write(root, 'canonical-a.md', '😀\n');
+  const configPath = path.join(root, 'agent-infrastructure.json');
+  write(root, 'agent-infrastructure.json', `${JSON.stringify(config)}\n`);
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(__dirname, 'check-agent-infrastructure.cjs'),
+      '--root',
+      root,
+      '--config',
+      configPath,
+    ],
+    { encoding: 'utf8', timeout: 1_000 },
+  );
+  assert.ifError(result.error);
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /canonical-a\.md:1: \[unicode-zero-width\] ""/,
+  );
+
+  config.staleTerms.rules[0] = {
+    id: 'unicode-bmp-zero-width',
+    pattern: '(?=A)',
+    flags: 'u',
+    allowlist: [],
+  };
+  write(root, 'canonical-a.md', 'A\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /canonical-a\.md:1: \[unicode-bmp-zero-width\] ""/,
+  );
+});
+
 test('strict task parsing rejects missing metadata instead of silently skipping it', (t) => {
   const root = createFixture(t);
   write(root, 'docs/TASKS.md', taskDocument({ omitHumanGate: true }));
@@ -479,6 +706,27 @@ test('report mode maps a changed mirror back to its canonical source', (t) => {
     'generated.md',
     'mirror.md',
   ]);
+});
+
+test('agent-infrastructure reports include the manifest for proposed skill and Cursor paths', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  for (const changedPath of [
+    'skills/example-new-skill/SKILL.md',
+    '.cursor/rules/example-new-rule.mdc',
+  ]) {
+    const report = reportImpactedDocuments(
+      repositoryConfig,
+      [changedPath],
+      REPO_ROOT,
+    );
+    assert.ok(report.documents.includes('config/agent-infrastructure.json'));
+    assert.deepEqual(report.documents, [...new Set(report.documents)].sort());
+  }
 });
 
 test('CLI report mode remains available while active documents are stale', (t) => {

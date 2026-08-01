@@ -549,6 +549,21 @@ function resolveDeclaredPath(repoRoot, relativePath) {
   return absolute;
 }
 
+function assertRealPathContained(repoRoot, absolutePath, relativePath) {
+  const realPath = fs.realpathSync(absolutePath);
+  const relative = path.relative(repoRoot, realPath);
+  if (
+    path.isAbsolute(relative) ||
+    relative === '..' ||
+    relative.startsWith(`..${path.sep}`)
+  ) {
+    throw new Error(
+      `Declared path resolves outside the repository: ${relativePath}`,
+    );
+  }
+  return realPath;
+}
+
 function assertPathExists(repoRoot, relativePath, context) {
   const absolute = resolveDeclaredPath(repoRoot, relativePath);
   const stats = fs.lstatSync(absolute, { throwIfNoEntry: false });
@@ -558,6 +573,7 @@ function assertPathExists(repoRoot, relativePath, context) {
   if (stats.isSymbolicLink()) {
     throw new Error(`Declared ${context} must not be a symbolic link: ${relativePath}`);
   }
+  assertRealPathContained(repoRoot, absolute, relativePath);
   return stats;
 }
 
@@ -580,6 +596,9 @@ function validateDeclaredPaths(repoRoot, config) {
         throw new Error(
           `Declared optional document must not be a symbolic link: ${document.path}`,
         );
+      }
+      if (stats) {
+        assertRealPathContained(repoRoot, absolute, document.path);
       }
       continue;
     }
@@ -676,7 +695,9 @@ function collectTextFiles(repoRoot, relativePath, excludedPaths = []) {
         continue;
       }
       if (entry.isSymbolicLink()) {
-        continue;
+        throw new Error(
+          `Active document traversal must not include a symbolic link: ${childRelative}`,
+        );
       }
       if (entry.isDirectory()) {
         walk(childAbsolute, childRelative);
@@ -701,6 +722,18 @@ function lineContext(content, index) {
 function compileGlobalRegex(pattern, flags) {
   const globalFlags = flags.includes('g') ? flags : `${flags}g`;
   return new RegExp(pattern, globalFlags);
+}
+
+function advanceRegexIndex(content, index, unicodeMode) {
+  if (index >= content.length) {
+    return content.length + 1;
+  }
+  if (!unicodeMode) {
+    return index + 1;
+  }
+  const codePoint = content.codePointAt(index);
+  const width = codePoint !== undefined && codePoint > 0xffff ? 2 : 1;
+  return Math.min(index + width, content.length + 1);
 }
 
 function checkStaleTerms(repoRoot, config) {
@@ -751,7 +784,11 @@ function checkStaleTerms(repoRoot, config) {
           });
         }
         if (match[0].length === 0) {
-          expression.lastIndex += 1;
+          expression.lastIndex = advanceRegexIndex(
+            content,
+            expression.lastIndex,
+            expression.unicode || expression.unicodeSets,
+          );
         }
       }
     }
@@ -1172,6 +1209,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  advanceRegexIndex,
   checkStaleTerms,
   extractTaskReferences,
   findDependencyCycle,

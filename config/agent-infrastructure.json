@@ -250,6 +250,11 @@
       "owner": "parent-agent"
     },
     {
+      "path": "docs/evidence/pr-24-review-correction",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/task-11-12-database-acceptance",
       "lifecycle": "historical",
       "owner": "historical-record"
@@ -268,6 +273,26 @@
       "path": "docs/evidence/task-10-reaudit",
       "lifecycle": "historical",
       "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/ui-audit-remediation-20260719",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/ui-audit-remediation-20260719-attempt1",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/ui-audit-remediation-20260719-attempt2",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/notes",
+      "lifecycle": "status",
+      "owner": "parent-agent"
     },
     {
       "path": "docs/notes/handoff.md",
@@ -634,6 +659,8 @@
       "docs/archive/**",
       "docs/decisions/archive",
       "docs/decisions/archive/**",
+      "docs/evidence/pr-24-review-correction",
+      "docs/evidence/pr-24-review-correction/**",
       "docs/evidence/task-10-baseline-ux",
       "docs/evidence/task-10-baseline-ux/**",
       "docs/evidence/task-10-f4-check",
@@ -642,6 +669,12 @@
       "docs/evidence/task-10-reaudit/**",
       "docs/evidence/task-11-12-database-acceptance",
       "docs/evidence/task-11-12-database-acceptance/**",
+      "docs/evidence/ui-audit-remediation-20260719",
+      "docs/evidence/ui-audit-remediation-20260719/**",
+      "docs/evidence/ui-audit-remediation-20260719-attempt1",
+      "docs/evidence/ui-audit-remediation-20260719-attempt1/**",
+      "docs/evidence/ui-audit-remediation-20260719-attempt2",
+      "docs/evidence/ui-audit-remediation-20260719-attempt2/**",
       "docs/research",
       "docs/research/**"
     ],
@@ -718,6 +751,7 @@
       ],
       "requiredDocuments": [
         "AGENTS.md",
+        "config/agent-infrastructure.json",
         "docs/AGENT_WORKFLOW.md",
         "docs/DOCUMENTATION_POLICY.md",
         "docs/LOOP_ENGINEERING.md",
