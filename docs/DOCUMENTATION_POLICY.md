@@ -16,6 +16,11 @@ source-to-mirror relationships, generated-command ownership, dependency
 edges, stale-term rules, changed-path impact rules, and the strict Task 13–29
 metadata contract.
 
+Document registry entries are required to exist by default. An intentionally
+transient, gitignored document may set `requiredOnDisk: false` so the graph can
+retain its lifecycle and ownership metadata without making a clean CI checkout
+manufacture session state.
+
 - `npm run check:agent-infra` validates that contract without writing files.
 - `node scripts/check-agent-infrastructure.cjs --report <changed-path>...`
   prints which documents require review for the supplied paths, including

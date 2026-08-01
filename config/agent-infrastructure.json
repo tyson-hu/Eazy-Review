@@ -257,7 +257,8 @@
     {
       "path": "docs/notes/handoff.md",
       "lifecycle": "status",
-      "owner": "parent-agent"
+      "owner": "parent-agent",
+      "requiredOnDisk": false
     },
     {
       "path": "docs/research",

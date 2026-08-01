@@ -28,6 +28,11 @@ stale terms, changed-path impacts, and the strict Task 13–29 metadata contract
 A Node-standard-library checker validates the graph and reports document
 impact without introducing a graph runtime.
 
+Registered documents exist in a clean checkout by default. Intentionally
+transient, gitignored session state may remain registered with
+`requiredOnDisk: false`; the checker validates it when present and permits it
+to be absent from CI.
+
 The graph owns dependencies, role authority, parallelism, review gates, and
 human approval. Skills continue to own retries, hypotheses, verification, stop
 conditions, memory, and handoff. Preparation and full Expo validation remain

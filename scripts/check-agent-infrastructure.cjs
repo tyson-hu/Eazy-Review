@@ -256,7 +256,12 @@ function validateConfig(config) {
   for (const [index, document] of config.documents.entries()) {
     const context = `documents[${index}]`;
     assertObject(document, context);
-    assertKeys(document, ['path', 'lifecycle', 'owner'], ['staleScan'], context);
+    assertKeys(
+      document,
+      ['path', 'lifecycle', 'owner'],
+      ['requiredOnDisk', 'staleScan'],
+      context,
+    );
     validateRelativePath(document.path, `${context}.path`);
     if (!LIFECYCLES.has(document.lifecycle)) {
       throw new Error(`${context}.lifecycle must be a supported lifecycle.`);
@@ -269,6 +274,12 @@ function validateConfig(config) {
       typeof document.staleScan !== 'boolean'
     ) {
       throw new Error(`${context}.staleScan must be a boolean.`);
+    }
+    if (
+      Object.hasOwn(document, 'requiredOnDisk') &&
+      typeof document.requiredOnDisk !== 'boolean'
+    ) {
+      throw new Error(`${context}.requiredOnDisk must be a boolean.`);
     }
     if (documents.has(document.path)) {
       throw new Error(`documents contains duplicate path "${document.path}".`);
@@ -562,6 +573,16 @@ function loadConfig(configPath) {
 
 function validateDeclaredPaths(repoRoot, config) {
   for (const document of config.documents) {
+    if (document.requiredOnDisk === false) {
+      const absolute = resolveDeclaredPath(repoRoot, document.path);
+      const stats = fs.lstatSync(absolute, { throwIfNoEntry: false });
+      if (stats?.isSymbolicLink()) {
+        throw new Error(
+          `Declared optional document must not be a symbolic link: ${document.path}`,
+        );
+      }
+      continue;
+    }
     assertPathExists(repoRoot, document.path, 'document');
   }
   for (const generated of config.generatedFiles) {
@@ -610,7 +631,10 @@ function validateMirrorPointers(repoRoot, config) {
 
 function collectTextFiles(repoRoot, relativePath) {
   const absolute = resolveDeclaredPath(repoRoot, relativePath);
-  const stats = fs.lstatSync(absolute);
+  const stats = fs.lstatSync(absolute, { throwIfNoEntry: false });
+  if (!stats) {
+    return [];
+  }
   if (stats.isFile()) {
     return [relativePath];
   }

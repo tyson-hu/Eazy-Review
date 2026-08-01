@@ -191,6 +191,16 @@ test('validateConfig rejects malformed manifest data', () => {
   const malformed = baseConfig();
   malformed.documents[0] = { ...malformed.documents[0], lifecycle: 'temporary' };
   assert.throws(() => validateConfig(malformed), /supported lifecycle/);
+
+  const invalidRequirement = baseConfig();
+  invalidRequirement.documents[0] = {
+    ...invalidRequirement.documents[0],
+    requiredOnDisk: 'sometimes',
+  };
+  assert.throws(
+    () => validateConfig(invalidRequirement),
+    /requiredOnDisk must be a boolean/,
+  );
 });
 
 test('runCheck reports every declared missing path', (t) => {
@@ -200,6 +210,17 @@ test('runCheck reports every declared missing path', (t) => {
     () => runCheck({ repoRoot: root, config: baseConfig() }),
     /Missing document: canonical-b\.md/,
   );
+});
+
+test('runCheck allows an explicitly optional document to be absent', (t) => {
+  const root = createFixture(t);
+  const config = baseConfig();
+  config.documents[0] = {
+    ...config.documents[0],
+    requiredOnDisk: false,
+  };
+  fs.unlinkSync(path.join(root, 'canonical-a.md'));
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
 });
 
 test('validateConfig rejects document dependency cycles', () => {
