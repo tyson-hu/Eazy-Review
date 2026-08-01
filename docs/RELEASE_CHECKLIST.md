@@ -35,7 +35,10 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Rating writes cannot set `user_ratings.id` or timestamps via client grants.
 - Community Score is recalculated by database/server-side logic; clients cannot write `rating_aggregates` or execute refresh RPCs.
 - Every product has a zero-count `rating_aggregates` row from create/seed (or Detail normalizes a missing join to `ratingCount: 0`).
-- Rating saves use a controlled server function or insert vs score-only update with unique-conflict retry (`23505`), not a client PostgREST upsert that updates identity columns.
+- Rating saves use the direct RLS-protected read/insert/update path with
+  unique-conflict retry (`23505`), not a client PostgREST upsert that updates
+  identity columns. A save function is permitted only under the defect-evidence
+  and separate-authorization exception in the accepted rating-write decision.
 - User cannot create duplicate ratings for the same product.
 - `user_ratings.product_id` and `user_ratings.user_id` are immutable after insert.
 
@@ -90,7 +93,10 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - App Store privacy answers match the actual email/profile/rating/private-note
   data inventory and any diagnostics SDKs.
 - The current App Store age-rating questionnaire, including social-media
-  capability answers, matches the release-candidate feature set.
+  capability answers, is completed in the final App Store Connect app record
+  and matches the release-candidate feature set.
+- Public-release recovery-email delivery and provider configuration are
+  verified end to end with the release-candidate environment.
 - App Store screenshots are current.
 - App display name, bundle/package identifiers, version, and build number are
   final.

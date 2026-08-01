@@ -600,9 +600,11 @@ Deliverables:
 - Data inventory covering email, profile fields, ratings, private note, and any
   diagnostics actually enabled.
 - Retention/deletion explanation and App Store privacy answers.
-- Complete the current
+- Prepare accurate answers for the current
   [App Store age-rating questionnaire](https://developer.apple.com/news/?id=tlur8uvi),
-  including accurate social-media capability answers.
+  including social-media capability answers. Task 26 completes and reverifies
+  the questionnaire after Task 25 creates the final App Store Connect app
+  record.
 - A rule to update disclosures whenever analytics or another data SDK is added.
 
 ## Task 25: EAS Environments And TestFlight Candidate
@@ -621,6 +623,9 @@ Deliverables:
 - Development, preview, and production EAS profiles/variable sets.
 - Preview connects only to staging.
 - Production connects only to a human-approved production Supabase project.
+- Document the intended public-release recovery-email provider/template
+  configuration; applying production provider changes remains a separate
+  human-approved environment action.
 - TestFlight upload and production migration/seed runbook.
 - No EAS Update rollout until runtime versioning is understood and tested.
 
@@ -646,8 +651,12 @@ Acceptance:
 - No placeholder Feed or Account surfaces.
 - Privacy/Terms links, screenshots, metadata, review notes, and deletion
   instructions are current.
-- Reverify age-rating, privacy, deletion, and support disclosures against the
-  actual release-candidate feature set before submission.
+- Complete and reverify the current App Store age-rating questionnaire in the
+  final App Store Connect app record, plus privacy, deletion, and support
+  disclosures, against the actual release-candidate feature set before
+  submission.
+- Verify public-release recovery-email delivery and provider configuration end
+  to end with the release-candidate environment and record the evidence.
 - If a later Android publication task is authorized, it must verify the
   external deletion-request URL and complete the Google Play Data Safety
   deletion declarations at the Android submission boundary.
