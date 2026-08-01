@@ -1095,8 +1095,17 @@ function reportImpactedDocuments(config, changedPaths, repoRoot = process.cwd())
           changedPath === generated.source ||
           changedPath.startsWith(`${generated.source}/`),
       );
+      const outputChanged = normalized.some(
+        (changedPath) =>
+          changedPath === generated.path ||
+          changedPath.startsWith(`${generated.path}/`),
+      );
       if ((sourceChanged || impacted.has(generated.source)) && !impacted.has(generated.path)) {
         impacted.add(generated.path);
+        changed = true;
+      }
+      if ((outputChanged || impacted.has(generated.path)) && !impacted.has(generated.source)) {
+        impacted.add(generated.source);
         changed = true;
       }
     }

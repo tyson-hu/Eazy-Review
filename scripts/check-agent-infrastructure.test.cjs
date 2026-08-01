@@ -708,6 +708,61 @@ test('report mode maps a changed mirror back to its canonical source', (t) => {
   ]);
 });
 
+test('report mode propagates generated outputs and sources bidirectionally', () => {
+  const config = {
+    documents: [
+      { path: '.agents/skills' },
+      { path: '.claude/skills' },
+      { path: 'docs/DECISIONS.md' },
+      { path: 'docs/decisions' },
+      { path: 'skills/manifest.json' },
+    ],
+    dependencies: [],
+    mirrors: [],
+    generatedFiles: [
+      {
+        path: '.agents/skills',
+        source: 'skills/manifest.json',
+      },
+      {
+        path: '.claude/skills',
+        source: 'skills/manifest.json',
+      },
+      {
+        path: 'docs/DECISIONS.md',
+        source: 'docs/decisions',
+      },
+    ],
+    impactRules: [],
+  };
+  const wrapperDocuments = [
+    '.agents/skills',
+    '.claude/skills',
+    'skills/manifest.json',
+  ];
+  const decisionDocuments = [
+    'docs/DECISIONS.md',
+    'docs/decisions',
+  ];
+  const cases = [
+    ['.agents/skills/bugfix-debug-loop/SKILL.md', wrapperDocuments],
+    ['.claude/skills/bugfix-debug-loop/SKILL.md', wrapperDocuments],
+    ['docs/DECISIONS.md', decisionDocuments],
+    ['skills/manifest.json', wrapperDocuments],
+    [
+      'docs/decisions/2026-07-03-persist-session-and-blocker-state.md',
+      decisionDocuments,
+    ],
+    ['src/unrelated.ts', []],
+  ];
+
+  for (const [changedPath, expectedDocuments] of cases) {
+    const report = reportImpactedDocuments(config, [changedPath], REPO_ROOT);
+    assert.deepEqual(report.documents, expectedDocuments);
+    assert.deepEqual(report.documents, [...new Set(report.documents)].sort());
+  }
+});
+
 test('agent-infrastructure reports include the manifest for proposed skill and Cursor paths', () => {
   const repositoryConfig = JSON.parse(
     fs.readFileSync(
