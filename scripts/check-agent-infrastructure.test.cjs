@@ -22,6 +22,7 @@ const TASK_FIELDS = [
   'Parallel-safe with',
   'Human gate',
 ];
+const REPO_ROOT = path.resolve(__dirname, '..');
 
 function write(root, relativePath, content) {
   const absolutePath = path.join(root, relativePath);
@@ -243,6 +244,58 @@ test('validateConfig rejects invalid source and mirror relationships', () => {
   );
 });
 
+test('GEMINI.md is registered as an AGENTS.md pointer and pointer content is validated', (t) => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === 'GEMINI.md'
+    ),
+    {
+      path: 'GEMINI.md',
+      lifecycle: 'mirror',
+      owner: 'tool-adapter',
+    },
+  );
+  assert.deepEqual(
+    repositoryConfig.mirrors.find(({ mirror }) => mirror === 'GEMINI.md'),
+    {
+      source: 'AGENTS.md',
+      mirror: 'GEMINI.md',
+      relationship: 'pointer',
+    },
+  );
+
+  const root = createFixture(t);
+  const config = baseConfig();
+  config.documents.push({
+    path: 'GEMINI.md',
+    lifecycle: 'mirror',
+    owner: 'tool-adapter',
+  });
+  config.mirrors.push({
+    source: 'canonical-b.md',
+    mirror: 'GEMINI.md',
+    relationship: 'pointer',
+  });
+  write(root, 'GEMINI.md', '@canonical-b.md\n');
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
+
+  write(
+    root,
+    'GEMINI.md',
+    '@different-source.md\n<!-- canonical-b.md is the expected source. -->\n',
+  );
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /Pointer mirror GEMINI\.md must contain exactly @canonical-b\.md/,
+  );
+});
+
 test('stale-term line allowlists and historical allowlists are explicit', (t) => {
   const root = createFixture(t);
   const config = baseConfig();
@@ -261,6 +314,66 @@ test('stale-term line allowlists and historical allowlists are explicit', (t) =>
   assert.throws(
     () => runCheck({ repoRoot: root, config }),
     /canonical-a\.md:1: \[old-expo-sdk\]/,
+  );
+});
+
+test('active document directories scan current ADRs but exclude registered archives', (t) => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === 'docs/decisions'
+    ),
+    {
+      path: 'docs/decisions',
+      lifecycle: 'evergreen',
+      owner: 'parent-agent',
+    },
+  );
+  assert.equal(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === 'docs/decisions/README.md'
+    )?.lifecycle,
+    'evergreen',
+  );
+  assert.equal(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === 'docs/decisions/archive'
+    )?.lifecycle,
+    'historical',
+  );
+
+  const root = createFixture(t);
+  const config = baseConfig();
+  config.documents.push(
+    {
+      path: 'docs/decisions',
+      lifecycle: 'evergreen',
+      owner: 'parent-agent',
+    },
+    {
+      path: 'docs/decisions/archive',
+      lifecycle: 'historical',
+      owner: 'historical-record',
+    },
+  );
+  config.staleTerms.historicalAllowlist.push(
+    'docs/decisions/archive',
+    'docs/decisions/archive/**',
+  );
+  write(root, 'docs/decisions/current.md', 'Use Expo SDK 57.\n');
+  write(root, 'docs/decisions/archive/old.md', 'Use Expo SDK 50.\n');
+
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
+
+  write(root, 'docs/decisions/current.md', 'Use Expo SDK 50.\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /docs\/decisions\/current\.md:1: \[old-expo-sdk\]/,
   );
 });
 
@@ -349,7 +462,7 @@ test('CLI report mode remains available while active documents are stale', (t) =
   assert.match(result.stdout, /canonical-a\.md/);
 });
 
-test('valid repository fixture passes all infrastructure checks', (t) => {
+test('valid fixture preserves mirror, dependency, and task-graph validation', (t) => {
   const root = createFixture(t);
   const summary = runCheck({ repoRoot: root, config: baseConfig() });
   assert.deepEqual(summary, {

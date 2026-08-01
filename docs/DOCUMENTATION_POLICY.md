@@ -21,6 +21,11 @@ transient, gitignored document may set `requiredOnDisk: false` so the graph can
 retain its lifecycle and ownership metadata without making a clean CI checkout
 manufacture session state.
 
+An active directory registration covers its current text descendants for
+stale-term validation. Traversal excludes any nested path separately registered
+as historical, so current ADR files remain active while
+`docs/decisions/archive/**` remains point-in-time history.
+
 - `npm run check:agent-infra` validates that contract without writing files.
 - `node scripts/check-agent-infrastructure.cjs --report <changed-path>...`
   prints which documents require review for the supplied paths, including

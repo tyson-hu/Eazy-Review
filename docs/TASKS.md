@@ -96,7 +96,7 @@ This is a planning/architecture gate, not a feature task or migration.
 
 ## Pre–Task 13 Agent Infrastructure Gate
 
-Status: **Implemented and GitHub CI validated in draft PR #28.**
+Status: **Implemented and validated in PR #28 before merge.**
 
 This unnumbered gate does not start or renumber Task 13. It establishes the
 machine-readable documentation/task graph, a read-only verifier gate, explicit
@@ -135,8 +135,8 @@ Work in order unless a task explicitly states that it is conditional.
 
 Status: **Next — not started.**
 
-Depends on: Tasks 11–12 and an exact-head passing run of the initial local-only
-database CI workflow.
+Depends on: Tasks 11–12 and a passing run of the initial local-only Database CI
+workflow that explicitly checks out the pull request head SHA.
 
 Unlocks: Task 14.
 

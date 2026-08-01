@@ -109,6 +109,11 @@
       "owner": "tool-adapter"
     },
     {
+      "path": "GEMINI.md",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
       "path": "README.md",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
@@ -218,6 +223,11 @@
       "path": "docs/archive",
       "lifecycle": "historical",
       "owner": "historical-record"
+    },
+    {
+      "path": "docs/decisions",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
     },
     {
       "path": "docs/decisions/README.md",
@@ -341,6 +351,11 @@
     {
       "source": "AGENTS.md",
       "mirror": "CLAUDE.md",
+      "relationship": "pointer"
+    },
+    {
+      "source": "AGENTS.md",
+      "mirror": "GEMINI.md",
       "relationship": "pointer"
     },
     {

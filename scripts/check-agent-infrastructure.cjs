@@ -621,6 +621,17 @@ function validateMirrorPointers(repoRoot, config) {
       throw new Error(`Mirror target must be a file: ${mirror.mirror}`);
     }
     const content = fs.readFileSync(mirrorPath, 'utf8');
+    if (
+      mirror.relationship === 'pointer' &&
+      content.trim() !== `@${mirror.source}`
+    ) {
+      throw new Error(
+        `Pointer mirror ${mirror.mirror} must contain exactly @${mirror.source}.`,
+      );
+    }
+    if (mirror.relationship === 'pointer') {
+      continue;
+    }
     if (!content.includes(mirror.source)) {
       throw new Error(
         `Mirror ${mirror.mirror} must point to canonical source ${mirror.source}.`,
@@ -629,7 +640,14 @@ function validateMirrorPointers(repoRoot, config) {
   }
 }
 
-function collectTextFiles(repoRoot, relativePath) {
+function isPathAtOrUnder(relativePath, rootPath) {
+  return relativePath === rootPath || relativePath.startsWith(`${rootPath}/`);
+}
+
+function collectTextFiles(repoRoot, relativePath, excludedPaths = []) {
+  if (excludedPaths.some((excludedPath) => isPathAtOrUnder(relativePath, excludedPath))) {
+    return [];
+  }
   const absolute = resolveDeclaredPath(repoRoot, relativePath);
   const stats = fs.lstatSync(absolute, { throwIfNoEntry: false });
   if (!stats) {
@@ -650,6 +668,13 @@ function collectTextFiles(repoRoot, relativePath) {
     for (const entry of entries) {
       const childAbsolute = path.join(currentAbsolute, entry.name);
       const childRelative = path.posix.join(currentRelative, entry.name);
+      if (
+        excludedPaths.some((excludedPath) =>
+          isPathAtOrUnder(childRelative, excludedPath),
+        )
+      ) {
+        continue;
+      }
       if (entry.isSymbolicLink()) {
         continue;
       }
@@ -680,13 +705,20 @@ function compileGlobalRegex(pattern, flags) {
 
 function checkStaleTerms(repoRoot, config) {
   const scanLifecycles = new Set(config.staleTerms.scanLifecycles);
+  const historicalPaths = config.documents
+    .filter((document) => document.lifecycle === 'historical')
+    .map((document) => document.path);
   const files = new Set();
   for (const document of config.documents) {
     if (
       scanLifecycles.has(document.lifecycle) &&
       document.staleScan !== false
     ) {
-      for (const file of collectTextFiles(repoRoot, document.path)) {
+      for (const file of collectTextFiles(
+        repoRoot,
+        document.path,
+        historicalPaths,
+      )) {
         files.add(file);
       }
     }

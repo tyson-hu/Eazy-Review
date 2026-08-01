@@ -60,7 +60,7 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 | Feature slice spanning data + UI (a `docs/TASKS.md` task) | The task in `docs/TASKS.md`, `docs/USER_FLOWS.md` (relevant flow), `docs/API_CONTRACTS.md` (types and functions), `docs/DESIGN.md` (component rules for its screens); for Tasks 15–19, also read the task-specific data, security, and tool-policy documents required by `skills/feature-slice-builder` | `docs/BLUEBOOK.md` |
 | Schema, Supabase, RLS, migrations, rating summaries | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` (affected contracts) | `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md` |
 | Frontend data shape, types, mock data, folder structure | `docs/API_CONTRACTS.md`; `docs/DATA_MODEL.md` only if a database contract changes | `docs/DESIGN.md` screen sections, `docs/BLUEBOOK.md` |
-| Bug fix | The failing flow in `docs/USER_FLOWS.md`, plus the doc for the layer the bug lives in (`docs/DESIGN.md` for UI, `docs/API_CONTRACTS.md` for data, `docs/DATA_MODEL.md` for database) | Everything else |
+| Bug fix | User-visible: the affected flow in `docs/USER_FLOWS.md` plus the layer contract. Database/tooling/CI/config/command: the affected canonical contract plus Validation Commands below. | Unrelated product flows or layer docs |
 | Refactor (no behavior change) | `docs/API_CONTRACTS.md` (folder structure and contracts covering the moved code) | Product and design docs |
 | Docs sync after code drift | `docs/DOCUMENTATION_POLICY.md` (Document Update Map) | Docs the change does not affect |
 | Validation / check run | Validation Commands section below in this file | Product docs |
@@ -286,6 +286,10 @@ Pick the narrowest command that covers the change:
 - `npm run test:db:reset` — local-only database reset, pgTAP, and concurrency
   harness. Database CI runs it only on Supabase/database-harness paths and
   always removes its local containers/volumes afterward.
+- Pull-request runs of Expo CI and Database CI explicitly check out
+  `github.event.pull_request.head.sha`; push runs fall back to `github.sha`.
+  This makes those check results exact to the tested branch head while
+  mergeability and integration protection remain separate GitHub gates.
 - `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
 - Interactive UX / simulator / mobile-web walks — `skills/interactive-preview-loop` (SOPs under `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`; evidence under `docs/evidence/`). These do not replace the npm commands above.
 - Docs-only changes use a targeted check when one exists (for example, `npm run decisions:check`); otherwise say why no command was needed in Validation.
