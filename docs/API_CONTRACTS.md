@@ -332,20 +332,16 @@ Task 12 column-level grants allow `INSERT` of identity + scores +
 the full payload can therefore require forbidden identity-column update
 privileges before immutability or RLS checks run.
 
-Required behavior:
+The Task 17 MVP path is the direct RLS-protected split path:
 
-1. Preferred: call a `SECURITY DEFINER` server function that performs the
-   insert-or-score-update atomically. It must derive ownership from
-   `auth.uid()`, reject unauthenticated calls and unpublished products, set
-   `product_id` + `auth.uid()` only on insert, update scores/`private_note`
-   only on conflict, validate score/note bounds, use
-   `SET search_path = ''` with fully qualified names, revoke execution from
-   `PUBLIC`/`anon`, and grant execution only to `authenticated`.
-2. Split path: insert identity + scores + optional note when no own rating
-   exists; update only scores + note for an existing own row.
-3. If split-path insert gets unique violation `23505` for
-   `(product_id, user_id)`, retry the permitted score/note-only update. Do not
-   surface the conflict as a failed save when the retry succeeds.
+1. Read the caller's existing rating.
+2. Insert identity, scores, and optional private note when absent.
+3. Update only scores and private note when present.
+4. On unique violation `23505`, retry the permitted update.
+
+Do not add a `SECURITY DEFINER` save function unless this accepted path proves
+insufficient through a reproducible correctness or performance defect and a
+separately authorized schema/security change.
 
 Do not ship `supabase.from('user_ratings').upsert({ product_id, user_id, … })`.
 The historical name `upsertUserRating` meant “create or replace my rating,” not
@@ -394,9 +390,13 @@ After rating mutation succeeds, invalidate:
 - `['userRating', userId, productId]`
 - `['ratedProducts', userId]`
 
-## Search And Filters
+## Task 20 Search, Filter, And Sort Options
 
-Browse should eventually support:
+These options are conditional and are not part of Tasks 15–19. Implement them
+only after Task 20 records measured catalog or query-plan evidence that
+client-side loading and search are insufficient.
+
+When triggered, Browse may support:
 - Search text.
 - Brand filter.
 - Size type filter.
@@ -414,7 +414,7 @@ Sort options:
 - Highest Price.
 - Recently Added.
 
-MVP sort options:
+Initial Task 20 sort options:
 - Highest Eazy Score.
 - Highest Community Score.
 - Lowest Price.

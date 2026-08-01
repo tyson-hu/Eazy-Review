@@ -139,32 +139,60 @@ Deliverables:
 - Committed SQL, preferably `supabase/seed.sql`, loaded by local reset.
 - Enable `[db.seed]` in `supabase/config.toml` while preserving
   `sql_paths = ["./seed.sql"]`.
-- Exactly two products with deterministic UUIDs:
-  - one complete published product with metadata, one approved HTTPS image, one
-    current Eazy assessment, and two or three verified USD/US offers;
-  - one sparse published product with no image, offer, or Eazy assessment and
-    zero community ratings.
+- Exactly two published products with deterministic UUIDs:
+  - one complete product with valid metadata, exactly one approved HTTPS image
+    with deliberate `sort_order`, exactly one current Eazy assessment, and two
+    or three verified USD/US offers;
+  - one sparse product with valid required metadata and no image, offer, Eazy
+    assessment, or user rating rows. Its product insert must still create one
+    zero-count `rating_aggregates` row through the accepted trigger.
+- The complete Eazy assessment must populate `look`, `comfort`, `quality`,
+  `outfit`, `value`, `maintenance`, `material`, `details`, `collection`,
+  `overall`, `score`, and `methodology_version`, with `is_current = true`.
+- Every complete-product offer must use a deterministic UUID, non-empty
+  `website_name`, an HTTPS `website_link`, a non-null price greater than zero,
+  uppercase `USD` / `US`, and a non-null `last_checked_at` based on actual
+  verification. `size` may be null only when the source is not size-specific.
 - Deterministic IDs for every product, image, assessment, and offer.
-- One transaction with idempotent `INSERT ... ON CONFLICT` behavior.
+- One transaction with conflict-aware inserts that are truly idempotent: when
+  existing fixture data already matches, a second application must add no rows
+  and change no values or timestamps.
 - Explicit `is_published`, deliberate image `sort_order`, uppercase `USD` /
   `US`, and `last_checked_at` only for an actually verified offer.
 - One focused seed acceptance test.
-- A short Task 13 status update; update README only if local reset changes.
+- Use the Task 13 implementation PR description as the short status/evidence
+  record. It must include stable IDs, image source and rights/permission basis,
+  image review date, retailer/source links, verified price/currency/region and
+  check time, relevant offer exclusions, and first-run versus same-database
+  second-run row counts plus before/after comparisons of every seeded value and
+  timestamp (or equivalent acceptance-test output). Do not create another
+  evidence directory unless the existing workflow requires it. Update README
+  only if local reset behavior changes.
 
 Acceptance:
 
 - `npm run test:db:reset` applies every migration, loads the configured seed,
   and passes the database suites.
-- Applying the seed twice to the same existing local database creates no
-  duplicates; two independent fresh resets do not prove idempotency.
-- Each product has exactly one trigger-created zero-count
-  `rating_aggregates` row.
-- Anonymous reads return both published products.
-- The complete product has deterministic image and offer data.
-- The sparse product maps cleanly to `imageUrl: null`, no price, no Eazy Score,
-  and zero Community ratings.
+- Apply the seed twice to the same existing local database. The second
+  application creates no duplicates and changes no fixture values or
+  timestamps; two independent fresh resets do not prove idempotency.
+- Each product has exactly one trigger-created `rating_aggregates` row with
+  `rating_count = 0` and all average and score fields null.
+- Seed code never inserts into or updates `rating_aggregates` directly.
+- Anonymous reads return both published products under the accepted Task 12
+  authorization rules.
+- The complete product has exactly one deterministic image, one fully populated
+  current Eazy assessment, and two or three deterministic verified offers that
+  satisfy the required HTTPS, price, currency, region, and verification fields.
+- The sparse product has no `product_images`, `product_offers`,
+  `eazy_assessments`, or `user_ratings` rows; only its trigger-created empty
+  aggregate exists. Task 15 owns app normalization to `imageUrl: null`, no
+  price, no Eazy Score, and an empty Community Score.
 - No `auth.users`, `profiles`, or `user_ratings` fixtures are created.
-- Seed code never inserts or updates `rating_aggregates`.
+- The Task 13 PR description contains the required image/offer provenance and
+  same-database idempotency evidence for row counts, fixture values, and
+  timestamps before and after the second application.
+- `npm run check` and `git diff --check` pass.
 - Staging seed application remains a separate explicit human-approved action.
 - Production remains untouched.
 
@@ -236,6 +264,11 @@ Dependencies: Tasks 13–14 accepted.
 Deliverables:
 
 - `ProductDetailPublicData` plus focused product repository/query functions.
+- `ProductDetailPublicData` contains only public catalog, assessment, offer,
+  and Community Score data. Task 15 excludes `myRating` and every other
+  viewer-owned field from that public payload and cache. Later tasks fetch
+  viewer-owned state separately after authenticated identity is available;
+  Task 17 owns the user-scoped My Rating query and Product Detail composition.
 - Browse and Product Detail queries/adapters.
 - Deterministic primary-image selection:
   `sort_order ASC`, `created_at ASC`, then `id ASC`.
@@ -339,7 +372,8 @@ Deliverables:
 
 Acceptance:
 
-- Exactly one row exists per user/product.
+- After a successful first save, exactly one rating row exists for that
+  user/product pair; no pair can contain more than one row.
 - Concurrent first saves do not expose an unhandled unique error.
 - Cross-user reads never return `private_note`.
 - My Rating and server-owned rating count/averages refresh from the database.
@@ -366,8 +400,22 @@ Deliverables:
 
 - Forgot Password and Reset Password routes.
 - Recovery-only session handling.
-- Development, preview, and production redirect URL matrix using the existing
-  `eazyreview` scheme.
+- Document the development, preview/staging, and production recovery redirect
+  matrix using the existing `eazyreview` scheme.
+- Configure and verify the local/development recovery redirect during
+  implementation.
+- If physical-device acceptance requires preview/staging configuration, Task
+  18 may configure that environment only after separate human approval and
+  must record evidence of both the environment action and the resulting
+  physical-device verification.
+- Task 18 does not configure production. Task 25 completes any remaining
+  preview/staging setup from the matrix and prepares the exact production
+  redirect configuration for human application with recorded evidence. Task
+  26 owns end-to-end verification of the production recovery link.
+- Default provider templates are acceptable for development and internal beta.
+  Branded email templates and dedicated SMTP are not Task 18 blockers.
+  Public-release email delivery and provider configuration are verified during
+  Tasks 25–26.
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
 - Physical-device deep-link verification in a development or preview build.
@@ -397,8 +445,11 @@ Deliverables:
 - One authenticated Supabase Edge Function.
 - Server validation of the bearer session and caller-derived target user ID.
 - No authoritative user ID accepted from the client.
-- Chosen session-revocation policy plus hard deletion with a server-only
-  secret.
+- Revoke all refresh sessions for the verified caller, then hard-delete that
+  same Auth user with a server-only secret.
+- Document the behavior and maximum remaining lifetime of already-issued
+  access tokens after session revocation or deletion. Do not claim
+  instantaneous cryptographic invalidation unless it is demonstrated.
 - Existing FK cascades remove profile/ratings and accepted triggers preserve
   aggregates.
 - Local session and user-scoped Query cleanup.
@@ -414,6 +465,13 @@ Acceptance:
 - Failed server validation performs no deletion.
 - Profile and ratings cascade; affected aggregates remain correct.
 - Local session/cache are removed and deleted credentials cannot sign in.
+- A second pre-existing session for the deleted account cannot refresh after
+  global revocation. After its already-issued access token reaches the
+  configured expiry, it cannot establish a new authenticated application
+  session.
+- Already-issued access tokens are tested and documented against the
+  configured JWT-expiry bound, which must be no more than one hour for the MVP;
+  the app does not claim immediate cryptographic invalidation.
 - A human records the staging destructive test.
 - Production deletion is never performed by a coding agent or tool.
 
@@ -484,6 +542,8 @@ Deliverables:
 - Account-switch integration coverage proving profile and rating cache
   isolation across a real multi-feature transition.
 - Tests outside the app route directory.
+- Add or extend a path-filtered CI workflow that runs the frontend test suite
+  for relevant application changes.
 - Path-filtered database CI job.
 - One small Maestro smoke flow for the critical journey, run on demand or by
   deliberate PR trigger rather than every minor change.
@@ -491,7 +551,8 @@ Deliverables:
 
 Acceptance:
 
-- Frontend tests and database CI run in documented commands/workflows.
+- Frontend tests and database CI run in documented commands and path-filtered
+  workflows; frontend tests are not local-only.
 - Focused tests from Tasks 15–19 remain green and missing cross-feature gaps
   are covered without broad snapshot duplication.
 - Account switching cannot expose the prior user’s profile or rating cache.
@@ -533,13 +594,26 @@ Dependencies: Product data collection behavior through Task 23 is stable.
 
 Deliverables:
 
-- Final Privacy Policy, Terms of Use, and support/contact route.
-- Direct in-app Privacy, Terms, and support/contact links plus public URLs for
-  store metadata. Do not add a generic Settings route unless concrete settings
-  receive explicit task ownership.
+- Final Privacy Policy, Terms of Use, and support/contact routes, each with a
+  functional public web URL for store metadata.
+- Direct Account links to the Terms, Privacy, and support/contact routes plus a
+  public account-deletion information URL. The public destination explains the
+  in-app deletion path and the data deletion/retention behavior; it is not a
+  second in-app deletion action or a new Expo route. Do not add a generic
+  Settings route unless concrete settings receive explicit task ownership.
+- If Android distribution is planned, provide a functional public web resource
+  where users can request account and associated-data deletion without the
+  installed app. Explain identity verification and retention, and prepare its
+  URL for the Google Play Data Safety form under the
+  [Google Play account-deletion requirements](https://support.google.com/googleplay/android-developer/answer/13327111?hl=en-EN).
 - Data inventory covering email, profile fields, ratings, private note, and any
   diagnostics actually enabled.
 - Retention/deletion explanation and App Store privacy answers.
+- Prepare accurate answers for the current
+  [App Store age-rating questionnaire](https://developer.apple.com/news/?id=tlur8uvi),
+  including social-media capability answers. Task 26 completes and reverifies
+  the questionnaire after Task 25 creates the final App Store Connect app
+  record.
 - A rule to update disclosures whenever analytics or another data SDK is added.
 
 ## Task 25: EAS Environments And TestFlight Candidate
@@ -558,6 +632,14 @@ Deliverables:
 - Development, preview, and production EAS profiles/variable sets.
 - Preview connects only to staging.
 - Production connects only to a human-approved production Supabase project.
+- Complete any remaining preview/staging recovery-redirect setup from the Task
+  18 matrix.
+- Prepare the exact production recovery-redirect configuration from the Task
+  18 matrix. A human applies the production environment change and records the
+  resulting evidence; a coding agent does not change production configuration.
+- Document the intended public-release recovery-email provider/template
+  configuration; applying production provider changes remains a separate
+  human-approved environment action.
 - TestFlight upload and production migration/seed runbook.
 - No EAS Update rollout until runtime versioning is understood and tested.
 
@@ -583,9 +665,29 @@ Acceptance:
 - No placeholder Feed or Account surfaces.
 - Privacy/Terms links, screenshots, metadata, review notes, and deletion
   instructions are current.
+- Complete and reverify the current App Store age-rating questionnaire in the
+  final App Store Connect app record, plus privacy, deletion, and support
+  disclosures, against the actual release-candidate feature set before
+  submission.
+- Verify public-release recovery-email delivery and provider configuration end
+  to end with the release-candidate environment and record the evidence.
+- Prove end to end that a public-release recovery email opens the installed
+  release-candidate build through the approved production redirect and
+  completes the verified password-reset flow.
+- If a later Android publication task is authorized, it must verify the
+  external deletion-request URL and complete the Google Play Data Safety
+  deletion declarations at the Android submission boundary.
 - Production variables, schema, and grants match the approved release plan.
 - Known limitations and rollback decision are written.
 - A human chooses staged/manual release and completes App Review submission.
+
+Boundaries:
+
+- This task is an iOS-first App Store submission. Android scope remains the
+  compatibility smoke owned by Task 23.
+- Android production build upload, Play Console listing, testing-track
+  promotion, review submission, and release decision require a separately
+  authorized Android publication task.
 
 ## Task 27: Post-Launch Operations
 
@@ -601,6 +703,8 @@ Deliverables:
 - Run aggregate consistency checks.
 - Keep rollback, catalog correction ownership, dependency/security update, and
   incident routines.
+- Maintain a lightweight release-incident record containing impact, response,
+  rollback decision, root cause, and durable correction.
 - Add Sentry only when built-in logs and beta/production evidence justify the
   SDK and disclosure cost.
 
@@ -614,8 +718,11 @@ stable.
 Potential scope:
 
 - Source identity/provenance, image rights, unique external IDs, idempotent
-  import jobs, freshness timestamps, source-specific rate/error handling, and
-  a minimal review workflow.
+  import jobs, freshness timestamps, source-specific rate limiting, retry
+  limits, error handling, and a minimal review workflow.
+- Choose and document catalog asset hosting only when the importer proves it is
+  needed. Cloudflare R2 may be evaluated then; it is not an established
+  requirement. Importing an image does not establish usage rights.
 - Server/worker execution only; never mobile-client scraping.
 - Keep imported products unpublished until validation passes.
 - Add offer business keys or other schema only when an actual importer proves
@@ -636,3 +743,7 @@ Boundary:
 - Keep this read-only and outside the mobile release critical path.
 - Consume reviewed product data; never become another source of truth for
   scores or catalog records.
+- Use the separately governed
+  [Eazy Review Lab plan](https://github.com/tyson-hu/eazy-review-lab/blob/main/PLAN.md#3-fixed-decisions)
+  for publishing deployment and asset decisions. This mobile-app repository
+  does not duplicate or override that workstream's provider configuration.

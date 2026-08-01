@@ -416,7 +416,11 @@ Render only the controls owned by the current accepted task:
 - Task 19 adds Delete Account with permanent-data explanation, destructive
   confirmation, reauthentication when required, and honest loading/error
   states.
-- Task 24 adds direct Terms of Use, Privacy Policy, and support/contact links.
+- Task 24 adds direct Terms of Use, Privacy Policy, and support/contact routes
+  plus a public account-deletion information URL. The deletion-information
+  link opens the public web destination; it does not add another destructive
+  action or a native Expo route. Task 19 remains the sole in-app Delete Account
+  action.
 
 No generic Settings route is planned for the MVP. Add one only when concrete
 settings have explicit task ownership.

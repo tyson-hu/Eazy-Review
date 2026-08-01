@@ -35,7 +35,10 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Rating writes cannot set `user_ratings.id` or timestamps via client grants.
 - Community Score is recalculated by database/server-side logic; clients cannot write `rating_aggregates` or execute refresh RPCs.
 - Every product has a zero-count `rating_aggregates` row from create/seed (or Detail normalizes a missing join to `ratingCount: 0`).
-- Rating saves use a controlled server function or insert vs score-only update with unique-conflict retry (`23505`), not a client PostgREST upsert that updates identity columns.
+- Rating saves use the direct RLS-protected read/insert/update path with
+  unique-conflict retry (`23505`), not a client PostgREST upsert that updates
+  identity columns. A save function is permitted only under the defect-evidence
+  and separate-authorization exception in the accepted rating-write decision.
 - User cannot create duplicate ratings for the same product.
 - `user_ratings.product_id` and `user_ratings.user_id` are immutable after insert.
 
@@ -54,7 +57,8 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 ## Automated Verification
 
-- Frontend unit/integration tests pass.
+- Frontend unit/integration tests pass in the documented path-filtered CI
+  workflow for relevant application changes; they are not local-only.
 - Database migrations, pgTAP authorization/behavior tests, and concurrency
   races pass in the documented CI path.
 - The critical Browse → Detail → auth → Rate/Edit journey passes its small E2E
@@ -74,17 +78,31 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Human-run deletion evidence covers a second pre-existing session failing to
   refresh, deleted credentials failing to sign in, profile/rating cascades,
   correct retained Community aggregates, local cache cleanup, and the
-  configured residual JWT-expiry bound.
+  configured residual JWT-expiry bound, which is no more than one hour for the
+  MVP.
 - Reset Password updates credentials only from a verified recovery session;
   direct navigation and expired/invalid links fail safely.
 
 ## Store Readiness
 
 - App icon and splash assets are final.
-- Final Terms, Privacy, and support/contact surfaces exist and have public
-  metadata URLs.
+- Final Terms, Privacy, and support/contact routes plus the public
+  account-deletion information URL are linked directly from Account and have
+  the required public metadata URLs.
+- At the later Android publication boundary only, verify the functional
+  external account-deletion request resource prepared conditionally by Task 24
+  and complete its URL and deletion declarations in Google Play Data Safety.
+  This Play Console verification is not part of Task 26's iOS release gate.
 - App Store privacy answers match the actual email/profile/rating/private-note
   data inventory and any diagnostics SDKs.
+- The current App Store age-rating questionnaire, including social-media
+  capability answers, is completed in the final App Store Connect app record
+  and matches the release-candidate feature set.
+- Public-release recovery-email delivery and provider configuration are
+  verified end to end with the release-candidate environment.
+- A public-release recovery email opens the installed release-candidate build
+  through the approved production redirect and completes the verified
+  password-reset flow end to end.
 - App Store screenshots are current.
 - App display name, bundle/package identifiers, version, and build number are
   final.
