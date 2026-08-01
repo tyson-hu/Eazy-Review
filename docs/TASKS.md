@@ -96,7 +96,7 @@ This is a planning/architecture gate, not a feature task or migration.
 
 ## Pre–Task 13 Agent Infrastructure Gate
 
-Status: **Implemented and locally validated — first GitHub CI run pending.**
+Status: **Implemented and GitHub CI validated in draft PR #28.**
 
 This unnumbered gate does not start or renumber Task 13. It establishes the
 machine-readable documentation/task graph, a read-only verifier gate, explicit
@@ -104,6 +104,8 @@ parent ownership for route preparation and full Expo validation, Expo CI route
 preparation/drift detection, and local-only path-filtered database CI. It changes
 no product behavior, schema, migration, RLS policy, Data API grant, seed,
 provider configuration, or remote environment.
+
+Exact workflow and Database CI credential-log evidence is recorded in PR #28.
 
 ## Revised Sequence
 
