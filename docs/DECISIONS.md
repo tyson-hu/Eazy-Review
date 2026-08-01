@@ -12,7 +12,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | --- | --- | --- | --- | --- |
 | Product and UX | [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Accepted | — | 2026-07-30 |
 | Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 15, 17 | 2026-07-30 |
-| Data and Supabase | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Accepted | 12, 17 | 2026-07-30 |
+| Data and Supabase | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Accepted | 12, 17 | 2026-08-01 |
 | Data and Supabase | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Accepted | 11, 13, 15 | 2026-07-30 |
 | Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 15, 17 | 2026-07-30 |
 | Data and Supabase | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Accepted | 11, 12, 15 | 2026-07-30 |
@@ -35,12 +35,12 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-08-01 |
 | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Architecture | Accepted | 2026-07-30 |
 | [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Product and UX | Accepted | 2026-07-30 |
 | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-07-30 |
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-07-30 |
 | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-30 |
-| [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-07-30 |
 | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Data and Supabase | Accepted | 2026-07-30 |
 | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Data and Supabase | Accepted | 2026-07-30 |
 | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-30 |

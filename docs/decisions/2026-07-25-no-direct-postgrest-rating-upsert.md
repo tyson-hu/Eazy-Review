@@ -1,7 +1,7 @@
 ---
 id: decision-no-direct-postgrest-rating-upsert
 date: 2026-07-25
-updated: 2026-07-30
+updated: 2026-08-01
 status: accepted
 area: data-supabase
 tasks: [12, 17]
@@ -23,32 +23,22 @@ observe a missing row and race on insert. The same row contains
 
 ## Decision
 
-`saveUserRating` uses an authorized insert for a missing rating and a
-score/private-note-only update for an existing rating, or calls a
-`SECURITY DEFINER` server function that enforces the same restrictions
-inside the function body. The client does not issue a direct PostgREST
-`.upsert()` of rating identity columns.
+The Task 17 MVP `saveUserRating` path is the direct RLS-protected split path:
+
+1. Read the caller's existing rating.
+2. Insert identity, scores, and optional `private_note` when absent.
+3. Update only scores and `private_note` when present.
+4. On PostgreSQL unique violation `23505` for `(product_id, user_id)`, retry
+   the permitted score/private-note-only update.
+
+Do not add a `SECURITY DEFINER` save function unless this accepted path proves
+insufficient through a reproducible correctness or performance defect and a
+separately authorized schema/security change. The client does not issue a
+direct PostgREST `.upsert()` of rating identity columns.
 
 Raw `user_ratings` reads remain owner-only. Public community surfaces read
 server-owned `rating_aggregates`; they never expose another user's
 `private_note`.
-
-When the preferred definer helper is used, it must:
-
-- derive the owner solely from `auth.uid()` (no trusted client `user_id`);
-- reject unauthenticated callers and unpublished products;
-- on insert, write validated `product_id` and server-derived `auth.uid()` with
-  scores and `private_note`; on conflict, update only scores and
-  `private_note` (never identity or audit columns);
-- use `SECURITY DEFINER SET search_path = ''` with fully qualified names;
-- `REVOKE EXECUTE` from `PUBLIC` / `anon` and `GRANT EXECUTE` only to
-  `authenticated`.
-
-When using the split insert/update path, an insert that fails with PostgreSQL
-unique-violation `23505` on `(product_id, user_id)` must immediately retry the
-permitted score/private-note-only update for that user and product. Prefer the
-atomic definer helper when available; either path must preserve the
-no-identity-upsert rule.
 
 ## Consequences
 
@@ -56,14 +46,17 @@ no-identity-upsert rule.
 - Ownership, product publication, and immutable identity rules stay enforced.
 - A user's private note cannot leak through public Community Score reads.
 - Concurrent first-save races do not drop the later submission: conflict
-  recovery or an atomic helper leaves one complete rating row.
+  recovery leaves one complete rating row.
 - Task 17 must test concurrent first saves and prove neither request ends as an
   unhandled unique-constraint failure.
+- A new save function requires both defect evidence and separate authorization
+  for the schema/security change.
 
 ## Revisit when
 
-The API supports a single atomic mutation that preserves the same column,
-ownership, publication, and audit-field restrictions.
+A reproducible correctness or performance defect shows the accepted direct
+path is insufficient and a separately authorized schema/security change can
+preserve the same column, ownership, publication, and audit-field restrictions.
 
 ## Related
 

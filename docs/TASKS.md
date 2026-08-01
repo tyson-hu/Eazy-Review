@@ -403,6 +403,10 @@ Deliverables:
 - Configure the local/development recovery redirect during implementation.
 - Preview/staging and production redirect configuration are separate
   human-approved environment actions and must record their own evidence.
+- Default provider templates are acceptable for development and internal beta.
+  Branded email templates and dedicated SMTP are not Task 18 blockers.
+  Public-release email delivery and provider configuration are verified during
+  Tasks 25–26.
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
 - Physical-device deep-link verification in a development or preview build.
