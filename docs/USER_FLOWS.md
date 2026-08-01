@@ -49,6 +49,9 @@ Non-tab screens:
 - Privacy.
 - Support / Contact.
 
+External destination from Account:
+- Account deletion information (public web URL; not an Expo route).
+
 Product Detail opens from:
 - Feed product card.
 - Browse product card.
@@ -59,8 +62,8 @@ Rating Form opens from Product Detail.
 Route ownership is phased: Task 16 adds core auth routes and Account states;
 Task 17 adds Rated Products; Task 18 adds recovery routes; Task 19 adds the
 Delete Account action and protected server boundary; Task 24 adds direct Terms,
-Privacy, and support/contact routes. No generic Settings route is planned for
-the MVP.
+Privacy, and support/contact routes plus the public account-deletion
+information URL. No generic Settings route is planned for the MVP.
 
 ## Flow 1: Browse Without Login
 
@@ -199,7 +202,9 @@ secret. Task 19 owns this flow. A human—not a coding agent or agent-controlled
 browser/MCP/SQL/admin tool—runs the destructive verification, including a
 second pre-existing session that can no longer refresh. Already-issued JWTs
 may remain valid until the configured expiry; the verification records that
-bounded lifetime.
+bounded lifetime. Task 24's public account-deletion information link explains
+this in-app path and the data deletion/retention behavior; it is informational
+and does not replace or invoke the Task 19 action.
 
 ## Browse Requirements
 

@@ -452,8 +452,10 @@ Acceptance:
 - Failed server validation performs no deletion.
 - Profile and ratings cascade; affected aggregates remain correct.
 - Local session/cache are removed and deleted credentials cannot sign in.
-- A second pre-existing session for the deleted account cannot refresh or
-  establish a new authenticated application session.
+- A second pre-existing session for the deleted account cannot refresh after
+  global revocation. After its already-issued access token reaches the
+  configured expiry, it cannot establish a new authenticated application
+  session.
 - Already-issued access tokens are tested and documented against the
   configured JWT-expiry bound; the app does not claim immediate cryptographic
   invalidation.
@@ -580,10 +582,11 @@ Dependencies: Product data collection behavior through Task 23 is stable.
 Deliverables:
 
 - Final Privacy Policy, Terms of Use, and support/contact route.
-- Direct Privacy, Terms, support/contact, and account-deletion information
-  links in the Account surface, plus public URLs for store metadata. Do not add
-  a generic Settings route unless concrete settings receive explicit task
-  ownership.
+- Direct Account links to the Terms, Privacy, and support/contact routes plus a
+  public account-deletion information URL. The public destination explains the
+  in-app deletion path and the data deletion/retention behavior; it is not a
+  second in-app deletion action or a new Expo route. Do not add a generic
+  Settings route unless concrete settings receive explicit task ownership.
 - If Android distribution is planned, provide a functional public web resource
   where users can request account and associated-data deletion without the
   installed app. Explain identity verification and retention, and prepare its
@@ -686,8 +689,9 @@ Potential scope:
 - Source identity/provenance, image rights, unique external IDs, idempotent
   import jobs, freshness timestamps, source-specific rate limiting, retry
   limits, error handling, and a minimal review workflow.
-- Use the established Cloudflare R2 asset strategy for approved public catalog
-  images where appropriate; importing an image does not establish usage rights.
+- Choose and document catalog asset hosting only when the importer proves it is
+  needed. Cloudflare R2 may be evaluated then; it is not an established
+  requirement. Importing an image does not establish usage rights.
 - Server/worker execution only; never mobile-client scraping.
 - Keep imported products unpublished until validation passes.
 - Add offer business keys or other schema only when an actual importer proves
@@ -708,6 +712,7 @@ Boundary:
 - Keep this read-only and outside the mobile release critical path.
 - Consume reviewed product data; never become another source of truth for
   scores or catalog records.
-- Deploy public publishing outputs through the existing Cloudflare-oriented
-  personal publishing and asset strategy unless a later hosting decision
-  replaces it.
+- Use the separately governed
+  [Eazy Review Lab plan](https://github.com/tyson-hu/eazy-review-lab/blob/main/PLAN.md#3-fixed-decisions)
+  for publishing deployment and asset decisions. This mobile-app repository
+  does not duplicate or override that workstream's provider configuration.

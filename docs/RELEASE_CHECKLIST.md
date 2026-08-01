@@ -81,8 +81,9 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 ## Store Readiness
 
 - App icon and splash assets are final.
-- Final Terms, Privacy, support/contact, and account-deletion information are
-  linked directly from Account and have the required public metadata URLs.
+- Final Terms, Privacy, and support/contact routes plus the public
+  account-deletion information URL are linked directly from Account and have
+  the required public metadata URLs.
 - If Android distribution is planned, a functional external account-deletion
   request resource is available without the installed app, and its URL and
   deletion declarations are verified in Google Play Data Safety.
