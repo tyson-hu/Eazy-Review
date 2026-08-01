@@ -402,9 +402,16 @@ Deliverables:
 - Recovery-only session handling.
 - Document the development, preview/staging, and production recovery redirect
   matrix using the existing `eazyreview` scheme.
-- Configure the local/development recovery redirect during implementation.
-- Preview/staging and production redirect configuration are separate
-  human-approved environment actions and must record their own evidence.
+- Configure and verify the local/development recovery redirect during
+  implementation.
+- If physical-device acceptance requires preview/staging configuration, Task
+  18 may configure that environment only after separate human approval and
+  must record evidence of both the environment action and the resulting
+  physical-device verification.
+- Task 18 does not configure production. Task 25 completes any remaining
+  preview/staging setup from the matrix and prepares the exact production
+  redirect configuration for human application with recorded evidence. Task
+  26 owns end-to-end verification of the production recovery link.
 - Default provider templates are acceptable for development and internal beta.
   Branded email templates and dedicated SMTP are not Task 18 blockers.
   Public-release email delivery and provider configuration are verified during
@@ -625,6 +632,11 @@ Deliverables:
 - Development, preview, and production EAS profiles/variable sets.
 - Preview connects only to staging.
 - Production connects only to a human-approved production Supabase project.
+- Complete any remaining preview/staging recovery-redirect setup from the Task
+  18 matrix.
+- Prepare the exact production recovery-redirect configuration from the Task
+  18 matrix. A human applies the production environment change and records the
+  resulting evidence; a coding agent does not change production configuration.
 - Document the intended public-release recovery-email provider/template
   configuration; applying production provider changes remains a separate
   human-approved environment action.
@@ -659,6 +671,9 @@ Acceptance:
   submission.
 - Verify public-release recovery-email delivery and provider configuration end
   to end with the release-candidate environment and record the evidence.
+- Prove end to end that a public-release recovery email opens the installed
+  release-candidate build through the approved production redirect and
+  completes the verified password-reset flow.
 - If a later Android publication task is authorized, it must verify the
   external deletion-request URL and complete the Google Play Data Safety
   deletion declarations at the Android submission boundary.

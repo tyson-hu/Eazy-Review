@@ -89,9 +89,10 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Final Terms, Privacy, and support/contact routes plus the public
   account-deletion information URL are linked directly from Account and have
   the required public metadata URLs.
-- If Android distribution is planned, a functional external account-deletion
-  request resource is available without the installed app, and its URL and
-  deletion declarations are verified in Google Play Data Safety.
+- At the later Android publication boundary only, verify the functional
+  external account-deletion request resource prepared conditionally by Task 24
+  and complete its URL and deletion declarations in Google Play Data Safety.
+  This Play Console verification is not part of Task 26's iOS release gate.
 - App Store privacy answers match the actual email/profile/rating/private-note
   data inventory and any diagnostics SDKs.
 - The current App Store age-rating questionnaire, including social-media
@@ -99,6 +100,9 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
   and matches the release-candidate feature set.
 - Public-release recovery-email delivery and provider configuration are
   verified end to end with the release-candidate environment.
+- A public-release recovery email opens the installed release-candidate build
+  through the approved production redirect and completes the verified
+  password-reset flow end to end.
 - App Store screenshots are current.
 - App display name, bundle/package identifiers, version, and build number are
   final.
