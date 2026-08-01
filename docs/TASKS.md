@@ -2,15 +2,10 @@
 
 ## Current Repo Status
 
-As of the post–Task 12 review on 2026-07-30:
-
 - Tasks 1–12 are accepted. The Browse → Product Detail → Rating Form mock
   journey passed its UX gate, and the Supabase schema, trigger-owned Community
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete.
-- Task 12 passed 418 local database assertions, both concurrency races,
-  repository security checks, and explicitly authorized staging acceptance.
-  Production was not touched.
 - Expo still reads mock catalog/detail data and stores My Rating in
   session-only memory. No Supabase client, generated database types, or
   TanStack Query runtime is installed yet.
@@ -18,6 +13,8 @@ As of the post–Task 12 review on 2026-07-30:
   light appearance, and does not advertise iPad support for the MVP.
 - Task 13 is the next implementation task. It has not started.
 
+Accepted Tasks 11–12 database evidence is preserved at
+[`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
 The prior detailed implementation record and superseded Tasks 13–18 plan remain
 available at
 [`docs/archive/tasks/2026-07-29-pre-review-task-plan.md`](archive/tasks/2026-07-29-pre-review-task-plan.md).
@@ -67,8 +64,7 @@ This is a planning/architecture gate, not a feature task or migration.
 ### Cleanup completed by this gate
 
 - Corrected stale completed-task statuses and archived implementation history.
-- Corrected the frontend comment from `rating_summaries` to
-  `rating_aggregates`.
+- Corrected stale frontend aggregate naming.
 - Replaced stale Feed mock-wiring copy and made Browse the initial destination.
 - Set the MVP app configuration to **Eazy Review**, light-only, and
   iPhone-only on iOS.
@@ -98,6 +94,17 @@ This is a planning/architecture gate, not a feature task or migration.
 - Production database access remains forbidden to coding agents and tools.
 - Account-deletion execution remains human-only on every environment.
 
+## Pre–Task 13 Agent Infrastructure Gate
+
+Status: **Implemented and locally validated — first GitHub CI run pending.**
+
+This unnumbered gate does not start or renumber Task 13. It establishes the
+machine-readable documentation/task graph, a read-only verifier gate, explicit
+parent ownership for route preparation and full Expo validation, Expo CI route
+preparation/drift detection, and local-only path-filtered database CI. It changes
+no product behavior, schema, migration, RLS policy, Data API grant, seed,
+provider configuration, or remote environment.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.
@@ -113,7 +120,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
-| 22 | Automated App Tests And Database CI | Pending |
+| 22 | Broader Automated App Tests And CI | Pending |
 | 23 | Reliability, Accessibility, And Device QA | Pending |
 | 24 | Privacy, Legal, And Store Disclosures | Pending |
 | 25 | EAS Environments And TestFlight Candidate | Pending |
@@ -126,13 +133,22 @@ Work in order unless a task explicitly states that it is conditional.
 
 Status: **Next — not started.**
 
+Depends on: Tasks 11–12 and an exact-head passing run of the initial local-only
+database CI workflow.
+
+Unlocks: Task 14.
+
+Execution owner: Parent.
+
+Parallel-safe with: None.
+
+Human gate: Staging seed application requires explicit approval; production
+remains forbidden.
+
 Goal: create the smallest trustworthy connected catalog needed to validate real
 Browse and Product Detail reads.
 
-Dependencies:
-
-- Tasks 11–12 accepted.
-- Canonical schema and authorization behavior remain unchanged.
+Canonical schema and authorization behavior remain unchanged.
 
 Deliverables:
 
@@ -207,10 +223,20 @@ Non-goals:
 
 Status: Pending.
 
+Depends on: Task 13.
+
+Unlocks: Task 15.
+
+Execution owner: Parent; bounded non-sensitive implementation packets may use
+the generic implementer.
+
+Parallel-safe with: None.
+
+Human gate: Human acceptance is required before Task 15; no environment action
+is implied.
+
 Goal: install and configure the durable application data layer before any
 screen depends on it.
-
-Dependencies: Task 13 accepted.
 
 Deliverables:
 
@@ -220,6 +246,8 @@ Deliverables:
 - Minimal frontend test foundation: `jest-expo`,
   `@testing-library/react-native`, the `expo-router/testing-library` utilities
   when route behavior needs them, and a stable `npm test` script.
+- Path-filtered frontend test CI when that harness lands; frontend tests must
+  not remain local-only.
 - One smoke test outside `app/` proving the frontend harness runs.
 - Reproducibly generated Supabase database types.
 - One initialized Supabase client and one Query client.
@@ -244,6 +272,7 @@ Acceptance:
   NetInfo.
 - Auth transitions can remove prior user-scoped data.
 - `npm test` runs the harness smoke test successfully.
+- Relevant frontend paths run that same harness in CI.
 - Existing mock screens still run at task completion.
 
 Non-goals:
@@ -256,10 +285,19 @@ Non-goals:
 
 Status: Pending.
 
+Depends on: Tasks 13–14.
+
+Unlocks: Task 16, conditional Task 20, and contributes to Task 21.
+
+Execution owner: Generic implementer under one bounded feature-slice packet;
+the parent owns scope and acceptance.
+
+Parallel-safe with: None.
+
+Human gate: Human acceptance is required before Task 16.
+
 Goal: replace mock reads on Browse and Product Detail with published Supabase
 data while keeping browsing anonymous.
-
-Dependencies: Tasks 13–14 accepted.
 
 Deliverables:
 
@@ -304,9 +342,19 @@ Acceptance:
 
 Status: Pending.
 
-Goal: add only the identity/session behavior needed to protect the rating flow.
+Depends on: Task 15.
 
-Dependencies: Task 15 accepted.
+Unlocks: Task 17, Task 18, and contributes to Task 19.
+
+Execution owner: Parent — verified strong; the generic implementer may receive
+only bounded non-sensitive leaf packets.
+
+Parallel-safe with: None.
+
+Human gate: Human acceptance is required before Tasks 17–18; any staging auth
+configuration is a separate explicit action.
+
+Goal: add only the identity/session behavior needed to protect the rating flow.
 
 Deliverables:
 
@@ -341,10 +389,21 @@ Non-goals:
 
 Status: Pending.
 
+Depends on: Task 16.
+
+Unlocks: Task 19, Task 21, and contributes to Task 22.
+
+Execution owner: Parent — verified strong; the generic implementer may receive
+only bounded non-sensitive leaf packets.
+
+Parallel-safe with: Task 18 after Task 16 is accepted and edit scopes are
+file-disjoint.
+
+Human gate: Staging rating writes or acceptance require separate explicit
+approval; production remains forbidden.
+
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products.
-
-Dependencies: Task 16 accepted.
 
 Write contract:
 
@@ -391,10 +450,21 @@ Non-goals:
 
 Status: Pending.
 
+Depends on: Task 16.
+
+Unlocks: Task 19 and recovery work in Tasks 25–26.
+
+Execution owner: Parent — verified strong; the generic implementer may receive
+only bounded non-sensitive leaf packets.
+
+Parallel-safe with: Task 17 after Task 16 is accepted and edit scopes are
+file-disjoint.
+
+Human gate: Preview/staging redirect configuration requires separate approval;
+production configuration remains owned by Tasks 25–26 and a human.
+
 Goal: let email users recover access without mixing recovery risk into core
 authentication.
-
-Dependencies: Task 16 accepted; Task 17 need not block implementation.
 
 Deliverables:
 
@@ -435,10 +505,20 @@ Acceptance:
 
 Status: Pending.
 
+Depends on: Tasks 16–18.
+
+Unlocks: Task 22.
+
+Execution owner: Parent — verified strong; the generic implementer may receive
+only bounded non-sensitive leaf packets.
+
+Parallel-safe with: None.
+
+Human gate: Actual account deletion is human-only on every environment; the
+staging destructive checklist is also human-run.
+
 Goal: provide complete in-app account deletion through a trusted server
 boundary.
-
-Dependencies: Tasks 16–18 accepted.
 
 Deliverables:
 
@@ -484,10 +564,19 @@ Non-goals:
 
 Status: **Conditional.**
 
-Start only when catalog size and measured query behavior make client-side
-loading/filtering inefficient.
+Depends on: Task 15 and a measured scaling need.
 
-Dependencies: Task 15 accepted and a measured scaling need.
+Unlocks: Task 22 only if this conditional task is triggered.
+
+Execution owner: Parent may delegate one bounded feature packet after the
+trigger evidence is accepted.
+
+Parallel-safe with: Task 21 only when the parent proves file-disjoint scopes.
+
+Human gate: A human/parent records the measured trigger before implementation.
+
+Goal: scale Browse only when catalog size and measured query behavior make
+client-side loading/filtering inefficient.
 
 Deliverables when triggered:
 
@@ -504,10 +593,18 @@ Until then, keep client-side search over the small catalog.
 
 Status: Pending.
 
-Goal: replace the primary placeholder with a deliberately small real Feed.
+Depends on: Task 15, Task 17, and enough real data for useful sections.
 
-Dependencies: Tasks 15 and 17 accepted; enough catalog/rating data for useful
-sections.
+Unlocks: Task 22.
+
+Execution owner: Generic implementer under one bounded feature packet; the
+parent owns scope and acceptance.
+
+Parallel-safe with: Task 20 only when the parent proves file-disjoint scopes.
+
+Human gate: Human acceptance is required before Task 22.
+
+Goal: replace the primary placeholder with a deliberately small real Feed.
 
 Deliverables:
 
@@ -525,15 +622,25 @@ Acceptance:
 - If a useful Feed cannot be completed before beta, remove the tab rather than
   ship a primary placeholder.
 
-## Task 22: Automated App Tests And Database CI
+## Task 22: Broader Automated App Tests And CI
 
 Status: Pending.
 
+Depends on: Tasks 14–19, Task 21, and Task 20 only if its conditional trigger
+was met.
+
+Unlocks: Task 23.
+
+Execution owner: Parent may delegate bounded, file-disjoint test packets; the
+parent owns integrated cache/account-switch acceptance.
+
+Parallel-safe with: None.
+
+Human gate: Human acceptance selects any deliberate E2E trigger and approves
+the integrated regression boundary before Task 23.
+
 Goal: close cross-feature verification gaps; connected tasks should already
 have added focused tests as they landed.
-
-Dependencies: Tasks 14–19 and 21 accepted; Task 20 only if its scale trigger
-was met.
 
 Deliverables:
 
@@ -542,17 +649,18 @@ Deliverables:
 - Account-switch integration coverage proving profile and rating cache
   isolation across a real multi-feature transition.
 - Tests outside the app route directory.
-- Add or extend a path-filtered CI workflow that runs the frontend test suite
-  for relevant application changes.
-- Path-filtered database CI job.
 - One small Maestro smoke flow for the critical journey, run on demand or by
   deliberate PR trigger rather than every minor change.
-- Coverage review, redundant-test removal, and test-suite cleanup.
+- Broader database/application regression coverage beyond the focused suites
+  that landed with Tasks 13–19.
+- Coverage review, redundant-test removal, test-suite cleanup, and CI
+  optimization across the existing Expo, frontend-test, and local-database
+  jobs.
 
 Acceptance:
 
-- Frontend tests and database CI run in documented commands and path-filtered
-  workflows; frontend tests are not local-only.
+- Existing frontend and local-database CI remain green, path-filtered, and
+  documented while broader regression coverage is added without duplication.
 - Focused tests from Tasks 15–19 remain green and missing cross-feature gaps
   are covered without broad snapshot duplication.
 - Account switching cannot expose the prior user’s profile or rating cache.
@@ -562,10 +670,20 @@ Acceptance:
 
 Status: Pending.
 
+Depends on: Task 22.
+
+Unlocks: Task 24.
+
+Execution owner: Parent coordinates bounded engineering packets and human
+device QA.
+
+Parallel-safe with: None.
+
+Human gate: Physical-device, accessibility, and platform acceptance require
+recorded human evidence.
+
 Goal: prepare a stable release candidate without adding a telemetry or
 animation program.
-
-Dependencies: Task 22 accepted.
 
 Deliverables:
 
@@ -588,9 +706,19 @@ Non-goals:
 
 Status: Pending.
 
-Goal: complete user-facing and store-facing obligations before release.
+Depends on: Task 23 and stable product data-collection behavior.
 
-Dependencies: Product data collection behavior through Task 23 is stable.
+Unlocks: Task 25.
+
+Execution owner: Parent prepares accurate drafts and inventory; a human owns
+legal and store answers.
+
+Parallel-safe with: None.
+
+Human gate: A human approves legal text, disclosures, and store questionnaire
+answers.
+
+Goal: complete user-facing and store-facing obligations before release.
 
 Deliverables:
 
@@ -620,10 +748,20 @@ Deliverables:
 
 Status: Pending.
 
+Depends on: Task 24.
+
+Unlocks: Task 26.
+
+Execution owner: Parent prepares configuration/runbooks; humans own protected
+environment actions and uploads.
+
+Parallel-safe with: None.
+
+Human gate: Production project/configuration actions, credentials, migrations,
+seeds, and TestFlight upload require separate human approval/execution.
+
 Goal: create isolated development, preview, and production build paths and a
 human-approved TestFlight candidate.
-
-Dependencies: Task 24 accepted.
 
 Deliverables:
 
@@ -653,9 +791,19 @@ Boundaries:
 
 Status: Pending.
 
-Goal: verify the final beta and complete App Store submission materials.
+Depends on: Task 25.
 
-Dependencies: Task 25 accepted.
+Unlocks: Task 27.
+
+Execution owner: Parent coordinates evidence and runbooks; humans own release
+systems and submission.
+
+Parallel-safe with: None.
+
+Human gate: Production verification, App Store Connect changes, submission,
+and release choice are human-controlled actions.
+
+Goal: verify the final beta and complete App Store submission materials.
 
 Acceptance:
 
@@ -693,6 +841,18 @@ Boundaries:
 
 Status: Pending.
 
+Depends on: Task 26.
+
+Unlocks: None.
+
+Execution owner: Parent maintains the operating checklist; humans own incident
+and production decisions.
+
+Parallel-safe with: None.
+
+Human gate: Production response, rollback, and provider/configuration changes
+remain human-controlled.
+
 Goal: maintain a lightweight operating checklist rather than another agent
 framework.
 
@@ -711,6 +871,18 @@ Deliverables:
 ## Task 28: Catalog Import And Admin Pipeline
 
 Status: **Post-MVP.**
+
+Depends on: Task 26 and evidence that manual catalog operations are stable.
+
+Unlocks: None.
+
+Execution owner: Parent scopes the future server-side pipeline; humans own
+source rights and publication approval.
+
+Parallel-safe with: Task 29 as a separately scoped workstream.
+
+Human gate: Source permission, asset rights, schema changes, and any
+environment deployment require separate approval.
 
 Goal: add a reviewed import/admin path only after manual catalog behavior is
 stable.
@@ -731,6 +903,21 @@ Potential scope:
 ## Task 29: Public Publishing And Project Journal
 
 Status: **Optional separate workstream; post-MVP.**
+
+Depends on: Task 26 and the separately governed Eazy Review Lab plan.
+
+Unlocks: None.
+
+Execution owner: The Eazy Review Lab workstream under its own repository
+governance.
+
+Parallel-safe with: Task 28 as a separately scoped workstream.
+
+Human gate: Publication, preview exposure, merge, and deployment each require
+their separately authorized Lab workflow gates.
+
+Goal: keep optional public publishing and project-journal work separate from
+the mobile release critical path.
 
 Potential outputs:
 
