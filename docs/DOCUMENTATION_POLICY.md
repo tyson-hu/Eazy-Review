@@ -16,9 +16,11 @@ source-to-mirror relationships, generated-command ownership, dependency
 edges, stale-term rules, changed-path impact rules, and the strict Task 13–29
 metadata contract.
 
-Document registry entries are required to exist by default. An intentionally
-transient, gitignored document may set `requiredOnDisk: false` so the graph can
-retain its lifecycle and ownership metadata without making a clean CI checkout
+Document registry entries declare whether they are files or directories, and
+the checker rejects kind substitutions as well as missing paths. Entries are
+required to exist by default. Only intentionally transient status documents
+under `docs/notes/` may set `requiredOnDisk: false`, so the graph can retain
+their lifecycle and ownership metadata without making a clean CI checkout
 manufacture session state.
 
 An active directory registration covers its current text descendants for

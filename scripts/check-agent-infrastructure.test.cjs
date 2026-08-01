@@ -38,6 +38,7 @@ function taskDocument({
   omitHumanGate = false,
   task13Parallel = 'None.',
   task14Dependency = 'Task 13.',
+  task14Parallel = 'None.',
   unknownLaterTask = false,
 } = {}) {
   const task13HumanGate = omitHumanGate ? [] : ['Human gate: None.'];
@@ -69,10 +70,50 @@ function taskDocument({
     `Depends on: ${task14Dependency}`,
     'Unlocks: None.',
     'Execution owner: Parent.',
-    'Parallel-safe with: None.',
+    `Parallel-safe with: ${task14Parallel}`,
     'Human gate: None.',
     '',
     'Goal: prove dependency parsing.',
+    '',
+  ].join('\n');
+}
+
+function transitiveParallelConflictDocument() {
+  return [
+    '# Fixture Tasks',
+    '',
+    '## Task 13: First fixture task',
+    '',
+    'Status: Pending.',
+    'Depends on: Task 12.',
+    'Unlocks: Task 14.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: Task 15.',
+    'Human gate: None.',
+    '',
+    'Goal: start the dependency chain.',
+    '',
+    '## Task 14: Second fixture task',
+    '',
+    'Status: Pending.',
+    'Depends on: Task 13.',
+    'Unlocks: Task 15.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: continue the dependency chain.',
+    '',
+    '## Task 15: Third fixture task',
+    '',
+    'Status: Pending.',
+    'Depends on: Task 14.',
+    'Unlocks: None.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: finish the dependency chain.',
     '',
   ].join('\n');
 }
@@ -89,31 +130,37 @@ function baseConfig() {
     documents: [
       {
         path: 'canonical-a.md',
+        kind: 'file',
         lifecycle: 'evergreen',
         owner: 'parent-agent',
       },
       {
         path: 'canonical-b.md',
+        kind: 'file',
         lifecycle: 'evergreen',
         owner: 'parent-agent',
       },
       {
         path: 'docs/TASKS.md',
+        kind: 'file',
         lifecycle: 'status',
         owner: 'parent-agent',
       },
       {
         path: 'generated.md',
+        kind: 'file',
         lifecycle: 'generated',
         owner: 'generated-command',
       },
       {
         path: 'history',
+        kind: 'directory',
         lifecycle: 'historical',
         owner: 'historical-record',
       },
       {
         path: 'mirror.md',
+        kind: 'file',
         lifecycle: 'mirror',
         owner: 'tool-adapter',
       },
@@ -197,6 +244,10 @@ test('validateConfig rejects malformed manifest data', () => {
   malformed.documents[0] = { ...malformed.documents[0], lifecycle: 'temporary' };
   assert.throws(() => validateConfig(malformed), /supported lifecycle/);
 
+  const invalidKind = baseConfig();
+  invalidKind.documents[0] = { ...invalidKind.documents[0], kind: 'artifact' };
+  assert.throws(() => validateConfig(invalidKind), /kind must be "file" or "directory"/);
+
   const invalidRequirement = baseConfig();
   invalidRequirement.documents[0] = {
     ...invalidRequirement.documents[0],
@@ -224,15 +275,42 @@ test('runCheck reports every declared missing path', (t) => {
   );
 });
 
-test('runCheck allows an explicitly optional document to be absent', (t) => {
+test('optional documents are limited to transient session status', (t) => {
   const root = createFixture(t);
-  const config = baseConfig();
-  config.documents[0] = {
-    ...config.documents[0],
+  for (const lifecycle of ['evergreen', 'generated', 'historical', 'mirror']) {
+    const invalidLifecycle = baseConfig();
+    invalidLifecycle.documents[0] = {
+      ...invalidLifecycle.documents[0],
+      lifecycle,
+      requiredOnDisk: false,
+    };
+    assert.throws(
+      () => validateConfig(invalidLifecycle),
+      /requiredOnDisk may be false only for transient status documents under docs\/notes\//,
+      lifecycle,
+    );
+  }
+
+  const invalidPath = baseConfig();
+  invalidPath.documents[0] = {
+    ...invalidPath.documents[0],
+    lifecycle: 'status',
     requiredOnDisk: false,
   };
-  fs.unlinkSync(path.join(root, 'canonical-a.md'));
-  assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
+  assert.throws(
+    () => validateConfig(invalidPath),
+    /requiredOnDisk may be false only for transient status documents under docs\/notes\//,
+  );
+
+  const valid = baseConfig();
+  valid.documents.push({
+    path: 'docs/notes/transient.md',
+    kind: 'file',
+    lifecycle: 'status',
+    owner: 'parent-agent',
+    requiredOnDisk: false,
+  });
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config: valid }));
 });
 
 test('declared paths stay inside the real repository root', (t) => {
@@ -243,6 +321,7 @@ test('declared paths stay inside the real repository root', (t) => {
   const directLinkConfig = baseConfig();
   directLinkConfig.documents.push({
     path: 'direct-link.md',
+    kind: 'file',
     lifecycle: 'evergreen',
     owner: 'parent-agent',
   });
@@ -264,6 +343,7 @@ test('declared paths stay inside the real repository root', (t) => {
     const escapedConfig = baseConfig();
     escapedConfig.documents.push({
       path: escapedPath,
+      kind: escapedPath.endsWith('/records') ? 'directory' : 'file',
       lifecycle: 'evergreen',
       owner: 'parent-agent',
     });
@@ -278,6 +358,7 @@ test('declared paths stay inside the real repository root', (t) => {
   const containedConfig = baseConfig();
   containedConfig.documents.push({
     path: 'contained-alias/record.md',
+    kind: 'file',
     lifecycle: 'evergreen',
     owner: 'parent-agent',
   });
@@ -285,12 +366,33 @@ test('declared paths stay inside the real repository root', (t) => {
 
   const optionalConfig = baseConfig();
   optionalConfig.documents.push({
-    path: 'missing/optional.md',
+    path: 'docs/notes/optional.md',
+    kind: 'file',
     lifecycle: 'status',
     owner: 'parent-agent',
     requiredOnDisk: false,
   });
   assert.doesNotThrow(() => runCheck({ repoRoot: root, config: optionalConfig }));
+});
+
+test('registered document kinds reject file and directory substitutions', (t) => {
+  const root = createFixture(t);
+
+  fs.unlinkSync(path.join(root, 'canonical-a.md'));
+  write(root, 'canonical-a.md/child.md', 'Wrong kind.\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config: baseConfig() }),
+    /Declared document must be a file: canonical-a\.md/,
+  );
+
+  fs.rmSync(path.join(root, 'canonical-a.md'), { recursive: true });
+  write(root, 'canonical-a.md', '# Canonical A\n');
+  fs.rmSync(path.join(root, 'history'), { recursive: true });
+  write(root, 'history', 'Wrong kind.\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config: baseConfig() }),
+    /Declared document must be a directory: history/,
+  );
 });
 
 test('validateConfig rejects document dependency cycles', () => {
@@ -328,6 +430,7 @@ test('generated sources must be registered active canonical documents', (t) => {
   const missing = baseConfig();
   missing.documents.push({
     path: 'missing-source.md',
+    kind: 'file',
     lifecycle: 'evergreen',
     owner: 'parent-agent',
   });
@@ -377,6 +480,7 @@ test('GEMINI.md is registered as an AGENTS.md pointer and pointer content is val
     ),
     {
       path: 'GEMINI.md',
+      kind: 'file',
       lifecycle: 'mirror',
       owner: 'tool-adapter',
     },
@@ -394,6 +498,7 @@ test('GEMINI.md is registered as an AGENTS.md pointer and pointer content is val
   const config = baseConfig();
   config.documents.push({
     path: 'GEMINI.md',
+    kind: 'file',
     lifecycle: 'mirror',
     owner: 'tool-adapter',
   });
@@ -429,6 +534,7 @@ test('UI_STYLE.md is registered as an active DESIGN.md mirror', () => {
     ),
     {
       path: 'docs/UI_STYLE.md',
+      kind: 'file',
       lifecycle: 'mirror',
       owner: 'tool-adapter',
     },
@@ -485,6 +591,7 @@ test('active document directories scan current ADRs but exclude registered archi
     ),
     {
       path: 'docs/decisions',
+      kind: 'directory',
       lifecycle: 'evergreen',
       owner: 'parent-agent',
     },
@@ -507,11 +614,13 @@ test('active document directories scan current ADRs but exclude registered archi
   config.documents.push(
     {
       path: 'docs/decisions',
+      kind: 'directory',
       lifecycle: 'evergreen',
       owner: 'parent-agent',
     },
     {
       path: 'docs/decisions/archive',
+      kind: 'directory',
       lifecycle: 'historical',
       owner: 'historical-record',
     },
@@ -545,6 +654,7 @@ test('session notes are active while the transient handoff remains optional', (t
     ),
     {
       path: 'docs/notes',
+      kind: 'directory',
       lifecycle: 'status',
       owner: 'parent-agent',
     },
@@ -567,11 +677,13 @@ test('session notes are active while the transient handoff remains optional', (t
   config.documents.push(
     {
       path: 'docs/notes',
+      kind: 'directory',
       lifecycle: 'status',
       owner: 'parent-agent',
     },
     {
       path: 'docs/notes/handoff.md',
+      kind: 'file',
       lifecycle: 'status',
       owner: 'parent-agent',
       requiredOnDisk: false,
@@ -617,6 +729,7 @@ test('historical evidence directories are registered, required, and excluded fro
       ),
       {
         path: historicalPath,
+        kind: 'directory',
         lifecycle: 'historical',
         owner: 'historical-record',
       },
@@ -634,6 +747,7 @@ test('historical evidence directories are registered, required, and excluded fro
   for (const historicalPath of historicalPaths) {
     config.documents.push({
       path: historicalPath,
+      kind: 'directory',
       lifecycle: 'historical',
       owner: 'historical-record',
     });
@@ -709,6 +823,21 @@ test('strict task parsing rejects missing metadata instead of silently skipping 
   );
 });
 
+test('task parsing ignores HTML-comment-hidden headings, fields, and references', () => {
+  const content = taskDocument();
+  const secondTask = content.indexOf('## Task 14:');
+  const hiddenFirstTask = `<!--\n${content.slice(0, secondTask)}-->\n${content.slice(secondTask)}`;
+  assert.throws(
+    () => parseTaskGraph(hiddenFirstTask, baseConfig().taskGraph),
+    /Task graph requires exactly Task 13 through Task 14 in order; found 14/,
+  );
+
+  const inlineComment = taskDocument({
+    task13Parallel: 'None. <!-- Task 999 is prose-only. -->',
+  });
+  assert.doesNotThrow(() => parseTaskGraph(inlineComment, baseConfig().taskGraph));
+});
+
 test('task dependency graph rejects cycles', (t) => {
   const root = createFixture(t);
   write(root, 'docs/TASKS.md', taskDocument({ cycle: true }));
@@ -761,6 +890,32 @@ test('parallel-safe metadata rejects self and direct dependencies', () => {
   assert.throws(
     () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 999.' }), taskConfig),
     /references unknown Task 999/,
+  );
+});
+
+test('parallel-safe metadata rejects prerequisite relationships from either endpoint', () => {
+  const taskConfig = baseConfig().taskGraph;
+  assert.throws(
+    () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 14.' }), taskConfig),
+    /Task 13 cannot be parallel-safe with prerequisite-related Task 14/,
+  );
+
+  assert.throws(
+    () =>
+      parseTaskGraph(transitiveParallelConflictDocument(), {
+        ...taskConfig,
+        lastTask: 15,
+      }),
+    /Task 13 cannot be parallel-safe with prerequisite-related Task 15/,
+  );
+
+  assert.throws(
+    () =>
+      parseTaskGraph(
+        taskDocument({ task14Parallel: 'Task 12.' }),
+        taskConfig,
+      ),
+    /Task 14 cannot be parallel-safe with prerequisite-related Task 12/,
   );
 });
 

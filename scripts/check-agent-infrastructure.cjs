@@ -12,6 +12,7 @@ const LIFECYCLES = new Set([
   'mirror',
   'historical',
 ]);
+const DOCUMENT_KINDS = new Set(['file', 'directory']);
 const MIRROR_RELATIONSHIPS = new Set(['pointer', 'summary', 'template']);
 const TASK_FIELDS = [
   'Status',
@@ -258,11 +259,14 @@ function validateConfig(config) {
     assertObject(document, context);
     assertKeys(
       document,
-      ['path', 'lifecycle', 'owner'],
+      ['path', 'kind', 'lifecycle', 'owner'],
       ['requiredOnDisk', 'staleScan'],
       context,
     );
     validateRelativePath(document.path, `${context}.path`);
+    if (!DOCUMENT_KINDS.has(document.kind)) {
+      throw new Error(`${context}.kind must be "file" or "directory".`);
+    }
     if (!LIFECYCLES.has(document.lifecycle)) {
       throw new Error(`${context}.lifecycle must be a supported lifecycle.`);
     }
@@ -280,6 +284,15 @@ function validateConfig(config) {
       typeof document.requiredOnDisk !== 'boolean'
     ) {
       throw new Error(`${context}.requiredOnDisk must be a boolean.`);
+    }
+    if (
+      document.requiredOnDisk === false &&
+      (document.lifecycle !== 'status' ||
+        !document.path.startsWith('docs/notes/'))
+    ) {
+      throw new Error(
+        `${context}.requiredOnDisk may be false only for transient status documents under docs/notes/.`,
+      );
     }
     if (documents.has(document.path)) {
       throw new Error(`documents contains duplicate path "${document.path}".`);
@@ -571,7 +584,16 @@ function assertRealPathContained(repoRoot, absolutePath, relativePath) {
   return realPath;
 }
 
-function assertPathExists(repoRoot, relativePath, context) {
+function assertPathKind(stats, expectedKind, relativePath, context) {
+  if (expectedKind === 'file' && !stats.isFile()) {
+    throw new Error(`Declared ${context} must be a file: ${relativePath}`);
+  }
+  if (expectedKind === 'directory' && !stats.isDirectory()) {
+    throw new Error(`Declared ${context} must be a directory: ${relativePath}`);
+  }
+}
+
+function assertPathExists(repoRoot, relativePath, context, expectedKind = null) {
   const absolute = resolveDeclaredPath(repoRoot, relativePath);
   const stats = fs.lstatSync(absolute, { throwIfNoEntry: false });
   if (!stats) {
@@ -581,6 +603,9 @@ function assertPathExists(repoRoot, relativePath, context) {
     throw new Error(`Declared ${context} must not be a symbolic link: ${relativePath}`);
   }
   assertRealPathContained(repoRoot, absolute, relativePath);
+  if (expectedKind) {
+    assertPathKind(stats, expectedKind, relativePath, context);
+  }
   return stats;
 }
 
@@ -606,10 +631,11 @@ function validateDeclaredPaths(repoRoot, config) {
       }
       if (stats) {
         assertRealPathContained(repoRoot, absolute, document.path);
+        assertPathKind(stats, document.kind, document.path, 'optional document');
       }
       continue;
     }
-    assertPathExists(repoRoot, document.path, 'document');
+    assertPathExists(repoRoot, document.path, 'document', document.kind);
   }
   for (const generated of config.generatedFiles) {
     assertPathExists(repoRoot, generated.source, 'generated source');
@@ -814,11 +840,44 @@ function checkStaleTerms(repoRoot, config) {
 function markdownLines(content) {
   const output = [];
   let fence = null;
+  let htmlComment = false;
   const lines = content.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
-    const text = lines[index];
+    const rawText = lines[index];
+    let text = rawText;
+    let commentSyntaxSeen = false;
+    const startedInComment = htmlComment;
+    if (fence === null) {
+      let visible = '';
+      let offset = 0;
+      while (offset < rawText.length) {
+        if (htmlComment) {
+          const end = rawText.indexOf('-->', offset);
+          commentSyntaxSeen = true;
+          if (end === -1) {
+            offset = rawText.length;
+            break;
+          }
+          htmlComment = false;
+          offset = end + 3;
+          continue;
+        }
+        const start = rawText.indexOf('<!--', offset);
+        if (start === -1) {
+          visible += rawText.slice(offset);
+          break;
+        }
+        visible += rawText.slice(offset, start);
+        commentSyntaxSeen = true;
+        htmlComment = true;
+        offset = start + 4;
+      }
+      text = visible;
+    }
     const marker = text.trimStart().match(/^(`{3,}|~{3,})/);
-    let active = fence === null;
+    let active =
+      fence === null &&
+      !((startedInComment || commentSyntaxSeen) && text.trim().length === 0);
     if (marker) {
       const character = marker[1][0];
       const length = marker[1].length;
@@ -920,6 +979,7 @@ function parseTaskGraph(content, taskConfig) {
   const knownTasks = new Set([...expected, ...taskConfig.allowedExternalTasks]);
   const records = new Map();
   const dependencyEdges = [];
+  const allDependencyEdges = [];
 
   for (const [headingIndex, heading] of inRange.entries()) {
     const nextHeading = inRange[headingIndex + 1];
@@ -1005,6 +1065,7 @@ function parseTaskGraph(content, taskConfig) {
           if (reference === heading.number) {
             throw new Error(`Task ${heading.number} depends on itself.`);
           }
+          allDependencyEdges.push([heading.number, reference]);
           if (reference >= taskConfig.firstTask && reference <= taskConfig.lastTask) {
             dependencyEdges.push([heading.number, reference]);
           }
@@ -1034,6 +1095,44 @@ function parseTaskGraph(content, taskConfig) {
   const taskCycle = findDependencyCycle(expected, dependencyEdges);
   if (taskCycle) {
     throw new Error(`Task dependency cycle: ${taskCycle.join(' -> ')}`);
+  }
+
+  const dependencyGraph = new Map(
+    [...knownTasks].map((task) => [task, []]),
+  );
+  for (const [task, dependency] of allDependencyEdges) {
+    dependencyGraph.get(task).push(dependency);
+  }
+  function dependsOnTransitively(task, possibleDependency) {
+    const pending = [...(dependencyGraph.get(task) ?? [])];
+    const visited = new Set();
+    while (pending.length > 0) {
+      const dependency = pending.pop();
+      if (dependency === possibleDependency) {
+        return true;
+      }
+      if (visited.has(dependency)) {
+        continue;
+      }
+      visited.add(dependency);
+      pending.push(...(dependencyGraph.get(dependency) ?? []));
+    }
+    return false;
+  }
+  for (const record of records.values()) {
+    const parallelReferences = extractTaskReferences(
+      record.fields['Parallel-safe with'],
+    );
+    for (const reference of parallelReferences) {
+      if (
+        dependsOnTransitively(record.number, reference) ||
+        dependsOnTransitively(reference, record.number)
+      ) {
+        throw new Error(
+          `Task ${record.number} cannot be parallel-safe with prerequisite-related Task ${reference}.`,
+        );
+      }
+    }
   }
 
   return { records, dependencyEdges };

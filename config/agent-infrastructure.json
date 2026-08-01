@@ -29,345 +29,413 @@
   "documents": [
     {
       "path": ".agents/skills",
+      "kind": "directory",
       "lifecycle": "generated",
       "owner": "generated-command"
     },
     {
       "path": ".claude/skills",
+      "kind": "directory",
       "lifecycle": "generated",
       "owner": "generated-command"
     },
     {
       "path": ".cursor/agents/debugger.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": ".cursor/agents/implementer.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": ".cursor/agents/reviewer.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": ".cursor/agents/verifier.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": ".cursor/mcp.json",
+      "kind": "file",
       "lifecycle": "status",
       "owner": "parent-agent",
       "staleScan": false
     },
     {
       "path": ".cursor/rules/design-system.mdc",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": ".cursor/rules/mcp-policy.mdc",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": ".cursor/rules/orchestration.mdc",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": ".cursor/rules/react-native-expo.mdc",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": ".cursor/rules/security.mdc",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": ".cursor/rules/supabase.mdc",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": ".github/pull_request_template.md",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": "AGENTS.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "CLAUDE.md",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": "GEMINI.md",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": "README.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "config/agent-infrastructure.json",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent",
       "staleScan": false
     },
     {
       "path": "docs/AGENT_WORKFLOW.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/API_CONTRACTS.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/BLUEBOOK.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "human-product"
     },
     {
       "path": "docs/DATA_MODEL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/DECISIONS.md",
+      "kind": "file",
       "lifecycle": "generated",
       "owner": "generated-command"
     },
     {
       "path": "docs/DESIGN.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "human-product"
     },
     {
       "path": "docs/DOCUMENTATION_POLICY.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/LOOP_ENGINEERING.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/MCP_WORKFLOW.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/MOBILE_SIMULATOR_SOP.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/RELEASE_CHECKLIST.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/ROADMAP.md",
+      "kind": "file",
       "lifecycle": "status",
       "owner": "human-product"
     },
     {
       "path": "docs/SECURITY.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/STITCH_PROMPTS.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "human-product"
     },
     {
       "path": "docs/TASKS.md",
+      "kind": "file",
       "lifecycle": "status",
       "owner": "human-product"
     },
     {
       "path": "docs/UI_STYLE.md",
+      "kind": "file",
       "lifecycle": "mirror",
       "owner": "tool-adapter"
     },
     {
       "path": "docs/USER_FLOWS.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "human-product"
     },
     {
       "path": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/WEB_MOBILE_PREVIEW_SOP.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/archive",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/decisions",
+      "kind": "directory",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/decisions/README.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/decisions/archive",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/README.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
       "path": "docs/evidence/pr-24-review-correction",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/task-11-12-database-acceptance",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/task-10-baseline-ux",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/task-10-f4-check",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/task-10-reaudit",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/ui-audit-remediation-20260719",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/ui-audit-remediation-20260719-attempt1",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/evidence/ui-audit-remediation-20260719-attempt2",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "docs/notes",
+      "kind": "directory",
       "lifecycle": "status",
       "owner": "parent-agent"
     },
     {
       "path": "docs/notes/handoff.md",
+      "kind": "file",
       "lifecycle": "status",
       "owner": "parent-agent",
       "requiredOnDisk": false
     },
     {
       "path": "docs/research",
+      "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
     {
       "path": "skills/blocker-note/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/bugfix-debug-loop/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/docs-sync-loop/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/feature-slice-builder/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/interactive-preview-loop/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/manifest.json",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent",
       "staleScan": false
     },
     {
       "path": "skills/product-data-modeling/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/refactor-safety-loop/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/session-handoff/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/skill-creator/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/supabase-schema-change/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/test-and-validation-loop/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
       "path": "skills/ui-screen-builder/SKILL.md",
+      "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     }
