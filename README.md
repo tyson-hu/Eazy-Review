@@ -2,7 +2,11 @@
 
 Eazy Review is a mobile-first product review and discovery app focused on sneakers and products. The core loop is simple: browse products, open a product detail page, compare Eazy Score with Community Score, submit or edit My Rating, and find rated products later.
 
-The repo currently starts from an Expo Router app shell. The project infrastructure docs define the intended architecture and implementation order.
+The repository contains the accepted mock Browse → Product Detail → Rating
+Form experience plus the accepted local/staging Supabase schema and
+least-privilege authorization foundation. Expo still uses mock data and
+session-only My Rating state; `docs/TASKS.md` is the sole current-status and
+implementation-order source.
 
 ## Documentation Map
 
@@ -45,7 +49,9 @@ Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Use npm `>=11.16.0 <12` (CI pins `11.17.0`). The repository rejects unsupported
 npm versions and fails dependency installs when a lifecycle script is not
 covered by the version-pinned `package.json#allowScripts` policy.
-Secret scanning: `npm run check:secrets` (also part of `npm run check`); it
+The read-only repository gate is `npm run check:readonly`; the parent-owned
+full Expo gate is `npm run check:expo` (`npm run check` is its alias). Secret
+scanning uses `npm run check:secrets` and is included in both gates; it
 includes recognized text files under bundled `app/`, `assets/`, and `src/`,
 even when gitignored or symlinked to regular files, plus every recognized
 root-level text file present on disk, including dynamic Expo/EAS configs and
@@ -54,7 +60,7 @@ included, and direct PostgreSQL URLs plus non-empty service-role,
 database-password, JWT-signing-secret, or Supabase management-token assignments
 fail the scan regardless of value length.
 
-## Local Supabase (Task 11)
+## Local Supabase
 
 Requires Docker Desktop and the Supabase CLI (`brew install supabase/tap/supabase`).
 
@@ -64,19 +70,21 @@ npm run test:db:reset       # clean reset + pgTAP + concurrency races
 supabase stop
 ```
 
-Expo must receive only the project URL and publishable/legacy anon key (see `.env.example`). Never put a service-role key in the mobile bundle (`docs/SECURITY.md`). The human-authorized staging target is linked through gitignored local CLI metadata; no project reference or credential is committed. Production database work is forbidden for agents.
+Expo must receive only the project URL and publishable/legacy anon key (see
+`.env.example`). Never put a service-role key in the mobile bundle
+(`docs/SECURITY.md`). Remote staging actions require a separate explicit human
+authorization; production database work is forbidden for agents. Accepted
+Tasks 11–12 database evidence is preserved in
+`docs/evidence/task-11-12-database-acceptance/RESULT.md`.
 
 ## Documentation Discipline
 
 Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commit/PR handoff.
 
-## First Build Goal
+## Current Product State
 
-Browse → Product Detail → Rating Form mock UX is complete (Tasks 6–10). Task 11
-core schema and PR review remediation passed local and human-authorized staging
-acceptance across all four forward-only migrations. Task 12 policies, grants,
-and authorization tests passed local and human-authorized staging acceptance
-in the fifth forward-only migration. Expo remains disconnected; the real read
-and write integrations stay owned by their later tasks. The post–Task 12
-review revised the connected sequence; Task 13's two-product deterministic SQL
-seed is next.
+Browse → Product Detail → Rating Form mock UX and the Tasks 11–12 database and
+authorization foundation are accepted. Expo remains disconnected; real reads,
+authentication, and writes stay owned by later tasks. Task 13's two-product
+deterministic SQL seed is next and has not started. `docs/TASKS.md` is the sole
+current-status and implementation-order ledger.

@@ -91,12 +91,11 @@ export type AccountProfile = {
 Tasks 11–12 establish database and authorization contracts only. They do not
 replace mock repositories, rename the current mock `comment` field in UI code,
 add auth screens, or connect rating writes. Task 11 schema (tables, triggers,
-deny-by-default RLS with no client policies/grants) is applied locally. Its
-four forward-only migrations passed human-authorized staging acceptance on
-2026-07-28, including the PR-review statement-trigger and 64-bit lock-key
-ordering remediations. Task 12 policies and Data API grants are accepted
-locally and on staging in the fifth forward-only migration. They expose profile
-rows only to their authenticated owner.
+deny-by-default RLS with no client policies/grants) precedes the accepted Task
+12 policies and explicit least-privilege Data API grants. They expose profile
+rows only to their authenticated owner. Dated migration and environment
+acceptance results are preserved in
+[`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
 
 | Database contract | Frontend / API meaning |
 | --- | --- |
@@ -209,8 +208,11 @@ src/
   utils/
     formatPrice.ts
     formatDate.ts
-    calculateScore.ts
 ```
+
+Community Score is server-owned; the recommended frontend structure does not
+include a score-calculation utility. Display formatting may live in a focused
+utility only when a concrete caller requires it.
 
 ## Product Card Shape
 

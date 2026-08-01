@@ -3,17 +3,13 @@
 Use relational Supabase/PostgreSQL tables. Do not store product identity,
 images, offers, ratings, and summaries inside one giant product JSON object.
 
-This document is the canonical contract for Tasks 11–12. Task 11 has four
-forward-only migrations under `supabase/migrations/`: core
-tables/triggers/RLS, complete internal-helper `EXECUTE` revocation, and
-statement-level aggregate refresh followed by 64-bit advisory-lock-key
-ordering that prevents multi-product lock inversion. No migration adds client
-policies or positive grants. The Task 11 local clean-reset gate is 183 pgTAP
-assertions plus same-product insert and multi-product rating-delete concurrency
-races. The four Task 11 migrations passed explicitly authorized staging
-acceptance on 2026-07-28. The fifth forward-only Task 12 migration passed local
-and explicitly authorized staging acceptance on 2026-07-29. Production was not
-touched.
+This document is the canonical current contract for the Tasks 11–12 schema,
+triggers, RLS, grants, and authorization behavior. Applied migrations remain
+forward-only and unchanged. The dated migration chronology, assertion counts,
+local concurrency results, and explicitly authorized staging evidence are
+preserved in
+[`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md),
+not duplicated into this evergreen contract.
 
 Separate these concerns:
 
@@ -257,7 +253,7 @@ trigger-based, server-side aggregate mechanism with these acceptance criteria:
   `scripts/test-db-concurrency.cjs` proves a same-product writer waits and sees
   both commits, then overlaps two fixture-only multi-product rating deletes
   across two products and verifies both complete with zeroed aggregates. The
-  agent-run harness never deletes `auth.users`. Local suite pass: 2026-07-28.
+  agent-run harness never deletes `auth.users`.
 - A fixed-value fixture with category/overall tuples
   `(10, 8, 6, 4, 2, 1)` and `(2, 4, 6, 8, 10, 10)` must produce `6.00` for
   every category average, `overall_avg = 5.50`, and `score = 55`.
@@ -320,21 +316,12 @@ keeps deny-by-default behavior independent of the project's inherited
 defaults. Optional explicit `service_role` grants are only for trusted
 staging/seed tooling and never place a service-role key in Expo.
 
-Packet 6 SQL tests under `supabase/tests/database/security.test.sql` assert
-these effective table privileges, zero policies, and denied execution across
-all six internal helpers. The current 183-assertion pgTAP suite and both
-concurrency races passed locally on 2026-07-28. Staging verification on
-2026-07-28 confirmed migration parity for all four migrations, 7/7 tables with
-RLS, zero policies, zero prohibited table privileges, all six internal helpers
-with zero prohibited executions, and both required `SECURITY DEFINER`
-functions. The original seven transaction-rolled-back profile/aggregate checks
-left no fixture residue. Review-remediation re-acceptance confirmed the old
-aggregate row trigger count is zero, all three statement triggers use
-transition tables, affected products are processed in actual 64-bit lock-key
-order, and client helper execution remains denied. A transaction-rolled-back
-multi-product insert/update/delete smoke restored both aggregates to zero/null
-after delete and left no fixture residue. Linked lint reported no schema
-errors.
+The SQL tests under `supabase/tests/database/security.test.sql` assert these
+effective table privileges, zero policies, and denied execution across all six
+internal helpers. The database harness also proves statement-trigger shape,
+actual 64-bit lock-key ordering, concurrency behavior, and zero fixture
+residue. Accepted local and staging results live in the historical evidence
+record linked at the top of this document.
 
 ## Task 12 Privileges And Data API Exposure
 
@@ -425,26 +412,11 @@ Keep `private_note` on the owner-only row. Community Score reads come from
   aggregate trigger side effects. The service-role secret is never used by or
   bundled into Expo.
 
-Local acceptance on 2026-07-29 applies
-`20260729214448_task_12_least_privilege_rls_grants.sql` after the four Task 11
-migrations. Seven pgTAP files pass 418 assertions, including 268 exact policy /
-privilege / helper checks and 70 authorization behavior scenarios, followed by
-both Task 11 concurrency races. The local public schema lint, secret scan,
-typecheck, lint, decision checks, and skill-wrapper checks pass. A separately
-scoped Expo SDK 57 patch alignment cleared the final dependency check; Expo
-Doctor passes 20/20 checks and the full repository gate passes. The Task 12 SQL
-packet adds no application runtime integration, and Expo remains disconnected
-from Supabase.
-
-Staging acceptance on 2026-07-29 applied only the Task 12 migration to the
-healthy `eazy-review-staging` project, with no seeds or roles. All five
-migrations are in parity; a post-apply dry run is empty; linked security
-advisors and public-schema lint report no issues. Hosted pgTAP functions were
-not available to the linked runner, so the approved fallback used direct,
-transaction-rolled-back assertions for all 16 policies, the effective table /
-column privilege allowlists, helper execution denial, anonymous and owner
-behavior, unpublished-product rules, `service_role` aggregate side effects,
-and zero fixture residue. Production was not touched.
+The accepted forward-only Task 12 migration implements this policy/grant
+contract after the Task 11 schema migrations. It adds no application runtime
+integration; Expo remains disconnected until its later tasks. Exact local and
+staging acceptance results, including the hosted-test fallback and production
+boundary, live in the historical evidence record linked at the top.
 
 ## Task 19 Account-Deletion Consequences
 

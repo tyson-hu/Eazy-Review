@@ -13,8 +13,8 @@ Task detail, dependencies, acceptance, and current status live in
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
 and no-social MVP boundary are locked unless a reproducible defect appears.
-Do not expand agent/process infrastructure while the connected application and
-release path remain unfinished.
+Agent/process infrastructure changes remain exceptional maintenance work that
+requires explicit approval and a concrete repository defect.
 
 ## Phase 1: Accepted Foundation
 
@@ -33,59 +33,28 @@ current decision records.
 
 ## Phase 2: Connected Critical Path
 
-Complete in order:
+**Tasks 13 → 14 → 15 → 16 → (17 and 18 as explicitly permitted) → 19.**
 
-1. **Task 13 — Product Seed Data**
-   - Two deterministic products: one complete and one sparse.
-   - SQL-only local seed and focused acceptance.
-2. **Task 14 — Connected Client And Query Foundation**
-   - Supabase client, generated types, Query client, lifecycle/online
-     integration, query keys, environment validation, and the minimal frontend
-     test harness required by connected tasks.
-3. **Task 15 — Real Public Catalog Reads**
-   - Published Browse/Detail reads and removal of mock-only mechanics.
-   - No temporary UUID rating map.
-4. **Task 16 — Core Authentication And Account State**
-   - Sign-up, sign-in, sign-out, restoration, profile, and Rate gate.
-5. **Task 17 — My Rating Persistence And Rated Products**
-   - Direct RLS-protected save path, cache invalidation, Rated Products, and
-     app-level aggregate verification.
-6. **Task 18 — Password Recovery And Deep Links**
-   - Recovery-only reset state and real-device deep-link verification.
-7. **Task 19 — Protected Account Deletion**
-   - Caller-derived Edge Function boundary and human-run destructive
-     acceptance.
-
-Why this order:
-
-- The durable client/query layer exists before connected screens.
-- Public reads never depend on a short-lived session-rating bridge.
-- Core auth, recovery, and deletion remain independently reviewable.
-- Aggregate architecture is not reopened; the app verifies the accepted
-  server-owned behavior when real rating writes land.
+This milestone moves from deterministic seed data to the durable client/query
+layer, real public catalog reads, core account state, owner-only rating and
+recovery paths, and finally protected account deletion. The accepted
+server-owned aggregate architecture is verified, not re-selected. Exact task
+dependencies and parallel-safety live only in `docs/TASKS.md`.
 
 ## Phase 3: Product Completeness And Verification
 
-1. **Task 20 — Browse Scale-Up (conditional)**
-   - Begin only after catalog size/query plans prove a need.
-2. **Task 21 — Real Feed MVP**
-   - At most three truthful, non-duplicative sections.
-3. **Task 22 — Automated App Tests And Database CI**
-   - Cross-feature regression and account-switch coverage, test-suite cleanup,
-     path-filtered database CI, and one small E2E smoke.
-4. **Task 23 — Reliability, Accessibility, And Device QA**
-   - Retry/offline behavior, VoiceOver/Dynamic Type, phone QA, iPhone
-     validation, and Android smoke.
+**Tasks 20–23.** Browse scale-up remains conditional on measured need; Feed
+must become useful or be removed. Connected work adds focused tests as it
+lands, while Task 22 closes cross-feature gaps, adds a deliberately triggered
+E2E smoke, and optimizes the already-present CI lanes. Task 23 owns release
+reliability, accessibility, and device QA.
 
 Task 21 must replace or remove the primary Feed placeholder before beta. Task
 20 does not start merely because Filter/Sort existed in the mock design.
 
 ## Phase 4: Release Boundary
 
-1. **Task 24 — Privacy, Legal, And Store Disclosures**
-2. **Task 25 — EAS Environments And TestFlight Candidate**
-3. **Task 26 — Release Candidate And App Store Submission**
-4. **Task 27 — Post-Launch Operations**
+**Tasks 24 → 25 → 26 → 27.**
 
 This phase owns privacy/terms/support, App Store disclosures, isolated build
 environments, production runbooks, TestFlight, release-candidate QA, App
@@ -96,13 +65,10 @@ remain deliberate human-controlled actions under `docs/SECURITY.md`.
 
 ## Post-MVP Workstreams
 
-- **Task 28 — Catalog Import And Admin Pipeline**
-  - Add provenance, external IDs, idempotent server-side imports, freshness,
-    rights review, and minimal admin review only after manual catalog behavior
-    is stable.
-- **Task 29 — Public Publishing And Project Journal**
-  - Optional read-only publishing/case-study work outside the mobile critical
-    path; never another score/catalog source of truth.
+**Tasks 28–29.** Catalog import/admin work waits for stable manual catalog
+behavior. Public publishing remains an optional read-only workstream outside
+the mobile critical path and never becomes another score/catalog source of
+truth.
 
 ## Explicit Deferrals
 

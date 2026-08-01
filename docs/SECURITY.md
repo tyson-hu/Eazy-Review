@@ -91,18 +91,9 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - `profiles` is owner-only client data. `anon` receives no table privilege or
   policy, and `authenticated` may select only `profiles.id = auth.uid()` and
   update only `display_name`, `username`, and `avatar_url`.
-- Task 12 local acceptance (2026-07-29) adds 16 positive policies and rebuilds
-  the exact client / `service_role` table and column allowlists in one
-  forward-only migration. Seven pgTAP files pass 418 assertions, both Task 11
-  concurrency races still pass, and local schema lint reports no errors. A
-  separately scoped Expo SDK 57 patch alignment cleared the final dependency
-  check; Expo Doctor passes 20/20 checks and the full repository gate passes.
-  The Task 12 SQL packet adds no client integration, and Expo remains
-  disconnected from Supabase. The fifth migration passed explicitly authorized
-  staging acceptance on 2026-07-29: migration parity, empty post-apply dry run,
-  security advisors, linked lint, direct transaction-rolled-back catalog /
-  authorization behavior, `service_role` aggregate side effects, and zero
-  fixture residue all passed. Production was not touched.
+- The accepted Task 12 forward-only migration creates complete policies before
+  rebuilding the exact client / `service_role` table and column allowlists. It
+  adds no client integration; Expo remains disconnected until its later tasks.
 - Secret scanning is a required Task 11 deliverable. Validate it with a safe
   deliberate test pattern; never use a real credential as the test.
 - Task 11 Packet 6 SQL tests under `supabase/tests/database/` assert
@@ -115,20 +106,12 @@ Canonical security rules for all agent and human work in this repo, regardless o
   users but never deletes `auth.users`. Statement triggers derive distinct
   affected products from transition tables, map them to 64-bit advisory-lock
   keys, and acquire the actual keys in stable order. Run after `supabase start`
-  (or use `npm run test:db:reset`). The current local gate passed 2026-07-28
-  with 183 pgTAP assertions and both races. The explicitly authorized staging
-  target received all four Task 11 migrations
-  on 2026-07-28. Migration parity, 7/7-table RLS state, zero policies, zero
-  prohibited table/helper privileges, the original seven
-  transaction-rolled-back behavior checks, linked lint, and zero test-fixture
-  residue passed. Review-remediation re-acceptance additionally confirmed the
-  old row trigger is absent, all three transition-table statement
-  triggers are present, actual 64-bit lock-key ordering is installed, and
-  client helper execution remains denied. A transaction-rolled-back
-  multi-product insert/update/delete smoke restored both aggregates to
-  zero/null after delete and left no fixture residue. The local CLI link is
-  gitignored; no project reference or credential is committed. Production was
-  not touched.
+  (or use `npm run test:db:reset`). The local CLI link is gitignored; no project
+  reference or credential is committed.
+- Accepted Tasks 11–12 migration chronology, assertion totals, concurrency
+  results, staging fallback checks, and the untouched-production boundary are
+  preserved in
+  [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
 - Repo secret scan (zero new dependencies): `npm run check:secrets` runs
   `test:secrets` then scans allowlisted paths (`app/`, `assets/`, `src/`,
   `docs/`, `supabase/`, `scripts/`, `.github/`, plus skill/agent trees).
