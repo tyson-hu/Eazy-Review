@@ -264,6 +264,9 @@ Dependencies: Tasks 13–14 accepted.
 Deliverables:
 
 - `ProductDetailPublicData` plus focused product repository/query functions.
+- `ProductDetailPublicData` contains only public catalog, assessment, offer,
+  and Community Score data. `myRating` and every other viewer-owned field are
+  fetched through a structurally separate user-scoped query.
 - Browse and Product Detail queries/adapters.
 - Deterministic primary-image selection:
   `sort_order ASC`, `created_at ASC`, then `id ASC`.
@@ -367,7 +370,8 @@ Deliverables:
 
 Acceptance:
 
-- Exactly one row exists per user/product.
+- After a successful first save, exactly one rating row exists for that
+  user/product pair; no pair can contain more than one row.
 - Concurrent first saves do not expose an unhandled unique error.
 - Cross-user reads never return `private_note`.
 - My Rating and server-owned rating count/averages refresh from the database.
@@ -394,8 +398,9 @@ Deliverables:
 
 - Forgot Password and Reset Password routes.
 - Recovery-only session handling.
-- Development, preview, and production redirect URL matrix using the existing
-  `eazyreview` scheme.
+- Document the development, preview, and production redirect URL matrix using
+  the existing `eazyreview` scheme, and configure the allowed recovery
+  redirects in each separately authorized environment.
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
 - Physical-device deep-link verification in a development or preview build.
@@ -410,6 +415,11 @@ Acceptance:
 - Expired/replayed links offer a safe restart.
 - The new password works and the old password fails.
 - Recovery is proven outside web-only development.
+
+Boundary:
+
+- Local implementation does not authorize staging or production configuration
+  changes.
 
 ## Task 19: Protected Account Deletion
 
@@ -427,6 +437,9 @@ Deliverables:
 - No authoritative user ID accepted from the client.
 - Chosen session-revocation policy plus hard deletion with a server-only
   secret.
+- Document the behavior and maximum remaining lifetime of already-issued
+  access tokens after session revocation or deletion. Do not claim
+  instantaneous cryptographic invalidation unless it is demonstrated.
 - Existing FK cascades remove profile/ratings and accepted triggers preserve
   aggregates.
 - Local session and user-scoped Query cleanup.
@@ -441,7 +454,8 @@ Acceptance:
 - The client cannot choose another target.
 - Failed server validation performs no deletion.
 - Profile and ratings cascade; affected aggregates remain correct.
-- Local session/cache are removed and deleted credentials cannot sign in.
+- Local session/cache are removed. A deleted user cannot establish a new
+  session or use the application's normal owner-data flow.
 - A human records the staging destructive test.
 - Production deletion is never performed by a coding agent or tool.
 
@@ -512,6 +526,8 @@ Deliverables:
 - Account-switch integration coverage proving profile and rating cache
   isolation across a real multi-feature transition.
 - Tests outside the app route directory.
+- Add or extend a path-filtered CI workflow that runs the frontend test suite
+  for relevant application changes.
 - Path-filtered database CI job.
 - One small Maestro smoke flow for the critical journey, run on demand or by
   deliberate PR trigger rather than every minor change.
@@ -519,7 +535,8 @@ Deliverables:
 
 Acceptance:
 
-- Frontend tests and database CI run in documented commands/workflows.
+- Frontend tests and database CI run in documented commands and path-filtered
+  workflows; frontend tests are not local-only.
 - Focused tests from Tasks 15–19 remain green and missing cross-feature gaps
   are covered without broad snapshot duplication.
 - Account switching cannot expose the prior user’s profile or rating cache.
@@ -562,12 +579,21 @@ Dependencies: Product data collection behavior through Task 23 is stable.
 Deliverables:
 
 - Final Privacy Policy, Terms of Use, and support/contact route.
-- Direct in-app Privacy, Terms, and support/contact links plus public URLs for
-  store metadata. Do not add a generic Settings route unless concrete settings
-  receive explicit task ownership.
+- Direct Privacy, Terms, support/contact, and account-deletion information
+  links in the Account surface, plus public URLs for store metadata. Do not add
+  a generic Settings route unless concrete settings receive explicit task
+  ownership.
+- If Android distribution is planned, provide a functional public web resource
+  where users can request account and associated-data deletion without the
+  installed app. Explain identity verification and retention, and prepare its
+  URL for the Google Play Data Safety form under the
+  [Google Play account-deletion requirements](https://support.google.com/googleplay/android-developer/answer/13327111?hl=en-EN).
 - Data inventory covering email, profile fields, ratings, private note, and any
   diagnostics actually enabled.
 - Retention/deletion explanation and App Store privacy answers.
+- Complete the current
+  [App Store age-rating questionnaire](https://developer.apple.com/news/?id=tlur8uvi),
+  including accurate social-media capability answers.
 - A rule to update disclosures whenever analytics or another data SDK is added.
 
 ## Task 25: EAS Environments And TestFlight Candidate
@@ -611,6 +637,11 @@ Acceptance:
 - No placeholder Feed or Account surfaces.
 - Privacy/Terms links, screenshots, metadata, review notes, and deletion
   instructions are current.
+- Reverify age-rating, privacy, deletion, and support disclosures against the
+  actual release-candidate feature set before submission.
+- If Android distribution is included, verify the external deletion-request
+  URL and complete the Google Play Data Safety deletion declarations at the
+  Android submission boundary.
 - Production variables, schema, and grants match the approved release plan.
 - Known limitations and rollback decision are written.
 - A human chooses staged/manual release and completes App Review submission.
@@ -629,6 +660,8 @@ Deliverables:
 - Run aggregate consistency checks.
 - Keep rollback, catalog correction ownership, dependency/security update, and
   incident routines.
+- Maintain a lightweight release-incident record containing impact, response,
+  rollback decision, root cause, and durable correction.
 - Add Sentry only when built-in logs and beta/production evidence justify the
   SDK and disclosure cost.
 
@@ -642,8 +675,10 @@ stable.
 Potential scope:
 
 - Source identity/provenance, image rights, unique external IDs, idempotent
-  import jobs, freshness timestamps, source-specific rate/error handling, and
-  a minimal review workflow.
+  import jobs, freshness timestamps, source-specific rate limiting, retry
+  limits, error handling, and a minimal review workflow.
+- Use the established Cloudflare R2 asset strategy for approved public catalog
+  images where appropriate; importing an image does not establish usage rights.
 - Server/worker execution only; never mobile-client scraping.
 - Keep imported products unpublished until validation passes.
 - Add offer business keys or other schema only when an actual importer proves
@@ -664,3 +699,6 @@ Boundary:
 - Keep this read-only and outside the mobile release critical path.
 - Consume reviewed product data; never become another source of truth for
   scores or catalog records.
+- Deploy public publishing outputs through the existing Cloudflare-oriented
+  personal publishing and asset strategy unless a later hosting decision
+  replaces it.

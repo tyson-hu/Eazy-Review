@@ -81,10 +81,15 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 ## Store Readiness
 
 - App icon and splash assets are final.
-- Final Terms, Privacy, and support/contact surfaces exist and have public
-  metadata URLs.
+- Final Terms, Privacy, support/contact, and account-deletion information are
+  linked directly from Account and have the required public metadata URLs.
+- If Android distribution is planned, a functional external account-deletion
+  request resource is available without the installed app, and its URL and
+  deletion declarations are verified in Google Play Data Safety.
 - App Store privacy answers match the actual email/profile/rating/private-note
   data inventory and any diagnostics SDKs.
+- The current App Store age-rating questionnaire, including social-media
+  capability answers, matches the release-candidate feature set.
 - App Store screenshots are current.
 - App display name, bundle/package identifiers, version, and build number are
   final.
