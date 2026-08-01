@@ -43,6 +43,16 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 
 ## Routine
 
+### Ownership for Tasks 16–19
+
+Tasks 16–19 are parent-owned, verified-strong implementations. The parent
+follows this skill for the integrated slice and keeps reviewer and verifier
+independent. The generic implementer may receive only explicitly bounded,
+non-sensitive leaf packets; it never owns auth/session state, rating
+authorization, recovery verification, account-deletion authority, secrets, or
+the protected server boundary. No security-specific implementer role is
+introduced.
+
 1. Restate the task scope in one sentence; anything beyond it is out of scope.
 2. Confirm every route the task touches exists in `docs/USER_FLOWS.md` under the same name. If a needed route is not documented, stop (see stop conditions).
 3. Confirm the data shapes against `docs/API_CONTRACTS.md`. Use the documented names exactly (`Product`, `ProductCardData`, `RatingBreakdown`, and auth/rating APIs the task names).
@@ -85,7 +95,12 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 ## Verification
 
 - `npm run typecheck`, plus `npm run lint` if files were added or imports changed.
-- `npm run check` if routes or dependencies changed.
+- After the implementation packet returns, the parent runs
+  `npm run prepare:routes` when routes/configuration require it, inspects
+  tracked drift, delegates the read-only `npm run check:readonly` gate, and
+  runs `npm run check:expo` outside the sandbox when routes or dependencies
+  changed. The generic implementer never owns route preparation or the full
+  Expo gate.
 - Manually walk the affected flow (for example Browse -> tap card -> Product Detail) in the simulator or web preview if the app is running.
 - For connected-read mode: confirm anonymous Browse/Detail hit published Supabase rows and that no migration or RLS file changed in the slice.
 - For core-auth mode: confirm sign-up creates one profile via the existing

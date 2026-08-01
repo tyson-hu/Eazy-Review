@@ -105,4 +105,9 @@ Direct /product/:id/rate → submit → Detail
 - When frontend data boundaries change: `docs/API_CONTRACTS.md`.
 - Durable high-impact process/product calls only: add or update `docs/decisions/*.md` under `docs/decisions/README.md`, then regenerate `docs/DECISIONS.md`. Routine findings, triage, pass/fail, and GO status stay in the audit report and `docs/TASKS.md`.
 
-Final validation after the last code change: `npm run typecheck`, `npm run lint`, `npm run check`, `git diff --check`, `git status --short` (docs-only audits may skip compile commands with an explicit reason).
+Final validation after the last code change: the read-only verifier runs the
+narrowest checks and `npm run check:readonly`; the parent performs any required
+`npm run prepare:routes`, inspects tracked drift, and runs
+`npm run check:expo` outside the sandbox when the change requires the full Expo
+gate. Finish with `git diff --check` and `git status --short`. Docs-only audits
+may skip unrelated compile commands with an explicit reason.

@@ -13,19 +13,35 @@ Read first: the Validation Commands section in `docs/AGENT_WORKFLOW.md`, and the
 
 ## Routine
 
-1. Pick the narrowest command that covers the change: `npm run typecheck`; add `npm run lint` if code style or imports changed; `npm run check` for route or dependency changes or final handoff.
-2. If a generation step is required first (e.g. `npm run generate:routes` on a clean checkout) and read-only mode blocks it, do not work around it. Report that the parent must run generation first and re-delegate.
-3. Run the chosen commands and capture exact output.
-4. Classify every failure as one of: **caused-by-change**, **pre-existing** (present without the change), **environmental** (network, cache, tooling), or **uncertain**. A failure is caused-by-change only when there is direct evidence connecting it to newly added or modified behavior — merely occurring in a changed file is suggestive, not conclusive; classify it as uncertain when direct evidence is unavailable. You are read-only, so any clean-base comparison (stash, temporary checkout) must be performed by the parent; request it in your report when it would settle an uncertain classification.
-5. For a user-visible change, exercise the relevant requested user flow when the prompt provides it and available tools support it. Otherwise, state exactly why the flow check was skipped.
+1. Pick the narrowest read-only command that covers the change: a focused test;
+   `npm run typecheck`; add `npm run lint` if code style or imports changed;
+   `npm run check:readonly` for the complete verifier gate. Never run
+   `prepare:routes`, `check:expo`, or the parent-owned full `check` command.
+2. If route/config generation or another preparation step is required, do not
+   work around it. Report that the parent must run the preparation command,
+   inspect tracked drift, and re-delegate.
+3. Run the chosen commands and capture exact output after redacting secrets,
+   credentials, tokens, personal data, and private notes.
+4. Classify every failure as one of: **caused-by-change**, **pre-existing**,
+   **environmental**, or **uncertain**. A failure is caused-by-change only when
+   direct evidence connects it to newly added or modified behavior; merely
+   occurring in a changed file is suggestive, not conclusive. When a clean-base
+   comparison would settle uncertainty, request that the parent use a
+   temporary worktree or another explicitly safe comparison. Never stash or
+   mutate the checkout.
+5. For a user-visible change, exercise the relevant requested user flow when
+   the prompt provides it and available tools support it. Otherwise, state
+   exactly why the flow check was skipped.
 
 ## Output format
 
-- Each command run, verbatim, with pass/fail.
-- Each failure: exact error text, its classification, and the evidence for that classification.
+- Each command run exactly as invoked, with pass/fail.
+- Each failure: exact redacted error text, its classification, and the evidence
+  for that classification.
 - Broader commands skipped, each with the reason.
 - Pre-existing failures listed separately so the parent can record them in `docs/TASKS.md` (you cannot write files).
-- Verdict: `pass`, `fail (caused-by-change)`, `fail (pre-existing only)`, or `blocked` with what you need.
+- Verdict: `pass`, `fail (caused-by-change)`, `fail (pre-existing only)`,
+  `fail (environmental)`, `fail (uncertain)`, or `blocked` with what you need.
 
 ## Hard limits
 

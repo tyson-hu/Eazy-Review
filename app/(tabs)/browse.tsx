@@ -50,7 +50,7 @@ export default function BrowseScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   // Mimics the async load Supabase will introduce so loading/error UI is
-  // exercised now and the TanStack Query swap (Task 10+) is a drop-in.
+  // exercised now. Task 14 owns TanStack Query; Task 15 owns this Browse swap.
   const [isLoading, setIsLoading] = useState(true);
   const [loadAttempt, setLoadAttempt] = useState(0);
 
