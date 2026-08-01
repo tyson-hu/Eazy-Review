@@ -6,9 +6,17 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -30,23 +38,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check skill wrapper contract
-        run: npm run check:skill-wrappers
+      - name: Prepare typed routes and config
+        run: npm run prepare:routes
 
-      - name: Check decision records and generated index
-        run: npm run decisions:check
+      - name: Fail on tracked route/config drift
+        run: git diff --exit-code -- tsconfig.json
 
-      - name: Secret scan and self-test
-        run: npm run check:secrets
-
-      - name: Generate typed routes
-        run: npm run generate:routes
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
+      - name: Run read-only repository checks
+        run: npm run check:readonly
 
       - name: Expo doctor
         run: npx expo-doctor

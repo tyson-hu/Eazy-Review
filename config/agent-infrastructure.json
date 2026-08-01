@@ -1,0 +1,840 @@
+{
+  "version": 1,
+  "owners": [
+    {
+      "id": "canonical-skill",
+      "description": "Human-reviewed loop routine; edits require the repository skill lifecycle."
+    },
+    {
+      "id": "generated-command",
+      "description": "Owned by the named deterministic generator/check command."
+    },
+    {
+      "id": "historical-record",
+      "description": "Evidence or archive content preserved as a point-in-time record."
+    },
+    {
+      "id": "human-product",
+      "description": "Human-owned product direction and scope."
+    },
+    {
+      "id": "parent-agent",
+      "description": "Parent-owned canonical project or workflow document."
+    },
+    {
+      "id": "tool-adapter",
+      "description": "Tool-facing pointer, summary, or template derived from a canonical source."
+    }
+  ],
+  "documents": [
+    {
+      "path": ".agents/skills",
+      "lifecycle": "generated",
+      "owner": "generated-command"
+    },
+    {
+      "path": ".claude/skills",
+      "lifecycle": "generated",
+      "owner": "generated-command"
+    },
+    {
+      "path": ".cursor/agents/debugger.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": ".cursor/agents/implementer.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": ".cursor/agents/reviewer.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": ".cursor/agents/verifier.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": ".cursor/mcp.json",
+      "lifecycle": "status",
+      "owner": "parent-agent",
+      "staleScan": false
+    },
+    {
+      "path": ".cursor/rules/design-system.mdc",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": ".cursor/rules/mcp-policy.mdc",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": ".cursor/rules/orchestration.mdc",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": ".cursor/rules/react-native-expo.mdc",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": ".cursor/rules/security.mdc",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": ".cursor/rules/supabase.mdc",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": "AGENTS.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "CLAUDE.md",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
+      "path": "README.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "config/agent-infrastructure.json",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent",
+      "staleScan": false
+    },
+    {
+      "path": "docs/AGENT_WORKFLOW.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/API_CONTRACTS.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/BLUEBOOK.md",
+      "lifecycle": "evergreen",
+      "owner": "human-product"
+    },
+    {
+      "path": "docs/DATA_MODEL.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "lifecycle": "generated",
+      "owner": "generated-command"
+    },
+    {
+      "path": "docs/DESIGN.md",
+      "lifecycle": "evergreen",
+      "owner": "human-product"
+    },
+    {
+      "path": "docs/DOCUMENTATION_POLICY.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/LOOP_ENGINEERING.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/MCP_WORKFLOW.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/MOBILE_SIMULATOR_SOP.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "lifecycle": "status",
+      "owner": "human-product"
+    },
+    {
+      "path": "docs/SECURITY.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/STITCH_PROMPTS.md",
+      "lifecycle": "evergreen",
+      "owner": "human-product"
+    },
+    {
+      "path": "docs/TASKS.md",
+      "lifecycle": "status",
+      "owner": "human-product"
+    },
+    {
+      "path": "docs/USER_FLOWS.md",
+      "lifecycle": "evergreen",
+      "owner": "human-product"
+    },
+    {
+      "path": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/WEB_MOBILE_PREVIEW_SOP.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/archive",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/decisions/README.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/decisions/archive",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/README.md",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/evidence/task-11-12-database-acceptance",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-10-baseline-ux",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-10-f4-check",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-10-reaudit",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/notes/handoff.md",
+      "lifecycle": "status",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/research",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "skills/blocker-note/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/bugfix-debug-loop/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/docs-sync-loop/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/feature-slice-builder/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/interactive-preview-loop/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/manifest.json",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent",
+      "staleScan": false
+    },
+    {
+      "path": "skills/product-data-modeling/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/refactor-safety-loop/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/session-handoff/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/skill-creator/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/supabase-schema-change/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/test-and-validation-loop/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
+      "path": "skills/ui-screen-builder/SKILL.md",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    }
+  ],
+  "mirrors": [
+    {
+      "source": "docs/USER_FLOWS.md",
+      "mirror": ".cursor/rules/react-native-expo.mdc",
+      "relationship": "summary"
+    },
+    {
+      "source": "AGENTS.md",
+      "mirror": "CLAUDE.md",
+      "relationship": "pointer"
+    },
+    {
+      "source": "docs/AGENT_WORKFLOW.md",
+      "mirror": ".cursor/rules/orchestration.mdc",
+      "relationship": "summary"
+    },
+    {
+      "source": "docs/AGENT_WORKFLOW.md",
+      "mirror": ".github/pull_request_template.md",
+      "relationship": "template"
+    },
+    {
+      "source": "docs/DATA_MODEL.md",
+      "mirror": ".cursor/rules/supabase.mdc",
+      "relationship": "summary"
+    },
+    {
+      "source": "docs/DESIGN.md",
+      "mirror": ".cursor/rules/design-system.mdc",
+      "relationship": "summary"
+    },
+    {
+      "source": "docs/MCP_WORKFLOW.md",
+      "mirror": ".cursor/rules/mcp-policy.mdc",
+      "relationship": "summary"
+    },
+    {
+      "source": "docs/SECURITY.md",
+      "mirror": ".cursor/rules/security.mdc",
+      "relationship": "summary"
+    }
+  ],
+  "generatedFiles": [
+    {
+      "path": ".agents/skills",
+      "source": "skills/manifest.json",
+      "checkCommand": "npm run check:skill-wrappers"
+    },
+    {
+      "path": ".claude/skills",
+      "source": "skills/manifest.json",
+      "checkCommand": "npm run check:skill-wrappers"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "source": "docs/decisions",
+      "checkCommand": "npm run decisions:check"
+    }
+  ],
+  "dependencies": [
+    {
+      "document": "README.md",
+      "dependsOn": "AGENTS.md",
+      "reason": "Setup-facing guidance points to the compact operating guide."
+    },
+    {
+      "document": "README.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Setup and local database instructions inherit security boundaries."
+    },
+    {
+      "document": "README.md",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "Current status and implementation order live only in TASKS."
+    },
+    {
+      "document": "AGENTS.md",
+      "dependsOn": "docs/DOCUMENTATION_POLICY.md",
+      "reason": "The compact guide routes documentation updates through the policy."
+    },
+    {
+      "document": "AGENTS.md",
+      "dependsOn": "docs/LOOP_ENGINEERING.md",
+      "reason": "Session routing selects a loop from the canonical index."
+    },
+    {
+      "document": "AGENTS.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "The compact guide inherits canonical security boundaries."
+    },
+    {
+      "document": "AGENTS.md",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "The active task remains the status source."
+    },
+    {
+      "document": "docs/AGENT_WORKFLOW.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Delegation and validation cannot weaken security boundaries."
+    },
+    {
+      "document": "docs/AGENT_WORKFLOW.md",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "Ownership and task routing use current task state."
+    },
+    {
+      "document": "docs/API_CONTRACTS.md",
+      "dependsOn": "docs/DATA_MODEL.md",
+      "reason": "Frontend mappings consume the accepted database contract."
+    },
+    {
+      "document": "docs/API_CONTRACTS.md",
+      "dependsOn": "docs/USER_FLOWS.md",
+      "reason": "Screen composition and API boundaries serve documented flows."
+    },
+    {
+      "document": "docs/DATA_MODEL.md",
+      "dependsOn": "docs/BLUEBOOK.md",
+      "reason": "The data contract implements product scope and terminology."
+    },
+    {
+      "document": "docs/DESIGN.md",
+      "dependsOn": "docs/BLUEBOOK.md",
+      "reason": "The UI authority implements product direction."
+    },
+    {
+      "document": "docs/DOCUMENTATION_POLICY.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "The document gate uses the canonical handoff and decision workflow."
+    },
+    {
+      "document": "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Evidence publication inherits secret and personal-data rules."
+    },
+    {
+      "document": "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
+      "dependsOn": "docs/evidence/README.md",
+      "reason": "Upload selection uses the evidence layout and status vocabulary."
+    },
+    {
+      "document": "docs/LOOP_ENGINEERING.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "Loops reuse session, validation, and handoff contracts."
+    },
+    {
+      "document": "docs/MCP_WORKFLOW.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "External-tool use stays inside the agent workflow."
+    },
+    {
+      "document": "docs/MCP_WORKFLOW.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "MCP action classes inherit canonical security boundaries."
+    },
+    {
+      "document": "docs/MOBILE_SIMULATOR_SOP.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "Interactive evidence complements, rather than replaces, validation."
+    },
+    {
+      "document": "docs/RELEASE_CHECKLIST.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Release actions preserve environment and credential boundaries."
+    },
+    {
+      "document": "docs/RELEASE_CHECKLIST.md",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "Release readiness follows accepted task state."
+    },
+    {
+      "document": "docs/ROADMAP.md",
+      "dependsOn": "docs/BLUEBOOK.md",
+      "reason": "Milestones implement the product vision."
+    },
+    {
+      "document": "docs/ROADMAP.md",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "Detailed task status and order remain in TASKS."
+    },
+    {
+      "document": "docs/SECURITY.md",
+      "dependsOn": "docs/DATA_MODEL.md",
+      "reason": "Database security rules preserve the accepted data contract."
+    },
+    {
+      "document": "docs/TASKS.md",
+      "dependsOn": "docs/API_CONTRACTS.md",
+      "reason": "Task deliverables use accepted frontend and server contracts."
+    },
+    {
+      "document": "docs/TASKS.md",
+      "dependsOn": "docs/BLUEBOOK.md",
+      "reason": "The task ledger implements human-owned product scope."
+    },
+    {
+      "document": "docs/USER_FLOWS.md",
+      "dependsOn": "docs/BLUEBOOK.md",
+      "reason": "Routes and user journeys implement the product flow."
+    },
+    {
+      "document": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
+      "dependsOn": "docs/MOBILE_SIMULATOR_SOP.md",
+      "reason": "Audits reuse the native capture procedure."
+    },
+    {
+      "document": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
+      "dependsOn": "docs/WEB_MOBILE_PREVIEW_SOP.md",
+      "reason": "Audits reuse the web capture procedure."
+    },
+    {
+      "document": "docs/WEB_MOBILE_PREVIEW_SOP.md",
+      "dependsOn": "docs/MCP_WORKFLOW.md",
+      "reason": "Browser automation follows MCP action policy."
+    },
+    {
+      "document": "skills/blocker-note/SKILL.md",
+      "dependsOn": "docs/LOOP_ENGINEERING.md",
+      "reason": "Blocker persistence implements the global retry stop."
+    },
+    {
+      "document": "skills/bugfix-debug-loop/SKILL.md",
+      "dependsOn": "docs/LOOP_ENGINEERING.md",
+      "reason": "Bug fixing inherits hypotheses, retry budgets, and stop conditions."
+    },
+    {
+      "document": "skills/bugfix-debug-loop/SKILL.md",
+      "dependsOn": "docs/USER_FLOWS.md",
+      "reason": "Regression scope is selected from documented flows."
+    },
+    {
+      "document": "skills/docs-sync-loop/SKILL.md",
+      "dependsOn": "docs/DOCUMENTATION_POLICY.md",
+      "reason": "Documentation sync applies the canonical update map."
+    },
+    {
+      "document": "skills/feature-slice-builder/SKILL.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Connected feature modes preserve auth and environment boundaries."
+    },
+    {
+      "document": "skills/feature-slice-builder/SKILL.md",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "The selected feature mode comes from the active task."
+    },
+    {
+      "document": "skills/interactive-preview-loop/SKILL.md",
+      "dependsOn": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
+      "reason": "The evidence loop delegates capture details to the SOP."
+    },
+    {
+      "document": "skills/supabase-schema-change/SKILL.md",
+      "dependsOn": "docs/DATA_MODEL.md",
+      "reason": "Schema work implements the canonical database contract."
+    },
+    {
+      "document": "skills/supabase-schema-change/SKILL.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Schema work preserves environment and authorization boundaries."
+    },
+    {
+      "document": "skills/test-and-validation-loop/SKILL.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "Validation command ownership and handoff live in the workflow."
+    }
+  ],
+  "staleTerms": {
+    "scanLifecycles": [
+      "evergreen",
+      "mirror",
+      "status"
+    ],
+    "historicalAllowlist": [
+      "docs/archive",
+      "docs/archive/**",
+      "docs/decisions/archive",
+      "docs/decisions/archive/**",
+      "docs/evidence/task-10-baseline-ux",
+      "docs/evidence/task-10-baseline-ux/**",
+      "docs/evidence/task-10-f4-check",
+      "docs/evidence/task-10-f4-check/**",
+      "docs/evidence/task-10-reaudit",
+      "docs/evidence/task-10-reaudit/**",
+      "docs/evidence/task-11-12-database-acceptance",
+      "docs/evidence/task-11-12-database-acceptance/**",
+      "docs/research",
+      "docs/research/**"
+    ],
+    "rules": [
+      {
+        "id": "old-expo-sdk",
+        "pattern": "\\bExpo SDK (?:[0-9]|[1-4][0-9]|5[0-6])\\b",
+        "flags": "g",
+        "allowlist": []
+      },
+      {
+        "id": "obsolete-schema-name",
+        "pattern": "\\b(?:official_ratings|product_rating_summary|rating_summaries)\\b",
+        "flags": "gi",
+        "allowlist": [
+          {
+            "path": "docs/DATA_MODEL.md",
+            "linePattern": "\\bobsolete\\b",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "obsolete-official-rating-label",
+        "pattern": "\\bofficial rating\\b",
+        "flags": "gi",
+        "allowlist": [
+          {
+            "path": "docs/BLUEBOOK.md",
+            "linePattern": "Do not call",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "stale-task-10-query-owner",
+        "pattern": "\\bTask 10\\+\\b",
+        "flags": "g",
+        "allowlist": []
+      },
+      {
+        "id": "stale-initial-database-ci-owner",
+        "pattern": "\\b(?:(?:add|adds|adding|owns) (?:a |the )?path-filtered (?:local )?database CI|path-filtered database CI job)\\b",
+        "flags": "gi",
+        "allowlist": []
+      },
+      {
+        "id": "stale-client-score-utility",
+        "pattern": "\\bcalculateScore\\.ts\\b",
+        "flags": "g",
+        "allowlist": []
+      },
+      {
+        "id": "stale-shell-only-description",
+        "pattern": "\\bonly an app shell\\b",
+        "flags": "gi",
+        "allowlist": []
+      }
+    ]
+  },
+  "impactRules": [
+    {
+      "id": "agent-infrastructure",
+      "changedPaths": [
+        ".agents/**",
+        ".claude/**",
+        ".cursor/**",
+        ".github/pull_request_template.md",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "config/agent-infrastructure.json",
+        "scripts/check-agent-infrastructure*.cjs",
+        "skills/**"
+      ],
+      "requiredDocuments": [
+        "AGENTS.md",
+        "docs/AGENT_WORKFLOW.md",
+        "docs/DOCUMENTATION_POLICY.md",
+        "docs/LOOP_ENGINEERING.md",
+        "docs/MCP_WORKFLOW.md",
+        "docs/SECURITY.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "application-routes",
+      "changedPaths": [
+        "app/**"
+      ],
+      "requiredDocuments": [
+        "docs/API_CONTRACTS.md",
+        "docs/DESIGN.md",
+        "docs/TASKS.md",
+        "docs/USER_FLOWS.md"
+      ]
+    },
+    {
+      "id": "frontend-contracts",
+      "changedPaths": [
+        "src/features/**",
+        "src/lib/**",
+        "src/types/**",
+        "src/utils/**"
+      ],
+      "requiredDocuments": [
+        "docs/API_CONTRACTS.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "product-scope",
+      "changedPaths": [
+        "docs/BLUEBOOK.md",
+        "docs/ROADMAP.md"
+      ],
+      "requiredDocuments": [
+        "docs/BLUEBOOK.md",
+        "docs/ROADMAP.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "release-readiness",
+      "changedPaths": [
+        "app.json",
+        "eas.json",
+        "docs/RELEASE_CHECKLIST.md"
+      ],
+      "requiredDocuments": [
+        "README.md",
+        "docs/RELEASE_CHECKLIST.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "supabase-contracts",
+      "changedPaths": [
+        "supabase/**",
+        "scripts/test-db-*.cjs"
+      ],
+      "requiredDocuments": [
+        "docs/API_CONTRACTS.md",
+        "docs/DATA_MODEL.md",
+        "docs/SECURITY.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "tooling-and-ci",
+      "changedPaths": [
+        ".github/workflows/**",
+        ".npmrc",
+        "package-lock.json",
+        "package.json",
+        "scripts/**"
+      ],
+      "requiredDocuments": [
+        "AGENTS.md",
+        "README.md",
+        "docs/AGENT_WORKFLOW.md",
+        "docs/DOCUMENTATION_POLICY.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "ui-components",
+      "changedPaths": [
+        "src/components/**",
+        "tailwind.config.js"
+      ],
+      "requiredDocuments": [
+        "docs/DESIGN.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "verification-evidence",
+      "changedPaths": [
+        "docs/evidence/**",
+        "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
+        "docs/MOBILE_SIMULATOR_SOP.md",
+        "docs/UX_SCREENSHOT_AUDIT_SOP.md",
+        "docs/WEB_MOBILE_PREVIEW_SOP.md"
+      ],
+      "requiredDocuments": [
+        "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
+        "docs/MOBILE_SIMULATOR_SOP.md",
+        "docs/TASKS.md",
+        "docs/UX_SCREENSHOT_AUDIT_SOP.md",
+        "docs/WEB_MOBILE_PREVIEW_SOP.md",
+        "docs/evidence/README.md"
+      ]
+    }
+  ],
+  "taskGraph": {
+    "document": "docs/TASKS.md",
+    "firstTask": 13,
+    "lastTask": 29,
+    "allowedExternalTasks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "fields": [
+      "Status",
+      "Depends on",
+      "Unlocks",
+      "Execution owner",
+      "Parallel-safe with",
+      "Human gate"
+    ]
+  }
+}

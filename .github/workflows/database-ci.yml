@@ -1,0 +1,67 @@
+name: Database CI
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/database-ci.yml"
+      - ".npmrc"
+      - "package-lock.json"
+      - "package.json"
+      - "scripts/test-db-*.cjs"
+      - "supabase/**"
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/database-ci.yml"
+      - ".npmrc"
+      - "package-lock.json"
+      - "package.json"
+      - "scripts/test-db-*.cjs"
+      - "supabase/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DO_NOT_TRACK: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Pin npm
+        working-directory: ${{ runner.temp }}
+        run: npm install --global --ignore-scripts npm@11.17.0
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.110.0
+
+      - name: Start local Supabase without logging generated credentials
+        run: supabase start >/dev/null
+
+      - name: Reset database and run pgTAP plus concurrency tests
+        run: npm run test:db:reset
+
+      - name: Stop local Supabase and remove CI volumes
+        if: always()
+        run: supabase stop --no-backup

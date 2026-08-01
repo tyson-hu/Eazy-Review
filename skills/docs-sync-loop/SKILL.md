@@ -19,11 +19,17 @@ Goal: bring drifted docs back in sync with the code that already changed, using 
 ## Read first
 
 - `docs/DOCUMENTATION_POLICY.md`: the Document Update Map is this loop's routine table.
+- `config/agent-infrastructure.json`: machine-readable document lifecycle,
+  dependency, mirror, ownership, stale-term, and changed-path impact rules.
 
 ## Routine
 
 1. List the changed files (`git diff --name-only`, or the stale docs named in the task).
-2. For each changed file, find its row in the Document Update Map and list the affected docs.
+2. Run
+   `node scripts/check-agent-infrastructure.cjs --report <changed-path>...`,
+   then compare its affected-document report with the prose Document Update
+   Map. The report is a required starting set; semantic impact still requires
+   human/reviewer judgment.
 3. Update each affected doc to match the code as it is now — status in `docs/TASKS.md`, contracts in `docs/API_CONTRACTS.md`, schema in `docs/DATA_MODEL.md`, flows in `docs/USER_FLOWS.md`.
 4. Where content exists in its canonical home (see the Canonical Homes table in `docs/AGENT_WORKFLOW.md`), add a one-line pointer — never duplicate the explanation into a second doc.
 5. Check every file path mentioned in the touched docs still exists (no dangling references to deleted or moved files).
@@ -33,6 +39,7 @@ Goal: bring drifted docs back in sync with the code that already changed, using 
 ## Verification
 
 - Grep the touched docs for referenced file paths and confirm each exists in the repo.
+- Run `npm run check:agent-infra`.
 - Re-read each updated doc top to bottom: no statement contradicts the current code or another doc.
 - No explanation now lives in two places.
 

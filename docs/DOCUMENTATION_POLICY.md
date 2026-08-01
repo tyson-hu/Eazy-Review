@@ -8,6 +8,28 @@ Every meaningful code, configuration, workflow, design, schema, dependency, rout
 
 Tiny typo fixes, formatting-only edits, and internal implementation changes with no visible behavior, contract, workflow, or architecture impact may use the no-docs-needed path.
 
+## Machine-Readable Enforcement
+
+This prose explains the policy. `config/agent-infrastructure.json` is the
+machine-readable enforcement source for document lifecycle, ownership,
+source-to-mirror relationships, generated-command ownership, dependency
+edges, stale-term rules, changed-path impact rules, and the strict Task 13–29
+metadata contract.
+
+- `npm run check:agent-infra` validates that contract without writing files.
+- `node scripts/check-agent-infrastructure.cjs --report <changed-path>...`
+  prints which documents require review for the supplied paths, including
+  dependency, bidirectional source/mirror, and generated-artifact propagation.
+  Report mode validates the manifest structure but remains available while
+  active-document drift is being repaired; `npm run check:agent-infra`
+  enforces the complete current-repository contract.
+
+The checker catches structural drift; it does not decide whether prose is
+semantically correct, whether an ADR is warranted, or whether a listed
+document actually needs a content change. Parent and independent reviewer
+judgment remain required. When the report and this prose differ, stop and
+correct the config or policy together rather than silently choosing one.
+
 ## Pre-Commit Documentation Gate
 
 Before staging or committing, agents must:
@@ -78,7 +100,10 @@ Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `docs/AGENT_WORKFLOW.md`
 - `docs/LOOP_ENGINEERING.md`
 - `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`, `docs/evidence/README.md`, and `skills/interactive-preview-loop` when interactive preview, UX audit, or evidence upload procedure changes
-- `skills/*/SKILL.md` (and the discovery stubs in `.claude/skills/*` and `.agents/skills/*`, kept identical)
+- `skills/*/SKILL.md` (canonical skill bodies) and the generated discovery
+  wrappers in `.claude/skills/*` and `.agents/skills/*`. The two wrapper trees
+  are byte-for-byte identical to each other; each wrapper points to its
+  canonical skill and intentionally does not copy the canonical body.
 - `docs/MCP_WORKFLOW.md`
 - `docs/DOCUMENTATION_POLICY.md`
 - `docs/decisions/*.md` only for a qualifying durable agent-workflow decision
