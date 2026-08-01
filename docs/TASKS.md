@@ -581,7 +581,8 @@ Dependencies: Product data collection behavior through Task 23 is stable.
 
 Deliverables:
 
-- Final Privacy Policy, Terms of Use, and support/contact route.
+- Final Privacy Policy, Terms of Use, and support/contact routes, each with a
+  functional public web URL for store metadata.
 - Direct Account links to the Terms, Privacy, and support/contact routes plus a
   public account-deletion information URL. The public destination explains the
   in-app deletion path and the data deletion/retention behavior; it is not a
