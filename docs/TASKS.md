@@ -163,9 +163,11 @@ Deliverables:
 - Use the Task 13 implementation PR description as the short status/evidence
   record. It must include stable IDs, image source and rights/permission basis,
   image review date, retailer/source links, verified price/currency/region and
-  check time, relevant offer exclusions, and first-run versus second-run row
-  counts. Do not create another evidence directory unless the existing
-  workflow requires it. Update README only if local reset behavior changes.
+  check time, relevant offer exclusions, and first-run versus same-database
+  second-run row counts plus before/after comparisons of every seeded value and
+  timestamp (or equivalent acceptance-test output). Do not create another
+  evidence directory unless the existing workflow requires it. Update README
+  only if local reset behavior changes.
 
 Acceptance:
 
@@ -188,7 +190,8 @@ Acceptance:
   price, no Eazy Score, and an empty Community Score.
 - No `auth.users`, `profiles`, or `user_ratings` fixtures are created.
 - The Task 13 PR description contains the required image/offer provenance and
-  same-database idempotency evidence.
+  same-database idempotency evidence for row counts, fixture values, and
+  timestamps before and after the second application.
 - `npm run check` and `git diff --check` pass.
 - Staging seed application remains a separate explicit human-approved action.
 - Production remains untouched.
