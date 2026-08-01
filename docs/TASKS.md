@@ -398,9 +398,11 @@ Deliverables:
 
 - Forgot Password and Reset Password routes.
 - Recovery-only session handling.
-- Document the development, preview, and production redirect URL matrix using
-  the existing `eazyreview` scheme, and configure the allowed recovery
-  redirects in each separately authorized environment.
+- Document the development, preview/staging, and production recovery redirect
+  matrix using the existing `eazyreview` scheme.
+- Configure the local/development recovery redirect during implementation.
+- Preview/staging and production redirect configuration are separate
+  human-approved environment actions and must record their own evidence.
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
 - Physical-device deep-link verification in a development or preview build.
@@ -416,11 +418,6 @@ Acceptance:
 - The new password works and the old password fails.
 - Recovery is proven outside web-only development.
 
-Boundary:
-
-- Local implementation does not authorize staging or production configuration
-  changes.
-
 ## Task 19: Protected Account Deletion
 
 Status: Pending.
@@ -435,8 +432,8 @@ Deliverables:
 - One authenticated Supabase Edge Function.
 - Server validation of the bearer session and caller-derived target user ID.
 - No authoritative user ID accepted from the client.
-- Chosen session-revocation policy plus hard deletion with a server-only
-  secret.
+- Revoke all refresh sessions for the verified caller, then hard-delete that
+  same Auth user with a server-only secret.
 - Document the behavior and maximum remaining lifetime of already-issued
   access tokens after session revocation or deletion. Do not claim
   instantaneous cryptographic invalidation unless it is demonstrated.
@@ -454,8 +451,12 @@ Acceptance:
 - The client cannot choose another target.
 - Failed server validation performs no deletion.
 - Profile and ratings cascade; affected aggregates remain correct.
-- Local session/cache are removed. A deleted user cannot establish a new
-  session or use the application's normal owner-data flow.
+- Local session/cache are removed and deleted credentials cannot sign in.
+- A second pre-existing session for the deleted account cannot refresh or
+  establish a new authenticated application session.
+- Already-issued access tokens are tested and documented against the
+  configured JWT-expiry bound; the app does not claim immediate cryptographic
+  invalidation.
 - A human records the staging destructive test.
 - Production deletion is never performed by a coding agent or tool.
 
@@ -639,12 +640,20 @@ Acceptance:
   instructions are current.
 - Reverify age-rating, privacy, deletion, and support disclosures against the
   actual release-candidate feature set before submission.
-- If Android distribution is included, verify the external deletion-request
-  URL and complete the Google Play Data Safety deletion declarations at the
-  Android submission boundary.
+- If a later Android publication task is authorized, it must verify the
+  external deletion-request URL and complete the Google Play Data Safety
+  deletion declarations at the Android submission boundary.
 - Production variables, schema, and grants match the approved release plan.
 - Known limitations and rollback decision are written.
 - A human chooses staged/manual release and completes App Review submission.
+
+Boundaries:
+
+- This task is an iOS-first App Store submission. Android scope remains the
+  compatibility smoke owned by Task 23.
+- Android production build upload, Play Console listing, testing-track
+  promotion, review submission, and release decision require a separately
+  authorized Android publication task.
 
 ## Task 27: Post-Launch Operations
 
