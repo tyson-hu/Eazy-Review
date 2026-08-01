@@ -40,6 +40,13 @@
       "owner": "generated-command"
     },
     {
+      "path": ".claude/settings.json",
+      "kind": "file",
+      "lifecycle": "status",
+      "owner": "parent-agent",
+      "staleScan": false
+    },
+    {
       "path": ".cursor/agents/debugger.md",
       "kind": "file",
       "lifecycle": "evergreen",
@@ -898,9 +905,13 @@
       "changedPaths": [
         ".github/workflows/**",
         ".npmrc",
+        "babel.config.js",
+        "eslint.config.js",
+        "metro.config.js",
         "package-lock.json",
         "package.json",
-        "scripts/**"
+        "scripts/**",
+        "tsconfig.json"
       ],
       "requiredDocuments": [
         "AGENTS.md",
@@ -913,6 +924,7 @@
     {
       "id": "ui-components",
       "changedPaths": [
+        "global.css",
         "src/components/**",
         "tailwind.config.js"
       ],

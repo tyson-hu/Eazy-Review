@@ -10,6 +10,7 @@ const test = require('node:test');
 const {
   advanceRegexIndex,
   extractTaskReferences,
+  globToRegExp,
   parseTaskGraph,
   reportImpactedDocuments,
   runCheck,
@@ -36,8 +37,11 @@ function taskDocument({
   cycle = false,
   laterCycle = false,
   omitHumanGate = false,
+  task13Owner = 'Parent.',
   task13Parallel = 'None.',
+  task13Unlocks = 'Task 14.',
   task14Dependency = 'Task 13.',
+  task14Owner = 'Parent.',
   task14Parallel = 'None.',
   unknownLaterTask = false,
 } = {}) {
@@ -57,8 +61,8 @@ function taskDocument({
     '',
     'Status: **Next — not started.**',
     task13Dependency,
-    'Unlocks: Task 14.',
-    'Execution owner: Parent.',
+    `Unlocks: ${task13Unlocks}`,
+    `Execution owner: ${task13Owner}`,
     `Parallel-safe with: ${task13Parallel}`,
     ...task13HumanGate,
     '',
@@ -69,7 +73,7 @@ function taskDocument({
     'Status: Pending.',
     `Depends on: ${task14Dependency}`,
     'Unlocks: None.',
-    'Execution owner: Parent.',
+    `Execution owner: ${task14Owner}`,
     `Parallel-safe with: ${task14Parallel}`,
     'Human gate: None.',
     '',
@@ -264,6 +268,22 @@ test('validateConfig rejects malformed manifest data', () => {
     () => validateConfig(stickyStaleTerm),
     /flags contains unsupported regular-expression flags/,
   );
+});
+
+test('repository globs must be normalized relative paths', () => {
+  for (const glob of [
+    '/app/**',
+    './app/**',
+    'docs/../app/**',
+    'app//**',
+    'app/',
+    'app\\**',
+  ]) {
+    assert.throws(() => globToRegExp(glob), /Invalid repository glob/, glob);
+  }
+  for (const glob of ['app/**', '.claude/**', '**/*.md']) {
+    assert.doesNotThrow(() => globToRegExp(glob), glob);
+  }
 });
 
 test('runCheck reports every declared missing path', (t) => {
@@ -838,6 +858,70 @@ test('task parsing ignores HTML-comment-hidden headings, fields, and references'
   assert.doesNotThrow(() => parseTaskGraph(inlineComment, baseConfig().taskGraph));
 });
 
+test('task parsing requires a bare fenced-code closing marker', () => {
+  const invalidClosingFence = [
+    '```text',
+    'fixture content',
+    '```not-a-closing-fence',
+    taskDocument(),
+  ].join('\n');
+  assert.throws(
+    () => parseTaskGraph(invalidClosingFence, baseConfig().taskGraph),
+    /found none/,
+  );
+
+  const validClosingFence = [
+    '```text',
+    'fixture content',
+    '```   ',
+    taskDocument(),
+  ].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(validClosingFence, baseConfig().taskGraph));
+});
+
+test('task execution owners are recognized and protected tasks remain parent-owned', () => {
+  assert.throws(
+    () =>
+      parseTaskGraph(
+        taskDocument({ task13Owner: 'Unrecognized reviewer.' }),
+        baseConfig().taskGraph,
+      ),
+    /Task 13 has unrecognized Execution owner metadata/,
+  );
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const currentTasks = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  const weakenedTask16 = currentTasks.replace(
+    'Execution owner: Parent — verified strong;',
+    'Execution owner: Generic implementer under one bounded feature packet;',
+  );
+  assert.throws(
+    () => parseTaskGraph(weakenedTask16, repositoryConfig.taskGraph),
+    /Task 16 is protected and must have Parent — verified strong/,
+  );
+});
+
+test('unlock metadata requires the target to depend on the source task', () => {
+  const taskConfig = baseConfig().taskGraph;
+  assert.throws(
+    () =>
+      parseTaskGraph(
+        taskDocument({ task14Dependency: 'Task 12.' }),
+        taskConfig,
+      ),
+    /Task 13 cannot unlock Task 14 because Task 14 does not depend on it/,
+  );
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+});
+
 test('task dependency graph rejects cycles', (t) => {
   const root = createFixture(t);
   write(root, 'docs/TASKS.md', taskDocument({ cycle: true }));
@@ -881,7 +965,9 @@ test('parallel-safe metadata rejects self and direct dependencies', () => {
     parseTaskGraph(
       taskDocument({
         task13Parallel: 'Task 14 after all prerequisites are accepted.',
+        task13Unlocks: 'None.',
         task14Dependency: 'Task 12.',
+        task14Parallel: 'Task 13 after all prerequisites are accepted.',
       }),
       taskConfig,
     ),
@@ -890,6 +976,33 @@ test('parallel-safe metadata rejects self and direct dependencies', () => {
   assert.throws(
     () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 999.' }), taskConfig),
     /references unknown Task 999/,
+  );
+});
+
+test('parallel-safe metadata must be reciprocal for in-range tasks', () => {
+  const taskConfig = baseConfig().taskGraph;
+  assert.throws(
+    () =>
+      parseTaskGraph(
+        taskDocument({
+          task13Parallel: 'Task 14.',
+          task13Unlocks: 'None.',
+          task14Dependency: 'Task 12.',
+        }),
+        taskConfig,
+      ),
+    /Task 13 and Task 14 must declare their parallel-safe relationship reciprocally/,
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(
+      taskDocument({
+        task13Parallel: 'Task 14.',
+        task13Unlocks: 'None.',
+        task14Dependency: 'Task 12.',
+        task14Parallel: 'Task 13.',
+      }),
+      taskConfig,
+    ),
   );
 });
 
@@ -1029,7 +1142,7 @@ test('report mode propagates generated outputs and sources bidirectionally', () 
   }
 });
 
-test('agent-infrastructure reports include the manifest for proposed skill and Cursor paths', () => {
+test('agent-infrastructure reports include the manifest for tool configuration paths', () => {
   const repositoryConfig = JSON.parse(
     fs.readFileSync(
       path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
@@ -1039,6 +1152,7 @@ test('agent-infrastructure reports include the manifest for proposed skill and C
   for (const changedPath of [
     'skills/example-new-skill/SKILL.md',
     '.cursor/rules/example-new-rule.mdc',
+    '.claude/settings.json',
   ]) {
     const report = reportImpactedDocuments(
       repositoryConfig,
@@ -1048,6 +1162,18 @@ test('agent-infrastructure reports include the manifest for proposed skill and C
     assert.ok(report.documents.includes('config/agent-infrastructure.json'));
     assert.deepEqual(report.documents, [...new Set(report.documents)].sort());
   }
+  assert.deepEqual(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === '.claude/settings.json'
+    ),
+    {
+      path: '.claude/settings.json',
+      kind: 'file',
+      lifecycle: 'status',
+      owner: 'parent-agent',
+      staleScan: false,
+    },
+  );
 });
 
 test('release-readiness reports include static and dynamic Expo configs', () => {
@@ -1084,6 +1210,46 @@ test('release-readiness reports include static and dynamic Expo configs', () => 
       .changedPaths.includes('app.example.ts'),
     false,
   );
+});
+
+test('active build configuration paths trigger their documentation contracts', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const toolingDocuments = [
+    'AGENTS.md',
+    'README.md',
+    'docs/AGENT_WORKFLOW.md',
+    'docs/DOCUMENTATION_POLICY.md',
+    'docs/TASKS.md',
+  ];
+  for (const changedPath of [
+    'babel.config.js',
+    'eslint.config.js',
+    'metro.config.js',
+    'tsconfig.json',
+  ]) {
+    const report = reportImpactedDocuments(
+      repositoryConfig,
+      [changedPath],
+      REPO_ROOT,
+    );
+    for (const expectedDocument of toolingDocuments) {
+      assert.ok(report.documents.includes(expectedDocument));
+    }
+  }
+
+  const stylesheetReport = reportImpactedDocuments(
+    repositoryConfig,
+    ['global.css'],
+    REPO_ROOT,
+  );
+  for (const expectedDocument of ['docs/DESIGN.md', 'docs/TASKS.md']) {
+    assert.ok(stylesheetReport.documents.includes(expectedDocument));
+  }
 });
 
 test('CLI report mode remains available while active documents are stale', (t) => {

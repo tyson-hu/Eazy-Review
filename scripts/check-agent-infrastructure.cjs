@@ -136,7 +136,14 @@ function validateRegex(pattern, flags, context) {
 
 function globToRegExp(glob) {
   assertNonEmptyString(glob, 'Glob');
-  if (glob.includes('\\') || path.posix.isAbsolute(glob)) {
+  if (
+    glob.includes('\\') ||
+    path.posix.isAbsolute(glob) ||
+    glob === '.' ||
+    glob.endsWith('/') ||
+    path.posix.normalize(glob) !== glob ||
+    glob.split('/').some((segment) => segment === '.' || segment === '..')
+  ) {
     throw new Error(`Invalid repository glob "${glob}".`);
   }
 
@@ -874,7 +881,7 @@ function markdownLines(content) {
       }
       text = visible;
     }
-    const marker = text.trimStart().match(/^(`{3,}|~{3,})/);
+    const marker = text.trimStart().match(/^(`{3,}|~{3,})(.*)$/);
     let active =
       fence === null &&
       !((startedInComment || commentSyntaxSeen) && text.trim().length === 0);
@@ -884,7 +891,11 @@ function markdownLines(content) {
       if (fence === null) {
         fence = { character, length };
         active = false;
-      } else if (character === fence.character && length >= fence.length) {
+      } else if (
+        character === fence.character &&
+        length >= fence.length &&
+        marker[2].trim().length === 0
+      ) {
         fence = null;
         active = false;
       } else {
@@ -1039,6 +1050,33 @@ function parseTaskGraph(content, taskConfig) {
       fields[field] = value;
     }
 
+    const executionOwner = fields['Execution owner'];
+    const recognizedExecutionOwner =
+      executionOwner === 'Parent.' ||
+      executionOwner.startsWith('Parent;') ||
+      executionOwner.startsWith('Parent —') ||
+      executionOwner.startsWith('Parent may ') ||
+      executionOwner.startsWith('Parent coordinates ') ||
+      executionOwner.startsWith('Parent prepares ') ||
+      executionOwner.startsWith('Parent maintains ') ||
+      executionOwner.startsWith('Parent scopes ') ||
+      executionOwner.startsWith('Generic implementer ') ||
+      executionOwner.startsWith('The Eazy Review Lab workstream ');
+    if (!recognizedExecutionOwner) {
+      throw new Error(
+        `Task ${heading.number} has unrecognized Execution owner metadata.`,
+      );
+    }
+    if (
+      heading.number >= 16 &&
+      heading.number <= 19 &&
+      !executionOwner.startsWith('Parent — verified strong;')
+    ) {
+      throw new Error(
+        `Task ${heading.number} is protected and must have Parent — verified strong as its Execution owner.`,
+      );
+    }
+
     const referencesByField = new Map();
     for (const field of ['Depends on', 'Unlocks', 'Parallel-safe with']) {
       const value = fields[field];
@@ -1120,6 +1158,14 @@ function parseTaskGraph(content, taskConfig) {
     return false;
   }
   for (const record of records.values()) {
+    for (const reference of extractTaskReferences(record.fields.Unlocks)) {
+      if (!dependsOnTransitively(reference, record.number)) {
+        throw new Error(
+          `Task ${record.number} cannot unlock Task ${reference} because Task ${reference} does not depend on it.`,
+        );
+      }
+    }
+
     const parallelReferences = extractTaskReferences(
       record.fields['Parallel-safe with'],
     );
@@ -1130,6 +1176,15 @@ function parseTaskGraph(content, taskConfig) {
       ) {
         throw new Error(
           `Task ${record.number} cannot be parallel-safe with prerequisite-related Task ${reference}.`,
+        );
+      }
+      const peer = records.get(reference);
+      if (
+        peer &&
+        !extractTaskReferences(peer.fields['Parallel-safe with']).includes(record.number)
+      ) {
+        throw new Error(
+          `Task ${record.number} and Task ${reference} must declare their parallel-safe relationship reciprocally.`,
         );
       }
     }
