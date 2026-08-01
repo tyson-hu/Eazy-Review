@@ -202,6 +202,13 @@ test('validateConfig rejects malformed manifest data', () => {
     () => validateConfig(invalidRequirement),
     /requiredOnDisk must be a boolean/,
   );
+
+  const stickyStaleTerm = baseConfig();
+  stickyStaleTerm.staleTerms.rules[0].flags = 'y';
+  assert.throws(
+    () => validateConfig(stickyStaleTerm),
+    /flags contains unsupported regular-expression flags/,
+  );
 });
 
 test('runCheck reports every declared missing path', (t) => {
@@ -294,6 +301,41 @@ test('GEMINI.md is registered as an AGENTS.md pointer and pointer content is val
     () => runCheck({ repoRoot: root, config }),
     /Pointer mirror GEMINI\.md must contain exactly @canonical-b\.md/,
   );
+});
+
+test('UI_STYLE.md is registered as an active DESIGN.md mirror', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(
+    repositoryConfig.documents.find(({ path: documentPath }) =>
+      documentPath === 'docs/UI_STYLE.md'
+    ),
+    {
+      path: 'docs/UI_STYLE.md',
+      lifecycle: 'mirror',
+      owner: 'tool-adapter',
+    },
+  );
+  assert.deepEqual(
+    repositoryConfig.mirrors.find(({ mirror }) => mirror === 'docs/UI_STYLE.md'),
+    {
+      source: 'docs/DESIGN.md',
+      mirror: 'docs/UI_STYLE.md',
+      relationship: 'summary',
+    },
+  );
+
+  const report = reportImpactedDocuments(
+    repositoryConfig,
+    ['docs/UI_STYLE.md'],
+    REPO_ROOT,
+  );
+  assert.ok(report.documents.includes('docs/UI_STYLE.md'));
+  assert.ok(report.documents.includes('docs/DESIGN.md'));
 });
 
 test('stale-term line allowlists and historical allowlists are explicit', (t) => {

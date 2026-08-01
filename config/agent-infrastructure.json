@@ -205,6 +205,11 @@
       "owner": "human-product"
     },
     {
+      "path": "docs/UI_STYLE.md",
+      "lifecycle": "mirror",
+      "owner": "tool-adapter"
+    },
+    {
       "path": "docs/USER_FLOWS.md",
       "lifecycle": "evergreen",
       "owner": "human-product"
@@ -376,6 +381,11 @@
     {
       "source": "docs/DESIGN.md",
       "mirror": ".cursor/rules/design-system.mdc",
+      "relationship": "summary"
+    },
+    {
+      "source": "docs/DESIGN.md",
+      "mirror": "docs/UI_STYLE.md",
       "relationship": "summary"
     },
     {

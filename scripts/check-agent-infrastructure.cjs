@@ -117,7 +117,7 @@ function validateRelativePath(value, context) {
 
 function validateRegex(pattern, flags, context) {
   assertNonEmptyString(pattern, `${context}.pattern`);
-  if (typeof flags !== 'string' || /[^dgimsuvy]/.test(flags)) {
+  if (typeof flags !== 'string' || /[^dgimsuv]/.test(flags)) {
     throw new Error(`${context}.flags contains unsupported regular-expression flags.`);
   }
   assertUnique([...flags], `${context}.flags`);
