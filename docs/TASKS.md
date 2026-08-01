@@ -398,8 +398,8 @@ Unlocks: Task 19, Task 21, and contributes to Task 22.
 Execution owner: Parent — verified strong; the generic implementer may receive
 only bounded non-sensitive leaf packets.
 
-Parallel-safe with: Task 18 after Task 16 is accepted and edit scopes are
-file-disjoint.
+Parallel-safe with: Task 18 after all prerequisites are accepted and edit
+scopes are file-disjoint.
 
 Human gate: Staging rating writes or acceptance require separate explicit
 approval; production remains forbidden.
@@ -459,8 +459,8 @@ Unlocks: Task 19 and recovery work in Tasks 25–26.
 Execution owner: Parent — verified strong; the generic implementer may receive
 only bounded non-sensitive leaf packets.
 
-Parallel-safe with: Task 17 after Task 16 is accepted and edit scopes are
-file-disjoint.
+Parallel-safe with: Task 17 after all prerequisites are accepted and edit
+scopes are file-disjoint.
 
 Human gate: Preview/staging redirect configuration requires separate approval;
 production configuration remains owned by Tasks 25–26 and a human.

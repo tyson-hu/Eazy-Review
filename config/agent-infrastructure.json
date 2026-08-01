@@ -800,6 +800,8 @@
     {
       "id": "release-readiness",
       "changedPaths": [
+        "app.config.js",
+        "app.config.ts",
         "app.json",
         "eas.json",
         "docs/RELEASE_CHECKLIST.md"

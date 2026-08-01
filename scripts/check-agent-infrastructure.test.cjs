@@ -10,6 +10,7 @@ const test = require('node:test');
 const {
   advanceRegexIndex,
   extractTaskReferences,
+  parseTaskGraph,
   reportImpactedDocuments,
   runCheck,
   validateConfig,
@@ -35,6 +36,8 @@ function taskDocument({
   cycle = false,
   laterCycle = false,
   omitHumanGate = false,
+  task13Parallel = 'None.',
+  task14Dependency = 'Task 13.',
   unknownLaterTask = false,
 } = {}) {
   const task13HumanGate = omitHumanGate ? [] : ['Human gate: None.'];
@@ -55,7 +58,7 @@ function taskDocument({
     task13Dependency,
     'Unlocks: Task 14.',
     'Execution owner: Parent.',
-    'Parallel-safe with: None.',
+    `Parallel-safe with: ${task13Parallel}`,
     ...task13HumanGate,
     '',
     'Goal: prove strict metadata parsing.',
@@ -63,7 +66,7 @@ function taskDocument({
     '## Task 14: Second fixture task',
     '',
     'Status: Pending.',
-    'Depends on: Task 13.',
+    `Depends on: ${task14Dependency}`,
     'Unlocks: None.',
     'Execution owner: Parent.',
     'Parallel-safe with: None.',
@@ -307,6 +310,57 @@ test('validateConfig rejects invalid source and mirror relationships', () => {
   assert.throws(
     () => validateConfig(config),
     /source must be an active canonical document|mirror must have lifecycle/,
+  );
+});
+
+test('generated sources must be registered active canonical documents', (t) => {
+  const root = createFixture(t);
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config: baseConfig() }));
+
+  write(root, 'unregistered.md', 'Existing but unregistered.\n');
+  const unregistered = baseConfig();
+  unregistered.generatedFiles[0].source = 'unregistered.md';
+  assert.throws(
+    () => runCheck({ repoRoot: root, config: unregistered }),
+    /generatedFiles\[0\]\.source is not in the document registry/,
+  );
+
+  const missing = baseConfig();
+  missing.documents.push({
+    path: 'missing-source.md',
+    lifecycle: 'evergreen',
+    owner: 'parent-agent',
+  });
+  missing.generatedFiles[0].source = 'missing-source.md';
+  assert.throws(
+    () => runCheck({ repoRoot: root, config: missing }),
+    /Missing document: missing-source\.md/,
+  );
+
+  for (const [sourcePath, lifecycle] of [
+    ['generated.md', 'generated'],
+    ['history', 'historical'],
+    ['mirror.md', 'mirror'],
+  ]) {
+    const invalidLifecycle = baseConfig();
+    invalidLifecycle.generatedFiles[0].source = sourcePath;
+    assert.throws(
+      () => validateConfig(invalidLifecycle),
+      /generatedFiles\[0\]\.source must be an active canonical document/,
+      lifecycle,
+    );
+  }
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  assert.doesNotThrow(() => validateConfig(repositoryConfig));
+  assert.deepEqual(
+    [...new Set(repositoryConfig.generatedFiles.map(({ source }) => source))].sort(),
+    ['docs/decisions', 'skills/manifest.json'],
   );
 });
 
@@ -684,6 +738,63 @@ test('task references support comma and and lists without ignoring later members
   );
 });
 
+test('parallel-safe metadata rejects self and direct dependencies', () => {
+  const taskConfig = baseConfig().taskGraph;
+  assert.throws(
+    () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 12.' }), taskConfig),
+    /Task 13 cannot be parallel-safe with direct dependency Task 12/,
+  );
+  assert.throws(
+    () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 13.' }), taskConfig),
+    /Task 13 is parallel-safe with itself/,
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(
+      taskDocument({
+        task13Parallel: 'Task 14 after all prerequisites are accepted.',
+        task14Dependency: 'Task 12.',
+      }),
+      taskConfig,
+    ),
+  );
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+  assert.throws(
+    () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 999.' }), taskConfig),
+    /references unknown Task 999/,
+  );
+});
+
+test('current Tasks 13-29 preserve the accepted Task 17 and 18 relationship', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const content = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  const graph = parseTaskGraph(content, repositoryConfig.taskGraph);
+  assert.equal(graph.records.size, 17);
+  assert.deepEqual(
+    extractTaskReferences(graph.records.get(17).fields['Depends on']),
+    [16],
+  );
+  assert.deepEqual(
+    extractTaskReferences(graph.records.get(18).fields['Depends on']),
+    [16],
+  );
+  assert.deepEqual(
+    extractTaskReferences(graph.records.get(17).fields['Parallel-safe with']),
+    [18],
+  );
+  assert.deepEqual(
+    extractTaskReferences(graph.records.get(18).fields['Parallel-safe with']),
+    [17],
+  );
+});
+
 test('report mode expands impact rules through dependencies, mirrors, and generators', (t) => {
   const root = createFixture(t);
   const config = baseConfig();
@@ -782,6 +893,42 @@ test('agent-infrastructure reports include the manifest for proposed skill and C
     assert.ok(report.documents.includes('config/agent-infrastructure.json'));
     assert.deepEqual(report.documents, [...new Set(report.documents)].sort());
   }
+});
+
+test('release-readiness reports include static and dynamic Expo configs', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const expectedDocuments = [
+    'README.md',
+    'docs/RELEASE_CHECKLIST.md',
+    'docs/TASKS.md',
+  ];
+  for (const changedPath of [
+    'app.config.js',
+    'app.config.ts',
+    'app.json',
+    'eas.json',
+  ]) {
+    const report = reportImpactedDocuments(
+      repositoryConfig,
+      [changedPath],
+      REPO_ROOT,
+    );
+    for (const expectedDocument of expectedDocuments) {
+      assert.ok(report.documents.includes(expectedDocument));
+    }
+    assert.deepEqual(report.documents, [...new Set(report.documents)].sort());
+  }
+  assert.equal(
+    repositoryConfig.impactRules
+      .find(({ id }) => id === 'release-readiness')
+      .changedPaths.includes('app.example.ts'),
+    false,
+  );
 });
 
 test('CLI report mode remains available while active documents are stale', (t) => {

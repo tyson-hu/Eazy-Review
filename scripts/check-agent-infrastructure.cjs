@@ -341,6 +341,13 @@ function validateConfig(config) {
     if (documents.get(generated.path)?.lifecycle !== 'generated') {
       throw new Error(`${context}.path must have lifecycle "generated".`);
     }
+    const source = documents.get(generated.source);
+    if (!source) {
+      throw new Error(`${context}.source is not in the document registry.`);
+    }
+    if (['generated', 'historical', 'mirror'].includes(source.lifecycle)) {
+      throw new Error(`${context}.source must be an active canonical document.`);
+    }
     if (generatedPaths.has(generated.path)) {
       throw new Error(`generatedFiles contains duplicate path "${generated.path}".`);
     }
@@ -972,9 +979,11 @@ function parseTaskGraph(content, taskConfig) {
       fields[field] = value;
     }
 
+    const referencesByField = new Map();
     for (const field of ['Depends on', 'Unlocks', 'Parallel-safe with']) {
       const value = fields[field];
       const references = extractTaskReferences(value);
+      referencesByField.set(field, references);
       const isNone = /^None\.?$/i.test(value);
       if (references.length === 0 && !isNone) {
         throw new Error(
@@ -1000,6 +1009,18 @@ function parseTaskGraph(content, taskConfig) {
             dependencyEdges.push([heading.number, reference]);
           }
         }
+      }
+    }
+
+    const directDependencies = new Set(referencesByField.get('Depends on'));
+    for (const reference of referencesByField.get('Parallel-safe with')) {
+      if (reference === heading.number) {
+        throw new Error(`Task ${heading.number} is parallel-safe with itself.`);
+      }
+      if (directDependencies.has(reference)) {
+        throw new Error(
+          `Task ${heading.number} cannot be parallel-safe with direct dependency Task ${reference}.`,
+        );
       }
     }
 

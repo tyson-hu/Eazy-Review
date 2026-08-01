@@ -75,9 +75,17 @@ For a new audit:
 After staging the intended proof set, run:
 
 ```bash
+EVIDENCE_DIR="docs/evidence/replace-with-task-or-topic"
+
+test -d "$EVIDENCE_DIR" || {
+  echo "Set EVIDENCE_DIR to the current evidence directory." >&2
+  exit 1
+}
+
 git status --short
 git ls-files docs/evidence
-git ls-files docs/evidence/task-or-topic | awk '/\.png$/ {count++} END {print count+0}'
+git ls-files "$EVIDENCE_DIR" |
+  awk '/\.png$/ {count++} END {print count+0}'
 git ls-files --others --ignored --exclude-standard docs/evidence
 git diff --check
 git diff --cached --name-only
