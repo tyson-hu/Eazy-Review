@@ -1103,12 +1103,13 @@ function parseTaskGraph(content, taskConfig) {
       const references = extractTaskReferences(value);
       referencesByField.set(field, references);
       const isNone = /^None\.?$/i.test(value);
+      const containsNoneToken = /\bNone\b/i.test(value);
       if (references.length === 0 && !isNone) {
         throw new Error(
           `Task ${heading.number} field "${field}" must contain task references or exactly "None".`,
         );
       }
-      if (references.length > 0 && isNone) {
+      if (references.length > 0 && containsNoneToken) {
         throw new Error(`Task ${heading.number} field "${field}" mixes None with references.`);
       }
       for (const reference of references) {

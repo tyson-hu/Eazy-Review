@@ -1222,6 +1222,44 @@ test('task sections end at every active level-two heading', () => {
   );
 });
 
+test('reference fields reject None mixed with task references', () => {
+  const taskConfig = baseConfig().taskGraph;
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+
+  for (const [fieldLabel, replacement] of [
+    ['Depends on', 'Depends on: None; Task 12.'],
+    ['Unlocks', 'Unlocks: None; Task 14.'],
+    ['Parallel-safe with', 'Parallel-safe with: None; Task 14.'],
+  ]) {
+    const mixed = taskDocument().replace(
+      fieldLabel === 'Depends on'
+        ? 'Depends on: Task 12.'
+        : fieldLabel === 'Unlocks'
+          ? 'Unlocks: Task 14.'
+          : 'Parallel-safe with: None.',
+      replacement,
+    );
+    assert.throws(
+      () => parseTaskGraph(mixed, taskConfig),
+      new RegExp(`Task 13 field "${fieldLabel}" mixes None with references`),
+    );
+  }
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const liveTasks = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(liveTasks, repositoryConfig.taskGraph),
+  );
+});
+
 test('unlock metadata requires the target to depend on the source task', () => {
   const taskConfig = baseConfig().taskGraph;
   assert.throws(
@@ -1598,6 +1636,7 @@ test('active build configuration paths trigger their documentation contracts', (
     'README.md',
     'docs/AGENT_WORKFLOW.md',
     'docs/DOCUMENTATION_POLICY.md',
+    'docs/SECURITY.md',
     'docs/TASKS.md',
   ];
   for (const changedPath of [
@@ -1624,6 +1663,44 @@ test('active build configuration paths trigger their documentation contracts', (
   for (const expectedDocument of ['docs/DESIGN.md', 'docs/TASKS.md']) {
     assert.ok(stylesheetReport.documents.includes(expectedDocument));
   }
+});
+
+test('environment boundary files report tooling and security documents', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const expectedDocuments = [
+    'AGENTS.md',
+    'README.md',
+    'docs/AGENT_WORKFLOW.md',
+    'docs/DOCUMENTATION_POLICY.md',
+    'docs/SECURITY.md',
+    'docs/TASKS.md',
+  ];
+  for (const changedPath of ['.env.example', '.gitignore']) {
+    const report = reportImpactedDocuments(
+      repositoryConfig,
+      [changedPath],
+      REPO_ROOT,
+    );
+    for (const expectedDocument of expectedDocuments) {
+      assert.ok(
+        report.documents.includes(expectedDocument),
+        `${changedPath} should require ${expectedDocument}`,
+      );
+    }
+    assert.deepEqual(report.documents, [...new Set(report.documents)].sort());
+  }
+
+  const unrelatedReport = reportImpactedDocuments(
+    repositoryConfig,
+    ['assets/fonts/SpaceMono-Regular.ttf'],
+    REPO_ROOT,
+  );
+  assert.equal(unrelatedReport.documents.includes('docs/SECURITY.md'), false);
 });
 
 test('CLI report mode remains available while active documents are stale', (t) => {
