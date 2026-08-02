@@ -57,9 +57,11 @@ const REVISED_SEQUENCE_HEADER =
 const REVISED_SEQUENCE_DELIMITER =
   /^\|(?:\s*:?-{3,}:?\s*\|){3}\s*$/;
 // Published Task ledger enforced by the agent-infrastructure graph.
+const REQUIRED_TASK_GRAPH_DOCUMENT = 'docs/TASKS.md';
 const REQUIRED_TASK_GRAPH_FIRST = 13;
 const REQUIRED_TASK_GRAPH_LAST = 29;
-const REVISED_SEQUENCE_HEADING = /^## Revised Sequence\s*$/;
+// Optional trailing ATX closing hashes (CommonMark-compatible) count as the same heading.
+const REVISED_SEQUENCE_HEADING = /^##[ \t]+Revised Sequence(?:[ \t]+#+)?[ \t]*$/;
 
 function isPlainObject(value) {
   return (
@@ -565,6 +567,11 @@ function validateConfig(config) {
   if (!documents.has(config.taskGraph.document)) {
     throw new Error('taskGraph.document must be in the document registry.');
   }
+  if (config.taskGraph.document !== REQUIRED_TASK_GRAPH_DOCUMENT) {
+    throw new Error(
+      `taskGraph.document must be exactly "${REQUIRED_TASK_GRAPH_DOCUMENT}".`,
+    );
+  }
   for (const field of ['firstTask', 'lastTask']) {
     if (!Number.isSafeInteger(config.taskGraph[field]) || config.taskGraph[field] < 1) {
       throw new Error(`taskGraph.${field} must be a positive safe integer.`);
@@ -586,11 +593,12 @@ function validateConfig(config) {
     if (!Number.isSafeInteger(taskNumber) || taskNumber < 1) {
       throw new Error('taskGraph.allowedExternalTasks must contain positive safe integers.');
     }
-    if (
-      taskNumber >= config.taskGraph.firstTask &&
-      taskNumber <= config.taskGraph.lastTask
-    ) {
-      throw new Error('taskGraph.allowedExternalTasks must stay outside the parsed range.');
+    // External prerequisites must be accepted history before the published ledger,
+    // never in-range tasks or unmodeled future task numbers.
+    if (taskNumber >= config.taskGraph.firstTask) {
+      throw new Error(
+        `taskGraph.allowedExternalTasks must be strictly before Task ${config.taskGraph.firstTask}.`,
+      );
     }
   }
   assertUnique(config.taskGraph.allowedExternalTasks, 'taskGraph.allowedExternalTasks');

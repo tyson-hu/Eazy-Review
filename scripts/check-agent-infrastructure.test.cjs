@@ -408,6 +408,29 @@ test('stale-term scans detect matches away from offset zero', (t) => {
   );
 });
 
+test('stale official rating label rejects singular and plural forms', (t) => {
+  const root = createFixture(t);
+  const config = baseConfig();
+  config.staleTerms.rules.push({
+    id: 'obsolete-official-rating-label',
+    pattern: '\\bofficial ratings?\\b',
+    flags: 'gi',
+    allowlist: [],
+  });
+  write(root, 'canonical-a.md', 'See Official Ratings for comparison.\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /\[obsolete-official-rating-label\] "Official Ratings"/,
+  );
+  write(root, 'canonical-a.md', 'Avoid official rating labels.\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /\[obsolete-official-rating-label\] "official rating"/,
+  );
+  write(root, 'canonical-a.md', '# Canonical A\n');
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config }));
+});
+
 test('repository globs must be normalized relative paths', () => {
   for (const glob of [
     '/app/**',
@@ -1892,7 +1915,63 @@ test('revised sequence rejects duplicate Revised Sequence headings', () => {
     () => parseTaskGraph(duplicate, taskConfig),
     /exactly one Revised Sequence heading/,
   );
+
+  const closingHashDuplicate = [
+    '# Fixture Tasks',
+    '',
+    '## Revised Sequence ##',
+    '',
+    '| Task | Title | State |',
+    '| --- | --- | --- |',
+    '| 13 | Stale fixture | Completed |',
+    '',
+    taskDocument().replace(/^# Fixture Tasks\n\n/m, ''),
+  ].join('\n');
+  assert.throws(
+    () => parseTaskGraph(closingHashDuplicate, taskConfig),
+    /exactly one Revised Sequence heading/,
+  );
   assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+});
+
+test('validateConfig pins the task ledger path and predecessor-only externals', () => {
+  assert.doesNotThrow(() => validateConfig(baseConfig()));
+
+  const otherDocument = baseConfig();
+  otherDocument.documents.push({
+    path: 'docs/other-tasks.md',
+    kind: 'file',
+    lifecycle: 'status',
+    owner: 'parent-agent',
+  });
+  otherDocument.taskGraph = {
+    ...otherDocument.taskGraph,
+    document: 'docs/other-tasks.md',
+  };
+  assert.throws(
+    () => validateConfig(otherDocument),
+    /taskGraph\.document must be exactly "docs\/TASKS\.md"/,
+  );
+
+  const futureExternal = baseConfig();
+  futureExternal.taskGraph = {
+    ...futureExternal.taskGraph,
+    allowedExternalTasks: [12, 30],
+  };
+  assert.throws(
+    () => validateConfig(futureExternal),
+    /allowedExternalTasks must be strictly before Task 13/,
+  );
+
+  const inRangeExternal = baseConfig();
+  inRangeExternal.taskGraph = {
+    ...inRangeExternal.taskGraph,
+    allowedExternalTasks: [12, 20],
+  };
+  assert.throws(
+    () => validateConfig(inRangeExternal),
+    /allowedExternalTasks must be strictly before Task 13/,
+  );
 });
 
 test('current Tasks 13-29 preserve the accepted Task 17 and 18 relationship', () => {

@@ -774,7 +774,7 @@
       },
       {
         "id": "obsolete-official-rating-label",
-        "pattern": "\\bofficial rating\\b",
+        "pattern": "\\bofficial ratings?\\b",
         "flags": "gi",
         "allowlist": [
           {
