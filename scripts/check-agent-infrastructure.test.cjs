@@ -293,6 +293,40 @@ test('validateConfig rejects malformed manifest data', () => {
     () => validateConfig(stickyStaleTerm),
     /flags contains unsupported regular-expression flags/,
   );
+
+  const stickyAllowlist = baseConfig();
+  stickyAllowlist.staleTerms.rules[0].allowlist = [
+    {
+      path: 'canonical-a.md',
+      linePattern: 'Expo SDK 50',
+      flags: 'y',
+    },
+  ];
+  assert.throws(
+    () => validateConfig(stickyAllowlist),
+    /flags contains unsupported regular-expression flags/,
+  );
+
+  const duplicateFlags = baseConfig();
+  duplicateFlags.staleTerms.rules[0].flags = 'ii';
+  assert.throws(
+    () => validateConfig(duplicateFlags),
+    /contains duplicate value "i"/,
+  );
+
+  const validFlags = baseConfig();
+  validFlags.staleTerms.rules[0].flags = 'giu';
+  assert.doesNotThrow(() => validateConfig(validFlags));
+});
+
+test('stale-term scans detect matches away from offset zero', (t) => {
+  const root = createFixture(t);
+  const config = baseConfig();
+  write(root, 'canonical-a.md', 'prefix text Expo SDK 50 trailing\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config }),
+    /canonical-a\.md:1: \[old-expo-sdk\] "Expo SDK 50"/,
+  );
 });
 
 test('repository globs must be normalized relative paths', () => {
@@ -883,6 +917,65 @@ test('task parsing ignores HTML-comment-hidden headings, fields, and references'
   assert.doesNotThrow(() => parseTaskGraph(inlineComment, baseConfig().taskGraph));
 });
 
+test('task graph rejects raw HTML block wrappers in the machine-parsed region', () => {
+  const taskConfig = baseConfig().taskGraph;
+  const content = taskDocument();
+  const sequenceStart = content.indexOf('## Revised Sequence');
+  const wrapped = `${content.slice(0, sequenceStart)}<pre>\n${content.slice(sequenceStart)}\n</pre>\n`;
+  assert.throws(
+    () => parseTaskGraph(wrapped, taskConfig),
+    /forbids raw HTML block syntax/,
+  );
+
+  for (const opener of [
+    '<script>',
+    '<style>',
+    '<table>',
+    '<div>',
+    '<!DOCTYPE html>',
+    '<![CDATA[',
+  ]) {
+    const withOpener = `${content.slice(0, sequenceStart)}${opener}\n${content.slice(sequenceStart)}`;
+    assert.throws(
+      () => parseTaskGraph(withOpener, taskConfig),
+      /forbids raw HTML block syntax/,
+      opener,
+    );
+  }
+
+  const htmlOutsideRegion = [
+    '<div>historical note outside the machine region</div>',
+    '',
+    content,
+  ].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(htmlOutsideRegion, taskConfig));
+
+  const angleBracketsInFence = [
+    '```html',
+    '<pre>example</pre>',
+    '```',
+    '',
+    content,
+  ].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(angleBracketsInFence, taskConfig));
+
+  assert.doesNotThrow(() => parseTaskGraph(content, taskConfig));
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const liveTasks = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(liveTasks, repositoryConfig.taskGraph),
+  );
+});
+
 test('task parsing requires a bare fenced-code closing marker', () => {
   const invalidClosingFence = [
     '```text',
@@ -1258,6 +1351,43 @@ test('task headings reject leading-zero task numbers', () => {
   );
 });
 
+test('task references reject noncanonical leading-zero numbers', () => {
+  assert.throws(() => extractTaskReferences('Task 013.'), /Noncanonical task number "013"/);
+  assert.throws(
+    () => extractTaskReferences('Tasks 013–14.'),
+    /Noncanonical task number "013"/,
+  );
+  assert.throws(
+    () => extractTaskReferences('Tasks 13–014.'),
+    /Noncanonical task number "014"/,
+  );
+  assert.deepEqual(extractTaskReferences('Task 13.'), [13]);
+  assert.deepEqual(extractTaskReferences('Tasks 13–14.'), [13, 14]);
+  assert.deepEqual(extractTaskReferences('Tasks 13, 14, and 15.'), [13, 14, 15]);
+
+  const taskConfig = baseConfig().taskGraph;
+  for (const [fieldLabel, replacement] of [
+    ['Depends on', 'Depends on: Task 013.'],
+    ['Unlocks', 'Unlocks: Task 014.'],
+    ['Parallel-safe with', 'Parallel-safe with: Task 014.'],
+  ]) {
+    const padded = taskDocument().replace(
+      fieldLabel === 'Depends on'
+        ? 'Depends on: Task 12.'
+        : fieldLabel === 'Unlocks'
+          ? 'Unlocks: Task 14.'
+          : 'Parallel-safe with: None.',
+      replacement,
+    );
+    assert.throws(
+      () => parseTaskGraph(padded, taskConfig),
+      /Noncanonical task number "0\d+"/,
+    );
+  }
+
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+});
+
 test('revised sequence table must match task metadata', () => {
   const taskConfig = baseConfig().taskGraph;
   assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
@@ -1346,12 +1476,62 @@ test('unlock metadata requires the target to depend on the source task', () => {
   assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
 });
 
-test('task dependency graph rejects cycles', (t) => {
+test('task dependency graph rejects later in-range dependencies and self-deps', (t) => {
   const root = createFixture(t);
   write(root, 'docs/TASKS.md', taskDocument({ cycle: true }));
   assert.throws(
     () => runCheck({ repoRoot: root, config: baseConfig() }),
-    /Task dependency cycle/,
+    /Task 13 cannot depend on later in-range Task 14/,
+  );
+  write(root, 'docs/TASKS.md', taskDocument({ laterCycle: true }));
+  assert.throws(
+    () => runCheck({ repoRoot: root, config: baseConfig() }),
+    /Task 13 cannot depend on later in-range Task 14/,
+  );
+  assert.throws(
+    () =>
+      parseTaskGraph(
+        taskDocument({ task14Dependency: 'Task 14.' }),
+        baseConfig().taskGraph,
+      ),
+    /Task 14 depends on itself/,
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(
+      taskDocument({ task14Dependency: 'Task 13.' }),
+      baseConfig().taskGraph,
+    ),
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(
+      taskDocument({
+        task13Unlocks: 'None.',
+        task14Dependency: 'Task 12.',
+      }),
+      baseConfig().taskGraph,
+    ),
+  );
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const liveTasks = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(liveTasks, repositoryConfig.taskGraph),
+  );
+  const laterDependency = liveTasks.replace(
+    '## Task 27: Post-Launch Operations\n\nStatus: Pending.\n\nDepends on: Task 26.\n',
+    '## Task 27: Post-Launch Operations\n\nStatus: Pending.\n\nDepends on: Task 28.\n',
+  );
+  assert.throws(
+    () => parseTaskGraph(laterDependency, repositoryConfig.taskGraph),
+    /Task 27 cannot depend on later in-range Task 28/,
   );
 });
 
@@ -1367,11 +1547,6 @@ test('task references support comma and and lists without ignoring later members
   assert.throws(
     () => runCheck({ repoRoot: root, config: baseConfig() }),
     /references unknown Task 999/,
-  );
-  write(root, 'docs/TASKS.md', taskDocument({ laterCycle: true }));
-  assert.throws(
-    () => runCheck({ repoRoot: root, config: baseConfig() }),
-    /Task dependency cycle/,
   );
 });
 

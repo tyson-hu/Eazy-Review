@@ -42,6 +42,30 @@ document actually needs a content change. Parent and independent reviewer
 judgment remain required. When the report and this prose differ, stop and
 correct the config or policy together rather than silently choosing one.
 
+### Task-ledger grammar enforced by the checker
+
+`docs/TASKS.md` Task 13–29 metadata is validated against a narrow plain-Markdown
+grammar, not against full CommonMark or GitHub Flavored Markdown rendering
+equivalence:
+
+- ATX level-two headings (`## Task N:` and `## Revised Sequence`) with
+  canonical positive integers (`[1-9]\d*`; no leading zeros).
+- Single-line `Field: value` metadata before each task's `Goal:` boundary.
+- Task references of the form `Task N`, `Tasks N–M`, and comma/`and` lists.
+- HTML comments and fenced code (opening indent 0–3 spaces; bare closing
+  fences) are inactive for machine parsing.
+- Raw HTML block openers capable of hiding the ledger (`<pre`, `<script`,
+  `<style`, `<table`, `<div`, and HTML declarations) are rejected inside the
+  machine-parsed Revised Sequence / Task 13–29 region rather than interpreted.
+
+Arbitrary Markdown constructs (blockquotes, nested lists, indented code,
+additional raw HTML block types, tabs with context-sensitive meaning, Setext
+headings, or a full CommonMark state machine) are intentionally outside this
+checker. Remaining rendering-equivalence risk is owned by the deferred
+**Agent infrastructure checker v2** structured task-graph migration in
+`docs/TASKS.md`, which replaces Markdown semantic parsing with
+`config/task-graph.json`.
+
 ## Pre-Commit Documentation Gate
 
 Before staging or committing, agents must:

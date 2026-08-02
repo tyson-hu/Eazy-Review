@@ -43,6 +43,12 @@ const ACTIVE_LEVEL_TWO_HEADING = /^##(?!#)(?:\s+|$)/;
 const REQUIRED_STALE_SCAN_LIFECYCLES = ['evergreen', 'mirror', 'status'];
 const TASK_HEADING =
   /^## Task ([1-9]\d*):\s+(.+?)\s*$/;
+const CANONICAL_TASK_NUMBER = /^[1-9]\d*$/;
+// Sticky `y` is intentionally unsupported: full-content scans add `g` and use
+// matchAll(), so sticky semantics would silently miss non-zero offsets.
+const PERMITTED_REGEX_FLAGS = new Set(['d', 'g', 'i', 'm', 's', 'u', 'v']);
+const RAW_HTML_BLOCK_OPENER =
+  /^ {0,3}(?:<(?:pre|script|style|table|div)(?=[\s/>]|$)|<!DOCTYPE\b|<!\[)/i;
 
 function isPlainObject(value) {
   return (
@@ -126,7 +132,10 @@ function validateRelativePath(value, context) {
 
 function validateRegex(pattern, flags, context) {
   assertNonEmptyString(pattern, `${context}.pattern`);
-  if (typeof flags !== 'string' || /[^dgimsuv]/.test(flags)) {
+  if (
+    typeof flags !== 'string' ||
+    [...flags].some((flag) => !PERMITTED_REGEX_FLAGS.has(flag))
+  ) {
     throw new Error(`${context}.flags contains unsupported regular-expression flags.`);
   }
   assertUnique([...flags], `${context}.flags`);
@@ -817,8 +826,7 @@ function checkStaleTerms(repoRoot, config) {
     const content = fs.readFileSync(resolveDeclaredPath(repoRoot, relativePath), 'utf8');
     for (const rule of config.staleTerms.rules) {
       const expression = compileGlobalRegex(rule.pattern, rule.flags);
-      let match;
-      while ((match = expression.exec(content)) !== null) {
+      for (const match of content.matchAll(expression)) {
         const context = lineContext(content, match.index);
         const allowed = rule.allowlist.some((allowance) => {
           if (!matchesGlob(relativePath, allowance.path)) {
@@ -837,13 +845,6 @@ function checkStaleTerms(repoRoot, config) {
             line: context.lineNumber,
             match: match[0],
           });
-        }
-        if (match[0].length === 0) {
-          expression.lastIndex = advanceRegexIndex(
-            content,
-            expression.lastIndex,
-            expression.unicode || expression.unicodeSets,
-          );
         }
       }
     }
@@ -924,17 +925,25 @@ function markdownLines(content) {
   return output;
 }
 
+function assertCanonicalTaskNumber(text) {
+  if (!CANONICAL_TASK_NUMBER.test(text)) {
+    throw new Error(`Noncanonical task number "${text}".`);
+  }
+}
+
 function extractTaskReferences(value) {
   const references = [];
   const recognizedNumbers = new Set();
   const expression =
     /\bTasks?\s+(\d+\b(?:\s*[–-]\s*\d+\b)?(?:(?:\s*,\s*(?:and\s+)?|\s+and\s+)\d+\b(?:\s*[–-]\s*\d+\b)?)*)/g;
-  let match;
-  while ((match = expression.exec(value)) !== null) {
+  for (const match of value.matchAll(expression)) {
     const listOffset = match.index + match[0].indexOf(match[1]);
     const itemExpression = /(\d+)\b(?:\s*[–-]\s*(\d+)\b)?/g;
-    let item;
-    while ((item = itemExpression.exec(match[1])) !== null) {
+    for (const item of match[1].matchAll(itemExpression)) {
+      assertCanonicalTaskNumber(item[1]);
+      if (item[2]) {
+        assertCanonicalTaskNumber(item[2]);
+      }
       const first = Number(item[1]);
       const last = item[2] ? Number(item[2]) : first;
       recognizedNumbers.add(listOffset + item.index);
@@ -958,9 +967,7 @@ function extractTaskReferences(value) {
     }
   }
 
-  const numericExpression = /\b\d+\b/g;
-  let numericMatch;
-  while ((numericMatch = numericExpression.exec(value)) !== null) {
+  for (const numericMatch of value.matchAll(/\b\d+\b/g)) {
     if (!recognizedNumbers.has(numericMatch.index)) {
       throw new Error(
         `Unrecognized task-number syntax near "${numericMatch[0]}" in "${value}".`,
@@ -968,6 +975,61 @@ function extractTaskReferences(value) {
     }
   }
   return [...new Set(references)];
+}
+
+function machineParsedRegionBounds(lines, inRange, activeLevelTwoLineIndexes) {
+  const firstTaskLineIndex = inRange[0].lineIndex;
+  const lastHeading = inRange[inRange.length - 1];
+  const nextLevelTwo = activeLevelTwoLineIndexes.find(
+    (lineIndex) => lineIndex > lastHeading.lineIndex,
+  );
+  const regionEnd =
+    nextLevelTwo === undefined ? lines.length : nextLevelTwo;
+
+  let regionStart = firstTaskLineIndex;
+  for (const line of lines) {
+    if (!line.active) {
+      continue;
+    }
+    if (/^## Revised Sequence\s*$/.test(line.text)) {
+      regionStart = Math.min(regionStart, line.lineNumber - 1);
+      break;
+    }
+    if (line.lineNumber - 1 >= firstTaskLineIndex) {
+      break;
+    }
+  }
+
+  for (let index = regionStart - 1; index >= 0; index -= 1) {
+    const line = lines[index];
+    if (!line.active) {
+      continue;
+    }
+    if (line.text.trim().length === 0) {
+      break;
+    }
+    if (RAW_HTML_BLOCK_OPENER.test(line.text)) {
+      regionStart = index;
+      continue;
+    }
+    break;
+  }
+
+  return { regionStart, regionEnd };
+}
+
+function assertNoRawHtmlInMachineTaskRegion(lines, regionStart, regionEnd) {
+  for (let index = regionStart; index < regionEnd; index += 1) {
+    const line = lines[index];
+    if (!line.active) {
+      continue;
+    }
+    if (RAW_HTML_BLOCK_OPENER.test(line.text)) {
+      throw new Error(
+        `Task graph machine-parsed region forbids raw HTML block syntax at line ${line.lineNumber}.`,
+      );
+    }
+  }
 }
 
 function parseTaskGraph(content, taskConfig) {
@@ -1010,6 +1072,12 @@ function parseTaskGraph(content, taskConfig) {
   const records = new Map();
   const dependencyEdges = [];
   const allDependencyEdges = [];
+  const { regionStart, regionEnd } = machineParsedRegionBounds(
+    lines,
+    inRange,
+    activeLevelTwoLineIndexes,
+  );
+  assertNoRawHtmlInMachineTaskRegion(lines, regionStart, regionEnd);
 
   for (const heading of inRange) {
     const nextLevelTwo = activeLevelTwoLineIndexes.find(
@@ -1133,6 +1201,15 @@ function parseTaskGraph(content, taskConfig) {
         for (const reference of references) {
           if (reference === heading.number) {
             throw new Error(`Task ${heading.number} depends on itself.`);
+          }
+          if (
+            reference >= taskConfig.firstTask &&
+            reference <= taskConfig.lastTask &&
+            reference > heading.number
+          ) {
+            throw new Error(
+              `Task ${heading.number} cannot depend on later in-range Task ${reference}.`,
+            );
           }
           allDependencyEdges.push([heading.number, reference]);
           if (reference >= taskConfig.firstTask && reference <= taskConfig.lastTask) {

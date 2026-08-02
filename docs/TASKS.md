@@ -107,6 +107,38 @@ provider configuration, or remote environment.
 
 Exact workflow and Database CI credential-log evidence is recorded in PR #28.
 
+## Follow-up: Agent infrastructure checker v2
+
+Status: **Deferred — documented only; not implemented in PR #28.**
+
+This unnumbered follow-up does not start or renumber Task 13. It owns the
+root-cause redesign that ends Markdown-semantic task-graph parsing.
+
+Scope:
+
+1. Create `config/task-graph.json` as canonical task metadata.
+2. Store task IDs as integers.
+3. Store dependency edges once.
+4. Derive `Unlocks`.
+5. Store parallel relationships as unordered pairs once.
+6. Replace owner prose with owner-policy IDs.
+7. Replace human-gate prose with gate-policy IDs.
+8. Generate the Revised Sequence table and task metadata from structured data.
+9. Remove Markdown semantic parsing from the task graph checker.
+10. Split the checker into schema, paths, inventory, documents, task graph,
+    stale terms, and impact-report modules.
+11. Add `git ls-files` coverage so managed tracked files must be registered,
+    covered by a collection, or explicitly exempt.
+12. Add impact-rule coverage for managed source/config paths.
+13. Prefer `matchAll()` and restricted regex flags.
+14. Derive generated and mirror registry properties rather than declaring the
+    same facts twice.
+
+Residual risk until this lands: general Markdown/HTML rendering constructs
+outside the documented plain-Markdown task-ledger grammar remain deferred
+limitations of the PR #28 checker, not open defects inside that supported
+contract.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.
