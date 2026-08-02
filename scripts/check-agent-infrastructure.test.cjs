@@ -927,6 +927,12 @@ test('task graph rejects raw HTML block wrappers in the machine-parsed region', 
     /forbids raw HTML block syntax/,
   );
 
+  const wrappedAcrossBlank = `${content.slice(0, sequenceStart)}<pre>\n\n${content.slice(sequenceStart)}\n</pre>\n`;
+  assert.throws(
+    () => parseTaskGraph(wrappedAcrossBlank, taskConfig),
+    /forbids raw HTML block syntax/,
+  );
+
   for (const opener of [
     '<script>',
     '<style>',
@@ -974,6 +980,61 @@ test('task graph rejects raw HTML block wrappers in the machine-parsed region', 
   assert.doesNotThrow(() =>
     parseTaskGraph(liveTasks, repositoryConfig.taskGraph),
   );
+});
+
+test('revised sequence requires header and delimiter rows', () => {
+  const taskConfig = baseConfig().taskGraph;
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+
+  const missingDelimiter = taskDocument().replace(
+    '| --- | --- | --- |\n',
+    '',
+  );
+  assert.throws(
+    () => parseTaskGraph(missingDelimiter, taskConfig),
+    /missing the required delimiter row/,
+  );
+
+  const malformedDelimiter = taskDocument().replace(
+    '| --- | --- | --- |',
+    '| --- | --- |',
+  );
+  assert.throws(
+    () => parseTaskGraph(malformedDelimiter, taskConfig),
+    /missing the required delimiter row/,
+  );
+
+  const missingHeader = taskDocument().replace(
+    '| Task | Title | Status |\n',
+    '',
+  );
+  assert.throws(
+    () => parseTaskGraph(missingHeader, taskConfig),
+    /missing a Revised Sequence table|missing the required delimiter row/,
+  );
+});
+
+test('stale Task 10+ ownership phrase is detected at word boundaries after plus', (t) => {
+  const root = createFixture(t);
+  const config = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const rule = config.staleTerms.rules.find(
+    (entry) => entry.id === 'stale-task-10-query-owner',
+  );
+  assert.ok(rule);
+  const local = baseConfig();
+  local.staleTerms.rules = [rule];
+  write(root, 'canonical-a.md', 'Owned by Task 10+ for query work.\n');
+  assert.throws(
+    () => runCheck({ repoRoot: root, config: local }),
+    /\[stale-task-10-query-owner\] "Task 10\+"/,
+  );
+  write(root, 'canonical-a.md', 'Mentions Task 10+x only as a non-match.\n');
+  assert.doesNotThrow(() => runCheck({ repoRoot: root, config: local }));
 });
 
 test('task parsing requires a bare fenced-code closing marker', () => {

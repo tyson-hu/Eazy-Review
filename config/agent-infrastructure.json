@@ -786,7 +786,7 @@
       },
       {
         "id": "stale-task-10-query-owner",
-        "pattern": "\\bTask 10\\+\\b",
+        "pattern": "\\bTask 10\\+(?!\\w)",
         "flags": "g",
         "allowlist": []
       },

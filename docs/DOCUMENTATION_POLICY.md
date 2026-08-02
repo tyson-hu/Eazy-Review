@@ -50,6 +50,8 @@ equivalence:
 
 - ATX level-two headings (`## Task N:` and `## Revised Sequence`) with
   canonical positive integers (`[1-9]\d*`; no leading zeros).
+- Revised Sequence pipe table with the exact header
+  `| Task | Title | Status |` and a Markdown delimiter row before data rows.
 - Single-line `Field: value` metadata before each task's `Goal:` boundary.
 - Task references of the form `Task N`, `Tasks N–M`, and comma/`and` lists.
 - HTML comments and fenced code (opening indent 0–3 spaces; bare closing
@@ -57,6 +59,7 @@ equivalence:
 - Raw HTML block openers capable of hiding the ledger (`<pre`, `<script`,
   `<style`, `<table`, `<div`, and HTML declarations) are rejected inside the
   machine-parsed Revised Sequence / Task 13–29 region rather than interpreted.
+  Container openers (`pre`/`script`/`style`) are detected across blank lines.
 
 Arbitrary Markdown constructs (blockquotes, nested lists, indented code,
 additional raw HTML block types, tabs with context-sensitive meaning, Setext

@@ -49,6 +49,13 @@ const CANONICAL_TASK_NUMBER = /^[1-9]\d*$/;
 const PERMITTED_REGEX_FLAGS = new Set(['d', 'g', 'i', 'm', 's', 'u', 'v']);
 const RAW_HTML_BLOCK_OPENER =
   /^ {0,3}(?:<(?:pre|script|style|table|div)(?=[\s/>]|$)|<!DOCTYPE\b|<!\[)/i;
+// CommonMark type-1 HTML blocks continue through blank lines until a closer.
+const RAW_HTML_CONTAINER_OPENER =
+  /^ {0,3}<(?:pre|script|style)(?=[\s/>]|$)/i;
+const REVISED_SEQUENCE_HEADER =
+  /^\|\s*Task\s*\|\s*Title\s*\|\s*Status\s*\|\s*$/i;
+const REVISED_SEQUENCE_DELIMITER =
+  /^\|(?:\s*:?-{3,}:?\s*\|){3}\s*$/;
 
 function isPlainObject(value) {
   return (
@@ -1000,16 +1007,23 @@ function machineParsedRegionBounds(lines, inRange, activeLevelTwoLineIndexes) {
     }
   }
 
+  let crossedBlank = false;
   for (let index = regionStart - 1; index >= 0; index -= 1) {
     const line = lines[index];
     if (!line.active) {
       continue;
     }
     if (line.text.trim().length === 0) {
-      break;
+      crossedBlank = true;
+      continue;
     }
     if (RAW_HTML_BLOCK_OPENER.test(line.text)) {
+      if (crossedBlank && !RAW_HTML_CONTAINER_OPENER.test(line.text)) {
+        // div/table HTML blocks end at a blank line; containers do not.
+        break;
+      }
       regionStart = index;
+      crossedBlank = false;
       continue;
     }
     break;
@@ -1341,6 +1355,8 @@ function statusMatchesSequence(fieldStatus, tableStatus) {
 
 function parseRevisedSequence(lines, taskConfig) {
   let inSequence = false;
+  let sawHeader = false;
+  let sawDelimiter = false;
   const rows = [];
   for (const line of lines) {
     if (!line.active) {
@@ -1356,6 +1372,22 @@ function parseRevisedSequence(lines, taskConfig) {
       }
     }
     if (!inSequence) {
+      continue;
+    }
+    if (!sawHeader) {
+      if (!REVISED_SEQUENCE_HEADER.test(line.text)) {
+        continue;
+      }
+      sawHeader = true;
+      continue;
+    }
+    if (!sawDelimiter) {
+      if (!REVISED_SEQUENCE_DELIMITER.test(line.text)) {
+        throw new Error(
+          'Revised Sequence table is missing the required delimiter row.',
+        );
+      }
+      sawDelimiter = true;
       continue;
     }
     const match = line.text.match(/^\|\s*([1-9]\d*)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/);
@@ -1374,7 +1406,7 @@ function parseRevisedSequence(lines, taskConfig) {
       status: match[3].trim(),
     });
   }
-  if (rows.length === 0) {
+  if (!sawHeader || !sawDelimiter || rows.length === 0) {
     throw new Error('Task graph is missing a Revised Sequence table.');
   }
   return rows;
