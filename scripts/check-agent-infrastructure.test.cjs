@@ -26,6 +26,15 @@ const TASK_FIELDS = [
   'Human gate',
 ];
 const REPO_ROOT = path.resolve(__dirname, '..');
+const FIXTURE_SEQUENCE = [
+  '## Revised Sequence',
+  '',
+  '| Task | Title | Status |',
+  '| --- | --- | --- |',
+  '| 13 | First fixture task | Next — not started |',
+  '| 14 | Second fixture task | Pending |',
+  '',
+];
 
 function write(root, relativePath, content) {
   const absolutePath = path.join(root, relativePath);
@@ -57,6 +66,7 @@ function taskDocument({
   return [
     '# Fixture Tasks',
     '',
+    ...FIXTURE_SEQUENCE,
     '## Task 13: First fixture task',
     '',
     'Status: **Next — not started.**',
@@ -85,6 +95,14 @@ function taskDocument({
 function transitiveParallelConflictDocument() {
   return [
     '# Fixture Tasks',
+    '',
+    '## Revised Sequence',
+    '',
+    '| Task | Title | Status |',
+    '| --- | --- | --- |',
+    '| 13 | First fixture task | Pending |',
+    '| 14 | Second fixture task | Pending |',
+    '| 15 | Third fixture task | Pending |',
     '',
     '## Task 13: First fixture task',
     '',
@@ -243,6 +261,13 @@ test('validateConfig rejects malformed manifest data', () => {
   assert.throws(
     () => validateConfig({ ...baseConfig(), surprise: true }),
     /unexpected surprise/,
+  );
+
+  const incompleteScanLifecycles = baseConfig();
+  incompleteScanLifecycles.staleTerms.scanLifecycles = ['mirror', 'status'];
+  assert.throws(
+    () => validateConfig(incompleteScanLifecycles),
+    /staleTerms.scanLifecycles must include required active lifecycle "evergreen"/,
   );
   const malformed = baseConfig();
   malformed.documents[0] = { ...malformed.documents[0], lifecycle: 'temporary' };
@@ -1114,6 +1139,7 @@ test('task sections end at every active level-two heading', () => {
   const withSubsection = [
     '# Fixture Tasks',
     '',
+    ...FIXTURE_SEQUENCE,
     '## Task 13: First fixture task',
     '',
     'Status: **Next — not started.**',
@@ -1144,6 +1170,7 @@ test('task sections end at every active level-two heading', () => {
   const fencedH2 = [
     '# Fixture Tasks',
     '',
+    ...FIXTURE_SEQUENCE,
     '## Task 13: First fixture task',
     '',
     '```text',
@@ -1176,6 +1203,7 @@ test('task sections end at every active level-two heading', () => {
   const commentedH2 = [
     '# Fixture Tasks',
     '',
+    ...FIXTURE_SEQUENCE,
     '## Task 13: First fixture task',
     '',
     '<!--',
@@ -1206,6 +1234,51 @@ test('task sections end at every active level-two heading', () => {
   assert.doesNotThrow(() => parseTaskGraph(commentedH2, taskConfig));
 
   assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const liveTasks = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(liveTasks, repositoryConfig.taskGraph),
+  );
+});
+
+test('task headings reject leading-zero task numbers', () => {
+  const zeroPadded = taskDocument().replace('## Task 13:', '## Task 013:');
+  assert.throws(
+    () => parseTaskGraph(zeroPadded, baseConfig().taskGraph),
+    /found 14/,
+  );
+});
+
+test('revised sequence table must match task metadata', () => {
+  const taskConfig = baseConfig().taskGraph;
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+
+  const driftedStatus = taskDocument().replace(
+    '| 13 | First fixture task | Next — not started |',
+    '| 13 | First fixture task | Completed |',
+  );
+  assert.throws(
+    () => parseTaskGraph(driftedStatus, taskConfig),
+    /Task 13 Revised Sequence status "Completed" does not match Status metadata/,
+  );
+
+  const driftedTitle = taskDocument().replace(
+    '| 13 | First fixture task | Next — not started |',
+    '| 13 | Renamed fixture task | Next — not started |',
+  );
+  assert.throws(
+    () => parseTaskGraph(driftedTitle, taskConfig),
+    /Task 13 Revised Sequence title "Renamed fixture task" does not match task heading/,
+  );
 
   const repositoryConfig = JSON.parse(
     fs.readFileSync(
@@ -1632,6 +1705,7 @@ test('active build configuration paths trigger their documentation contracts', (
     ),
   );
   const toolingDocuments = [
+    '.cursor/rules/react-native-expo.mdc',
     'AGENTS.md',
     'README.md',
     'docs/AGENT_WORKFLOW.md',
@@ -1643,6 +1717,7 @@ test('active build configuration paths trigger their documentation contracts', (
     'babel.config.js',
     'eslint.config.js',
     'metro.config.js',
+    'package.json',
     'tsconfig.json',
   ]) {
     const report = reportImpactedDocuments(
@@ -1673,6 +1748,7 @@ test('environment boundary files report tooling and security documents', () => {
     ),
   );
   const expectedDocuments = [
+    '.cursor/rules/react-native-expo.mdc',
     'AGENTS.md',
     'README.md',
     'docs/AGENT_WORKFLOW.md',

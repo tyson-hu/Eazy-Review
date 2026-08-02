@@ -922,6 +922,7 @@
         "tsconfig.json"
       ],
       "requiredDocuments": [
+        ".cursor/rules/react-native-expo.mdc",
         "AGENTS.md",
         "README.md",
         "docs/AGENT_WORKFLOW.md",

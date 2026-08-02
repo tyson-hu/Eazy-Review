@@ -40,6 +40,9 @@ const PROTECTED_TASK_EXECUTION_OWNER =
 const TASK_19_HUMAN_GATE =
   'Actual account deletion is human-only on every environment; the staging destructive checklist is also human-run.';
 const ACTIVE_LEVEL_TWO_HEADING = /^##(?!#)(?:\s+|$)/;
+const REQUIRED_STALE_SCAN_LIFECYCLES = ['evergreen', 'mirror', 'status'];
+const TASK_HEADING =
+  /^## Task ([1-9]\d*):\s+(.+?)\s*$/;
 
 function isPlainObject(value) {
   return (
@@ -432,6 +435,13 @@ function validateConfig(config) {
   }
   assertUnique(config.staleTerms.scanLifecycles, 'staleTerms.scanLifecycles');
   const scanLifecycleSet = new Set(config.staleTerms.scanLifecycles);
+  for (const lifecycle of REQUIRED_STALE_SCAN_LIFECYCLES) {
+    if (!scanLifecycleSet.has(lifecycle)) {
+      throw new Error(
+        `staleTerms.scanLifecycles must include required active lifecycle "${lifecycle}".`,
+      );
+    }
+  }
 
   assertArray(
     config.staleTerms.historicalAllowlist,
@@ -971,7 +981,7 @@ function parseTaskGraph(content, taskConfig) {
     if (ACTIVE_LEVEL_TWO_HEADING.test(line.text)) {
       activeLevelTwoLineIndexes.push(line.lineNumber - 1);
     }
-    const match = line.text.match(/^## Task (\d+):\s+(.+?)\s*$/);
+    const match = line.text.match(TASK_HEADING);
     if (match) {
       headings.push({
         number: Number(match[1]),
@@ -1211,7 +1221,86 @@ function parseTaskGraph(content, taskConfig) {
     }
   }
 
+  const sequenceRows = parseRevisedSequence(lines, taskConfig);
+  const expectedSequence = expected.map(String);
+  const actualSequence = sequenceRows.map((row) => String(row.number));
+  if (JSON.stringify(actualSequence) !== JSON.stringify(expectedSequence)) {
+    throw new Error(
+      `Revised Sequence must list Task ${taskConfig.firstTask} through Task ${taskConfig.lastTask} in order; found ${actualSequence.join(', ') || 'none'}.`,
+    );
+  }
+  for (const row of sequenceRows) {
+    const record = records.get(row.number);
+    if (record.title !== row.title) {
+      throw new Error(
+        `Task ${row.number} Revised Sequence title "${row.title}" does not match task heading "${record.title}".`,
+      );
+    }
+    if (!statusMatchesSequence(record.fields.Status, row.status)) {
+      throw new Error(
+        `Task ${row.number} Revised Sequence status "${row.status}" does not match Status metadata "${record.fields.Status}".`,
+      );
+    }
+  }
+
   return { records, dependencyEdges };
+}
+
+function normalizeStatusText(value) {
+  return value.replace(/\*\*/g, '').replace(/\.$/, '').trim();
+}
+
+function statusMatchesSequence(fieldStatus, tableStatus) {
+  const field = normalizeStatusText(fieldStatus);
+  const table = normalizeStatusText(tableStatus);
+  return (
+    field === table ||
+    field.startsWith(`${table} `) ||
+    field.startsWith(`${table}—`) ||
+    field.startsWith(`${table} —`) ||
+    field.startsWith(`${table};`)
+  );
+}
+
+function parseRevisedSequence(lines, taskConfig) {
+  let inSequence = false;
+  const rows = [];
+  for (const line of lines) {
+    if (!line.active) {
+      continue;
+    }
+    if (ACTIVE_LEVEL_TWO_HEADING.test(line.text)) {
+      if (/^## Revised Sequence\s*$/.test(line.text)) {
+        inSequence = true;
+        continue;
+      }
+      if (inSequence) {
+        break;
+      }
+    }
+    if (!inSequence) {
+      continue;
+    }
+    const match = line.text.match(/^\|\s*([1-9]\d*)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/);
+    if (!match) {
+      continue;
+    }
+    const number = Number(match[1]);
+    if (number < taskConfig.firstTask || number > taskConfig.lastTask) {
+      throw new Error(
+        `Revised Sequence includes out-of-range Task ${number}.`,
+      );
+    }
+    rows.push({
+      number,
+      title: match[2].trim(),
+      status: match[3].trim(),
+    });
+  }
+  if (rows.length === 0) {
+    throw new Error('Task graph is missing a Revised Sequence table.');
+  }
+  return rows;
 }
 
 function validateTaskGraph(repoRoot, config) {
