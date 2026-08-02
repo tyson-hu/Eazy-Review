@@ -879,6 +879,12 @@
         "app.config.ts",
         "app.json",
         "eas.json",
+        "assets/images/android-icon-background.png",
+        "assets/images/android-icon-foreground.png",
+        "assets/images/android-icon-monochrome.png",
+        "assets/images/favicon.png",
+        "assets/images/icon.png",
+        "assets/images/splash-icon.png",
         "docs/RELEASE_CHECKLIST.md"
       ],
       "requiredDocuments": [
@@ -924,6 +930,7 @@
     {
       "id": "ui-components",
       "changedPaths": [
+        "assets/images/products/**",
         "global.css",
         "src/components/**",
         "tailwind.config.js"

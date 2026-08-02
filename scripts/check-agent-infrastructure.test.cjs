@@ -879,6 +879,69 @@ test('task parsing requires a bare fenced-code closing marker', () => {
   assert.doesNotThrow(() => parseTaskGraph(validClosingFence, baseConfig().taskGraph));
 });
 
+test('task parsing recognizes fence markers only with zero to three leading spaces', () => {
+  const taskConfig = baseConfig().taskGraph;
+  const liveTasks = fs.readFileSync(path.join(REPO_ROOT, 'docs', 'TASKS.md'), 'utf8');
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+
+  for (const indent of ['', ' ', '  ', '   ']) {
+    const indentedFence = [
+      `${indent}\`\`\`text`,
+      'fixture content',
+      `${indent}\`\`\`   `,
+      taskDocument(),
+    ].join('\n');
+    assert.doesNotThrow(() => parseTaskGraph(indentedFence, taskConfig));
+  }
+
+  const fourSpaceOpener = ['    ```text', taskDocument()].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(fourSpaceOpener, taskConfig));
+
+  const fourSpaceCloser = [
+    '```text',
+    '    ```',
+    taskDocument(),
+  ].join('\n');
+  assert.throws(
+    () => parseTaskGraph(fourSpaceCloser, taskConfig),
+    /found none/,
+  );
+
+  const ledgerReproduction = ['```text', '    ```', liveTasks].join('\n');
+  assert.throws(
+    () => parseTaskGraph(ledgerReproduction, repositoryConfig.taskGraph),
+    /found none/,
+  );
+
+  const whitespaceOnlyCloser = [
+    '```text',
+    'fixture content',
+    '```\t  ',
+    taskDocument(),
+  ].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(whitespaceOnlyCloser, taskConfig));
+
+  const closerWithTrailingText = [
+    '```text',
+    'fixture content',
+    '``` still-open',
+    taskDocument(),
+  ].join('\n');
+  assert.throws(
+    () => parseTaskGraph(closerWithTrailingText, taskConfig),
+    /found none/,
+  );
+
+  assert.doesNotThrow(() =>
+    parseTaskGraph(liveTasks, repositoryConfig.taskGraph),
+  );
+});
+
 test('task execution owners are recognized and protected tasks remain parent-owned', () => {
   assert.throws(
     () =>
@@ -887,6 +950,12 @@ test('task execution owners are recognized and protected tasks remain parent-own
         baseConfig().taskGraph,
       ),
     /Task 13 has unrecognized Execution owner metadata/,
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(
+      taskDocument({ task13Owner: 'Generic implementer under one bounded feature packet;' }),
+      baseConfig().taskGraph,
+    ),
   );
 
   const repositoryConfig = JSON.parse(
@@ -899,13 +968,257 @@ test('task execution owners are recognized and protected tasks remain parent-own
     path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
     'utf8',
   );
-  const weakenedTask16 = currentTasks.replace(
-    'Execution owner: Parent — verified strong;',
+  const protectedOwner =
+    'Parent — verified strong; the generic implementer may receive only bounded non-sensitive leaf packets.';
+  const graph = parseTaskGraph(currentTasks, repositoryConfig.taskGraph);
+  for (const taskNumber of [16, 17, 18, 19]) {
+    assert.equal(
+      graph.records.get(taskNumber).fields['Execution owner'],
+      protectedOwner,
+    );
+  }
+
+  const protectedOwnerSource =
+    'Execution owner: Parent — verified strong; the generic implementer may receive\nonly bounded non-sensitive leaf packets.';
+  const genericImplementerOwner = currentTasks.replace(
+    protectedOwnerSource,
     'Execution owner: Generic implementer under one bounded feature packet;',
   );
   assert.throws(
-    () => parseTaskGraph(weakenedTask16, repositoryConfig.taskGraph),
+    () => parseTaskGraph(genericImplementerOwner, repositoryConfig.taskGraph),
     /Task 16 is protected and must have Parent — verified strong/,
+  );
+
+  const unknownOwner = currentTasks.replace(
+    protectedOwnerSource,
+    'Execution owner: Unrecognized reviewer.',
+  );
+  assert.throws(
+    () => parseTaskGraph(unknownOwner, repositoryConfig.taskGraph),
+    /Task 16 has unrecognized Execution owner metadata/,
+  );
+
+  const contradictorySuffix = currentTasks.replace(
+    protectedOwnerSource,
+    'Execution owner: Parent — verified strong; Generic implementer owns the integrated auth slice.',
+  );
+  assert.throws(
+    () => parseTaskGraph(contradictorySuffix, repositoryConfig.taskGraph),
+    /Task 16 is protected and must have Parent — verified strong/,
+  );
+
+  const unauthorizedExtraProse = currentTasks.replace(
+    protectedOwnerSource,
+    `Execution owner: ${protectedOwner.slice(0, -1)} plus optional notes.`,
+  );
+  assert.throws(
+    () => parseTaskGraph(unauthorizedExtraProse, repositoryConfig.taskGraph),
+    /Task 16 is protected and must have Parent — verified strong/,
+  );
+
+  assert.doesNotThrow(() =>
+    parseTaskGraph(currentTasks, repositoryConfig.taskGraph),
+  );
+});
+
+test('task 19 human gate keeps account deletion human-only', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const currentTasks = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  const canonicalGate =
+    'Actual account deletion is human-only on every environment; the staging destructive checklist is also human-run.';
+  assert.equal(
+    parseTaskGraph(currentTasks, repositoryConfig.taskGraph).records.get(19)
+      .fields['Human gate'],
+    canonicalGate,
+  );
+
+  const noneGate = currentTasks.replace(
+    'Human gate: Actual account deletion is human-only on every environment; the\nstaging destructive checklist is also human-run.',
+    'Human gate: None.',
+  );
+  assert.throws(
+    () => parseTaskGraph(noneGate, repositoryConfig.taskGraph),
+    /Task 19 Human gate must keep actual account deletion human-only/,
+  );
+
+  const genericApproval = currentTasks.replace(
+    'Human gate: Actual account deletion is human-only on every environment; the\nstaging destructive checklist is also human-run.',
+    'Human gate: Human approval required.',
+  );
+  assert.throws(
+    () => parseTaskGraph(genericApproval, repositoryConfig.taskGraph),
+    /Task 19 Human gate must keep actual account deletion human-only/,
+  );
+
+  const contradictoryGate = currentTasks.replace(
+    'Human gate: Actual account deletion is human-only on every environment; the\nstaging destructive checklist is also human-run.',
+    `Human gate: ${canonicalGate} Agents may delete accounts in staging.`,
+  );
+  assert.throws(
+    () => parseTaskGraph(contradictoryGate, repositoryConfig.taskGraph),
+    /Task 19 Human gate must keep actual account deletion human-only/,
+  );
+
+  assert.doesNotThrow(() =>
+    parseTaskGraph(
+      taskDocument({ omitHumanGate: false }),
+      baseConfig().taskGraph,
+    ),
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(currentTasks, repositoryConfig.taskGraph),
+  );
+});
+
+test('task sections end at every active level-two heading', () => {
+  const taskConfig = baseConfig().taskGraph;
+  const interrupted = [
+    '# Fixture Tasks',
+    '',
+    '## Task 13: First fixture task',
+    '## Deferred metadata',
+    'Status: **Next — not started.**',
+    'Depends on: Task 12.',
+    'Unlocks: Task 14.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: prove strict metadata parsing.',
+    '',
+    '## Task 14: Second fixture task',
+    '',
+    'Status: Pending.',
+    'Depends on: Task 13.',
+    'Unlocks: None.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: prove dependency parsing.',
+    '',
+  ].join('\n');
+  assert.throws(
+    () => parseTaskGraph(interrupted, taskConfig),
+    /Task 13 (?:must contain exactly one "Status:" field|is missing Goal metadata boundary)/,
+  );
+
+  const withSubsection = [
+    '# Fixture Tasks',
+    '',
+    '## Task 13: First fixture task',
+    '',
+    'Status: **Next — not started.**',
+    'Depends on: Task 12.',
+    'Unlocks: Task 14.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    '### Notes',
+    '',
+    'Goal: prove subsections do not end the task.',
+    '',
+    '## Task 14: Second fixture task',
+    '',
+    'Status: Pending.',
+    'Depends on: Task 13.',
+    'Unlocks: None.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: prove dependency parsing.',
+    '',
+  ].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(withSubsection, taskConfig));
+
+  const fencedH2 = [
+    '# Fixture Tasks',
+    '',
+    '## Task 13: First fixture task',
+    '',
+    '```text',
+    '## Deferred metadata',
+    '```',
+    '',
+    'Status: **Next — not started.**',
+    'Depends on: Task 12.',
+    'Unlocks: Task 14.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: prove fenced headings stay inactive.',
+    '',
+    '## Task 14: Second fixture task',
+    '',
+    'Status: Pending.',
+    'Depends on: Task 13.',
+    'Unlocks: None.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: prove dependency parsing.',
+    '',
+  ].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(fencedH2, taskConfig));
+
+  const commentedH2 = [
+    '# Fixture Tasks',
+    '',
+    '## Task 13: First fixture task',
+    '',
+    '<!--',
+    '## Deferred metadata',
+    '-->',
+    '',
+    'Status: **Next — not started.**',
+    'Depends on: Task 12.',
+    'Unlocks: Task 14.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: prove commented headings stay inactive.',
+    '',
+    '## Task 14: Second fixture task',
+    '',
+    'Status: Pending.',
+    'Depends on: Task 13.',
+    'Unlocks: None.',
+    'Execution owner: Parent.',
+    'Parallel-safe with: None.',
+    'Human gate: None.',
+    '',
+    'Goal: prove dependency parsing.',
+    '',
+  ].join('\n');
+  assert.doesNotThrow(() => parseTaskGraph(commentedH2, taskConfig));
+
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const liveTasks = fs.readFileSync(
+    path.join(REPO_ROOT, repositoryConfig.taskGraph.document),
+    'utf8',
+  );
+  assert.doesNotThrow(() =>
+    parseTaskGraph(liveTasks, repositoryConfig.taskGraph),
   );
 });
 
@@ -1208,6 +1521,67 @@ test('release-readiness reports include static and dynamic Expo configs', () => 
     repositoryConfig.impactRules
       .find(({ id }) => id === 'release-readiness')
       .changedPaths.includes('app.example.ts'),
+    false,
+  );
+});
+
+test('bundled product and release assets report their documentation contracts', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const uiDocuments = ['docs/DESIGN.md', 'docs/TASKS.md'];
+  const releaseDocuments = [
+    'README.md',
+    'docs/RELEASE_CHECKLIST.md',
+    'docs/TASKS.md',
+  ];
+
+  const productImageReport = reportImpactedDocuments(
+    repositoryConfig,
+    ['assets/images/products/product-01-stan-smith-orange.png'],
+    REPO_ROOT,
+  );
+  for (const expectedDocument of uiDocuments) {
+    assert.ok(productImageReport.documents.includes(expectedDocument));
+  }
+  assert.deepEqual(
+    productImageReport.documents,
+    [...new Set(productImageReport.documents)].sort(),
+  );
+
+  for (const changedPath of [
+    'assets/images/icon.png',
+    'assets/images/android-icon-foreground.png',
+    'assets/images/android-icon-background.png',
+    'assets/images/android-icon-monochrome.png',
+    'assets/images/favicon.png',
+    'assets/images/splash-icon.png',
+  ]) {
+    const report = reportImpactedDocuments(
+      repositoryConfig,
+      [changedPath],
+      REPO_ROOT,
+    );
+    for (const expectedDocument of releaseDocuments) {
+      assert.ok(
+        report.documents.includes(expectedDocument),
+        `${changedPath} should require ${expectedDocument}`,
+      );
+    }
+    assert.deepEqual(report.documents, [...new Set(report.documents)].sort());
+  }
+
+  const unrelatedAssetReport = reportImpactedDocuments(
+    repositoryConfig,
+    ['assets/images/unrelated-placeholder.bin'],
+    REPO_ROOT,
+  );
+  assert.equal(unrelatedAssetReport.documents.includes('docs/DESIGN.md'), false);
+  assert.equal(
+    unrelatedAssetReport.documents.includes('docs/RELEASE_CHECKLIST.md'),
     false,
   );
 });

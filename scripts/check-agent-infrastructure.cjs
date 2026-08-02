@@ -35,6 +35,11 @@ const TEXT_EXTENSIONS = new Set([
   '.yaml',
   '.yml',
 ]);
+const PROTECTED_TASK_EXECUTION_OWNER =
+  'Parent — verified strong; the generic implementer may receive only bounded non-sensitive leaf packets.';
+const TASK_19_HUMAN_GATE =
+  'Actual account deletion is human-only on every environment; the staging destructive checklist is also human-run.';
+const ACTIVE_LEVEL_TWO_HEADING = /^##(?!#)(?:\s+|$)/;
 
 function isPlainObject(value) {
   return (
@@ -881,7 +886,7 @@ function markdownLines(content) {
       }
       text = visible;
     }
-    const marker = text.trimStart().match(/^(`{3,}|~{3,})(.*)$/);
+    const marker = text.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
     let active =
       fence === null &&
       !((startedInComment || commentSyntaxSeen) && text.trim().length === 0);
@@ -958,9 +963,13 @@ function extractTaskReferences(value) {
 function parseTaskGraph(content, taskConfig) {
   const lines = markdownLines(content);
   const headings = [];
+  const activeLevelTwoLineIndexes = [];
   for (const line of lines) {
     if (!line.active) {
       continue;
+    }
+    if (ACTIVE_LEVEL_TWO_HEADING.test(line.text)) {
+      activeLevelTwoLineIndexes.push(line.lineNumber - 1);
     }
     const match = line.text.match(/^## Task (\d+):\s+(.+?)\s*$/);
     if (match) {
@@ -992,9 +1001,12 @@ function parseTaskGraph(content, taskConfig) {
   const dependencyEdges = [];
   const allDependencyEdges = [];
 
-  for (const [headingIndex, heading] of inRange.entries()) {
-    const nextHeading = inRange[headingIndex + 1];
-    const sectionEnd = nextHeading ? nextHeading.lineIndex : lines.length;
+  for (const heading of inRange) {
+    const nextLevelTwo = activeLevelTwoLineIndexes.find(
+      (lineIndex) => lineIndex > heading.lineIndex,
+    );
+    const sectionEnd =
+      nextLevelTwo === undefined ? lines.length : nextLevelTwo;
     const section = lines.slice(heading.lineIndex + 1, sectionEnd);
     const goalLine = section.findIndex(
       (line) => line.active && /^Goal:\s*/.test(line.text),
@@ -1070,10 +1082,18 @@ function parseTaskGraph(content, taskConfig) {
     if (
       heading.number >= 16 &&
       heading.number <= 19 &&
-      !executionOwner.startsWith('Parent — verified strong;')
+      executionOwner !== PROTECTED_TASK_EXECUTION_OWNER
     ) {
       throw new Error(
         `Task ${heading.number} is protected and must have Parent — verified strong as its Execution owner.`,
+      );
+    }
+    if (
+      heading.number === 19 &&
+      fields['Human gate'] !== TASK_19_HUMAN_GATE
+    ) {
+      throw new Error(
+        'Task 19 Human gate must keep actual account deletion human-only on every environment.',
       );
     }
 
