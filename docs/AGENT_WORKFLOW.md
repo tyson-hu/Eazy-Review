@@ -206,7 +206,10 @@ This sequence extends the Definition Of Done and Validation Commands below; it d
    `npm run check:expo` / `npm run check` outside the sandbox.
 9. **Documentation gate** — tasks, contracts, decisions, and affected docs per
    `docs/DOCUMENTATION_POLICY.md`. Documentation-only changes do not require
-   unrelated application checks.
+   unrelated application checks. When step 9 changes any registered document,
+   decision, mirror, skill, or agent-infrastructure path, re-run
+   `npm run check:readonly` on the final tree before handoff so the document,
+   task-graph, generated-index, and stale-term gates still cover post-doc edits.
 10. **Final repository check and handoff** — `git diff --check`,
     `git status --short`, then the Human-Readable Handoff below.
 

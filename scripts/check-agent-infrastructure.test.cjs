@@ -1112,7 +1112,7 @@ test('revised sequence requires header, delimiter, and contiguous data rows', ()
   );
   assert.throws(
     () => parseTaskGraph(missingHeader, taskConfig),
-    /missing a Revised Sequence table|missing the required delimiter row/,
+    /missing a Revised Sequence table|missing the required delimiter row|non-canonical table before the required header/,
   );
 
   const gapAfterDelimiter = taskDocument().replace(
@@ -1972,6 +1972,41 @@ test('validateConfig pins the task ledger path and predecessor-only externals', 
     () => validateConfig(inRangeExternal),
     /allowedExternalTasks must be strictly before Task 13/,
   );
+});
+
+test('revised sequence rejects non-canonical tables before the required header', () => {
+  const taskConfig = baseConfig().taskGraph;
+  const staleLeadingTable = taskDocument().replace(
+    '## Revised Sequence\n\n| Task | Title | Status |\n',
+    [
+      '## Revised Sequence',
+      '',
+      '| Task | Title | State |',
+      '| --- | --- | --- |',
+      '| 13 | Stale fixture | Completed |',
+      '',
+      '| Task | Title | Status |',
+      '',
+    ].join('\n'),
+  );
+  assert.throws(
+    () => parseTaskGraph(staleLeadingTable, taskConfig),
+    /non-canonical table before the required header/,
+  );
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+});
+
+test('validateConfig rejects historical documents as impact targets', () => {
+  const historicalTarget = baseConfig();
+  historicalTarget.impactRules[0] = {
+    ...historicalTarget.impactRules[0],
+    requiredDocuments: ['history'],
+  };
+  assert.throws(
+    () => validateConfig(historicalTarget),
+    /requiredDocuments must not list historical lifecycle entry "history"/,
+  );
+  assert.doesNotThrow(() => validateConfig(baseConfig()));
 });
 
 test('current Tasks 13-29 preserve the accepted Task 17 and 18 relationship', () => {

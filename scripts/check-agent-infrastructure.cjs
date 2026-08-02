@@ -544,6 +544,11 @@ function validateConfig(config) {
       if (!documents.has(documentPath)) {
         throw new Error(`${context} references unknown document "${documentPath}".`);
       }
+      if (documents.get(documentPath).lifecycle === 'historical') {
+        throw new Error(
+          `${context} requiredDocuments must not list historical lifecycle entry "${documentPath}".`,
+        );
+      }
     }
     assertUnique(rule.requiredDocuments, `${context}.requiredDocuments`);
     impactRuleIds.push(rule.id);
@@ -1439,10 +1444,15 @@ function parseRevisedSequence(lines, taskConfig) {
       continue;
     }
     if (!sawHeader) {
-      if (!REVISED_SEQUENCE_HEADER.test(line.text)) {
+      if (line.text.startsWith('|')) {
+        if (!REVISED_SEQUENCE_HEADER.test(line.text)) {
+          throw new Error(
+            'Revised Sequence must not contain a non-canonical table before the required header.',
+          );
+        }
+        sawHeader = true;
         continue;
       }
-      sawHeader = true;
       continue;
     }
     if (!sawDelimiter) {
