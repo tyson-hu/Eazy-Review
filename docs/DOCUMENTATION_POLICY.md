@@ -51,9 +51,11 @@ equivalence:
 - ATX level-two headings (`## Task N:` and `## Revised Sequence`) with
   canonical positive integers (`[1-9]\d*`; no leading zeros).
 - Revised Sequence pipe table with the exact header
-  `| Task | Title | Status |` and a Markdown delimiter row before data rows.
+  `| Task | Title | Status |`, a Markdown delimiter row, and contiguous data
+  rows immediately after that delimiter.
 - Single-line `Field: value` metadata before each task's `Goal:` boundary.
-- Task references of the form `Task N`, `Tasks N–M`, and comma/`and` lists.
+- Task references use singular `Task N` for one number and plural
+  `Tasks N–M` / comma-`and` lists for multiple numbers.
 - HTML comments and fenced code (opening indent 0–3 spaces; bare closing
   fences) are inactive for machine parsing.
 - Raw HTML block openers capable of hiding the ledger (`<pre`, `<script`,

@@ -982,7 +982,7 @@ test('task graph rejects raw HTML block wrappers in the machine-parsed region', 
   );
 });
 
-test('revised sequence requires header and delimiter rows', () => {
+test('revised sequence requires header, delimiter, and contiguous data rows', () => {
   const taskConfig = baseConfig().taskGraph;
   assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
 
@@ -1011,6 +1011,60 @@ test('revised sequence requires header and delimiter rows', () => {
   assert.throws(
     () => parseTaskGraph(missingHeader, taskConfig),
     /missing a Revised Sequence table|missing the required delimiter row/,
+  );
+
+  const gapAfterDelimiter = taskDocument().replace(
+    '| --- | --- | --- |\n| 13 |',
+    '| --- | --- | --- |\n\n| 13 |',
+  );
+  assert.throws(
+    () => parseTaskGraph(gapAfterDelimiter, taskConfig),
+    /must begin immediately after the delimiter/,
+  );
+
+  const gapBetweenRows = taskDocument().replace(
+    '| 13 | First fixture task | Next — not started |\n| 14 |',
+    '| 13 | First fixture task | Next — not started |\n\n| 14 |',
+  );
+  assert.throws(
+    () => parseTaskGraph(gapBetweenRows, taskConfig),
+    /must remain contiguous after the delimiter/,
+  );
+});
+
+test('staleScan false is limited to machine-readable JSON configuration', () => {
+  const allowed = baseConfig();
+  allowed.documents.push({
+    path: 'config/fixture.json',
+    kind: 'file',
+    lifecycle: 'evergreen',
+    owner: 'parent-agent',
+    staleScan: false,
+  });
+  assert.doesNotThrow(() => validateConfig(allowed));
+
+  const evergreenEscape = baseConfig();
+  evergreenEscape.documents[0] = {
+    ...evergreenEscape.documents[0],
+    staleScan: false,
+  };
+  assert.throws(
+    () => validateConfig(evergreenEscape),
+    /staleScan may be false only for machine-readable JSON configuration files/,
+  );
+});
+
+test('task references enforce singular Task and plural Tasks grammar', () => {
+  assert.deepEqual(extractTaskReferences('Task 13.'), [13]);
+  assert.deepEqual(extractTaskReferences('Tasks 13–14.'), [13, 14]);
+  assert.deepEqual(extractTaskReferences('Tasks 13, 14, and 15.'), [13, 14, 15]);
+  assert.throws(
+    () => extractTaskReferences('Task 13–14.'),
+    /Singular "Task" cannot introduce a range or list/,
+  );
+  assert.throws(
+    () => extractTaskReferences('Tasks 13.'),
+    /Plural "Tasks" requires a range or list/,
   );
 });
 
@@ -1601,7 +1655,7 @@ test('task references support comma and and lists without ignoring later members
   assert.deepEqual(extractTaskReferences('Tasks 14 and 16.'), [14, 16]);
   assert.throws(
     () => extractTaskReferences('Tasks 14 / 16.'),
-    /Unrecognized task-number syntax/,
+    /Plural "Tasks" requires a range or list|Unrecognized task-number syntax/,
   );
   const root = createFixture(t);
   write(root, 'docs/TASKS.md', taskDocument({ unknownLaterTask: true }));

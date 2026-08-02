@@ -310,6 +310,11 @@ function validateConfig(config) {
     ) {
       throw new Error(`${context}.staleScan must be a boolean.`);
     }
+    if (document.staleScan === false && !document.path.endsWith('.json')) {
+      throw new Error(
+        `${context}.staleScan may be false only for machine-readable JSON configuration files.`,
+      );
+    }
     if (
       Object.hasOwn(document, 'requiredOnDisk') &&
       typeof document.requiredOnDisk !== 'boolean'
@@ -942,11 +947,26 @@ function extractTaskReferences(value) {
   const references = [];
   const recognizedNumbers = new Set();
   const expression =
-    /\bTasks?\s+(\d+\b(?:\s*[–-]\s*\d+\b)?(?:(?:\s*,\s*(?:and\s+)?|\s+and\s+)\d+\b(?:\s*[–-]\s*\d+\b)?)*)/g;
+    /\b(Tasks?)(\s+)(\d+\b(?:\s*[–-]\s*\d+\b)?(?:(?:\s*,\s*(?:and\s+)?|\s+and\s+)\d+\b(?:\s*[–-]\s*\d+\b)?)*)/g;
   for (const match of value.matchAll(expression)) {
-    const listOffset = match.index + match[0].indexOf(match[1]);
+    const prefix = match[1];
+    const listText = match[3];
+    const listOffset = match.index + match[0].indexOf(listText);
     const itemExpression = /(\d+)\b(?:\s*[–-]\s*(\d+)\b)?/g;
-    for (const item of match[1].matchAll(itemExpression)) {
+    const items = [...listText.matchAll(itemExpression)];
+    const isMulti =
+      items.length > 1 || items.some((item) => item[2] !== undefined);
+    if (prefix === 'Task' && isMulti) {
+      throw new Error(
+        `Singular "Task" cannot introduce a range or list in "${match[0]}".`,
+      );
+    }
+    if (prefix === 'Tasks' && !isMulti) {
+      throw new Error(
+        `Plural "Tasks" requires a range or list in "${match[0]}".`,
+      );
+    }
+    for (const item of items) {
       assertCanonicalTaskNumber(item[1]);
       if (item[2]) {
         assertCanonicalTaskNumber(item[2]);
@@ -1357,6 +1377,7 @@ function parseRevisedSequence(lines, taskConfig) {
   let inSequence = false;
   let sawHeader = false;
   let sawDelimiter = false;
+  let tableEnded = false;
   const rows = [];
   for (const line of lines) {
     if (!line.active) {
@@ -1392,7 +1413,18 @@ function parseRevisedSequence(lines, taskConfig) {
     }
     const match = line.text.match(/^\|\s*([1-9]\d*)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/);
     if (!match) {
+      if (rows.length === 0) {
+        throw new Error(
+          'Revised Sequence table data must begin immediately after the delimiter.',
+        );
+      }
+      tableEnded = true;
       continue;
+    }
+    if (tableEnded) {
+      throw new Error(
+        'Revised Sequence table data must remain contiguous after the delimiter.',
+      );
     }
     const number = Number(match[1]);
     if (number < taskConfig.firstTask || number > taskConfig.lastTask) {
