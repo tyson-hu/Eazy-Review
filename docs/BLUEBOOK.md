@@ -96,37 +96,12 @@ names follow `docs/DATA_MODEL.md` (`eazy_assessments` for editorial scoring).
 - Supabase: auth, Postgres, storage, RLS, functions, and triggers.
 - TanStack Query: client caching, fetching, mutations, loading states, errors, and refetching.
 
-## Build Order
+## Delivery Order
 
-1. Create Expo app with TypeScript.
-2. Set up Expo Router.
-3. Set up NativeWind.
-4. Create reusable UI components.
-5. Create mock product data.
-6. Build Browse screen with fake data.
-7. Build Product Detail screen with fake data.
-8. Build Rating Form with fake local update.
-9. Build Feed placeholder.
-10. Build Account placeholder.
-11. Task 11 — create local/staging Supabase environments and the deny-by-default core schema.
-12. Task 12 — add RLS policies, explicit Data API grants, and authorization tests.
-13. Task 13 — seed exactly two deterministic products: one complete and one sparse.
-14. Task 14 — establish the Supabase client, generated types, TanStack Query, query keys, React Native lifecycle/online integration, and the minimal frontend test harness.
-15. Task 15 — connect anonymous published Browse/Product Detail reads; do not build a temporary UUID rating map.
-16. Task 16 — add core email/password auth, session restoration, Account state, and the Rate gate.
-17. Task 17 — persist owner-only My Rating, add Rated Products, and verify the accepted server-owned aggregate behavior end to end.
-18. Task 18 — add password recovery and mobile deep links.
-19. Task 19 — add caller-derived protected account deletion through a server-only boundary.
-20. Task 20 — scale Browse search/filter/sort/pagination only when measured catalog size requires it.
-21. Task 21 — replace the placeholder with a small real Feed.
-22. Task 22 — close cross-feature test gaps, add path-filtered database CI and one small E2E smoke, and clean up the test suite.
-23. Task 23 — complete reliability, accessibility, and device QA.
-24. Task 24 — finish privacy, legal, support, and store disclosures.
-25. Task 25 — configure isolated EAS environments and produce a TestFlight candidate.
-26. Task 26 — complete release-candidate QA and App Store submission.
-27. Task 27 — establish lightweight post-launch operations.
-28. Task 28 — add catalog import/admin infrastructure after MVP.
-29. Task 29 — optional read-only public publishing/project-journal workstream.
+`docs/TASKS.md` is the sole current implementation ledger: it owns task order,
+status, dependencies, execution ownership, parallel-safety, human gates,
+deliverables, and acceptance. `docs/ROADMAP.md` keeps the milestone-level view.
+This product plan intentionally does not duplicate either source.
 
 ## Success Criteria
 

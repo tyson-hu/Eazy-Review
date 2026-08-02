@@ -52,8 +52,10 @@ inside the skill.
    is forbidden.
 6. Update affected canonical docs and frontend contracts in the same branch.
    Do not change UI or mock behavior unless the task explicitly owns it.
-7. Run the narrowest local schema/authorization checks plus project validation,
-   then complete the documentation gate.
+7. Run the narrowest local schema/authorization checks. After implementation,
+   the parent owns any route preparation and full Expo validation; the
+   read-only verifier owns `npm run check:readonly`. Then complete the
+   documentation gate.
 
 ## Verification
 

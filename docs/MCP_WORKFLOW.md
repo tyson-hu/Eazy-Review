@@ -38,10 +38,19 @@ Do not start an agent coding directly on large features. Start with documents, t
 
 ## MCP Setup Philosophy
 
-Keep MCP configs small; add tools based on real workflow needs. Each agent reads its own config, so a server the project relies on must be added to every config in use:
+MCP setup is optional and user-local unless a future task explicitly adopts a
+project-wide server dependency. The committed Cursor config is currently an
+empty server registry (`.cursor/mcp.json`), and no root `.mcp.json` exists.
+Codex MCP configuration remains user-global. Do not add credentials, tokens,
+project references, or placeholder server entries merely to make these files
+look populated.
+
+Keep MCP configs small; add tools only for a real workflow need. If a future
+task deliberately makes a server a shared project dependency, configure each
+agent surface in use without committing credentials:
 
 - Cursor: `.cursor/mcp.json`
-- Claude Code: `.mcp.json` at the repo root
+- Claude Code: `.mcp.json` at the repo root (currently absent)
 - Codex: its global `config.toml` (not a repo file)
 
 Recommended starting tools:

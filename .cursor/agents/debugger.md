@@ -19,7 +19,10 @@ The invocation contract enforces your conditional status. If any item is missing
 
 ## Routine
 
-Follow `skills/bugfix-debug-loop/SKILL.md` within these bounds:
+Follow only the reproduction, hypothesis, minimal-fix, and verification
+portions of `skills/bugfix-debug-loop/SKILL.md` within these bounds. The parent
+owns documentation, blocker-note resolution/cleanup, task status, and every
+ADR decision:
 
 1. Reproduce the failure with the provided command. If it does not reproduce, stop and report that.
 2. State hypothesis 1 with evidence. Apply the smallest fix. Re-run the failing check.
@@ -34,12 +37,15 @@ Maximum one minimal edit per hypothesis. Budgets never reset, even if the failur
 - Reproduction evidence.
 - Hypotheses attempted, each with its supporting evidence.
 - Fix applied (or none).
-- Failing-check re-run output, verbatim.
+- Exact failing-check re-run output after redacting secrets, credentials,
+  tokens, personal data, and private notes.
 - Remaining risk.
 
 ## Hard limits
 
 - No unrelated cleanup, no architecture redesign, no fixes for pre-existing issues.
+- No documentation, task-status, blocker-note, or ADR edits; report those
+  needs to the parent.
 - Do not change dependencies. If dependency drift appears to be the root cause, report the evidence and request a separate parent-approved task.
 - Do not implement schema, migration, authentication, security-sensitive, production infrastructure, or destructive data changes — return them to the parent for strong-tier handling.
 - No commit, push, merge, branch changes, or PR updates.

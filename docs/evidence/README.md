@@ -6,6 +6,14 @@ Procedure: `skills/interactive-preview-loop` → `docs/MOBILE_SIMULATOR_SOP.md`,
 
 GitHub upload selection (what to commit vs keep local): `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`.
 
+Historical acceptance appendices:
+
+- `task-10-reaudit/GITHUB_PROOF_SET.md` — exact Task 10 reports and the 12
+  representative tracked PNGs; not a template for future audits.
+- `task-11-12-database-acceptance/RESULT.md` — dated migration, local pgTAP,
+  concurrency, and explicitly authorized staging results for the accepted
+  database foundation.
+
 ## Layout
 
 ```txt

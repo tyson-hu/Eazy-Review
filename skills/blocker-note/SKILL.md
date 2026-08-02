@@ -20,7 +20,8 @@ Write a blocker note when any of these occur:
 
 ## Inputs expected
 
-- The exact failing behavior or error, verbatim.
+- The exact failing behavior or error after redacting secrets, credentials,
+  tokens, personal data, and private notes.
 - The list of attempts made so far (what was changed, what happened).
 
 ## Read first
@@ -53,7 +54,10 @@ Write a blocker note when any of these occur:
    - **Problem** — one or two sentences, the observed vs expected behavior.
    - **Attempts so far** — one line per attempt: hypothesis, change made, result. Number them.
    - **Ruled out** — causes that are proven wrong, with the proof. This is what saves the next session from repeating work.
-   - **Evidence** — exact error messages, command output, and versions, verbatim. No paraphrasing.
+   - **Evidence** — exact error messages, command output, and versions after
+     redacting secrets, credentials, tokens, personal data, and private notes.
+     Preserve all non-sensitive characters and line structure; do not
+     paraphrase the remaining evidence.
    - **Environment facts** — anything about timing, cache, network, registry, or machine state that affects reproduction.
    - **Next hypothesis** — the single most promising unexplored cause, or `Unknown — re-read <doc> first`.
 4. Run the memory step below.
@@ -93,7 +97,8 @@ If a future session cannot verify or falsify the sentence, it does not belong in
 ## Common mistakes
 
 - Writing the note after "just one more try" — the extra attempt is usually the loop restarting.
-- Paraphrasing errors instead of pasting them verbatim.
+- Paraphrasing non-sensitive error text instead of preserving the exact
+  redacted evidence.
 - Listing attempts without their results, so the next session cannot tell what was disproven.
 - Putting the real insight in the chat summary but not in the note.
 

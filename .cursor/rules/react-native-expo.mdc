@@ -16,7 +16,9 @@ Before writing Expo code, read the exact Expo SDK 57 docs at `https://docs.expo.
 
 Rules:
 - Use Expo Router file-based navigation.
-- Keep bottom tabs named Feed, Browse, and Account; keep all routes aligned with `docs/USER_FLOWS.md`.
+- The current tab set is Feed, Browse, and Account. Route or tab changes are
+  governed by `docs/USER_FLOWS.md` and the active task; this rule does not make
+  the present set permanent.
 - Do not assume older Expo or Expo Router behavior; use the installed SDK versions in `package.json`.
 
 Feature work follows the routine in `skills/feature-slice-builder/SKILL.md`.

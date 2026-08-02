@@ -60,7 +60,7 @@ Read only what the task type needs. Do not read `docs/BLUEBOOK.md` "before any w
 | Feature slice spanning data + UI (a `docs/TASKS.md` task) | The task in `docs/TASKS.md`, `docs/USER_FLOWS.md` (relevant flow), `docs/API_CONTRACTS.md` (types and functions), `docs/DESIGN.md` (component rules for its screens); for Tasks 15–19, also read the task-specific data, security, and tool-policy documents required by `skills/feature-slice-builder` | `docs/BLUEBOOK.md` |
 | Schema, Supabase, RLS, migrations, rating summaries | `docs/DATA_MODEL.md`, `docs/API_CONTRACTS.md` (affected contracts) | `docs/DESIGN.md`, `docs/STITCH_PROMPTS.md` |
 | Frontend data shape, types, mock data, folder structure | `docs/API_CONTRACTS.md`; `docs/DATA_MODEL.md` only if a database contract changes | `docs/DESIGN.md` screen sections, `docs/BLUEBOOK.md` |
-| Bug fix | The failing flow in `docs/USER_FLOWS.md`, plus the doc for the layer the bug lives in (`docs/DESIGN.md` for UI, `docs/API_CONTRACTS.md` for data, `docs/DATA_MODEL.md` for database) | Everything else |
+| Bug fix | User-visible: the affected flow in `docs/USER_FLOWS.md` plus the layer contract. Database/tooling/CI/config/command: the affected canonical contract plus Validation Commands below. | Unrelated product flows or layer docs |
 | Refactor (no behavior change) | `docs/API_CONTRACTS.md` (folder structure and contracts covering the moved code) | Product and design docs |
 | Docs sync after code drift | `docs/DOCUMENTATION_POLICY.md` (Document Update Map) | Docs the change does not affect |
 | Validation / check run | Validation Commands section below in this file | Product docs |
@@ -104,10 +104,17 @@ The delegation architecture defines four roles. Rollout is phased; current statu
 | --- | --- | --- |
 | `reviewer` | Independent read-only review: spec review and deletion-first review | Active |
 | `verifier` | Read-only check runs and failure classification | Active |
-| `implementer` | One scoped implementation task packet, following the packet's named skill | Active |
+| `implementer` | One scoped non-sensitive implementation packet, following the packet's named skill | Active |
 | `debugger` | Isolated diagnosis of an escalated caused-by-change failure via `skills/bugfix-debug-loop` | Available — conditional escalation only; unvalidated until its first legitimate escalation case |
 
 The debugger is not part of the normal execution path. The parent must explicitly name and invoke `debugger`; description-based routing alone is insufficient authorization. It is entered only when a caused-by-change failure survives the implementer's repair attempts, or when the parent explicitly determines diagnosis requires isolated context.
+
+Tasks 16–19 are parent-owned, verified-strong implementations because their
+integrated behavior crosses authentication, private data, recovery, rating
+authorization, or account-deletion boundaries. Reviewer and verifier remain
+independent. The generic implementer may receive only an explicitly bounded,
+non-sensitive leaf packet; it never owns the integrated auth/security slice.
+No security-specific implementer role exists.
 
 ### Task Packet Format
 
@@ -144,7 +151,39 @@ Verifier verdict routing — only a directly evidenced caused-by-change failure 
 - `uncertain` — the parent gathers missing evidence or performs the clean-base comparison; never routed automatically to the debugger.
 - `blocked` — the parent supplies the missing prerequisite or stops.
 
+A clean-base comparison is parent-controlled and uses a temporary worktree or
+another explicitly safe method. Never stash user work automatically, and never
+ask a read-only verifier to mutate the checkout.
+
+Every parent, subagent, debugger, blocker note, and verifier failure report
+preserves the exact non-sensitive error text and command context after
+redacting secrets, credentials, tokens, personal data, and private notes.
+Lossy paraphrases such as “the check had an issue” are not evidence.
+
 Review economy: per-packet independent review is required for meaningful code or contract changes; the parent may skip it for trivial follow-up packets; one final integrated review always runs across the whole task. A materially behavior-changing verifier fix may require another reviewer pass, but only when the parent explicitly authorizes it — typo and lint fixes do not.
+
+### Execution Graph
+
+The graph records dependencies, role authority, parallelism, review gates, and
+human approval. Concrete skills remain the loop implementations: they own
+retries, hypotheses, verification, stop conditions, memory, and handoff. This
+is a document/checker contract, not a graph runtime.
+
+```mermaid
+flowchart LR
+  A["Parent scope"] --> B["Bounded implementation"]
+  B --> C["Independent review"]
+  C --> D["One accepted fix pass"]
+  D --> E["Read-only verifier"]
+  E -->|"directly evidenced failure"| F["Bounded repair or debugger escalation"]
+  F --> E
+  E -->|"pass"| G["Documentation gate"]
+  G --> H["Parent and human acceptance"]
+```
+
+`config/agent-infrastructure.json` is the machine-readable document graph.
+Task dependencies, execution ownership, parallel safety, and human gates live
+in the standardized Task 13–29 metadata in `docs/TASKS.md`.
 
 ### Completion Sequence
 
@@ -152,11 +191,27 @@ This sequence extends the Definition Of Done and Validation Commands below; it d
 
 1. **Scope check** — confirm the work stayed inside its assigned slice.
 2. **Implementation and self-cleanup** — apply the Abstraction And Cleanup Checklist below.
-3. **Independent read-only review** — required for meaningful code changes; optional for docs-only or trivial edits.
+3. **Independent read-only review** — required for meaningful code or contract changes; optional only for trivial edits.
 4. **One review-fix pass** — the implementing agent addresses accepted findings. No unbounded reviewer-implementer loop; unresolved disagreements go to the human.
-5. **Final verification** — the narrowest validation commands plus the requested user flow, run after the final code modification.
-6. **Documentation gate** — tasks, contracts, decisions, and affected docs per `docs/DOCUMENTATION_POLICY.md`. Documentation-only changes do not require rerunning unrelated application checks.
-7. **Final repository check and handoff** — `git diff --check`, `git status --short`, then the Human-Readable Handoff below.
+5. **Parent preparation** — when routes/configuration require generation, the
+   parent runs `npm run prepare:routes` and checks tracked drift before the
+   verifier starts.
+6. **Read-only verifier** — run the narrowest command and, for a finished
+   packet, `npm run check:readonly` after the final modification. The verifier
+   never runs an intentionally mutating preparation command.
+7. **Bounded repair or debugger escalation** — only a directly evidenced
+   caused-by-change failure enters the repair budgets above; the verifier
+   reruns after any modification.
+8. **Parent Expo gate** — when required, the parent runs
+   `npm run check:expo` / `npm run check` outside the sandbox.
+9. **Documentation gate** — tasks, contracts, decisions, and affected docs per
+   `docs/DOCUMENTATION_POLICY.md`. Documentation-only changes do not require
+   unrelated application checks. When step 9 changes any registered document,
+   decision, mirror, skill, or agent-infrastructure path, re-run
+   `npm run check:readonly` on the final tree before handoff so the document,
+   task-graph, generated-index, and stale-term gates still cover post-doc edits.
+10. **Final repository check and handoff** — `git diff --check`,
+    `git status --short`, then the Human-Readable Handoff below.
 
 ### Teach-Back Policy
 
@@ -212,17 +267,41 @@ Pick the narrowest command that covers the change:
 
 - `npm run decisions:build` — validates ADR metadata and writes the generated `docs/DECISIONS.md` index after a decision record changes.
 - `npm run decisions:check` — validates decision filenames, metadata, statuses, IDs, supersession links, required sections, the legacy archive, and generated-index freshness without writing. Run after decision-record or index-tooling edits; CI and `npm run check` also run it.
+- `npm run test:agent-infra` — unit tests for malformed manifests, missing
+  paths, document/task dependency cycles, invalid mirrors, stale-term
+  allowlists, impact reporting, and a valid fixture.
+- `npm run check:agent-infra` — runs the unit suite, then validates the current
+  repository against `config/agent-infrastructure.json` without writing files.
+- `node scripts/check-agent-infrastructure.cjs --report <changed-path>...` —
+  prints the document-review impact set for specified paths. It is a starting
+  set; semantic correctness still requires parent/reviewer judgment.
 - `npm run typecheck` — TypeScript only. Fastest; enough for pure type or logic edits.
 - `npm run lint` — ESLint via Expo. Add it when code style or imports changed.
-- `npm run check` — decision-index validation, typed-route generation, typecheck, lint, Expo doctor, and Expo dependency alignment. Use for route changes, dependency changes, or before handing off a finished task.
-- `npm run generate:routes` — regenerates typed routes; required before typecheck on clean checkouts.
+- `npm run check:readonly` — verifier-safe repository gate: skill wrappers,
+  decisions, secrets, agent infrastructure, typecheck, and lint. It does not
+  intentionally modify tracked files.
+- `npm run prepare:routes` — parent/CI-owned route/config preparation (backed
+  by `npm run generate:routes`). Inspect `git diff --exit-code -- tsconfig.json`
+  afterward; a read-only verifier does not run this command.
+- `npm run check:expo` — parent-owned route preparation, read-only gate, Expo
+  Doctor, and Expo dependency alignment. Run outside the sandbox.
+- `npm run check` — alias for the full parent-owned `check:expo` handoff gate.
+- `npm run test:db:reset` — local-only database reset, pgTAP, and concurrency
+  harness. Database CI runs it only on Supabase/database-harness paths and
+  always removes its local containers/volumes afterward.
+- Pull-request runs of Expo CI and Database CI explicitly check out
+  `github.event.pull_request.head.sha`; push runs fall back to `github.sha`.
+  This makes those check results exact to the tested branch head while
+  mergeability and integration protection remain separate GitHub gates.
 - `CI=1 npx expo export --platform web` — verify the web bundle in CI or locally.
 - Interactive UX / simulator / mobile-web walks — `skills/interactive-preview-loop` (SOPs under `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`; evidence under `docs/evidence/`). These do not replace the npm commands above.
 - Docs-only changes use a targeted check when one exists (for example, `npm run decisions:check`); otherwise say why no command was needed in Validation.
 
 ### Expo doctor and dependency checks — agent sandbox
 
-`npx expo-doctor` and `npx expo install --check` (also the tail of `npm run check`) read and write under the host `~/.expo` cache. Cursor’s default command sandbox often blocks that path.
+`npx expo-doctor` and `npx expo install --check` (also the tail of
+`npm run check:expo` / `npm run check`) read and write under the host `~/.expo`
+cache. Cursor’s default command sandbox often blocks that path.
 
 Observed failure modes (recurring — do not treat sandboxed output as authoritative):
 
@@ -230,7 +309,7 @@ Observed failure modes (recurring — do not treat sandboxed output as authorita
 | --- | --- |
 | `expo-doctor` reports **20/20** / “No issues detected” | False clean. Outside the sandbox the same tree may still fail “packages match versions required by installed Expo SDK”. |
 | `expo install --check` exits with **`EPERM`** opening `~/.expo/native-modules-cache/…` | Environment/permission noise, not a real dependency verdict. |
-| `npm run check` “passes” or “fails” only in the Expo doctor / install-check steps under sandbox | Re-run those steps (or the full `npm run check`) **outside the sandbox** (`required_permissions: ["all"]` or equivalent unrestricted host shell) before claiming alignment or opening a version-fix packet. |
+| `npm run check:expo` / `npm run check` “passes” or “fails” only in the Expo doctor / install-check steps under sandbox | Re-run those steps (or the full parent gate) **outside the sandbox** (`required_permissions: ["all"]` or equivalent unrestricted host shell) before claiming alignment or opening a version-fix packet. |
 
 Rule for agents: after any Expo dependency edit, or when doctor/install-check results will gate handoff or a fix, run `npx expo-doctor` and `npx expo install --check` with unrestricted host access. If sandboxed and unrestricted results disagree, trust the unrestricted run. Same class of issue as Simulator/`simctl` needing host access (`docs/MOBILE_SIMULATOR_SOP.md`).
 
@@ -310,6 +389,7 @@ One home per instruction; everywhere else points, never restates.
 | Frontend types, API functions, query keys, folder structure | `docs/API_CONTRACTS.md` |
 | Routes, user journeys, auth gates | `docs/USER_FLOWS.md` |
 | Doc-update gate and Document Update Map | `docs/DOCUMENTATION_POLICY.md` |
+| Machine-readable document lifecycle, ownership, dependency, mirror, stale-term, impact, and task-graph rules | `config/agent-infrastructure.json` |
 | Security rules | `docs/SECURITY.md` (mirrored by `.cursor/rules/security.mdc`) |
 | Session flow, context map, definition of done, validation commands, handoff and PR formats | `docs/AGENT_WORKFLOW.md` (this file) |
 | Session boundary triggers, state-persistence principle, resume prompt | `docs/AGENT_WORKFLOW.md` (this file) |

@@ -8,6 +8,69 @@ Every meaningful code, configuration, workflow, design, schema, dependency, rout
 
 Tiny typo fixes, formatting-only edits, and internal implementation changes with no visible behavior, contract, workflow, or architecture impact may use the no-docs-needed path.
 
+## Machine-Readable Enforcement
+
+This prose explains the policy. `config/agent-infrastructure.json` is the
+machine-readable enforcement source for document lifecycle, ownership,
+source-to-mirror relationships, generated-command ownership, dependency
+edges, stale-term rules, changed-path impact rules, and the strict Task 13–29
+metadata contract.
+
+Document registry entries declare whether they are files or directories, and
+the checker rejects kind substitutions as well as missing paths. Entries are
+required to exist by default. Only intentionally transient status documents
+under `docs/notes/` may set `requiredOnDisk: false`, so the graph can retain
+their lifecycle and ownership metadata without making a clean CI checkout
+manufacture session state.
+
+An active directory registration covers its current text descendants for
+stale-term validation. Traversal excludes any nested path separately registered
+as historical, so current ADR files remain active while
+`docs/decisions/archive/**` remains point-in-time history.
+
+- `npm run check:agent-infra` validates that contract without writing files.
+- `node scripts/check-agent-infrastructure.cjs --report <changed-path>...`
+  prints which documents require review for the supplied paths, including
+  dependency, bidirectional source/mirror, and generated-artifact propagation.
+  Report mode validates the manifest structure but remains available while
+  active-document drift is being repaired; `npm run check:agent-infra`
+  enforces the complete current-repository contract.
+
+The checker catches structural drift; it does not decide whether prose is
+semantically correct, whether an ADR is warranted, or whether a listed
+document actually needs a content change. Parent and independent reviewer
+judgment remain required. When the report and this prose differ, stop and
+correct the config or policy together rather than silently choosing one.
+
+### Task-ledger grammar enforced by the checker
+
+`docs/TASKS.md` Task 13–29 metadata is validated against a narrow plain-Markdown
+grammar, not against full CommonMark or GitHub Flavored Markdown rendering
+equivalence:
+
+- ATX level-two headings (`## Task N:` and `## Revised Sequence`) with
+  canonical positive integers (`[1-9]\d*`; no leading zeros).
+- Revised Sequence pipe table with the exact header
+  `| Task | Title | Status |`, a Markdown delimiter row, and contiguous data
+  rows immediately after that delimiter.
+- Single-line `Field: value` metadata before each task's `Goal:` boundary.
+- Task references use singular `Task N` for one number and plural
+  `Tasks N–M` / comma-`and` lists for multiple numbers.
+- HTML comments and fenced code (opening indent 0–3 spaces; bare closing
+  fences) are inactive for machine parsing.
+- Raw HTML block openers capable of hiding the ledger (`<pre`, `<script`,
+  `<style`, `<table`, `<div`, and HTML declarations) are rejected inside the
+  machine-parsed Revised Sequence / Task 13–29 region rather than interpreted.
+  Container openers (`pre`/`script`/`style`) are detected across blank lines.
+
+Arbitrary Markdown constructs (blockquotes, nested lists, indented code,
+additional raw HTML block types, tabs with context-sensitive meaning, Setext
+headings, or a full CommonMark state machine) are intentionally outside this
+checker. Remaining rendering-equivalence risk is owned by the deferred
+**Agent infrastructure checker v2** structured task-graph migration in
+`docs/TASKS.md`, which replaces Markdown semantic parsing with
+`config/task-graph.json`.
+
 ## Pre-Commit Documentation Gate
 
 Before staging or committing, agents must:
@@ -78,7 +141,10 @@ Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `docs/AGENT_WORKFLOW.md`
 - `docs/LOOP_ENGINEERING.md`
 - `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`, `docs/evidence/README.md`, and `skills/interactive-preview-loop` when interactive preview, UX audit, or evidence upload procedure changes
-- `skills/*/SKILL.md` (and the discovery stubs in `.claude/skills/*` and `.agents/skills/*`, kept identical)
+- `skills/*/SKILL.md` (canonical skill bodies) and the generated discovery
+  wrappers in `.claude/skills/*` and `.agents/skills/*`. The two wrapper trees
+  are byte-for-byte identical to each other; each wrapper points to its
+  canonical skill and intentionally does not copy the canonical body.
 - `docs/MCP_WORKFLOW.md`
 - `docs/DOCUMENTATION_POLICY.md`
 - `docs/decisions/*.md` only for a qualifying durable agent-workflow decision

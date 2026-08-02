@@ -56,11 +56,24 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 ## Validation
 
 - `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
+- `npm run test:agent-infra` for the manifest/checker unit suite and
+  `npm run check:agent-infra` for the repository document, mirror, dependency,
+  stale-term, impact-rule, and task-graph contract.
 - `npm run check:skill-wrappers` after canonical skill, manifest, generator, or discovery-wrapper edits (also part of `npm run check`).
 - `npm run decisions:check` after decision-record or decision-index tooling edits (also part of `npm run check`).
-- `npm run check` (skill wrappers, decision index, routes, typecheck, lint, Expo doctor, dependency alignment) for route/dependency/skill changes or before handoff.
+- `npm run check:readonly` is the verifier-safe gate: skill wrappers, decision
+  index, secrets, agent infrastructure, typecheck, and lint. It intentionally
+  does not prepare routes or run the Expo cache-owning checks.
+- `npm run prepare:routes` is parent/CI-owned preparation. After it runs, check
+  tracked config drift before delegating read-only verification.
+- `npm run check:expo` is the parent-owned full Expo gate: route preparation,
+  read-only checks, Expo Doctor, and dependency alignment. `npm run check`
+  remains an alias for this full handoff gate.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
-- `expo-doctor` / `expo install --check` (and thus the Expo tail of `npm run check`) must run **outside the agent sandbox** — sandboxed runs can false-pass doctor or `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation Commands → Expo doctor and dependency checks — agent sandbox.
+- `expo-doctor` / `expo install --check` (and thus `check:expo` / `check`) must
+  run **outside the agent sandbox** — sandboxed runs can false-pass doctor or
+  `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation
+  Commands → Expo doctor and dependency checks — agent sandbox.
 
 ## Pointers
 
