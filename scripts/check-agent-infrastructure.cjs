@@ -56,6 +56,10 @@ const REVISED_SEQUENCE_HEADER =
   /^\|\s*Task\s*\|\s*Title\s*\|\s*Status\s*\|\s*$/i;
 const REVISED_SEQUENCE_DELIMITER =
   /^\|(?:\s*:?-{3,}:?\s*\|){3}\s*$/;
+// Published Task ledger enforced by the agent-infrastructure graph.
+const REQUIRED_TASK_GRAPH_FIRST = 13;
+const REQUIRED_TASK_GRAPH_LAST = 29;
+const REVISED_SEQUENCE_HEADING = /^## Revised Sequence\s*$/;
 
 function isPlainObject(value) {
   return (
@@ -569,6 +573,14 @@ function validateConfig(config) {
   if (config.taskGraph.firstTask > config.taskGraph.lastTask) {
     throw new Error('taskGraph.firstTask must not exceed taskGraph.lastTask.');
   }
+  if (
+    config.taskGraph.firstTask !== REQUIRED_TASK_GRAPH_FIRST ||
+    config.taskGraph.lastTask !== REQUIRED_TASK_GRAPH_LAST
+  ) {
+    throw new Error(
+      `taskGraph.firstTask and taskGraph.lastTask must be exactly ${REQUIRED_TASK_GRAPH_FIRST} and ${REQUIRED_TASK_GRAPH_LAST}.`,
+    );
+  }
   assertArray(config.taskGraph.allowedExternalTasks, 'taskGraph.allowedExternalTasks');
   for (const taskNumber of config.taskGraph.allowedExternalTasks) {
     if (!Number.isSafeInteger(taskNumber) || taskNumber < 1) {
@@ -1018,7 +1030,7 @@ function machineParsedRegionBounds(lines, inRange, activeLevelTwoLineIndexes) {
     if (!line.active) {
       continue;
     }
-    if (/^## Revised Sequence\s*$/.test(line.text)) {
+    if (REVISED_SEQUENCE_HEADING.test(line.text)) {
       regionStart = Math.min(regionStart, line.lineNumber - 1);
       break;
     }
@@ -1382,6 +1394,21 @@ function statusMatchesSequence(fieldStatus, tableStatus) {
 }
 
 function parseRevisedSequence(lines, taskConfig) {
+  let revisedSequenceCount = 0;
+  for (const line of lines) {
+    if (line.active && REVISED_SEQUENCE_HEADING.test(line.text)) {
+      revisedSequenceCount += 1;
+    }
+  }
+  if (revisedSequenceCount === 0) {
+    throw new Error('Task graph is missing a Revised Sequence heading.');
+  }
+  if (revisedSequenceCount !== 1) {
+    throw new Error(
+      'Task graph must contain exactly one Revised Sequence heading.',
+    );
+  }
+
   let inSequence = false;
   let sawHeader = false;
   let sawDelimiter = false;
@@ -1392,7 +1419,7 @@ function parseRevisedSequence(lines, taskConfig) {
       continue;
     }
     if (ACTIVE_LEVEL_TWO_HEADING.test(line.text)) {
-      if (/^## Revised Sequence\s*$/.test(line.text)) {
+      if (REVISED_SEQUENCE_HEADING.test(line.text)) {
         inSequence = true;
         continue;
       }

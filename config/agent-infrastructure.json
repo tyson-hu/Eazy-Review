@@ -916,6 +916,7 @@
         "babel.config.js",
         "eslint.config.js",
         "metro.config.js",
+        "nativewind-env.d.ts",
         "package-lock.json",
         "package.json",
         "scripts/**",

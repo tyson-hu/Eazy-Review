@@ -26,15 +26,8 @@ const TASK_FIELDS = [
   'Human gate',
 ];
 const REPO_ROOT = path.resolve(__dirname, '..');
-const FIXTURE_SEQUENCE = [
-  '## Revised Sequence',
-  '',
-  '| Task | Title | Status |',
-  '| --- | --- | --- |',
-  '| 13 | First fixture task | Next — not started |',
-  '| 14 | Second fixture task | Pending |',
-  '',
-];
+const FIXTURE_FIRST_TASK = 13;
+const FIXTURE_LAST_TASK = 29;
 
 function write(root, relativePath, content) {
   const absolutePath = path.join(root, relativePath);
@@ -42,54 +35,132 @@ function write(root, relativePath, content) {
   fs.writeFileSync(absolutePath, content, 'utf8');
 }
 
+function fixtureTaskTitle(taskNumber) {
+  if (taskNumber === 13) {
+    return 'First fixture task';
+  }
+  if (taskNumber === 14) {
+    return 'Second fixture task';
+  }
+  return `Fixture task ${taskNumber}`;
+}
+
+function fixtureTaskStatus(taskNumber) {
+  return taskNumber === 13 ? 'Next — not started' : 'Pending';
+}
+
+function fixtureSequenceLines(firstTask, lastTask) {
+  const rows = [];
+  for (let taskNumber = firstTask; taskNumber <= lastTask; taskNumber += 1) {
+    rows.push(
+      `| ${taskNumber} | ${fixtureTaskTitle(taskNumber)} | ${fixtureTaskStatus(taskNumber)} |`,
+    );
+  }
+  return [
+    '## Revised Sequence',
+    '',
+    '| Task | Title | Status |',
+    '| --- | --- | --- |',
+    ...rows,
+    '',
+  ];
+}
+
+function fixtureTaskSection(taskNumber, {
+  dependsOn,
+  unlocks,
+  owner,
+  parallel = 'None.',
+  status,
+  humanGate,
+} = {}) {
+  const defaultOwner =
+    taskNumber >= 16 && taskNumber <= 19
+      ? 'Parent — verified strong; the generic implementer may receive only bounded non-sensitive leaf packets.'
+      : 'Parent.';
+  const defaultHumanGate =
+    taskNumber === 19
+      ? 'Human gate: Actual account deletion is human-only on every environment; the staging destructive checklist is also human-run.'
+      : 'Human gate: None.';
+  const lines = [
+    `## Task ${taskNumber}: ${fixtureTaskTitle(taskNumber)}`,
+    '',
+    `Status: ${status ?? (taskNumber === 13 ? '**Next — not started.**' : 'Pending.')}`,
+    `Depends on: ${dependsOn}`,
+    `Unlocks: ${unlocks}`,
+    `Execution owner: ${owner ?? defaultOwner}`,
+    `Parallel-safe with: ${parallel}`,
+  ];
+  const gateLine = humanGate === null ? null : (humanGate ?? defaultHumanGate);
+  if (gateLine) {
+    lines.push(gateLine);
+  }
+  lines.push('', `Goal: prove metadata for task ${taskNumber}.`, '');
+  return lines;
+}
+
 function taskDocument({
   cycle = false,
   laterCycle = false,
   omitHumanGate = false,
+  firstTask = FIXTURE_FIRST_TASK,
+  lastTask = FIXTURE_LAST_TASK,
   task13Owner = 'Parent.',
   task13Parallel = 'None.',
   task13Unlocks = 'Task 14.',
   task14Dependency = 'Task 13.',
   task14Owner = 'Parent.',
   task14Parallel = 'None.',
+  task14Unlocks,
   unknownLaterTask = false,
 } = {}) {
-  const task13HumanGate = omitHumanGate ? [] : ['Human gate: None.'];
-  let task13Dependency = 'Depends on: Task 12.';
+  let task13DependsOn = 'Task 12.';
   if (cycle) {
-    task13Dependency = 'Depends on: Task 14.';
+    task13DependsOn = 'Task 14.';
   } else if (laterCycle) {
-    task13Dependency = 'Depends on: Tasks 12 and 14.';
+    task13DependsOn = 'Tasks 12 and 14.';
   } else if (unknownLaterTask) {
-    task13Dependency = 'Depends on: Tasks 12, 999.';
+    task13DependsOn = 'Tasks 12, 999.';
   }
-  return [
-    '# Fixture Tasks',
-    '',
-    ...FIXTURE_SEQUENCE,
-    '## Task 13: First fixture task',
-    '',
-    'Status: **Next — not started.**',
-    task13Dependency,
-    `Unlocks: ${task13Unlocks}`,
-    `Execution owner: ${task13Owner}`,
-    `Parallel-safe with: ${task13Parallel}`,
-    ...task13HumanGate,
-    '',
-    'Goal: prove strict metadata parsing.',
-    '',
-    '## Task 14: Second fixture task',
-    '',
-    'Status: Pending.',
-    `Depends on: ${task14Dependency}`,
-    'Unlocks: None.',
-    `Execution owner: ${task14Owner}`,
-    `Parallel-safe with: ${task14Parallel}`,
-    'Human gate: None.',
-    '',
-    'Goal: prove dependency parsing.',
-    '',
-  ].join('\n');
+
+  const lines = ['# Fixture Tasks', '', ...fixtureSequenceLines(firstTask, lastTask)];
+  for (let taskNumber = firstTask; taskNumber <= lastTask; taskNumber += 1) {
+    if (taskNumber === 13) {
+      lines.push(
+        ...fixtureTaskSection(13, {
+          dependsOn: task13DependsOn,
+          unlocks: task13Unlocks,
+          owner: task13Owner,
+          parallel: task13Parallel,
+          status: '**Next — not started.**',
+          humanGate: omitHumanGate ? null : 'Human gate: None.',
+        }),
+      );
+      continue;
+    }
+    if (taskNumber === 14) {
+      const unlocks =
+        task14Unlocks ??
+        (lastTask > 14 ? `Task ${taskNumber + 1}.` : 'None.');
+      const dependsOn = task14Dependency.replace(/^Depends on:\s*/i, '');
+      lines.push(
+        ...fixtureTaskSection(14, {
+          dependsOn,
+          unlocks,
+          owner: task14Owner,
+          parallel: task14Parallel,
+        }),
+      );
+      continue;
+    }
+    lines.push(
+      ...fixtureTaskSection(taskNumber, {
+        dependsOn: `Task ${taskNumber - 1}.`,
+        unlocks: taskNumber === lastTask ? 'None.' : `Task ${taskNumber + 1}.`,
+      }),
+    );
+  }
+  return lines.join('\n');
 }
 
 function transitiveParallelConflictDocument() {
@@ -229,11 +300,19 @@ function baseConfig() {
     ],
     taskGraph: {
       document: 'docs/TASKS.md',
-      firstTask: 13,
-      lastTask: 14,
+      firstTask: FIXTURE_FIRST_TASK,
+      lastTask: FIXTURE_LAST_TASK,
       allowedExternalTasks: [12],
       fields: TASK_FIELDS,
     },
+  };
+}
+
+function narrowTaskGraph(lastTask = 14, firstTask = FIXTURE_FIRST_TASK) {
+  return {
+    ...baseConfig().taskGraph,
+    firstTask,
+    lastTask,
   };
 }
 
@@ -908,7 +987,7 @@ test('task parsing ignores HTML-comment-hidden headings, fields, and references'
   const hiddenFirstTask = `<!--\n${content.slice(0, secondTask)}-->\n${content.slice(secondTask)}`;
   assert.throws(
     () => parseTaskGraph(hiddenFirstTask, baseConfig().taskGraph),
-    /Task graph requires exactly Task 13 through Task 14 in order; found 14/,
+    /Task graph requires exactly Task 13 through Task 29 in order; found 14/,
   );
 
   const inlineComment = taskDocument({
@@ -1312,7 +1391,8 @@ test('task 19 human gate keeps account deletion human-only', () => {
 });
 
 test('task sections end at every active level-two heading', () => {
-  const taskConfig = baseConfig().taskGraph;
+  const taskConfig = narrowTaskGraph(14);
+  const twoTaskSequence = fixtureSequenceLines(13, 14);
   const interrupted = [
     '# Fixture Tasks',
     '',
@@ -1347,7 +1427,7 @@ test('task sections end at every active level-two heading', () => {
   const withSubsection = [
     '# Fixture Tasks',
     '',
-    ...FIXTURE_SEQUENCE,
+    ...twoTaskSequence,
     '## Task 13: First fixture task',
     '',
     'Status: **Next — not started.**',
@@ -1378,7 +1458,7 @@ test('task sections end at every active level-two heading', () => {
   const fencedH2 = [
     '# Fixture Tasks',
     '',
-    ...FIXTURE_SEQUENCE,
+    ...twoTaskSequence,
     '## Task 13: First fixture task',
     '',
     '```text',
@@ -1411,7 +1491,7 @@ test('task sections end at every active level-two heading', () => {
   const commentedH2 = [
     '# Fixture Tasks',
     '',
-    ...FIXTURE_SEQUENCE,
+    ...twoTaskSequence,
     '## Task 13: First fixture task',
     '',
     '<!--',
@@ -1441,7 +1521,7 @@ test('task sections end at every active level-two heading', () => {
   ].join('\n');
   assert.doesNotThrow(() => parseTaskGraph(commentedH2, taskConfig));
 
-  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument({ lastTask: 14 }), taskConfig));
 
   const repositoryConfig = JSON.parse(
     fs.readFileSync(
@@ -1669,7 +1749,7 @@ test('parallel-safe metadata rejects self and direct dependencies', () => {
   const taskConfig = baseConfig().taskGraph;
   assert.throws(
     () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 12.' }), taskConfig),
-    /Parallel-safe with must name an in-range Task 13–14/,
+    /Parallel-safe with must name an in-range Task 13–29/,
   );
   assert.throws(
     () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 13.' }), taskConfig),
@@ -1701,7 +1781,7 @@ test('parallel-safe metadata rejects self and direct dependencies', () => {
         }),
         taskConfig,
       ),
-    /Parallel-safe with must name an in-range Task 13–14/,
+    /Parallel-safe with must name an in-range Task 13–29/,
   );
 });
 
@@ -1754,8 +1834,65 @@ test('parallel-safe metadata rejects prerequisite relationships from either endp
         taskDocument({ task14Parallel: 'Task 12.' }),
         taskConfig,
       ),
-    /Parallel-safe with must name an in-range Task 13–14/,
+    /Parallel-safe with must name an in-range Task 13–29/,
   );
+});
+
+test('validateConfig pins the published task range to Tasks 13–29', () => {
+  assert.doesNotThrow(() => validateConfig(baseConfig()));
+
+  const shrinksRange = baseConfig();
+  shrinksRange.taskGraph = {
+    ...shrinksRange.taskGraph,
+    firstTask: 14,
+    lastTask: 29,
+    allowedExternalTasks: [12, 13],
+  };
+  assert.throws(
+    () => validateConfig(shrinksRange),
+    /taskGraph\.firstTask and taskGraph\.lastTask must be exactly 13 and 29/,
+  );
+
+  const expandsRange = baseConfig();
+  expandsRange.taskGraph = {
+    ...expandsRange.taskGraph,
+    firstTask: 13,
+    lastTask: 30,
+  };
+  assert.throws(
+    () => validateConfig(expandsRange),
+    /taskGraph\.firstTask and taskGraph\.lastTask must be exactly 13 and 29/,
+  );
+
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  assert.equal(repositoryConfig.taskGraph.firstTask, 13);
+  assert.equal(repositoryConfig.taskGraph.lastTask, 29);
+  assert.doesNotThrow(() => validateConfig(repositoryConfig));
+});
+
+test('revised sequence rejects duplicate Revised Sequence headings', () => {
+  const taskConfig = baseConfig().taskGraph;
+  const duplicate = [
+    '# Fixture Tasks',
+    '',
+    '## Revised Sequence',
+    '',
+    '| Task | Title | State |',
+    '| --- | --- | --- |',
+    '| 13 | Stale fixture | Completed |',
+    '',
+    taskDocument().replace(/^# Fixture Tasks\n\n/m, ''),
+  ].join('\n');
+  assert.throws(
+    () => parseTaskGraph(duplicate, taskConfig),
+    /exactly one Revised Sequence heading/,
+  );
+  assert.doesNotThrow(() => parseTaskGraph(taskDocument(), taskConfig));
 });
 
 test('current Tasks 13-29 preserve the accepted Task 17 and 18 relationship', () => {
@@ -2019,6 +2156,7 @@ test('active build configuration paths trigger their documentation contracts', (
     'babel.config.js',
     'eslint.config.js',
     'metro.config.js',
+    'nativewind-env.d.ts',
     'package.json',
     'tsconfig.json',
   ]) {
@@ -2111,6 +2249,6 @@ test('valid fixture preserves mirror, dependency, and task-graph validation', (t
     documents: 6,
     dependencies: 1,
     scannedFiles: 4,
-    tasks: 2,
+    tasks: 17,
   });
 });
