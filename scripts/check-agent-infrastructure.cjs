@@ -1258,6 +1258,14 @@ function parseTaskGraph(content, taskConfig) {
       if (reference === heading.number) {
         throw new Error(`Task ${heading.number} is parallel-safe with itself.`);
       }
+      if (
+        reference < taskConfig.firstTask ||
+        reference > taskConfig.lastTask
+      ) {
+        throw new Error(
+          `Task ${heading.number} Parallel-safe with must name an in-range Task ${taskConfig.firstTask}–${taskConfig.lastTask}; found Task ${reference}.`,
+        );
+      }
       if (directDependencies.has(reference)) {
         throw new Error(
           `Task ${heading.number} cannot be parallel-safe with direct dependency Task ${reference}.`,

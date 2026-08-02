@@ -1669,7 +1669,7 @@ test('parallel-safe metadata rejects self and direct dependencies', () => {
   const taskConfig = baseConfig().taskGraph;
   assert.throws(
     () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 12.' }), taskConfig),
-    /Task 13 cannot be parallel-safe with direct dependency Task 12/,
+    /Parallel-safe with must name an in-range Task 13–14/,
   );
   assert.throws(
     () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 13.' }), taskConfig),
@@ -1690,6 +1690,18 @@ test('parallel-safe metadata rejects self and direct dependencies', () => {
   assert.throws(
     () => parseTaskGraph(taskDocument({ task13Parallel: 'Task 999.' }), taskConfig),
     /references unknown Task 999/,
+  );
+  assert.throws(
+    () =>
+      parseTaskGraph(
+        taskDocument({
+          task13Parallel: 'Task 12 after prerequisites.',
+          task13Unlocks: 'None.',
+          task14Dependency: 'Task 12.',
+        }),
+        taskConfig,
+      ),
+    /Parallel-safe with must name an in-range Task 13–14/,
   );
 });
 
@@ -1742,7 +1754,7 @@ test('parallel-safe metadata rejects prerequisite relationships from either endp
         taskDocument({ task14Parallel: 'Task 12.' }),
         taskConfig,
       ),
-    /Task 14 cannot be parallel-safe with prerequisite-related Task 12/,
+    /Parallel-safe with must name an in-range Task 13–14/,
   );
 });
 
