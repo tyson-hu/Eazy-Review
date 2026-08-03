@@ -12,13 +12,13 @@ declare
   sparse_product_id constant uuid := 'a1000000-0000-4000-8000-000000000002';
   image_id constant uuid := 'a1000000-0000-4000-8000-000000000011';
   assessment_id constant uuid := 'a1000000-0000-4000-8000-000000000021';
-  offer_kith_id constant uuid := 'a1000000-0000-4000-8000-000000000031';
-  offer_sp_id constant uuid := 'a1000000-0000-4000-8000-000000000032';
+  offer_finish_line_id constant uuid := 'a1000000-0000-4000-8000-000000000031';
+  offer_dicks_id constant uuid := 'a1000000-0000-4000-8000-000000000032';
   image_url constant text :=
-    'https://raw.githubusercontent.com/tyson-hu/Eazy-Review/470be6a/assets/images/products/product-03-990v6-grey.png';
+    'https://raw.githubusercontent.com/tyson-hu/Eazy-Review/470be6a/assets/images/products/product-05-air-force-1-white.png';
   complete_description constant text :=
-    'The sixth version of the MADE in USA 990 in the signature grey mesh and pig suede build with FuelCell and ENCAP cushioning.';
-  offer_checked_at constant timestamptz := '2026-08-02T14:19:30Z';
+    'The all-white staple Air Force 1 Low.';
+  offer_checked_at constant timestamptz := '2026-08-03T16:17:14Z';
   r_product public.products%rowtype;
   r_image public.product_images%rowtype;
   r_assessment public.eazy_assessments%rowtype;
@@ -27,7 +27,7 @@ declare
   n int;
 begin
   -- -------------------------------------------------------------------------
-  -- Complete product: New Balance 990v6 Grey (mock catalog id 3 / M990GL6)
+  -- Complete product: Nike Air Force 1 Low White (mock catalog id 5 / CW2288-111)
   -- -------------------------------------------------------------------------
   insert into public.products (
     id,
@@ -41,11 +41,11 @@ begin
   )
   select
     complete_product_id,
-    'New Balance',
-    'New Balance 990v6 Grey',
-    'M990GL6',
+    'Nike',
+    'Nike Air Force 1 Low White',
+    'CW2288-111',
     'men',
-    '2022-11-04'::date,
+    '2020-07-15'::date,
     complete_description,
     true
   where not exists (
@@ -56,11 +56,11 @@ begin
   from public.products
   where id = complete_product_id;
 
-  if r_product.brand is distinct from 'New Balance'
-    or r_product.name is distinct from 'New Balance 990v6 Grey'
-    or r_product.sku is distinct from 'M990GL6'
+  if r_product.brand is distinct from 'Nike'
+    or r_product.name is distinct from 'Nike Air Force 1 Low White'
+    or r_product.sku is distinct from 'CW2288-111'
     or r_product.size_type is distinct from 'men'
-    or r_product.release_date is distinct from '2022-11-04'::date
+    or r_product.release_date is distinct from '2020-07-15'::date
     or r_product.description is distinct from complete_description
     or r_product.is_published is distinct from true
   then
@@ -98,7 +98,7 @@ begin
   end if;
 
   -- Task 13 seed editorial fixture (methodology_version task13-seed-v1).
-  -- Coherent with mock catalog eazyScore 88; not community or laboratory evidence.
+  -- Coherent with mock catalog eazyScore 79; not community or laboratory evidence.
   insert into public.eazy_assessments (
     id,
     product_id,
@@ -119,17 +119,17 @@ begin
   select
     assessment_id,
     complete_product_id,
-    9,  -- look
-    9,  -- comfort
-    9,  -- quality
-    9,  -- outfit
-    7,  -- value (premium retail)
-    8,  -- maintenance
-    9,  -- material
-    9,  -- details
-    9,  -- collection
-    9,  -- overall
-    88, -- score
+    8,  -- look
+    8,  -- comfort
+    8,  -- quality
+    8,  -- outfit
+    8,  -- value
+    7,  -- maintenance
+    8,  -- material
+    8,  -- details
+    8,  -- collection
+    8,  -- overall
+    79, -- score
     'task13-seed-v1',
     true
   where not exists (
@@ -141,17 +141,17 @@ begin
   where id = assessment_id;
 
   if r_assessment.product_id is distinct from complete_product_id
-    or r_assessment.look is distinct from 9
-    or r_assessment.comfort is distinct from 9
-    or r_assessment.quality is distinct from 9
-    or r_assessment.outfit is distinct from 9
-    or r_assessment.value is distinct from 7
-    or r_assessment.maintenance is distinct from 8
-    or r_assessment.material is distinct from 9
-    or r_assessment.details is distinct from 9
-    or r_assessment.collection is distinct from 9
-    or r_assessment.overall is distinct from 9
-    or r_assessment.score is distinct from 88
+    or r_assessment.look is distinct from 8
+    or r_assessment.comfort is distinct from 8
+    or r_assessment.quality is distinct from 8
+    or r_assessment.outfit is distinct from 8
+    or r_assessment.value is distinct from 8
+    or r_assessment.maintenance is distinct from 7
+    or r_assessment.material is distinct from 8
+    or r_assessment.details is distinct from 8
+    or r_assessment.collection is distinct from 8
+    or r_assessment.overall is distinct from 8
+    or r_assessment.score is distinct from 79
     or r_assessment.methodology_version is distinct from 'task13-seed-v1'
     or r_assessment.is_current is distinct from true
   then
@@ -160,7 +160,7 @@ begin
       assessment_id;
   end if;
 
-  -- Offers verified 2026-08-02 from retailer storefront JSON (USD, US sizes).
+  -- Offers verified 2026-08-03 from in-stock US retailer product pages.
   insert into public.product_offers (
     id,
     product_id,
@@ -173,83 +173,84 @@ begin
     last_checked_at
   )
   select
-    offer_kith_id,
+    offer_finish_line_id,
     complete_product_id,
-    'Kith',
-    'https://kith.com/products/nbm990gl6',
-    7.0,
-    'US',
-    'USD',
-    200.00,
-    offer_checked_at
-  where not exists (
-    select 1 from public.product_offers po where po.id = offer_kith_id
-  );
-
-  select * into strict r_offer
-  from public.product_offers
-  where id = offer_kith_id;
-
-  if r_offer.product_id is distinct from complete_product_id
-    or r_offer.website_name is distinct from 'Kith'
-    or r_offer.website_link is distinct from 'https://kith.com/products/nbm990gl6'
-    or r_offer.size is distinct from 7.0
-    or r_offer.size_region is distinct from 'US'
-    or r_offer.currency is distinct from 'USD'
-    or r_offer.price is distinct from 200.00
-    or r_offer.last_checked_at is distinct from offer_checked_at
-  then
-    raise exception
-      'Task 13 seed conflict: product_offers % exists with non-canonical data',
-      offer_kith_id;
-  end if;
-
-  insert into public.product_offers (
-    id,
-    product_id,
-    website_name,
-    website_link,
-    size,
-    size_region,
-    currency,
-    price,
-    last_checked_at
-  )
-  select
-    offer_sp_id,
-    complete_product_id,
-    'Shoe Palace',
-    'https://www.shoepalace.com/products/newbalance-m990gl6-made-in-usa-990v6-mens-lifestyle-shoes-grey',
+    'Finish Line',
+    'https://www.finishline.com/pdp/mens-nike-air-force-1-07-casual-shoes/prod2767626/CW2288/111',
     10.0,
     'US',
     'USD',
-    200.00,
+    115.00,
     offer_checked_at
   where not exists (
-    select 1 from public.product_offers po where po.id = offer_sp_id
+    select 1 from public.product_offers po where po.id = offer_finish_line_id
   );
 
   select * into strict r_offer
   from public.product_offers
-  where id = offer_sp_id;
+  where id = offer_finish_line_id;
 
   if r_offer.product_id is distinct from complete_product_id
-    or r_offer.website_name is distinct from 'Shoe Palace'
+    or r_offer.website_name is distinct from 'Finish Line'
     or r_offer.website_link is distinct from
-      'https://www.shoepalace.com/products/newbalance-m990gl6-made-in-usa-990v6-mens-lifestyle-shoes-grey'
+      'https://www.finishline.com/pdp/mens-nike-air-force-1-07-casual-shoes/prod2767626/CW2288/111'
     or r_offer.size is distinct from 10.0
     or r_offer.size_region is distinct from 'US'
     or r_offer.currency is distinct from 'USD'
-    or r_offer.price is distinct from 200.00
+    or r_offer.price is distinct from 115.00
     or r_offer.last_checked_at is distinct from offer_checked_at
   then
     raise exception
       'Task 13 seed conflict: product_offers % exists with non-canonical data',
-      offer_sp_id;
+      offer_finish_line_id;
+  end if;
+
+  insert into public.product_offers (
+    id,
+    product_id,
+    website_name,
+    website_link,
+    size,
+    size_region,
+    currency,
+    price,
+    last_checked_at
+  )
+  select
+    offer_dicks_id,
+    complete_product_id,
+    'DICK''S Sporting Goods',
+    'https://www.dickssportinggoods.com/p/nike-mens-air-force-1-07-shoes-16nikmrfrc1grywhtlfs/16nikmrfrc1grywhtlfs?color=White%2FWhite',
+    10.0,
+    'US',
+    'USD',
+    114.99,
+    offer_checked_at
+  where not exists (
+    select 1 from public.product_offers po where po.id = offer_dicks_id
+  );
+
+  select * into strict r_offer
+  from public.product_offers
+  where id = offer_dicks_id;
+
+  if r_offer.product_id is distinct from complete_product_id
+    or r_offer.website_name is distinct from 'DICK''S Sporting Goods'
+    or r_offer.website_link is distinct from
+      'https://www.dickssportinggoods.com/p/nike-mens-air-force-1-07-shoes-16nikmrfrc1grywhtlfs/16nikmrfrc1grywhtlfs?color=White%2FWhite'
+    or r_offer.size is distinct from 10.0
+    or r_offer.size_region is distinct from 'US'
+    or r_offer.currency is distinct from 'USD'
+    or r_offer.price is distinct from 114.99
+    or r_offer.last_checked_at is distinct from offer_checked_at
+  then
+    raise exception
+      'Task 13 seed conflict: product_offers % exists with non-canonical data',
+      offer_dicks_id;
   end if;
 
   -- -------------------------------------------------------------------------
-  -- Sparse product: Vans Old Skool Black White (mock catalog id 8)
+  -- Sparse product: Adidas Samba OG Cloud White Core Black (mock catalog id 7)
   -- -------------------------------------------------------------------------
   insert into public.products (
     id,
@@ -263,9 +264,9 @@ begin
   )
   select
     sparse_product_id,
-    'Vans',
-    'Vans Old Skool Black White',
-    'VN000D3HY28',
+    'Adidas',
+    'Adidas Samba OG Cloud White Core Black',
+    'B75806',
     'unisex',
     null,
     null,
@@ -278,9 +279,9 @@ begin
   from public.products
   where id = sparse_product_id;
 
-  if r_product.brand is distinct from 'Vans'
-    or r_product.name is distinct from 'Vans Old Skool Black White'
-    or r_product.sku is distinct from 'VN000D3HY28'
+  if r_product.brand is distinct from 'Adidas'
+    or r_product.name is distinct from 'Adidas Samba OG Cloud White Core Black'
+    or r_product.sku is distinct from 'B75806'
     or r_product.size_type is distinct from 'unisex'
     or r_product.release_date is not null
     or r_product.description is not null

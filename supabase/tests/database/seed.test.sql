@@ -1,12 +1,12 @@
 -- Task 13: seed acceptance — published fixtures, aggregates, anon reads,
 -- same-database reapply idempotency, no auth/ratings, no direct aggregate writes.
--- Reapply uses \ir ../support/task13_seed_reapply.sql.inc, which must stay
--- byte-identical to supabase/seed.sql (psql test runner can only see under tests/).
+-- Reapply uses \ir ../support/task13_seed_reapply.sql.inc because the psql test
+-- runner can only see tests/. test:db:reset enforces byte identity first.
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(33);
+select plan(35);
 
 -- Deterministic fixture IDs (must match supabase/seed.sql).
 select is(
@@ -40,6 +40,24 @@ select is(
   ),
   2,
   'exactly two seeded products by deterministic UUID'
+);
+select is(
+  (
+    select sku
+    from public.products
+    where id = 'a1000000-0000-4000-8000-000000000001'::uuid
+  ),
+  'CW2288-111',
+  'complete product is Air Force 1 White'
+);
+select is(
+  (
+    select sku
+    from public.products
+    where id = 'a1000000-0000-4000-8000-000000000002'::uuid
+  ),
+  'B75806',
+  'sparse product is Samba White and Black'
 );
 
 -- Complete product relations

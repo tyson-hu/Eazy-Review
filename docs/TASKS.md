@@ -11,7 +11,8 @@
   TanStack Query runtime is installed yet.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 13 is the next implementation task. It has not started.
+- Task 13 is implemented in PR #29 and awaits human acceptance. Task 14 remains
+  blocked until that acceptance.
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -145,7 +146,7 @@ Work in order unless a task explicitly states that it is conditional.
 
 | Task | Title | Status |
 | --- | --- | --- |
-| 13 | Product Seed Data | Next |
+| 13 | Product Seed Data | Implemented |
 | 14 | Connected Client And Query Foundation | Pending |
 | 15 | Real Public Catalog Reads | Pending |
 | 16 | Core Authentication And Account State | Pending |
@@ -165,7 +166,7 @@ Work in order unless a task explicitly states that it is conditional.
 
 ## Task 13: Product Seed Data
 
-Status: **Next — not started.**
+Status: **Implemented — awaiting human acceptance.**
 
 Depends on: Tasks 11–12 and a passing run of the initial local-only Database CI
 workflow that explicitly checks out the pull request head SHA.
