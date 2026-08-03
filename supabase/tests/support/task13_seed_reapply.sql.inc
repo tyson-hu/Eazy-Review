@@ -15,7 +15,7 @@ declare
   offer_finish_line_id constant uuid := 'a1000000-0000-4000-8000-000000000031';
   offer_dicks_id constant uuid := 'a1000000-0000-4000-8000-000000000032';
   image_url constant text :=
-    'https://raw.githubusercontent.com/tyson-hu/Eazy-Review/470be6a/assets/images/products/product-05-air-force-1-white.png';
+    'https://raw.githubusercontent.com/tyson-hu/Eazy-Review/470be6a710642a98aceea59dc67d6d908029bc0a/assets/images/products/product-05-air-force-1-white.png';
   complete_description constant text :=
     'The all-white staple Air Force 1 Low.';
   offer_checked_at constant timestamptz := '2026-08-03T16:17:14Z';

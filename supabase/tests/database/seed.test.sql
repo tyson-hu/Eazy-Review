@@ -6,7 +6,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(35);
+select plan(38);
 
 -- Deterministic fixture IDs (must match supabase/seed.sql).
 select is(
@@ -40,6 +40,11 @@ select is(
   ),
   2,
   'exactly two seeded products by deterministic UUID'
+);
+select is(
+  (select count(*)::int from public.products where is_published),
+  2,
+  'fresh seed contains exactly two published products'
 );
 select is(
   (
@@ -78,6 +83,15 @@ select is(
   ),
   'a1000000-0000-4000-8000-000000000011'::uuid,
   'complete product image uses deterministic id'
+);
+select is(
+  (
+    select sort_order
+    from public.product_images
+    where id = 'a1000000-0000-4000-8000-000000000011'::uuid
+  ),
+  0,
+  'complete product image uses sort order zero'
 );
 select ok(
   (
@@ -135,6 +149,18 @@ select ok(
     where product_id = 'a1000000-0000-4000-8000-000000000001'::uuid
   ) between 2 and 3,
   'complete product has two or three offers'
+);
+select is(
+  (
+    select array_agg(id order by id)
+    from public.product_offers
+    where product_id = 'a1000000-0000-4000-8000-000000000001'::uuid
+  ),
+  array[
+    'a1000000-0000-4000-8000-000000000031'::uuid,
+    'a1000000-0000-4000-8000-000000000032'::uuid
+  ],
+  'complete product offers use exactly the deterministic ids'
 );
 select ok(
   not exists (
