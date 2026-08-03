@@ -8,8 +8,10 @@ Task detail, dependencies, acceptance, and current status live in
 - Tasks 1–10: app shell and mock Browse → Detail → Rate journey accepted.
 - Tasks 11–12: secure Supabase schema/authorization foundation accepted
   locally and on explicitly authorized staging; production untouched.
+- Task 13: deterministic complete/sparse local catalog seed accepted;
+  staging and production untouched.
 - Post–Task 12 review: **GO with roadmap revision**.
-- Next task: **Task 13 — Product Seed Data**.
+- Next task: **Task 14 — Connected Client And Query Foundation**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
 and no-social MVP boundary are locked unless a reproducible defect appears.

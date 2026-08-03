@@ -2,17 +2,17 @@
 
 ## Current Repo Status
 
-- Tasks 1–12 are accepted. The Browse → Product Detail → Rating Form mock
+- Tasks 1–13 are accepted. The Browse → Product Detail → Rating Form mock
   journey passed its UX gate, and the Supabase schema, trigger-owned Community
   Score, RLS policies, explicit Data API grants, and authorization contract are
-  complete.
+  complete. Task 13's deterministic two-product local catalog seed is also
+  accepted.
 - Expo still reads mock catalog/detail data and stores My Rating in
   session-only memory. No Supabase client, generated database types, or
   TanStack Query runtime is installed yet.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 13 is implemented in PR #29 and awaits human acceptance. Task 14 remains
-  blocked until that acceptance.
+- Task 13 is accepted in PR #29. Task 14 is next and remains not started.
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -37,6 +37,7 @@ publication, and merge are not implied by one another.
 | 10 | Done — GO | Integrated Browse → Detail → Rate UX audit and device evidence |
 | 11 | Done | Deny-by-default seven-table schema, trigger-owned aggregates, local/staging acceptance |
 | 12 | Done | Least-privilege RLS/grants, authorization tests, local/staging acceptance |
+| 13 | Done | Deterministic complete/sparse product seed, provenance, and same-database idempotency acceptance |
 
 Task 2 and Task 5 are fully done; their former “Mostly done” and “Partial”
 labels were stale. Detailed packet histories, reviewer cycles, evidence paths,
@@ -146,8 +147,8 @@ Work in order unless a task explicitly states that it is conditional.
 
 | Task | Title | Status |
 | --- | --- | --- |
-| 13 | Product Seed Data | Implemented |
-| 14 | Connected Client And Query Foundation | Pending |
+| 13 | Product Seed Data | Done |
+| 14 | Connected Client And Query Foundation | Next — not started |
 | 15 | Real Public Catalog Reads | Pending |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
@@ -166,7 +167,7 @@ Work in order unless a task explicitly states that it is conditional.
 
 ## Task 13: Product Seed Data
 
-Status: **Implemented — awaiting human acceptance.**
+Status: **Done — human accepted.**
 
 Depends on: Tasks 11–12 and a passing run of the initial local-only Database CI
 workflow that explicitly checks out the pull request head SHA.
@@ -256,7 +257,7 @@ Non-goals:
 
 ## Task 14: Connected Client And Query Foundation
 
-Status: Pending.
+Status: **Next — not started.**
 
 Depends on: Task 13.
 

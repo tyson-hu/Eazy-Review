@@ -88,8 +88,7 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 ## Current Product State
 
 Browse → Product Detail → Rating Form mock UX and the Tasks 11–12 database and
-authorization foundation are accepted. Expo remains disconnected; real reads,
-authentication, and writes stay owned by later tasks. Task 13's two-product
-deterministic SQL seed is implemented in PR #29 and awaits human acceptance;
-Task 14 remains blocked until that acceptance. `docs/TASKS.md` is the sole
-current-status and implementation-order ledger.
+authorization foundation are accepted. Task 13's deterministic two-product SQL
+seed is also accepted. Expo remains disconnected; real reads, authentication,
+and writes stay owned by later tasks. Task 14 is next and remains not started.
+`docs/TASKS.md` is the sole current-status and implementation-order ledger.
