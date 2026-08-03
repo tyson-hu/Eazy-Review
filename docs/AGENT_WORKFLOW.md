@@ -286,9 +286,10 @@ Pick the narrowest command that covers the change:
 - `npm run check:expo` — parent-owned route preparation, read-only gate, Expo
   Doctor, and Expo dependency alignment. Run outside the sandbox.
 - `npm run check` — alias for the full parent-owned `check:expo` handoff gate.
-- `npm run test:db:reset` — local-only database reset, pgTAP, and concurrency
-  harness. Database CI runs it only on Supabase/database-harness paths and
-  always removes its local containers/volumes afterward.
+- `npm run test:db:reset` — verifies the Task 13 canonical/reapply seed copies
+  are byte-identical, then runs the local-only database reset, pgTAP, and
+  concurrency harness. Database CI runs it only on Supabase/database-harness
+  paths and always removes its local containers/volumes afterward.
 - Pull-request runs of Expo CI and Database CI explicitly check out
   `github.event.pull_request.head.sha`; push runs fall back to `github.sha`.
   This makes those check results exact to the tested branch head while

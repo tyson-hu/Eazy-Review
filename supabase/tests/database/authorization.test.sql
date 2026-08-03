@@ -197,10 +197,20 @@ reset role;
 grant select on table public.products to anon;
 
 -- Anonymous published-catalog behavior.
+-- Counts are scoped to this file's fixtures so Task 13 catalog seed rows do
+-- not dilute the authorization assertions.
 set local role anon;
 
 select is(
-  (select count(*)::int from public.products),
+  (
+    select count(*)::int
+    from public.products
+    where id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   2,
   'anon reads only the two published products'
 );
@@ -214,17 +224,41 @@ select is(
   'anon cannot read the unpublished product'
 );
 select is(
-  (select count(*)::int from public.product_images),
+  (
+    select count(*)::int
+    from public.product_images
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   1,
   'anon reads only images for published products'
 );
 select is(
-  (select count(*)::int from public.product_offers),
+  (
+    select count(*)::int
+    from public.product_offers
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   1,
   'anon reads only offers for published products'
 );
 select is(
-  (select count(*)::int from public.eazy_assessments),
+  (
+    select count(*)::int
+    from public.eazy_assessments
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   1,
   'anon reads only the current assessment for a published product'
 );
@@ -238,7 +272,15 @@ select is(
   'anon cannot read historical assessments'
 );
 select is(
-  (select count(*)::int from public.rating_aggregates),
+  (
+    select count(*)::int
+    from public.rating_aggregates
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   2,
   'anon reads aggregates only for published products'
 );
@@ -300,27 +342,67 @@ select set_config(
 set local role authenticated;
 
 select is(
-  (select count(*)::int from public.products),
+  (
+    select count(*)::int
+    from public.products
+    where id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   2,
   'authenticated User A reads only published products'
 );
 select is(
-  (select count(*)::int from public.product_images),
+  (
+    select count(*)::int
+    from public.product_images
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   1,
   'authenticated User A reads only published-product images'
 );
 select is(
-  (select count(*)::int from public.product_offers),
+  (
+    select count(*)::int
+    from public.product_offers
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   1,
   'authenticated User A reads only published-product offers'
 );
 select is(
-  (select count(*)::int from public.eazy_assessments),
+  (
+    select count(*)::int
+    from public.eazy_assessments
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   1,
   'authenticated User A reads only current published assessments'
 );
 select is(
-  (select count(*)::int from public.rating_aggregates),
+  (
+    select count(*)::int
+    from public.rating_aggregates
+    where product_id in (
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
+    )
+  ),
   2,
   'authenticated User A reads only published-product aggregates'
 );

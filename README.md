@@ -76,6 +76,10 @@ Expo must receive only the project URL and publishable/legacy anon key (see
 authorization; production database work is forbidden for agents. Accepted
 Tasks 11–12 database evidence is preserved in
 `docs/evidence/task-11-12-database-acceptance/RESULT.md`.
+The reset loads Task 13's deterministic two-product catalog seed: a complete
+Air Force 1 White fixture and a sparse Samba White and Black fixture. The test
+command first verifies that the same-database reapply fixture is byte-identical
+to the canonical `supabase/seed.sql` source.
 
 ## Documentation Discipline
 
@@ -84,7 +88,7 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 ## Current Product State
 
 Browse → Product Detail → Rating Form mock UX and the Tasks 11–12 database and
-authorization foundation are accepted. Expo remains disconnected; real reads,
-authentication, and writes stay owned by later tasks. Task 13's two-product
-deterministic SQL seed is next and has not started. `docs/TASKS.md` is the sole
-current-status and implementation-order ledger.
+authorization foundation are accepted. Task 13's deterministic two-product SQL
+seed is also accepted. Expo remains disconnected; real reads, authentication,
+and writes stay owned by later tasks. Task 14 is next and remains not started.
+`docs/TASKS.md` is the sole current-status and implementation-order ledger.

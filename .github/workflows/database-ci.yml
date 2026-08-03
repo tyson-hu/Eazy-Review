@@ -7,6 +7,7 @@ on:
       - ".npmrc"
       - "package-lock.json"
       - "package.json"
+      - "scripts/check-task13-seed-reapply.cjs"
       - "scripts/test-db-*.cjs"
       - "supabase/**"
   push:
@@ -17,6 +18,7 @@ on:
       - ".npmrc"
       - "package-lock.json"
       - "package.json"
+      - "scripts/check-task13-seed-reapply.cjs"
       - "scripts/test-db-*.cjs"
       - "supabase/**"
 

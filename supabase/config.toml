@@ -65,9 +65,8 @@ enabled = true
 schema_paths = []
 
 [db.seed]
-# Disabled until Task 13 adds committed seed SQL. Avoids db reset failing on a
-# missing ./seed.sql during Task 11 local verification.
-enabled = false
+# Task 13 product seed: two published products (complete + sparse).
+enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = ["./seed.sql"]
