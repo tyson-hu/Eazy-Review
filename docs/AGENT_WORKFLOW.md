@@ -277,14 +277,20 @@ Pick the narrowest command that covers the change:
   set; semantic correctness still requires parent/reviewer judgment.
 - `npm run typecheck` — TypeScript only. Fastest; enough for pure type or logic edits.
 - `npm run lint` — ESLint via Expo. Add it when code style or imports changed.
+- `npm test` — jest-expo frontend unit suite (infrastructure and future screen
+  tests). Watchman is disabled so CI and sandboxed hosts can run the harness.
+- `npm run types:generate` / `npm run types:check` — write or verify
+  `src/types/database.generated.ts` from the **local** Supabase schema only.
+  Requires `supabase start`; does not contact staging or production.
 - `npm run check:readonly` — verifier-safe repository gate: skill wrappers,
   decisions, secrets, agent infrastructure, typecheck, and lint. It does not
   intentionally modify tracked files.
 - `npm run prepare:routes` — parent/CI-owned route/config preparation (backed
   by `npm run generate:routes`). Inspect `git diff --exit-code -- tsconfig.json`
   afterward; a read-only verifier does not run this command.
-- `npm run check:expo` — parent-owned route preparation, read-only gate, Expo
-  Doctor, and Expo dependency alignment. Run outside the sandbox.
+- `npm run check:expo` — parent-owned route preparation, read-only gate,
+  frontend unit tests, Expo Doctor, and Expo dependency alignment. Run outside
+  the sandbox.
 - `npm run check` — alias for the full parent-owned `check:expo` handoff gate.
 - `npm run test:db:reset` — verifies the Task 13 canonical/reapply seed copies
   are byte-identical, then runs the local-only database reset, pgTAP, and

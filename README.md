@@ -37,8 +37,8 @@ implementation-order source.
 - React Native
 - TypeScript
 - NativeWind
-- Supabase (schema/authorization shipped; Expo client planned in Task 14)
-- TanStack Query (planned in Task 14)
+- Supabase (schema/authorization shipped; Expo client foundation in Task 14)
+- TanStack Query (foundation in Task 14; screen queries in Task 15+)
 
 Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 
@@ -71,10 +71,33 @@ supabase stop
 ```
 
 Expo must receive only the project URL and publishable/legacy anon key (see
-`.env.example`). Never put a service-role key in the mobile bundle
-(`docs/SECURITY.md`). Remote staging actions require a separate explicit human
-authorization; production database work is forbidden for agents. Accepted
-Tasks 11–12 database evidence is preserved in
+`.env.example`). Copy to `.env` and set:
+
+```bash
+EXPO_PUBLIC_SUPABASE_URL=<local API URL from supabase status>
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<local publishable or legacy anon key>
+```
+
+`.env.example` values are intentionally invalid placeholders so misconfigured
+boots fail with a clear development error. Never put a service-role key in the
+mobile bundle (`docs/SECURITY.md`). Remote staging actions require a separate
+explicit human authorization; production database work is forbidden for agents.
+
+Regenerate TypeScript database types from the **local** schema only:
+
+```bash
+supabase start
+npm run types:generate   # writes src/types/database.generated.ts
+npm run types:check      # fails if committed types are stale
+```
+
+Frontend unit tests (jest-expo + React Native Testing Library):
+
+```bash
+npm test
+```
+
+Accepted Tasks 11–12 database evidence is preserved in
 `docs/evidence/task-11-12-database-acceptance/RESULT.md`.
 The reset loads Task 13's deterministic two-product catalog seed: a complete
 Air Force 1 White fixture and a sparse Samba White and Black fixture. The test
@@ -87,8 +110,9 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 
 ## Current Product State
 
-Browse → Product Detail → Rating Form mock UX and the Tasks 11–12 database and
-authorization foundation are accepted. Task 13's deterministic two-product SQL
-seed is also accepted. Expo remains disconnected; real reads, authentication,
-and writes stay owned by later tasks. Task 14 is next and remains not started.
+Browse → Product Detail → Rating Form mock UX and the Tasks 11–13 database,
+authorization, and seed foundation are accepted. Task 14 adds the Expo Supabase
+client, generated types, TanStack Query providers/lifecycle, and frontend unit
+tests; **screens remain mock-backed**. Task 15 will connect anonymous Browse
+and Product Detail reads. Staging and production were not contacted for Task 14.
 `docs/TASKS.md` is the sole current-status and implementation-order ledger.

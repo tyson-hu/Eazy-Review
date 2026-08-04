@@ -7,12 +7,15 @@
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
   accepted.
-- Expo still reads mock catalog/detail data and stores My Rating in
-  session-only memory. No Supabase client, generated database types, or
-  TanStack Query runtime is installed yet.
+- Task 14 is done: Expo has a validated public Supabase env module, one typed
+  client, generated local database types, TanStack Query providers/lifecycle,
+  public vs user-scoped query keys, and a jest-expo frontend test foundation.
+  Browse, Product Detail, Feed, auth, and rating remain mock/session-backed;
+  no screen queries Supabase yet.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 13 is accepted in PR #29. Task 14 is next and remains not started.
+- Task 13 is accepted in PR #29. Task 14 is next to human-accept; Task 15 is
+  the next implementation task after acceptance.
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -148,8 +151,8 @@ Work in order unless a task explicitly states that it is conditional.
 | Task | Title | Status |
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
-| 14 | Connected Client And Query Foundation | Next — not started |
-| 15 | Real Public Catalog Reads | Pending |
+| 14 | Connected Client And Query Foundation | Done — implementation complete; human acceptance pending |
+| 15 | Real Public Catalog Reads | Next — not started |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -257,7 +260,7 @@ Non-goals:
 
 ## Task 14: Connected Client And Query Foundation
 
-Status: **Next — not started.**
+Status: **Done — implementation complete; human acceptance pending.**
 
 Depends on: Task 13.
 
@@ -276,25 +279,20 @@ screen depends on it.
 
 Deliverables:
 
-- `@supabase/supabase-js`, one supported React Native session-storage adapter,
-  and a URL polyfill only where required.
-- `@tanstack/react-query` and React Native NetInfo integration.
+- `@supabase/supabase-js`, Expo SecureStore session adapter, URL polyfill.
+- `@tanstack/react-query` and React Native NetInfo + AppState lifecycle.
 - Minimal frontend test foundation: `jest-expo`,
-  `@testing-library/react-native`, the `expo-router/testing-library` utilities
-  when route behavior needs them, and a stable `npm test` script.
-- Path-filtered frontend test CI when that harness lands; frontend tests must
-  not remain local-only.
-- One smoke test outside `app/` proving the frontend harness runs.
-- Reproducibly generated Supabase database types.
-- One initialized Supabase client and one Query client.
-- Root providers in `app/_layout.tsx`.
-- A query-key factory with structurally separate public and user-scoped keys.
-- Auth-change utilities that remove the prior user’s scoped queries.
-- Development validation for the Supabase URL and publishable client key.
-- Coordinated AppState/online handling for auth token refresh, Query focus, and
-  NetInfo rather than competing lifecycle listeners.
-- One small total read-retry budget; rating mutations are never automatically
-  retried.
+  `@testing-library/react-native`, `npm test`, and path-filtered frontend CI.
+- One smoke test outside `app/` (`src/test/harness.smoke.test.tsx`).
+- Generated Supabase database types from the local schema
+  (`src/types/database.generated.ts`; `npm run types:generate` /
+  `npm run types:check`).
+- One initialized Supabase client and one Query client with root providers in
+  `app/_layout.tsx` via `AppProviders`.
+- Query-key factories with separate public (`catalogKeys`) and user-scoped
+  (`accountKeys`, `ratingKeys`) keys, plus `removeUserScopedQueries`.
+- Development validation for `EXPO_PUBLIC_SUPABASE_URL` and
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 
 Acceptance:
 
@@ -306,10 +304,12 @@ Acceptance:
 - Public and user-scoped query keys cannot collide.
 - Query focus follows foreground/background state and online state follows
   NetInfo.
-- Auth transitions can remove prior user-scoped data.
+- Auth transitions can remove prior user-scoped data
+  (`removeUserScopedQueries`).
 - `npm test` runs the harness smoke test successfully.
 - Relevant frontend paths run that same harness in CI.
 - Existing mock screens still run at task completion.
+- Staging and production were not contacted.
 
 Non-goals:
 
@@ -319,7 +319,7 @@ Non-goals:
 
 ## Task 15: Real Public Catalog Reads
 
-Status: Pending.
+Status: **Next — not started.**
 
 Depends on: Tasks 13–14.
 

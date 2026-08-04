@@ -10,8 +10,11 @@ Task detail, dependencies, acceptance, and current status live in
   locally and on explicitly authorized staging; production untouched.
 - Task 13: deterministic complete/sparse local catalog seed accepted;
   staging and production untouched.
+- Task 14: client/query foundation implementation-complete; screens remain
+  mock-backed; staging and production untouched.
 - Post–Task 12 review: **GO with roadmap revision**.
-- Next task: **Task 14 — Connected Client And Query Foundation**.
+- Next task: **Task 15 — Real Public Catalog Reads** (after Task 14 human
+  acceptance).
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
 and no-social MVP boundary are locked unless a reproducible defect appears.
