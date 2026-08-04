@@ -20,7 +20,16 @@ export async function renderWithProviders(
   options?: Omit<RenderOptions, 'wrapper'> & ExtraOptions,
 ) {
   const { queryClient: providedClient, ...renderOptions } = options ?? {};
-  const queryClient = providedClient ?? createAppQueryClient();
+  // Disable GC timers so Jest can exit without --forceExit.
+  const queryClient =
+    providedClient ??
+    createAppQueryClient({
+      defaultOptions: {
+        queries: {
+          gcTime: Infinity,
+        },
+      },
+    });
 
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <AppProviders queryClient={queryClient} enableLifecycle={false}>
@@ -33,5 +42,14 @@ export async function renderWithProviders(
   return {
     queryClient,
     ...result,
+    /**
+     * Tears down the QueryClient (cancels in-flight work, clears cache/timers).
+     * Safe to call after each test that used this harness.
+     */
+    async cleanup() {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      result.unmount();
+    },
   };
 }

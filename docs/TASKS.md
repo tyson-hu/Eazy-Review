@@ -7,15 +7,15 @@
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
   accepted.
-- Task 14 is done: Expo has a validated public Supabase env module, one typed
-  client, generated local database types, TanStack Query providers/lifecycle,
-  public vs user-scoped query keys, and a jest-expo frontend test foundation.
-  Browse, Product Detail, Feed, auth, and rating remain mock/session-backed;
-  no screen queries Supabase yet.
+- Task 14: Implementation complete — human acceptance pending. Expo has a
+  validated public Supabase env module, one typed client, generated local
+  database types, TanStack Query providers/lifecycle, public vs user-scoped
+  query keys, and a jest-expo frontend test foundation. Browse, Product Detail,
+  Feed, auth, and rating remain mock/session-backed; no screen queries
+  Supabase yet.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 13 is accepted in PR #29. Task 14 is next to human-accept; Task 15 is
-  the next implementation task after acceptance.
+- Task 13 is accepted in PR #29. Task 15 is blocked pending Task 14 acceptance.
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -151,8 +151,8 @@ Work in order unless a task explicitly states that it is conditional.
 | Task | Title | Status |
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
-| 14 | Connected Client And Query Foundation | Done — implementation complete; human acceptance pending |
-| 15 | Real Public Catalog Reads | Next — not started |
+| 14 | Connected Client And Query Foundation | Implementation complete — human acceptance pending |
+| 15 | Real Public Catalog Reads | Blocked pending Task 14 acceptance |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -260,7 +260,7 @@ Non-goals:
 
 ## Task 14: Connected Client And Query Foundation
 
-Status: **Done — implementation complete; human acceptance pending.**
+Status: **Implementation complete — human acceptance pending.**
 
 Depends on: Task 13.
 
@@ -317,9 +317,32 @@ Non-goals:
   broad repository framework, universal runtime row validation, or optimistic
   mutation.
 
+### Implementation evidence (PR #31)
+
+Evidence only — does not replace the deliverables or acceptance above.
+
+- Public env module uses static `process.env.EXPO_PUBLIC_*` references via
+  `runtimePublicEnv`; validation rejects missing/invalid/placeholder/secret
+  values without echoing credentials.
+- Auth session storage uses `@react-native-async-storage/async-storage`
+  (iOS/Android/web) rather than SecureStore, because full session payloads can
+  exceed SecureStore’s value size limit; this still satisfies the durable
+  Expo-compatible session-adapter deliverable.
+- Typed `getSupabase()` singleton (no Proxy; no fire-and-forget dynamic import);
+  client construction passes AsyncStorage adapter + `processLock` and issues
+  no network request.
+- Lifecycle cleanup removes AppState/NetInfo subscriptions, stops auth auto
+  refresh, and restores default Query focus/online handling.
+- Frontend unit tests run in the primary Expo CI `validate` job; the prior
+  broken path-filtered duplicate frontend job was removed rather than patched.
+- Database CI runs `npm run types:check` against local Supabase and also
+  triggers on `scripts/generate-database-types.cjs` and
+  `src/types/database.generated.ts`.
+- Screens remain mock-backed; Task 15 stays blocked until human acceptance.
+
 ## Task 15: Real Public Catalog Reads
 
-Status: **Next — not started.**
+Status: **Blocked pending Task 14 acceptance.**
 
 Depends on: Tasks 13–14.
 

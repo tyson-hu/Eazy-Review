@@ -7,10 +7,9 @@ import { renderWithProviders } from '@/src/test/renderWithProviders';
 
 describe('frontend test harness', () => {
   it('renders through application providers', async () => {
-    const { getByText, queryClient } = await renderWithProviders(
-      <Text>harness-smoke</Text>,
-    );
-    expect(getByText('harness-smoke')).toBeTruthy();
-    expect(queryClient).toBeDefined();
+    const rendered = await renderWithProviders(<Text>harness-smoke</Text>);
+    expect(rendered.getByText('harness-smoke')).toBeTruthy();
+    expect(rendered.queryClient).toBeDefined();
+    await rendered.cleanup();
   });
 });

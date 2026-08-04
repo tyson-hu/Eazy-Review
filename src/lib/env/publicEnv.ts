@@ -3,6 +3,10 @@
  *
  * Only intentionally public values belong here. Never read or export
  * service_role, database passwords, JWT signing secrets, or management tokens.
+ *
+ * Expo requires static `process.env.EXPO_PUBLIC_*` references so Metro includes
+ * them in the client bundle. Do not read those names through computed access
+ * (`process.env[name]`) on the runtime path.
  */
 
 export const PUBLIC_SUPABASE_URL_VAR = 'EXPO_PUBLIC_SUPABASE_URL';
@@ -26,7 +30,18 @@ export class PublicEnvError extends Error {
   }
 }
 
-type EnvSource = Record<string, string | undefined>;
+export type EnvSource = Readonly<Record<string, string | undefined>>;
+
+/**
+ * Runtime public env bag built with static dot-notation access so Expo can
+ * inline `EXPO_PUBLIC_*` values. Unit tests may still inject a source into
+ * `validatePublicSupabaseEnv` / `getPublicEnv`.
+ */
+export const runtimePublicEnv: EnvSource = {
+  EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+};
 
 const PLACEHOLDER_PATTERNS: RegExp[] = [
   /^https?:\/\/example(\.|-)/i,
@@ -145,7 +160,7 @@ function tryDecodeJwtPayload(token: string): string | null {
 
 /**
  * Validates public Supabase environment values.
- * Pass a source in tests; production code uses `process.env` via `getPublicEnv`.
+ * Pass a source in tests; application runtime uses `runtimePublicEnv`.
  */
 export function validatePublicSupabaseEnv(
   source: EnvSource,
@@ -182,15 +197,16 @@ let cachedEnv: PublicSupabaseEnv | undefined;
 /**
  * Reads and validates public Expo env once per process. Throws PublicEnvError
  * with the invalid variable name — never logs credential values.
+ *
+ * When `source` is omitted, uses the static-dot-notation runtime bag Expo
+ * can inline. Injectable sources remain available for unit tests.
  */
-export function getPublicEnv(
-  source: EnvSource = process.env as EnvSource,
-): PublicSupabaseEnv {
-  if (cachedEnv && source === (process.env as EnvSource)) {
+export function getPublicEnv(source: EnvSource = runtimePublicEnv): PublicSupabaseEnv {
+  if (cachedEnv && source === runtimePublicEnv) {
     return cachedEnv;
   }
   const env = validatePublicSupabaseEnv(source);
-  if (source === (process.env as EnvSource)) {
+  if (source === runtimePublicEnv) {
     cachedEnv = env;
   }
   return env;

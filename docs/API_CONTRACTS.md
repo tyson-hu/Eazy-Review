@@ -186,7 +186,7 @@ src/
     supabase/
       client.ts                # Task 14 singleton
       createClient.ts
-      authStorage.ts           # Task 14 SecureStore / web localStorage adapter
+      authStorage.ts           # Task 14 AsyncStorage session adapter
     query/
       client.ts                # Task 14 QueryClient factory
       keys.ts                  # public catalog vs user-scoped key factories

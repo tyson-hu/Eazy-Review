@@ -1,13 +1,20 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, processLock } from '@supabase/supabase-js';
 
 import {
-  createAppSupabaseClient,
-  type AppSupabaseClient,
-} from '@/src/lib/supabase/createClient';
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+  PUBLIC_SUPABASE_URL_VAR,
+  PublicEnvError,
+  resetPublicEnvCacheForTests,
+} from '@/src/lib/env/publicEnv';
 import {
   getSupabase,
   resetSupabaseClientForTests,
 } from '@/src/lib/supabase/client';
+import {
+  createAppSupabaseClient,
+  type AppSupabaseClient,
+} from '@/src/lib/supabase/createClient';
+import { authStorage } from '@/src/lib/supabase/authStorage';
 import type { Database } from '@/src/types/database.generated';
 
 const VALID_ENV = {
@@ -16,31 +23,44 @@ const VALID_ENV = {
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
 } as const;
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    from: jest.fn(),
-    auth: {
-      startAutoRefresh: jest.fn(),
-      stopAutoRefresh: jest.fn(),
-    },
-  })),
-}));
+jest.mock('@supabase/supabase-js', () => {
+  const actual = jest.requireActual<typeof import('@supabase/supabase-js')>(
+    '@supabase/supabase-js',
+  );
+  return {
+    ...actual,
+    createClient: jest.fn(() => ({
+      from: jest.fn(),
+      auth: {
+        startAutoRefresh: jest.fn(),
+        stopAutoRefresh: jest.fn(),
+      },
+    })),
+  };
+});
 
-jest.mock('@/src/lib/env/publicEnv', () => ({
-  getPublicEnv: jest.fn(() => VALID_ENV),
-  resetPublicEnvCacheForTests: jest.fn(),
-}));
+jest.mock('@/src/lib/env/publicEnv', () => {
+  const actual = jest.requireActual<typeof import('@/src/lib/env/publicEnv')>(
+    '@/src/lib/env/publicEnv',
+  );
+  return {
+    ...actual,
+    getPublicEnv: jest.fn(() => VALID_ENV),
+  };
+});
 
 const mockedCreateClient = createClient as jest.MockedFunction<
   typeof createClient
 >;
+const mockedGetPublicEnv = jest.requireMock('@/src/lib/env/publicEnv')
+  .getPublicEnv as jest.MockedFunction<() => typeof VALID_ENV>;
 
 describe('createAppSupabaseClient', () => {
   beforeEach(() => {
     mockedCreateClient.mockClear();
   });
 
-  it('creates the client with validated configuration and auth adapter options', () => {
+  it('creates the client with storage, processLock, and auth session options', () => {
     createAppSupabaseClient(VALID_ENV);
 
     expect(mockedCreateClient).toHaveBeenCalledTimes(1);
@@ -54,7 +74,8 @@ describe('createAppSupabaseClient', () => {
         detectSessionInUrl: false,
       },
     });
-    expect(options?.auth?.storage).toBeDefined();
+    expect(options?.auth?.storage).toBe(authStorage);
+    expect(options?.auth?.lock).toBe(processLock);
   });
 
   it('uses the generated Database type at compile time', () => {
@@ -85,14 +106,17 @@ describe('createAppSupabaseClient', () => {
 describe('supabase singleton module', () => {
   beforeEach(() => {
     mockedCreateClient.mockClear();
+    mockedGetPublicEnv.mockImplementation(() => VALID_ENV);
     resetSupabaseClientForTests();
   });
 
-  it('exports one stable client instance', () => {
-    const a = getSupabase();
-    const b = getSupabase();
-    expect(a).toBe(b);
+  it('returns one real stable client instance', () => {
+    const first = getSupabase();
+    const second = getSupabase();
+    expect(first).toBe(second);
     expect(mockedCreateClient).toHaveBeenCalledTimes(1);
+    // Not a Proxy wrapping an empty target.
+    expect(Object.getPrototypeOf(first)).not.toBeNull();
   });
 
   it('does not issue a database query when first resolving the singleton', () => {
@@ -103,4 +127,40 @@ describe('supabase singleton module', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
+
+  it('fails in a controlled way when public env validation throws', () => {
+    mockedGetPublicEnv.mockImplementation(() => {
+      throw new PublicEnvError(
+        PUBLIC_SUPABASE_URL_VAR,
+        'is missing or empty after trim',
+      );
+    });
+
+    expect(() => getSupabase()).toThrow(PublicEnvError);
+    expect(() => getSupabase()).toThrow(/EXPO_PUBLIC_SUPABASE_URL/);
+    expect(mockedCreateClient).not.toHaveBeenCalled();
+  });
+
+  it('propagates controlled env failure for invalid placeholder values', () => {
+    mockedGetPublicEnv.mockImplementation(() => {
+      throw new PublicEnvError(
+        PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+        'looks like a placeholder; set the public publishable (or legacy anon) key',
+      );
+    });
+
+    try {
+      getSupabase();
+      throw new Error('expected getSupabase to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PublicEnvError);
+      expect(String(error)).toContain(PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR);
+      expect(String(error)).not.toMatch(/sb_publishable_your/);
+    }
+  });
+});
+
+afterAll(() => {
+  resetPublicEnvCacheForTests();
+  resetSupabaseClientForTests();
 });

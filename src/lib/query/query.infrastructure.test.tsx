@@ -23,6 +23,7 @@ describe('query client defaults', () => {
     expect(defaultQueryClientOptions.mutations?.retry).toBe(false);
     const client = createAppQueryClient();
     expect(client.getDefaultOptions().mutations?.retry).toBe(false);
+    client.clear();
   });
 
   it('retries transient read failures once and skips 4xx', () => {
@@ -79,22 +80,31 @@ describe('query keys', () => {
 
 describe('AppProviders / render harness', () => {
   it('renders a child component', async () => {
-    const { getByText } = await renderWithProviders(
+    const rendered = await renderWithProviders(
       <View>
         <Text>infra-ok</Text>
       </View>,
     );
-    expect(getByText('infra-ok')).toBeTruthy();
+    expect(rendered.getByText('infra-ok')).toBeTruthy();
+    await rendered.cleanup();
   });
 
   it('gives tests isolated QueryClient instances', async () => {
     const first = await renderWithProviders(<Text>a</Text>);
     const second = await renderWithProviders(<Text>b</Text>);
     expect(first.queryClient).not.toBe(second.queryClient);
+    await first.cleanup();
+    await second.cleanup();
   });
 
   it('can remove user-scoped cache without dropping catalog keys', async () => {
-    const client = createAppQueryClient();
+    const client = createAppQueryClient({
+      defaultOptions: {
+        queries: {
+          gcTime: Infinity,
+        },
+      },
+    });
     await client.prefetchQuery({
       queryKey: catalogKeys.product('p1'),
       queryFn: async () => ({ id: 'p1' }),
@@ -117,5 +127,8 @@ describe('AppProviders / render harness', () => {
     expect(
       client.getQueryData(ratingKeys.mine('user-1', 'p1')),
     ).toBeUndefined();
+
+    await client.cancelQueries();
+    client.clear();
   });
 });

@@ -6,6 +6,7 @@ import {
   getAppQueryClient,
 } from '@/src/lib/query/client';
 import { setupQueryLifecycle } from '@/src/lib/query/lifecycle';
+import { getSupabase } from '@/src/lib/supabase/client';
 
 type AppProvidersProps = {
   children: ReactNode;
@@ -25,6 +26,10 @@ type AppProvidersProps = {
  * Application infrastructure providers. Does not alter mock-backed product UI.
  * Future auth or feature providers may compose here without restructuring
  * navigation.
+ *
+ * With lifecycle enabled, validates public env and constructs the Supabase
+ * client synchronously on mount. Invalid configuration throws `PublicEnvError`
+ * on this deliberate path — never swallowed as a fire-and-forget rejection.
  */
 export function AppProviders({
   children,
@@ -40,20 +45,10 @@ export function AppProviders({
       return;
     }
 
-    let cancelled = false;
-    let cleanup: (() => void) | undefined;
-
-    void import('@/src/lib/supabase/client').then(({ supabase }) => {
-      if (cancelled) {
-        return;
-      }
-      cleanup = setupQueryLifecycle({ supabase });
-    });
-
-    return () => {
-      cancelled = true;
-      cleanup?.();
-    };
+    // Synchronous getSupabase: controlled failure for bad env, real client
+    // identity (no Proxy, no dynamic import).
+    const cleanup = setupQueryLifecycle({ supabase: getSupabase() });
+    return cleanup;
   }, [enableLifecycle]);
 
   return (

@@ -25,6 +25,41 @@ export function isNetInfoOnline(state: {
 }
 
 /**
+ * Restore the default web online/offline window listeners used by TanStack
+ * Query. On React Native (no window listen), installs a no-op setup so prior
+ * NetInfo subscriptions are released via `setEventListener` cleanup.
+ */
+function restoreDefaultOnlineManager(): void {
+  onlineManager.setEventListener((setOnline) => {
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.addEventListener === 'function'
+    ) {
+      const onlineListener = () => setOnline(true);
+      const offlineListener = () => setOnline(false);
+      window.addEventListener('online', onlineListener, false);
+      window.addEventListener('offline', offlineListener, false);
+      return () => {
+        window.removeEventListener('online', onlineListener);
+        window.removeEventListener('offline', offlineListener);
+      };
+    }
+    return undefined;
+  });
+}
+
+/**
+ * Restore default focus detection: clear the forced focused flag so TanStack
+ * Query falls back to document visibility (web) / unknown native state.
+ * Does not replace global module state wholesale — only undoes our override.
+ */
+function restoreDefaultFocusManager(): void {
+  // Clearing the override lets FocusManager.isFocused() use document
+  // visibility again when available (TanStack Query 5 focusManager API).
+  focusManager.setFocused(undefined);
+}
+
+/**
  * Wire TanStack Query onlineManager to NetInfo. Subscribe once per app launch.
  */
 export function setupQueryOnlineManager(): LifecycleCleanup {
@@ -36,7 +71,7 @@ export function setupQueryOnlineManager(): LifecycleCleanup {
   });
 
   return () => {
-    onlineManager.setEventListener(() => () => {});
+    restoreDefaultOnlineManager();
   };
 }
 
@@ -59,6 +94,7 @@ export function setupQueryFocusManager(): LifecycleCleanup {
   const subscription = AppState.addEventListener('change', onChange);
   return () => {
     subscription.remove();
+    restoreDefaultFocusManager();
   };
 }
 
@@ -85,6 +121,7 @@ export function setupAuthAppStateRefresh(
   const subscription = AppState.addEventListener('change', onChange);
   return () => {
     subscription.remove();
+    void client.auth.stopAutoRefresh();
   };
 }
 

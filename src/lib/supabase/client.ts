@@ -11,10 +11,13 @@ let client: AppSupabaseClient | undefined;
 /**
  * Application-owned Supabase singleton accessor.
  *
- * - Uses validated public URL + publishable key only.
+ * - Uses validated public URL + publishable key only (static Expo env source).
  * - Typed against generated `Database` from the local schema.
- * - Does not query the database when the module is imported; the client is
- *   created on first access (still does not issue a query).
+ * - Returns one real client instance (not a Proxy). Identity is stable across
+ *   calls: `getSupabase() === getSupabase()`.
+ * - Module import and first `createClient` do not issue a database query.
+ * - Invalid public environment configuration throws `PublicEnvError` (or the
+ *   underlying failure) synchronously — callers must not silently swallow it.
  * - Do not create additional clients inside React components.
  *
  * Screens remain on mock data until Task 15+. Accessing the client does not
@@ -26,16 +29,6 @@ export function getSupabase(): AppSupabaseClient {
   }
   return client;
 }
-
-/**
- * Stable singleton property. Resolves lazily so passive imports (tests that
- * never touch Supabase) do not require env vars.
- */
-export const supabase: AppSupabaseClient = new Proxy({} as AppSupabaseClient, {
-  get(_target, property, receiver) {
-    return Reflect.get(getSupabase(), property, receiver);
-  },
-});
 
 /** Test-only: drop the singleton between cases. */
 export function resetSupabaseClientForTests(): void {

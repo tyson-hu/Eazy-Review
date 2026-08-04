@@ -1,22 +1,17 @@
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Auth session storage adapter for Supabase Auth.
  *
- * Native: Expo SecureStore (encrypted/keychain-backed where the OS provides it).
- * Web: `localStorage` (SecureStore is not available in browsers).
- *
- * Known limitation (iOS SecureStore): individual values are limited to about
- * 2048 bytes. A full Supabase session JSON can approach or exceed that limit
- * once access + refresh tokens and user metadata grow. If setItem fails with a
- * size-related error, the failure surfaces in development rather than
- * silently discarding the session. Switch this adapter in isolation if a
- * larger-capacity store becomes necessary (for example SQLite-backed
- * localStorage via `expo-sqlite`).
+ * Uses `@react-native-async-storage/async-storage` on every platform Expo
+ * supports for this app (iOS, Android, and web). Session JSON can exceed the
+ * ~2048-byte iOS SecureStore value limit; AsyncStorage does not have that
+ * limit, and it is the storage option documented by Supabase for React Native.
  *
  * Values are stored as plain strings. Callers (supabase-js) own JSON encoding;
- * this adapter does not double-encode.
+ * this adapter does not double-encode. Storage errors propagate to the caller.
+ * Key names may appear in __DEV__ diagnostics; token or session body content
+ * never does.
  */
 
 export type AuthStorageAdapter = {
@@ -25,73 +20,59 @@ export type AuthStorageAdapter = {
   removeItem: (key: string) => Promise<void>;
 };
 
-const webStorage: AuthStorageAdapter = {
-  async getItem(key) {
-    if (typeof localStorage === 'undefined') {
-      return null;
-    }
-    return localStorage.getItem(key);
-  },
-  async setItem(key, value) {
-    if (typeof localStorage === 'undefined') {
-      throw new Error(
-        'Auth storage is unavailable: localStorage is not defined on web.',
-      );
-    }
-    localStorage.setItem(key, value);
-  },
-  async removeItem(key) {
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    localStorage.removeItem(key);
-  },
-};
-
-const secureStorage: AuthStorageAdapter = {
-  async getItem(key) {
-    try {
-      return await SecureStore.getItemAsync(key);
-    } catch (error) {
-      // Missing key is returned as null by SecureStore; rethrow hard failures.
-      if (__DEV__) {
-        console.warn(
-          `[authStorage] getItem failed for key "${key}"`,
-          error instanceof Error ? error.message : 'unknown error',
-        );
+/**
+ * Builds an auth storage adapter against an AsyncStorage-compatible backend.
+ * Production uses the package singleton; tests inject a mock store.
+ */
+export function createAuthStorageAdapter(
+  store: Pick<
+    typeof AsyncStorage,
+    'getItem' | 'setItem' | 'removeItem'
+  > = AsyncStorage,
+): AuthStorageAdapter {
+  return {
+    async getItem(key) {
+      try {
+        return await store.getItem(key);
+      } catch (error) {
+        if (__DEV__) {
+          console.warn(
+            `[authStorage] getItem failed for key "${key}"`,
+            error instanceof Error ? error.message : 'unknown error',
+          );
+        }
+        throw error;
       }
-      throw error;
-    }
-  },
-  async setItem(key, value) {
-    try {
-      await SecureStore.setItemAsync(key, value);
-    } catch (error) {
-      if (__DEV__) {
-        console.warn(
-          `[authStorage] setItem failed for key "${key}" (value length ${value.length}; iOS SecureStore ~2048-byte limit may apply)`,
-          error instanceof Error ? error.message : 'unknown error',
-        );
+    },
+    async setItem(key, value) {
+      try {
+        // Store the string as-is; do not JSON.stringify again.
+        await store.setItem(key, value);
+      } catch (error) {
+        if (__DEV__) {
+          console.warn(
+            `[authStorage] setItem failed for key "${key}" (value length ${value.length})`,
+            error instanceof Error ? error.message : 'unknown error',
+          );
+        }
+        throw error;
       }
-      throw error;
-    }
-  },
-  async removeItem(key) {
-    try {
-      await SecureStore.deleteItemAsync(key);
-    } catch (error) {
-      // deleteItem on a missing key is often a no-op; propagate unexpected errors.
-      if (__DEV__) {
-        console.warn(
-          `[authStorage] removeItem failed for key "${key}"`,
-          error instanceof Error ? error.message : 'unknown error',
-        );
+    },
+    async removeItem(key) {
+      try {
+        await store.removeItem(key);
+      } catch (error) {
+        if (__DEV__) {
+          console.warn(
+            `[authStorage] removeItem failed for key "${key}"`,
+            error instanceof Error ? error.message : 'unknown error',
+          );
+        }
+        throw error;
       }
-      throw error;
-    }
-  },
-};
+    },
+  };
+}
 
 /** Singleton adapter wired into the app Supabase client. */
-export const authStorage: AuthStorageAdapter =
-  Platform.OS === 'web' ? webStorage : secureStorage;
+export const authStorage: AuthStorageAdapter = createAuthStorageAdapter();
