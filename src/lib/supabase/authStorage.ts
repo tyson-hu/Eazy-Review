@@ -21,6 +21,16 @@ export type AuthStorageAdapter = {
 };
 
 /**
+ * Node SSR (Expo static web export) has no DOM `window`. Client web and React
+ * Native runtimes define it, so session persistence can use AsyncStorage.
+ * During SSR, treat storage as empty and no-op so provider bootstrap can
+ * construct the Supabase client without crashing.
+ */
+export function isAuthStorageRuntimeAvailable(): boolean {
+  return typeof window !== 'undefined';
+}
+
+/**
  * Builds an auth storage adapter against an AsyncStorage-compatible backend.
  * Production uses the package singleton; tests inject a mock store.
  */
@@ -29,9 +39,16 @@ export function createAuthStorageAdapter(
     typeof AsyncStorage,
     'getItem' | 'setItem' | 'removeItem'
   > = AsyncStorage,
+  options: { skipWhenNoWindow?: boolean } = {},
 ): AuthStorageAdapter {
+  // Injected test stores always run; the production singleton guards SSR.
+  const skipWhenNoWindow = options.skipWhenNoWindow === true;
+
   return {
     async getItem(key) {
+      if (skipWhenNoWindow && !isAuthStorageRuntimeAvailable()) {
+        return null;
+      }
       try {
         return await store.getItem(key);
       } catch (error) {
@@ -45,6 +62,9 @@ export function createAuthStorageAdapter(
       }
     },
     async setItem(key, value) {
+      if (skipWhenNoWindow && !isAuthStorageRuntimeAvailable()) {
+        return;
+      }
       try {
         // Store the string as-is; do not JSON.stringify again.
         await store.setItem(key, value);
@@ -59,6 +79,9 @@ export function createAuthStorageAdapter(
       }
     },
     async removeItem(key) {
+      if (skipWhenNoWindow && !isAuthStorageRuntimeAvailable()) {
+        return;
+      }
       try {
         await store.removeItem(key);
       } catch (error) {
@@ -75,4 +98,7 @@ export function createAuthStorageAdapter(
 }
 
 /** Singleton adapter wired into the app Supabase client. */
-export const authStorage: AuthStorageAdapter = createAuthStorageAdapter();
+export const authStorage: AuthStorageAdapter = createAuthStorageAdapter(
+  AsyncStorage,
+  { skipWhenNoWindow: true },
+);

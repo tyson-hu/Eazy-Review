@@ -16,8 +16,8 @@ type AppProvidersProps = {
    */
   queryClient?: ReturnType<typeof createAppQueryClient>;
   /**
-   * When false, skip NetInfo / AppState / auth-refresh setup (unit tests).
-   * Defaults to true for the running app.
+   * When false, skip Supabase resolution and NetInfo / AppState / auth-refresh
+   * setup (unit tests). Defaults to true for the running app.
    */
   enableLifecycle?: boolean;
 };
@@ -28,8 +28,10 @@ type AppProvidersProps = {
  * navigation.
  *
  * With lifecycle enabled, validates public env and constructs the Supabase
- * client synchronously on mount. Invalid configuration throws `PublicEnvError`
- * on this deliberate path — never swallowed as a fire-and-forget rejection.
+ * client synchronously during provider render/bootstrap (not in an effect).
+ * Invalid configuration throws `PublicEnvError` on this deliberate path —
+ * never swallowed as a fire-and-forget rejection. The effect only installs
+ * and tears down AppState / NetInfo / auth-refresh listeners.
  */
 export function AppProviders({
   children,
@@ -40,16 +42,17 @@ export function AppProviders({
     () => queryClientProp ?? getAppQueryClient(),
   );
 
+  // Render/bootstrap path: controlled failure for bad env before children mount.
+  // Identity is the real singleton (no Proxy, no dynamic import).
+  const supabase = enableLifecycle ? getSupabase() : undefined;
+
   useEffect(() => {
-    if (!enableLifecycle) {
+    if (!supabase) {
       return;
     }
 
-    // Synchronous getSupabase: controlled failure for bad env, real client
-    // identity (no Proxy, no dynamic import).
-    const cleanup = setupQueryLifecycle({ supabase: getSupabase() });
-    return cleanup;
-  }, [enableLifecycle]);
+    return setupQueryLifecycle({ supabase });
+  }, [supabase]);
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

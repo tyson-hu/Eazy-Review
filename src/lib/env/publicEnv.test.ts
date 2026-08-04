@@ -4,7 +4,6 @@ import {
   PublicEnvError,
   getPublicEnv,
   resetPublicEnvCacheForTests,
-  runtimePublicEnv,
   validatePublicSupabaseEnv,
 } from '@/src/lib/env/publicEnv';
 
@@ -14,14 +13,88 @@ const VALID_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 const VALID_PUBLISHABLE = 'sb_publishable_local_dev_key_abcdefghijklmnop';
 
+const ENV_URL = 'EXPO_PUBLIC_SUPABASE_URL';
+const ENV_KEY = 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY';
+
 // Synthetic service-role-shaped JWT for rejection tests only. Not a real credential.
 function encodeJwtPayload(payload: object): string {
   const json = JSON.stringify(payload);
-  const b64 = globalThis.btoa(json)
+  const b64 = globalThis
+    .btoa(json)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/g, '');
   return `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${b64}.sig`;
+}
+
+type ProcessEnvSnapshot = {
+  url: string | undefined;
+  key: string | undefined;
+};
+
+function snapshotProcessEnv(): ProcessEnvSnapshot {
+  return {
+    url: process.env[ENV_URL],
+    key: process.env[ENV_KEY],
+  };
+}
+
+function applyProcessEnv(snapshot: ProcessEnvSnapshot): void {
+  if (snapshot.url === undefined) {
+    delete process.env[ENV_URL];
+  } else {
+    process.env[ENV_URL] = snapshot.url;
+  }
+  if (snapshot.key === undefined) {
+    delete process.env[ENV_KEY];
+  } else {
+    process.env[ENV_KEY] = snapshot.key;
+  }
+}
+
+/**
+ * Reloads publicEnv after setting process.env so the private runtime bag is
+ * captured with static `process.env.EXPO_PUBLIC_*` values at module load.
+ */
+function loadPublicEnvModuleWithProcessEnv(values: {
+  url?: string | undefined;
+  key?: string | undefined;
+}): {
+  getPublicEnv: typeof getPublicEnv;
+  PublicEnvError: typeof PublicEnvError;
+  PUBLIC_SUPABASE_URL_VAR: typeof PUBLIC_SUPABASE_URL_VAR;
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR: typeof PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR;
+  resetPublicEnvCacheForTests: typeof resetPublicEnvCacheForTests;
+  restore: () => void;
+} {
+  const previous = snapshotProcessEnv();
+
+  if (values.url === undefined) {
+    delete process.env[ENV_URL];
+  } else {
+    process.env[ENV_URL] = values.url;
+  }
+  if (values.key === undefined) {
+    delete process.env[ENV_KEY];
+  } else {
+    process.env[ENV_KEY] = values.key;
+  }
+
+  jest.resetModules();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional fresh load after resetModules
+  const mod = require('@/src/lib/env/publicEnv') as typeof import('@/src/lib/env/publicEnv');
+
+  return {
+    getPublicEnv: mod.getPublicEnv,
+    PublicEnvError: mod.PublicEnvError,
+    PUBLIC_SUPABASE_URL_VAR: mod.PUBLIC_SUPABASE_URL_VAR,
+    PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR: mod.PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+    resetPublicEnvCacheForTests: mod.resetPublicEnvCacheForTests,
+    restore: () => {
+      applyProcessEnv(previous);
+      jest.resetModules();
+    },
+  };
 }
 
 afterEach(() => {
@@ -151,81 +224,57 @@ describe('validatePublicSupabaseEnv', () => {
   });
 });
 
-describe('runtimePublicEnv static source', () => {
-  it('exposes EXPO_PUBLIC keys resolved through static process.env.dot access', () => {
-    expect(Object.keys(runtimePublicEnv).sort()).toEqual(
-      [
-        PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
-        PUBLIC_SUPABASE_URL_VAR,
-      ].sort(),
-    );
-    // Shape contract: values are process.env mirrors (string | undefined).
-    expect(
-      runtimePublicEnv.EXPO_PUBLIC_SUPABASE_URL === undefined ||
-        typeof runtimePublicEnv.EXPO_PUBLIC_SUPABASE_URL === 'string',
-    ).toBe(true);
-    expect(
-      runtimePublicEnv.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY === undefined ||
-        typeof runtimePublicEnv.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ===
-          'string',
-    ).toBe(true);
-  });
-
-  it('uses runtimePublicEnv as the getPublicEnv default path', () => {
-    const originalUrl = runtimePublicEnv.EXPO_PUBLIC_SUPABASE_URL;
-    const originalKey = runtimePublicEnv.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-    // Mutate the exported bag so the real default source is exercised without
-    // relying on a manually supplied validate(...) object alone.
-    (runtimePublicEnv as { EXPO_PUBLIC_SUPABASE_URL?: string }).EXPO_PUBLIC_SUPABASE_URL =
-      VALID_URL;
-    (
-      runtimePublicEnv as {
-        EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
-      }
-    ).EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = VALID_KEY;
-
+describe('getPublicEnv runtime path (process.env + module load)', () => {
+  it('accepts valid process.env values on the default getPublicEnv path', () => {
+    const loaded = loadPublicEnvModuleWithProcessEnv({
+      url: `  ${VALID_URL}  `,
+      key: `  ${VALID_KEY}  `,
+    });
     try {
-      const env = getPublicEnv();
+      const env = loaded.getPublicEnv();
       expect(env.supabaseUrl).toBe(VALID_URL);
       expect(env.supabasePublishableKey).toBe(VALID_KEY);
+      expect(Object.isFrozen(env)).toBe(true);
+      // Deterministic cache for the runtime bag.
+      expect(loaded.getPublicEnv()).toBe(env);
     } finally {
-      (
-        runtimePublicEnv as { EXPO_PUBLIC_SUPABASE_URL?: string }
-      ).EXPO_PUBLIC_SUPABASE_URL = originalUrl;
-      (
-        runtimePublicEnv as {
-          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
-        }
-      ).EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = originalKey;
+      loaded.restore();
     }
   });
 
-  it('fails clearly on the runtime path when values are missing', () => {
-    const originalUrl = runtimePublicEnv.EXPO_PUBLIC_SUPABASE_URL;
-    const originalKey = runtimePublicEnv.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-    (
-      runtimePublicEnv as { EXPO_PUBLIC_SUPABASE_URL?: string }
-    ).EXPO_PUBLIC_SUPABASE_URL = undefined;
-    (
-      runtimePublicEnv as {
-        EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
-      }
-    ).EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = undefined;
-
+  it('fails clearly when process.env public values are missing', () => {
+    const loaded = loadPublicEnvModuleWithProcessEnv({
+      url: undefined,
+      key: undefined,
+    });
     try {
-      expect(() => getPublicEnv()).toThrow(PublicEnvError);
-      expect(() => getPublicEnv()).toThrow(/EXPO_PUBLIC_SUPABASE_URL/);
+      expect(() => loaded.getPublicEnv()).toThrow(loaded.PublicEnvError);
+      expect(() => loaded.getPublicEnv()).toThrow(/EXPO_PUBLIC_SUPABASE_URL/);
     } finally {
-      (
-        runtimePublicEnv as { EXPO_PUBLIC_SUPABASE_URL?: string }
-      ).EXPO_PUBLIC_SUPABASE_URL = originalUrl;
-      (
-        runtimePublicEnv as {
-          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
-        }
-      ).EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = originalKey;
+      loaded.restore();
+    }
+  });
+
+  it('identifies the missing variable without echoing credential-shaped noise', () => {
+    const longNoise =
+      'not-a-valid-public-key-that-must-never-be-echoed_in_runtime_errors_xyz999';
+    const loaded = loadPublicEnvModuleWithProcessEnv({
+      url: VALID_URL,
+      key: longNoise,
+    });
+    try {
+      try {
+        loaded.getPublicEnv();
+        throw new Error('expected getPublicEnv to throw');
+      } catch (error) {
+        expect(error).toBeInstanceOf(loaded.PublicEnvError);
+        expect(String(error)).toContain(
+          loaded.PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+        );
+        expect(String(error)).not.toContain(longNoise);
+      }
+    } finally {
+      loaded.restore();
     }
   });
 });

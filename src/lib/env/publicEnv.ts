@@ -33,15 +33,16 @@ export class PublicEnvError extends Error {
 export type EnvSource = Readonly<Record<string, string | undefined>>;
 
 /**
- * Runtime public env bag built with static dot-notation access so Expo can
- * inline `EXPO_PUBLIC_*` values. Unit tests may still inject a source into
- * `validatePublicSupabaseEnv` / `getPublicEnv`.
+ * Private runtime bag built with static dot-notation access so Expo can
+ * inline `EXPO_PUBLIC_*` values at module load. Immutable — tests exercise the
+ * runtime path via `process.env` + `jest.resetModules()`, not by mutating this
+ * object.
  */
-export const runtimePublicEnv: EnvSource = {
+const runtimePublicEnv: EnvSource = Object.freeze({
   EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-};
+});
 
 const PLACEHOLDER_PATTERNS: RegExp[] = [
   /^https?:\/\/example(\.|-)/i,
@@ -160,7 +161,7 @@ function tryDecodeJwtPayload(token: string): string | null {
 
 /**
  * Validates public Supabase environment values.
- * Pass a source in tests; application runtime uses `runtimePublicEnv`.
+ * Pass a source in tests; application runtime uses the private static bag.
  */
 export function validatePublicSupabaseEnv(
   source: EnvSource,
@@ -195,13 +196,17 @@ export function validatePublicSupabaseEnv(
 let cachedEnv: PublicSupabaseEnv | undefined;
 
 /**
- * Reads and validates public Expo env once per process. Throws PublicEnvError
- * with the invalid variable name — never logs credential values.
+ * Reads and validates public Expo env once per process for the runtime bag.
+ * Throws PublicEnvError with the invalid variable name — never logs credential
+ * values.
  *
- * When `source` is omitted, uses the static-dot-notation runtime bag Expo
- * can inline. Injectable sources remain available for unit tests.
+ * When `source` is omitted, uses the private static-dot-notation runtime bag
+ * Expo can inline. Injectable sources remain available for unit tests that
+ * exercise validation without reloading the module.
  */
-export function getPublicEnv(source: EnvSource = runtimePublicEnv): PublicSupabaseEnv {
+export function getPublicEnv(
+  source: EnvSource = runtimePublicEnv,
+): PublicSupabaseEnv {
   if (cachedEnv && source === runtimePublicEnv) {
     return cachedEnv;
   }

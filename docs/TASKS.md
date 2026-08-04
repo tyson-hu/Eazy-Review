@@ -279,10 +279,11 @@ screen depends on it.
 
 Deliverables:
 
-- `@supabase/supabase-js`, Expo SecureStore session adapter, URL polyfill.
-- `@tanstack/react-query` and React Native NetInfo + AppState lifecycle.
-- Minimal frontend test foundation: `jest-expo`,
-  `@testing-library/react-native`, `npm test`, and path-filtered frontend CI.
+- `@supabase/supabase-js`, one supported React Native session-storage
+  adapter, and a URL polyfill only where required.
+- `@tanstack/react-query` with React Native NetInfo and AppState lifecycle
+  integration.
+- Minimal frontend test foundation enforced in Expo CI.
 - One smoke test outside `app/` (`src/test/harness.smoke.test.tsx`).
 - Generated Supabase database types from the local schema
   (`src/types/database.generated.ts`; `npm run types:generate` /
@@ -293,11 +294,14 @@ Deliverables:
   (`accountKeys`, `ratingKeys`) keys, plus `removeUserScopedQueries`.
 - Development validation for `EXPO_PUBLIC_SUPABASE_URL` and
   `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- Supported durable session storage; reproducible generated types; coordinated
+  lifecycle handling; public vs user-scoped query-key separation; auth-transition
+  cache cleanup; one small read-retry budget; no automatic rating mutation retry.
 
 Acceptance:
 
 - The app starts with valid development variables and fails clearly when they
-  are missing.
+  are missing (provider bootstrap/render path surfaces `PublicEnvError`).
 - URL and publishable/legacy anon key are treated as public client
   configuration; no secret/service-role value reaches the bundle.
 - Database types regenerate through one documented command.
@@ -307,7 +311,7 @@ Acceptance:
 - Auth transitions can remove prior user-scoped data
   (`removeUserScopedQueries`).
 - `npm test` runs the harness smoke test successfully.
-- Relevant frontend paths run that same harness in CI.
+- Frontend unit tests run in the primary Expo CI validation job.
 - Existing mock screens still run at task completion.
 - Staging and production were not contacted.
 
@@ -321,20 +325,19 @@ Non-goals:
 
 Evidence only — does not replace the deliverables or acceptance above.
 
-- Public env module uses static `process.env.EXPO_PUBLIC_*` references via
-  `runtimePublicEnv`; validation rejects missing/invalid/placeholder/secret
-  values without echoing credentials.
+- Public env module uses static `process.env.EXPO_PUBLIC_*` references in a
+  private frozen runtime bag; validation rejects missing/invalid/placeholder/secret
+  values without echoing credentials. Invalid configuration throws during the
+  `AppProviders` render/bootstrap path when lifecycle is enabled.
 - Auth session storage uses `@react-native-async-storage/async-storage`
-  (iOS/Android/web) rather than SecureStore, because full session payloads can
-  exceed SecureStore’s value size limit; this still satisfies the durable
-  Expo-compatible session-adapter deliverable.
+  (iOS/Android/web).
 - Typed `getSupabase()` singleton (no Proxy; no fire-and-forget dynamic import);
   client construction passes AsyncStorage adapter + `processLock` and issues
   no network request.
 - Lifecycle cleanup removes AppState/NetInfo subscriptions, stops auth auto
   refresh, and restores default Query focus/online handling.
-- Frontend unit tests run in the primary Expo CI `validate` job; the prior
-  broken path-filtered duplicate frontend job was removed rather than patched.
+- Frontend unit tests run in the primary Expo CI `validate` job (no separate
+  path-filtered frontend job).
 - Database CI runs `npm run types:check` against local Supabase and also
   triggers on `scripts/generate-database-types.cjs` and
   `src/types/database.generated.ts`.

@@ -128,3 +128,30 @@ describe('authStorage singleton', () => {
     expect(typeof authStorage.removeItem).toBe('function');
   });
 });
+
+describe('SSR-safe storage runtime guard', () => {
+  it('returns null and no-ops when window is unavailable', async () => {
+    const store = createMockStore();
+    const adapter = createAuthStorageAdapter(store, {
+      skipWhenNoWindow: true,
+    });
+
+    const originalWindow = globalThis.window;
+    // Simulate Node SSR used by Expo static web export.
+    // @ts-expect-error intentional delete for SSR simulation
+    delete globalThis.window;
+
+    try {
+      await expect(adapter.getItem('sb-auth-token')).resolves.toBeNull();
+      await expect(
+        adapter.setItem('sb-auth-token', 'opaque'),
+      ).resolves.toBeUndefined();
+      await expect(adapter.removeItem('sb-auth-token')).resolves.toBeUndefined();
+      expect(store.getItem).not.toHaveBeenCalled();
+      expect(store.setItem).not.toHaveBeenCalled();
+      expect(store.removeItem).not.toHaveBeenCalled();
+    } finally {
+      globalThis.window = originalWindow;
+    }
+  });
+});
