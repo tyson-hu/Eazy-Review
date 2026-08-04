@@ -7,7 +7,8 @@
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
   accepted.
-- Task 14: Implementation complete — human acceptance pending. Expo has a
+- Task 14: Human accepted — merge pending. Implementation and human acceptance
+  are complete. Expo has a
   validated public Supabase env module, one typed client, generated local
   database types, TanStack Query providers/lifecycle, public vs user-scoped
   query keys, and a jest-expo frontend test foundation. Browse, Product Detail,
@@ -15,7 +16,7 @@
   Supabase yet.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 13 is accepted in PR #29. Task 15 is blocked pending Task 14 acceptance.
+- Task 13 is accepted in PR #29. Task 15 is blocked pending the Task 14 merge.
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -151,8 +152,8 @@ Work in order unless a task explicitly states that it is conditional.
 | Task | Title | Status |
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
-| 14 | Connected Client And Query Foundation | Implementation complete — human acceptance pending |
-| 15 | Real Public Catalog Reads | Blocked pending Task 14 acceptance |
+| 14 | Connected Client And Query Foundation | Human accepted — merge pending |
+| 15 | Real Public Catalog Reads | Blocked pending Task 14 merge |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -260,7 +261,7 @@ Non-goals:
 
 ## Task 14: Connected Client And Query Foundation
 
-Status: **Implementation complete — human acceptance pending.**
+Status: **Human accepted — merge pending.**
 
 Depends on: Task 13.
 
@@ -271,8 +272,8 @@ the generic implementer.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is required before Task 15; no environment action
-is implied.
+Human gate: Human acceptance is complete. Task 14 must merge before Task 15
+begins; no environment action is implied.
 
 Goal: install and configure the durable application data layer before any
 screen depends on it.
@@ -341,11 +342,11 @@ Evidence only — does not replace the deliverables or acceptance above.
 - Database CI runs `npm run types:check` against local Supabase and also
   triggers on `scripts/generate-database-types.cjs` and
   `src/types/database.generated.ts`.
-- Screens remain mock-backed; Task 15 stays blocked until human acceptance.
+- Screens remain mock-backed; Task 15 stays blocked until the Task 14 merge.
 
 ## Task 15: Real Public Catalog Reads
 
-Status: **Blocked pending Task 14 acceptance.**
+Status: **Blocked pending Task 14 merge.**
 
 Depends on: Tasks 13–14.
 
@@ -390,6 +391,15 @@ Remove in this task:
 Acceptance:
 
 - Anonymous users can open connected Browse and Product Detail.
+- Network loss does not block the application shell or navigation from
+  launching, and catalog surfaces show a visible offline state.
+- Cached public catalog data remains visible when available.
+- When no cached catalog data is available, show an explicit offline/error
+  state with a Retry action.
+- Automatically refetch catalog data when connectivity returns.
+- Never leave the user on an indefinite loading indicator.
+- Missing Supabase configuration and temporary network loss use separate error
+  paths; configuration failures must not be mislabeled as offline failures.
 - Only published products appear.
 - Primary image selection is stable across repeated reads.
 - Mixed currencies are never compared numerically.
@@ -399,6 +409,9 @@ Acceptance:
 - No client calculation writes or replaces Community Score.
 - Adapter tests cover no image, no offer, no aggregate, multiple images, and
   mismatched currency.
+
+Persistent offline Query cache remains deferred; Task 15 may satisfy this
+contract with the available in-memory cache.
 
 ## Task 16: Core Authentication And Account State
 
@@ -441,6 +454,18 @@ Acceptance:
 - Sign-out/account switching cannot expose the prior user’s profile or rating
   cache.
 - Session restoration works after app restart.
+- Supabase access and refresh tokens are sensitive authentication material.
+  Profile display data such as name, email, phone, and avatar does not by
+  itself drive the storage decision; the authentication tokens do.
+- AsyncStorage is accepted for the MVP foundation, but before production
+  authentication is finalized Task 16 must document the threat model and
+  either:
+  1. explicitly accept AsyncStorage for the intended risk level; or
+  2. introduce and test an appropriate secure native storage alternative.
+- Service-role keys, passwords, backend secrets, and database credentials must
+  never be stored in client storage.
+- Server-side RLS remains required regardless of local encryption. Encrypted
+  local storage does not replace correct authorization policies.
 
 Non-goals:
 
