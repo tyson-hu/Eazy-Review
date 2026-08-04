@@ -115,9 +115,34 @@ describe('createAuthStorageAdapter', () => {
     const warnText = warnSpy.mock.calls.map((call) => call.join(' ')).join(' ');
     expect(warnText).not.toContain(tokenish);
     expect(warnText).not.toContain('session-body-must-not-be-logged');
+    // Diagnostics may include only safe metadata (key name / value length).
     expect(warnText).toContain('sb-auth-token');
+    expect(warnText).toContain(String(tokenish.length));
 
     warnSpy.mockRestore();
+  });
+
+  it('still runs injected stores when window is unavailable', async () => {
+    // Default adapters (injected test stores) must not apply the SSR skip.
+    const store = createMockStore({
+      getItem: jest.fn(async () => 'from-mock'),
+    });
+    const adapter = createAuthStorageAdapter(store);
+
+    const originalWindow = globalThis.window;
+    // @ts-expect-error intentional delete for SSR simulation
+    delete globalThis.window;
+
+    try {
+      await expect(adapter.getItem('k')).resolves.toBe('from-mock');
+      await adapter.setItem('k', 'v');
+      await adapter.removeItem('k');
+      expect(store.getItem).toHaveBeenCalledWith('k');
+      expect(store.setItem).toHaveBeenCalledWith('k', 'v');
+      expect(store.removeItem).toHaveBeenCalledWith('k');
+    } finally {
+      globalThis.window = originalWindow;
+    }
   });
 });
 

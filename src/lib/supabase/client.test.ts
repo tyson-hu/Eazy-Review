@@ -115,8 +115,17 @@ describe('supabase singleton module', () => {
     const second = getSupabase();
     expect(first).toBe(second);
     expect(mockedCreateClient).toHaveBeenCalledTimes(1);
-    // Not a Proxy wrapping an empty target.
+    // Real singleton identity: createClient mock result is returned as-is (not wrapped).
+    expect(first).toBe(mockedCreateClient.mock.results[0]?.value);
     expect(Object.getPrototypeOf(first)).not.toBeNull();
+  });
+
+  it('creates a fresh singleton after test reset', () => {
+    const first = getSupabase();
+    resetSupabaseClientForTests();
+    const second = getSupabase();
+    expect(second).not.toBe(first);
+    expect(mockedCreateClient).toHaveBeenCalledTimes(2);
   });
 
   it('does not issue a database query when first resolving the singleton', () => {

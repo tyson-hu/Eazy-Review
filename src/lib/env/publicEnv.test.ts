@@ -102,7 +102,7 @@ afterEach(() => {
 });
 
 describe('validatePublicSupabaseEnv', () => {
-  it('accepts a valid URL and legacy anon publishable key', () => {
+  it('accepts a valid local HTTP URL and legacy anon publishable key', () => {
     const env = validatePublicSupabaseEnv({
       [PUBLIC_SUPABASE_URL_VAR]: `  ${VALID_URL}  `,
       [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: `  ${VALID_KEY}  `,
@@ -112,11 +112,29 @@ describe('validatePublicSupabaseEnv', () => {
     expect(Object.isFrozen(env)).toBe(true);
   });
 
+  it('accepts a valid HTTPS Supabase-style URL', () => {
+    const httpsUrl = 'https://abcdefghijklmnop.supabase.co';
+    const env = validatePublicSupabaseEnv({
+      [PUBLIC_SUPABASE_URL_VAR]: httpsUrl,
+      [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_PUBLISHABLE,
+    });
+    expect(env.supabaseUrl).toBe(httpsUrl);
+  });
+
   it('accepts a modern sb_publishable_ key', () => {
     const env = validatePublicSupabaseEnv({
       [PUBLIC_SUPABASE_URL_VAR]: VALID_URL,
       [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_PUBLISHABLE,
     });
+    expect(env.supabasePublishableKey).toBe(VALID_PUBLISHABLE);
+  });
+
+  it('trims surrounding whitespace on both values', () => {
+    const env = validatePublicSupabaseEnv({
+      [PUBLIC_SUPABASE_URL_VAR]: ` \t${VALID_URL}\n `,
+      [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: ` ${VALID_PUBLISHABLE} `,
+    });
+    expect(env.supabaseUrl).toBe(VALID_URL);
     expect(env.supabasePublishableKey).toBe(VALID_PUBLISHABLE);
   });
 
@@ -141,13 +159,57 @@ describe('validatePublicSupabaseEnv', () => {
     ).toThrow(/EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
   });
 
-  it('rejects an invalid URL', () => {
+  it('rejects empty and whitespace-only values', () => {
+    expect(() =>
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: '',
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_KEY,
+      }),
+    ).toThrow(/EXPO_PUBLIC_SUPABASE_URL/);
+
+    expect(() =>
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: '   ',
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_KEY,
+      }),
+    ).toThrow(/EXPO_PUBLIC_SUPABASE_URL/);
+
+    expect(() =>
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: VALID_URL,
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: '',
+      }),
+    ).toThrow(/EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
+
+    expect(() =>
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: VALID_URL,
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: '  \t  ',
+      }),
+    ).toThrow(/EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
+  });
+
+  it('rejects a malformed URL', () => {
     expect(() =>
       validatePublicSupabaseEnv({
         [PUBLIC_SUPABASE_URL_VAR]: 'not-a-url',
         [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_KEY,
       }),
     ).toThrow(/valid absolute URL/);
+  });
+
+  it('rejects an unsupported URL protocol', () => {
+    try {
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: 'ftp://127.0.0.1:54321',
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_KEY,
+      });
+      throw new Error('expected validation to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PublicEnvError);
+      expect((error as PublicEnvError).variable).toBe(PUBLIC_SUPABASE_URL_VAR);
+      expect(String(error)).toMatch(/http or https/i);
+    }
   });
 
   it('rejects placeholder URL and key values', () => {
@@ -165,6 +227,13 @@ describe('validatePublicSupabaseEnv', () => {
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eazy-review-fake-anon-key-not-real',
       }),
     ).toThrow(/placeholder/);
+
+    expect(() =>
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: VALID_URL,
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: 'sb_publishable_your_project_key',
+      }),
+    ).toThrow(/placeholder/);
   });
 
   it('rejects service_role-shaped JWT claims without echoing credentials', () => {
@@ -180,6 +249,9 @@ describe('validatePublicSupabaseEnv', () => {
       throw new Error('expected validation to throw');
     } catch (error) {
       expect(error).toBeInstanceOf(PublicEnvError);
+      expect((error as PublicEnvError).variable).toBe(
+        PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+      );
       expect(String(error)).toContain(PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR);
       expect(String(error)).toMatch(/service_role|secret/i);
       expect(String(error)).not.toContain(adminJwt);
@@ -220,6 +292,32 @@ describe('validatePublicSupabaseEnv', () => {
     } catch (error) {
       expect(String(error)).toContain(PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR);
       expect(String(error)).not.toContain(notPublic);
+    }
+  });
+
+  it('names the invalid variable on each rejection path', () => {
+    try {
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: 'not-a-url',
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_KEY,
+      });
+      throw new Error('expected validation to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PublicEnvError);
+      expect((error as PublicEnvError).variable).toBe(PUBLIC_SUPABASE_URL_VAR);
+    }
+
+    try {
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: VALID_URL,
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: 'not-a-key',
+      });
+      throw new Error('expected validation to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PublicEnvError);
+      expect((error as PublicEnvError).variable).toBe(
+        PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+      );
     }
   });
 });
