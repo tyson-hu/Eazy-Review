@@ -283,6 +283,17 @@ describe('validatePublicSupabaseEnv', () => {
     }
   });
 
+  it('rejects legacy JWTs whose role is not anon', () => {
+    const userJwt = encodeJwtPayload({ role: 'authenticated' });
+
+    expect(() =>
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: VALID_URL,
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: userJwt,
+      }),
+    ).toThrow(/legacy anon JWT/i);
+  });
+
   it('does not put the full credential value in error messages', () => {
     const longInvalid =
       'not-a-valid-public-key-super-long-value_that_must_not_appear_in_errors_xyz123';

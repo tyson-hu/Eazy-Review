@@ -142,6 +142,13 @@ function assertValidPublishableKey(value: string): void {
       'must not be a secret or service_role credential',
     );
   }
+
+  if (looksLikeJwt && jwtPayload?.role !== 'anon') {
+    throw new PublicEnvError(
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+      'must be a legacy anon JWT',
+    );
+  }
 }
 
 function decodeBase64Url(segment: string): string | null {
