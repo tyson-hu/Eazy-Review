@@ -212,6 +212,24 @@ describe('validatePublicSupabaseEnv', () => {
     }
   });
 
+  it.each([
+    'https://user@project.supabase.co',
+    'https://user:database-password@project.supabase.co',
+  ])('rejects URL userinfo without echoing it: %s', (supabaseUrl) => {
+    try {
+      validatePublicSupabaseEnv({
+        [PUBLIC_SUPABASE_URL_VAR]: supabaseUrl,
+        [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: VALID_KEY,
+      });
+      throw new Error('expected validation to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PublicEnvError);
+      expect((error as PublicEnvError).variable).toBe(PUBLIC_SUPABASE_URL_VAR);
+      expect(String(error)).toMatch(/embedded credentials/i);
+      expect(String(error)).not.toMatch(/user|database-password/);
+    }
+  });
+
   it('rejects placeholder URL and key values', () => {
     expect(() =>
       validatePublicSupabaseEnv({

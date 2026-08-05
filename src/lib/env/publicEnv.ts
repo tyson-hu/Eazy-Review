@@ -97,6 +97,13 @@ function assertValidSupabaseUrl(value: string): void {
     throw new PublicEnvError(PUBLIC_SUPABASE_URL_VAR, 'must include a hostname');
   }
 
+  if (parsed.username || parsed.password) {
+    throw new PublicEnvError(
+      PUBLIC_SUPABASE_URL_VAR,
+      'must not include embedded credentials',
+    );
+  }
+
   if (isPlaceholder(value) || isPlaceholder(parsed.hostname)) {
     throw new PublicEnvError(
       PUBLIC_SUPABASE_URL_VAR,
