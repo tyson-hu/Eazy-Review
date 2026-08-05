@@ -259,6 +259,30 @@ describe('validatePublicSupabaseEnv', () => {
     }
   });
 
+  it('rejects service_role JWT claims when atob is unavailable', () => {
+    const adminJwt = encodeJwtPayload({ role: 'service_role' });
+    const originalAtob = globalThis.atob;
+
+    Object.defineProperty(globalThis, 'atob', {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      expect(() =>
+        validatePublicSupabaseEnv({
+          [PUBLIC_SUPABASE_URL_VAR]: VALID_URL,
+          [PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR]: adminJwt,
+        }),
+      ).toThrow(/service_role|secret/i);
+    } finally {
+      Object.defineProperty(globalThis, 'atob', {
+        configurable: true,
+        value: originalAtob,
+      });
+    }
+  });
+
   it('does not put the full credential value in error messages', () => {
     const longInvalid =
       'not-a-valid-public-key-super-long-value_that_must_not_appear_in_errors_xyz123';

@@ -122,11 +122,20 @@ function assertValidPublishableKey(value: string): void {
     );
   }
 
+  const jwtPayload = looksLikeJwt ? tryDecodeJwtPayload(value) : null;
+
+  if (looksLikeJwt && jwtPayload == null) {
+    throw new PublicEnvError(
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
+      'must be a decodable legacy anon JWT',
+    );
+  }
+
   // Reject secret/admin key shapes without echoing the value.
   if (
     value.startsWith('sb_secret_') ||
     value.includes('service_role') ||
-    /role["']?\s*:\s*["']?service_role/i.test(tryDecodeJwtPayload(value) ?? '')
+    jwtPayload?.role === 'service_role'
   ) {
     throw new PublicEnvError(
       PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
@@ -145,18 +154,75 @@ function decodeBase64Url(segment: string): string | null {
     if (typeof globalThis.atob === 'function') {
       return globalThis.atob(normalized);
     }
-    return null;
+    return decodeBase64WithoutAtob(normalized);
   } catch {
     return null;
   }
 }
 
-function tryDecodeJwtPayload(token: string): string | null {
+function decodeBase64WithoutAtob(base64: string): string | null {
+  const alphabet =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+  if (base64.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
+    return null;
+  }
+
+  let decoded = '';
+  for (let index = 0; index < base64.length; index += 4) {
+    const first = alphabet.indexOf(base64[index]);
+    const second = alphabet.indexOf(base64[index + 1]);
+    const third = base64[index + 2] === '=' ? 0 : alphabet.indexOf(base64[index + 2]);
+    const fourth = base64[index + 3] === '=' ? 0 : alphabet.indexOf(base64[index + 3]);
+
+    if (first < 0 || second < 0 || third < 0 || fourth < 0) {
+      return null;
+    }
+
+    decoded += String.fromCharCode((first << 2) | (second >> 4));
+    if (base64[index + 2] !== '=') {
+      decoded += String.fromCharCode(((second & 15) << 4) | (third >> 2));
+    }
+    if (base64[index + 3] !== '=') {
+      decoded += String.fromCharCode(((third & 3) << 6) | fourth);
+    }
+  }
+
+  return decoded;
+}
+
+function decodeUtf8(binary: string): string | null {
+  try {
+    return decodeURIComponent(
+      binary.replace(/[\s\S]/g, (character) =>
+        `%${character.charCodeAt(0).toString(16).padStart(2, '0')}`,
+      ),
+    );
+  } catch {
+    return null;
+  }
+}
+
+function tryDecodeJwtPayload(token: string): Record<string, unknown> | null {
   const parts = token.split('.');
   if (parts.length !== 3) {
     return null;
   }
-  return decodeBase64Url(parts[1]);
+  const binaryPayload = decodeBase64Url(parts[1]);
+  const payload = binaryPayload == null ? null : decodeUtf8(binaryPayload);
+  if (payload == null) {
+    return null;
+  }
+
+  try {
+    const claims: unknown = JSON.parse(payload);
+    if (typeof claims !== 'object' || claims == null || Array.isArray(claims)) {
+      return null;
+    }
+    return claims as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
 
 /**
