@@ -110,10 +110,11 @@ Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commi
 
 ## Current Product State
 
-Browse → Product Detail → Rating Form mock UX and the Tasks 11–13 database,
-authorization, and seed foundation are accepted. Task 14 is accepted in PR
-#31. It adds the Expo Supabase client, generated types, TanStack Query
-providers/lifecycle, and frontend unit tests; **screens remain mock-backed**.
-Task 15 is next and remains not started; it will connect anonymous Browse and
-Product Detail reads. Staging and production were not contacted for Task 14.
+Browse → Product Detail → Rating Form mock UX and the Tasks 11–14 database,
+authorization, seed, client, query, lifecycle, and test foundations are
+accepted. Task 15 now connects anonymous Browse and Product Detail to the two
+deterministic local catalog fixtures through the accepted Supabase and TanStack
+Query boundary. Its implementation is complete on the Task 15 branch and
+awaits human acceptance; authentication and rating persistence remain out of
+scope. Task 15 did not contact staging or production.
 `docs/TASKS.md` is the sole current-status and implementation-order ledger.

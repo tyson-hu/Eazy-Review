@@ -93,8 +93,10 @@ Canonical security rules for all agent and human work in this repo, regardless o
   update only `display_name`, `username`, and `avatar_url`.
 - The accepted Task 12 forward-only migration creates complete policies before
   rebuilding the exact client / `service_role` table and column allowlists. The
-  migration itself added no client integration. Task 14 now provides the Expo
-  client/query foundation, while screens remain mock-backed until Task 15+.
+  migration itself added no client integration. Task 14 provides the Expo
+  client/query foundation, and Task 15 uses only its public client for
+  anonymous published-catalog reads. No privileged credential is part of that
+  screen path.
 - Secret scanning is a required Task 11 deliverable. Validate it with a safe
   deliberate test pattern; never use a real credential as the test.
 - Task 11 Packet 6 SQL tests under `supabase/tests/database/` assert

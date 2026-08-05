@@ -92,3 +92,12 @@ docs/evidence/ui-audit-remediation-20260719/screenshots/*
 
 # PR #24 review correction: report is tracked; lightweight web captures stay local.
 docs/evidence/pr-24-review-correction/screenshots/
+
+# Task 15 public catalog acceptance: retain the full raw simulator set locally;
+# GitHub keeps the five representative complete/sparse catalog proof PNGs.
+docs/evidence/task-15-public-catalog/screenshots/*
+!docs/evidence/task-15-public-catalog/screenshots/01-air-force-detail.png
+!docs/evidence/task-15-public-catalog/screenshots/02-air-force-detail-offers.png
+!docs/evidence/task-15-public-catalog/screenshots/03-samba-detail.png
+!docs/evidence/task-15-public-catalog/screenshots/04-samba-missing-offers.png
+!docs/evidence/task-15-public-catalog/screenshots/06-browse-clean.png

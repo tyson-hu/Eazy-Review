@@ -20,8 +20,8 @@ let client: AppSupabaseClient | undefined;
  *   underlying failure) synchronously — callers must not silently swallow it.
  * - Do not create additional clients inside React components.
  *
- * Screens remain on mock data until Task 15+. Accessing the client does not
- * wire Browse, Product Detail, auth, or rating flows.
+ * Task 15 catalog APIs use this client for anonymous Browse and Product Detail
+ * reads. Accessing the client alone does not wire auth or rating flows.
  */
 export function getSupabase(): AppSupabaseClient {
   if (!client) {

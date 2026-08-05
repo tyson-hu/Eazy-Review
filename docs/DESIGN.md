@@ -357,7 +357,10 @@ Keep these components small. Add abstractions only when they remove real duplica
 - Job: help users decide whether this product is worth buying.
 - Focal point: sneaker image plus score summary.
 - Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), community category breakdown and rating count, price/purchase section (price by size), My Rating section, description, Rate/Edit CTA.
-- Image empty state: missing or unmapped mock `mock-product://` assets show "Image coming soon"; HTTP(S) product URLs still load normally.
+- Image empty state: connected products with no public image show "No image
+  available"; missing or unmapped mock `mock-product://` fixture assets may
+  retain "Image coming soon" on isolated mock-only surfaces. HTTP(S) product
+  URLs load normally.
 - Post-MVP only: public written-review snippets or previews are social content and
   must not appear in the MVP Product Detail structure.
 - Avoid: showing all data at the same visual weight, too many badges, crowded charts, marketplace-first layout.

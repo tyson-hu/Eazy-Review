@@ -7,15 +7,20 @@
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
   accepted.
-- Task 14 is complete and human accepted. Expo has a
-  validated public Supabase env module, one typed client, generated local
-  database types, TanStack Query providers/lifecycle, public vs user-scoped
-  query keys, and a jest-expo frontend test foundation. Browse, Product Detail,
-  Feed, auth, and rating remain mock/session-backed; no screen queries
-  Supabase yet.
+- Task 14 is complete and human accepted. Expo has a validated public Supabase
+  env module, one typed client, generated local database types, TanStack Query
+  providers/lifecycle, public vs user-scoped query keys, and a jest-expo
+  frontend test foundation.
+- Task 15 implementation is complete and awaits human acceptance. Anonymous
+  Browse and Product Detail now read the two deterministic published products
+  through one Supabase request per surface, with complete, sparse, loading,
+  cached-refresh, offline, error/retry, empty, and not-found behavior. Feed,
+  auth, and rating persistence remain mock/placeholder-backed and out of scope.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 14 is accepted in PR #31. Task 15 is next and remains not started.
+- Task 14 is accepted in PR #31. Task 15 must receive human acceptance before
+  Task 16 begins. Task 15 evidence is recorded at
+  [`docs/evidence/task-15-public-catalog/RESULT.md`](evidence/task-15-public-catalog/RESULT.md).
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -153,7 +158,7 @@ Work in order unless a task explicitly states that it is conditional.
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
-| 15 | Real Public Catalog Reads | Next — not started |
+| 15 | Real Public Catalog Reads | Implementation complete — human acceptance pending |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -342,11 +347,12 @@ Evidence only — does not replace the deliverables or acceptance above.
 - Database CI runs `npm run types:check` against local Supabase and also
   triggers on `scripts/generate-database-types.cjs` and
   `src/types/database.generated.ts`.
-- Screens remain mock-backed; Task 15 is next and remains not started.
+- Task 15 consumes this accepted foundation for anonymous Browse and Product
+  Detail; it does not change Task 14 defaults or create another Query Client.
 
 ## Task 15: Real Public Catalog Reads
 
-Status: **Next — not started.**
+Status: **Implementation complete — human acceptance pending.**
 
 Depends on: Tasks 13–14.
 
@@ -412,6 +418,11 @@ Acceptance:
 
 Persistent offline Query cache remains deferred; Task 15 may satisfy this
 contract with the available in-memory cache.
+
+Implementation and validation evidence, including public query/view-model
+contracts, request counts, null/error/retry behavior, test totals, simulator
+results, and known limitations, is recorded at
+[`docs/evidence/task-15-public-catalog/RESULT.md`](evidence/task-15-public-catalog/RESULT.md).
 
 ## Task 16: Core Authentication And Account State
 

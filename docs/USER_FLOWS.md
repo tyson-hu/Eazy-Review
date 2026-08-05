@@ -217,6 +217,9 @@ Features:
 - Empty state.
 - Loading state.
 - Error state.
+- Manual retry.
+- Cached products remain visible during background refresh or while offline;
+  offline-without-cache is an explicit full-surface state.
 
 Task 15 uses client-side search for the small connected catalog. Filter, sort,
 and pagination controls belong to conditional Task 20 only after measured
@@ -228,6 +231,12 @@ MVP local search should search:
 - SKU.
 
 Product card tap should navigate to `/product/[id]`.
+
+Task 15 Product Detail keeps cached public data visible during refresh/offline
+periods and shows explicit initial loading, offline-without-cache, request
+failure/retry, and published-product-not-found states. A missing image,
+assessment, offer, or Community Score remains missing; it is never converted to
+a zero or fabricated fallback.
 
 ## Product Detail Requirements
 

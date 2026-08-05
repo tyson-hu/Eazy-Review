@@ -1,53 +1,27 @@
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { EmptyState } from '@/src/components/ui/EmptyState';
+import { ErrorState } from '@/src/components/ui/ErrorState';
 import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
+import { LoadingState } from '@/src/components/ui/LoadingState';
 import { RatingRow } from '@/src/components/ui/RatingRow';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import { Screen } from '@/src/components/ui/Screen';
-import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
-import { resolveProductImageSource } from '@/src/features/products/mockProductImages';
-import type { ProductOffer, ProductRatingSummary } from '@/src/types/product';
+import { CatalogStatusBanner } from '@/src/features/products/CatalogStatusBanner';
+import { getCatalogErrorPresentation } from '@/src/features/products/errors';
+import { useProductQuery } from '@/src/features/products/queries';
+import type {
+  ProductRatingSummary,
+  VerifiedProductOffer,
+} from '@/src/types/product';
 import { formatPrice } from '@/src/utils/formatPrice';
-
-function formatSizeLabel(offer: ProductOffer): string | null {
-  if (offer.size == null) {
-    return offer.sizeRegion ? offer.sizeRegion : null;
-  }
-  return `${offer.sizeRegion} ${offer.size}`.trim();
-}
-
-type PricedOffer = ProductOffer & { price: number };
-
-/** Prefer min of priced offers; fall back to catalog lowestPrice (mock/MVP: USD) when needed. */
-function resolveLowestPrice(
-  pricedOffers: PricedOffer[],
-  catalogLowest: number | null | undefined,
-): { amount: number; currency: string; fromOffers: boolean } | null {
-  if (pricedOffers.length > 0) {
-    const cheapest = pricedOffers.reduce((min, offer) =>
-      offer.price < min.price ? offer : min,
-    );
-    return {
-      amount: cheapest.price,
-      currency: cheapest.currency,
-      fromOffers: true,
-    };
-  }
-  // Catalog `lowestPrice` has no currency field; mock/MVP catalog amounts are USD.
-  if (catalogLowest != null) {
-    return { amount: catalogLowest, currency: 'USD', fromOffers: false };
-  }
-  return null;
-}
+import { formatVerifiedDate } from '@/src/utils/formatVerifiedDate';
 
 type CommunityCategoryAvg = { label: string; value: number | null };
-
 type CommunityHighlight = { label: string; value: number };
 
 const COMMUNITY_CATEGORY_FIELDS: {
@@ -56,34 +30,39 @@ const COMMUNITY_CATEGORY_FIELDS: {
     ProductRatingSummary,
     'lookAvg' | 'comfortAvg' | 'qualityAvg' | 'outfitAvg' | 'valueAvg'
   >;
-  ratingKey: 'look' | 'comfort' | 'quality' | 'outfit' | 'value';
 }[] = [
-  { label: 'Look', avgKey: 'lookAvg', ratingKey: 'look' },
-  { label: 'Comfort', avgKey: 'comfortAvg', ratingKey: 'comfort' },
-  { label: 'Quality', avgKey: 'qualityAvg', ratingKey: 'quality' },
-  { label: 'Outfit', avgKey: 'outfitAvg', ratingKey: 'outfit' },
-  { label: 'Value', avgKey: 'valueAvg', ratingKey: 'value' },
+  { label: 'Look', avgKey: 'lookAvg' },
+  { label: 'Comfort', avgKey: 'comfortAvg' },
+  { label: 'Quality', avgKey: 'qualityAvg' },
+  { label: 'Outfit', avgKey: 'outfitAvg' },
+  { label: 'Value', avgKey: 'valueAvg' },
 ];
 
-function getCommunityCategoryAvgs(summary: ProductRatingSummary): CommunityCategoryAvg[] {
+function getCommunityCategoryAvgs(
+  summary: ProductRatingSummary,
+): CommunityCategoryAvg[] {
   return COMMUNITY_CATEGORY_FIELDS.map(({ label, avgKey }) => ({
     label,
     value: summary[avgKey],
   }));
 }
 
-function getCommunityCategoryRows(summary: ProductRatingSummary): CommunityCategoryAvg[] {
+function getCommunityCategoryRows(
+  summary: ProductRatingSummary,
+): CommunityCategoryAvg[] {
   return [
     { label: 'Overall', value: summary.overallAvg },
     ...getCommunityCategoryAvgs(summary),
   ];
 }
 
-function hasMeaningfulCommunityCategories(summary: ProductRatingSummary): boolean {
-  if (summary.ratingCount <= 0) {
-    return false;
-  }
-  return getCommunityCategoryRows(summary).some((row) => row.value != null);
+function hasMeaningfulCommunityCategories(
+  summary: ProductRatingSummary,
+): boolean {
+  return (
+    summary.ratingCount > 0 &&
+    getCommunityCategoryRows(summary).some((row) => row.value != null)
+  );
 }
 
 function getCommunityHighlights(
@@ -92,97 +71,162 @@ function getCommunityHighlights(
   if (summary.ratingCount <= 0) {
     return null;
   }
-
   const categories = getCommunityCategoryAvgs(summary).filter(
     (category): category is CommunityHighlight => category.value != null,
   );
-
   if (categories.length < 2) {
     return null;
   }
-
   const ranked = [...categories].sort((a, b) => b.value - a.value);
   const strongest = ranked[0];
   const weakest = ranked[ranked.length - 1];
+  return strongest.value.toFixed(1) === weakest.value.toFixed(1)
+    ? null
+    : { strongest, weakest };
+}
 
-  // Hide the pair when averages are equal at display precision (one decimal).
-  if (strongest.value.toFixed(1) === weakest.value.toFixed(1)) {
-    return null;
-  }
+function ProductHeader({ title = 'Product' }: { title?: string }) {
+  return (
+    <Stack.Screen
+      options={{
+        title,
+        headerLeft: ({ canGoBack }) => (
+          <HeaderBackButton canGoBack={canGoBack} />
+        ),
+      }}
+    />
+  );
+}
 
-  return { strongest, weakest };
+function offerContext(offer: VerifiedProductOffer): string {
+  return `${offer.retailer} · ${offer.sizeLabel ?? offer.market}`;
+}
+
+function OfferPrice({ offer }: { offer: VerifiedProductOffer }) {
+  return (
+    <AppText className="text-lg font-semibold text-primary">
+      {formatPrice(offer.amount, offer.currency)} {offer.currency}
+    </AppText>
+  );
 }
 
 export default function ProductDetailScreen() {
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  // Re-read session fixtures when this screen focuses (e.g. after rate submit or
-  // when a pre-submit Detail instance in the back stack becomes visible again).
-  const [, setFocusTick] = useState(0);
-  useFocusEffect(
-    useCallback(() => {
-      setFocusTick((tick) => tick + 1);
-    }, []),
-  );
-  const detail = typeof id === 'string' ? getMockProductDetailById(id) : null;
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const productId = typeof id === 'string' ? id : '';
+  const productQuery = useProductQuery(productId);
+  const hasData = productQuery.data !== undefined;
+  const retry = () => {
+    void productQuery.refetch();
+  };
 
-  if (!detail) {
+  if (!productId) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Product',
-            headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
-          }}
+        <ProductHeader />
+        <EmptyState
+          title="Product not found"
+          message="This product is not publicly available."
         />
-        <EmptyState title="Product not found" message="This product is not in the catalog." />
       </Screen>
     );
   }
 
-  const { product, offers, ratingSummary, myRating } = detail;
-  const pricedOffers = offers.filter(
-    (offer): offer is PricedOffer => offer.price != null,
-  );
-  const lowest = resolveLowestPrice(pricedOffers, product.lowestPrice);
+  if (productQuery.isOffline && !hasData) {
+    return (
+      <Screen>
+        <ProductHeader />
+        <ErrorState
+          title="You're offline."
+          message="Connect to the internet and try again."
+          onRetry={retry}
+        />
+      </Screen>
+    );
+  }
+
+  if (productQuery.isPending && !hasData) {
+    return (
+      <Screen>
+        <ProductHeader />
+        <LoadingState message="Loading product..." />
+      </Screen>
+    );
+  }
+
+  if (productQuery.error && !hasData) {
+    const presentation = getCatalogErrorPresentation(
+      productQuery.error,
+      'product',
+    );
+    return (
+      <Screen>
+        <ProductHeader />
+        {productQuery.error.code === 'not-found' ? (
+          <EmptyState
+            title={presentation.title}
+            message={presentation.message}
+          />
+        ) : (
+          <ErrorState
+            title={presentation.title}
+            message={presentation.message}
+            onRetry={presentation.canRetry ? retry : undefined}
+          />
+        )}
+      </Screen>
+    );
+  }
+
+  const detail = productQuery.data;
+  if (!detail) {
+    return null;
+  }
+
+  const { product, ratingSummary, eazyAssessment, offers } = detail;
+  const productImageUrl = detail.imageUrls[0] ?? product.imageUrl;
+  const productImageSource = productImageUrl
+    ? { uri: productImageUrl }
+    : undefined;
   const metadataParts = [
     product.sku,
     product.releaseDate,
     product.sizeType,
   ].filter((part): part is string => Boolean(part));
-  const showCommunityBreakdown = hasMeaningfulCommunityCategories(ratingSummary);
+  const showCommunityBreakdown =
+    hasMeaningfulCommunityCategories(ratingSummary);
   const communityHighlights = getCommunityHighlights(ratingSummary);
   const communityCategoryRows = getCommunityCategoryRows(ratingSummary);
-  const myRatingCategoryRows = myRating
-    ? COMMUNITY_CATEGORY_FIELDS.map(({ label, ratingKey }) => ({
-        label,
-        value: myRating[ratingKey],
-      }))
-    : [];
-  const ctaLabel = myRating ? 'Edit my rating' : 'Rate this product';
-  const productImageSource = resolveProductImageSource(product.imageUrl);
+  const lowestOffer = offers[0] ?? null;
 
   return (
     <Screen
       scroll
       footer={
         <View className="border-t border-border bg-background px-4 py-3">
-          <Button
-            label={ctaLabel}
-            onPress={() => router.push(`/product/${product.id}/rate`)}
-          />
+          <Button label="Rating unavailable" disabled />
         </View>
       }>
-      <Stack.Screen
-        options={{
-          title: product.name,
-          headerLeft: ({ canGoBack }) => <HeaderBackButton canGoBack={canGoBack} />,
-        }}
-      />
+      <ProductHeader title={product.name} />
+
+      {productQuery.isOffline ? (
+        <CatalogStatusBanner
+          title="You're offline."
+          message="Prices and availability may have changed."
+        />
+      ) : productQuery.isFetching ? (
+        <CatalogStatusBanner title="Refreshing product..." />
+      ) : productQuery.error ? (
+        <CatalogStatusBanner
+          title="Could not refresh product."
+          message="Showing the last available product data."
+          onRetry={retry}
+        />
+      ) : null}
 
       <View className="mt-4 h-56 items-center justify-center overflow-hidden rounded-card bg-card">
         {productImageSource ? (
           <Image
+            testID="product-detail-image"
             source={productImageSource}
             resizeMode="contain"
             style={{ width: '100%', height: '100%' }}
@@ -190,7 +234,7 @@ export default function ProductDetailScreen() {
             accessibilityIgnoresInvertColors
           />
         ) : (
-          <AppText variant="caption">Image coming soon</AppText>
+          <AppText variant="caption">No image available</AppText>
         )}
       </View>
 
@@ -207,17 +251,30 @@ export default function ProductDetailScreen() {
       </View>
 
       <View className="mt-5 flex-row gap-5">
-        <ScoreBadge label="Eazy Score" score={product.eazyScore} className="flex-1" />
+        <ScoreBadge
+          label="Eazy Score"
+          score={eazyAssessment?.score ?? null}
+          emptyLabel="Not assessed yet"
+          sourceLabel="Eazy Assessment · Editorial evaluation"
+          className="flex-1"
+        />
         <ScoreBadge
           label="Community Score"
           score={ratingSummary.communityScore}
+          emptyLabel={
+            ratingSummary.ratingCount === 0
+              ? 'No ratings yet'
+              : 'No score yet'
+          }
           className="flex-1"
         />
       </View>
       {ratingSummary.ratingCount > 0 ? (
         <AppText variant="caption" className="mt-2">
           {ratingSummary.ratingCount}{' '}
-          {ratingSummary.ratingCount === 1 ? 'community rating' : 'community ratings'}
+          {ratingSummary.ratingCount === 1
+            ? 'community rating'
+            : 'community ratings'}
         </AppText>
       ) : null}
 
@@ -239,13 +296,15 @@ export default function ProductDetailScreen() {
                 {communityHighlights.weakest.value.toFixed(1)}/10
               </AppText>
             </View>
-            <AppText variant="caption">Based on community category averages.</AppText>
+            <AppText variant="caption">
+              Based on community category averages.
+            </AppText>
           </View>
         ) : (
           <AppText variant="body" className="mt-2">
             {ratingSummary.ratingCount > 0
               ? 'No clear category strengths or weaknesses yet.'
-              : 'Not enough community ratings for strengths and weaknesses yet.'}
+              : 'No ratings yet'}
           </AppText>
         )}
       </Card>
@@ -260,84 +319,57 @@ export default function ProductDetailScreen() {
           </View>
         ) : (
           <AppText variant="body" className="mt-2">
-            No community ratings yet
+            No ratings yet
           </AppText>
         )}
       </Card>
 
       <Card className="mt-5">
-        <AppText variant="label">Purchase</AppText>
-        {lowest ? (
-          <>
-            <View className="mt-2 flex-row items-end justify-between">
-              <AppText variant="caption">Lowest price</AppText>
-              <AppText className="text-2xl font-semibold text-primary">
-                {formatPrice(lowest.amount, lowest.currency)}
+        <AppText variant="label">Verified offers</AppText>
+        {lowestOffer ? (
+          <View className="mt-3 gap-3">
+            <View testID={`verified-offer-${lowestOffer.id}`}>
+              <AppText variant="caption">Lowest verified offer</AppText>
+              <OfferPrice offer={lowestOffer} />
+              <AppText variant="caption" className="mt-1">
+                {offerContext(lowestOffer)}
+              </AppText>
+              <AppText variant="caption" className="mt-1">
+                Checked {formatVerifiedDate(lowestOffer.checkedAt)}
               </AppText>
             </View>
-            {lowest.fromOffers ? (
-              <View className="mt-4 gap-3">
-                <AppText variant="label">Price by size</AppText>
-                {pricedOffers.map((offer) => {
-                  const sizeLabel = formatSizeLabel(offer);
-                  return (
-                    <View
-                      key={offer.id}
-                      className="flex-row items-center justify-between border-t border-border pt-3">
-                      <View className="flex-1 pr-3">
-                        {sizeLabel ? (
-                          <AppText variant="body">{sizeLabel}</AppText>
-                        ) : null}
-                        <AppText variant="caption" className={sizeLabel ? 'mt-0.5' : undefined}>
-                          {offer.websiteName}
-                        </AppText>
-                      </View>
-                      <AppText className="text-lg font-semibold text-primary">
-                        {formatPrice(offer.price, offer.currency)}
-                      </AppText>
-                    </View>
-                  );
-                })}
+            {offers.slice(1).map((offer) => (
+              <View
+                key={offer.id}
+                testID={`verified-offer-${offer.id}`}
+                className="border-t border-border pt-3">
+                <View className="flex-row items-start justify-between gap-3">
+                  <View className="flex-1">
+                    <AppText variant="body">{offerContext(offer)}</AppText>
+                    <AppText variant="caption" className="mt-1">
+                      Checked {formatVerifiedDate(offer.checkedAt)}
+                    </AppText>
+                  </View>
+                  <OfferPrice offer={offer} />
+                </View>
               </View>
-            ) : (
-              <AppText variant="caption" className="mt-1">
-                Catalog estimate — no live size offers
-              </AppText>
-            )}
-          </>
+            ))}
+          </View>
         ) : (
           <AppText variant="body" className="mt-2">
-            Purchase unavailable
+            No verified offer available
           </AppText>
         )}
       </Card>
 
       <Card className="mt-5 border-accent">
         <AppText variant="label">My Rating</AppText>
-        {myRating == null ? (
-          <AppText variant="body" className="mt-2">
-            Not rated yet
-          </AppText>
-        ) : (
-          <>
-            <View className="mt-2 flex-row items-end justify-between">
-              <AppText variant="caption">Overall</AppText>
-              <AppText className="text-2xl font-semibold text-primary">
-                {myRating.overall}/10
-              </AppText>
-            </View>
-            <View className="mt-4 gap-3">
-              {myRatingCategoryRows.map((row) => (
-                <RatingRow key={row.label} label={row.label} value={row.value} />
-              ))}
-            </View>
-            {myRating.comment ? (
-              <AppText variant="body" className="mt-4">
-                {myRating.comment}
-              </AppText>
-            ) : null}
-          </>
-        )}
+        <AppText variant="body" className="mt-2">
+          Rating is temporarily unavailable.
+        </AppText>
+        <AppText variant="caption" className="mt-1">
+          Sign-in and saved ratings are not part of this catalog task.
+        </AppText>
       </Card>
 
       <Card className="mt-5">
