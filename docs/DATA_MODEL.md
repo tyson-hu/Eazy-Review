@@ -413,8 +413,9 @@ Keep `private_note` on the owner-only row. Community Score reads come from
   bundled into Expo.
 
 The accepted forward-only Task 12 migration implements this policy/grant
-contract after the Task 11 schema migrations. It adds no application runtime
-integration; Expo remains disconnected until its later tasks. Exact local and
+contract after the Task 11 schema migrations. The migration itself added no
+application runtime integration. Task 14 now provides the Expo client/query
+foundation, while screens remain mock-backed until Task 15+. Exact local and
 staging acceptance results, including the hosted-test fallback and production
 boundary, live in the historical evidence record linked at the top.
 

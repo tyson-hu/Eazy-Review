@@ -8,7 +8,9 @@ on:
       - "package-lock.json"
       - "package.json"
       - "scripts/check-task13-seed-reapply.cjs"
+      - "scripts/generate-database-types.cjs"
       - "scripts/test-db-*.cjs"
+      - "src/types/database.generated.ts"
       - "supabase/**"
   push:
     branches:
@@ -19,7 +21,9 @@ on:
       - "package-lock.json"
       - "package.json"
       - "scripts/check-task13-seed-reapply.cjs"
+      - "scripts/generate-database-types.cjs"
       - "scripts/test-db-*.cjs"
+      - "src/types/database.generated.ts"
       - "supabase/**"
 
 permissions:
@@ -65,6 +69,9 @@ jobs:
 
       - name: Reset database and run pgTAP plus concurrency tests
         run: npm run test:db:reset
+
+      - name: Check generated database types match local schema
+        run: npm run types:check
 
       - name: Stop local Supabase and remove CI volumes
         if: always()

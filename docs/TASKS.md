@@ -2,17 +2,20 @@
 
 ## Current Repo Status
 
-- Tasks 1–13 are accepted. The Browse → Product Detail → Rating Form mock
+- Tasks 1–14 are accepted. The Browse → Product Detail → Rating Form mock
   journey passed its UX gate, and the Supabase schema, trigger-owned Community
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
   accepted.
-- Expo still reads mock catalog/detail data and stores My Rating in
-  session-only memory. No Supabase client, generated database types, or
-  TanStack Query runtime is installed yet.
+- Task 14 is complete and human accepted. Expo has a
+  validated public Supabase env module, one typed client, generated local
+  database types, TanStack Query providers/lifecycle, public vs user-scoped
+  query keys, and a jest-expo frontend test foundation. Browse, Product Detail,
+  Feed, auth, and rating remain mock/session-backed; no screen queries
+  Supabase yet.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 13 is accepted in PR #29. Task 14 is next and remains not started.
+- Task 14 is accepted in PR #31. Task 15 is next and remains not started.
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -38,6 +41,7 @@ publication, and merge are not implied by one another.
 | 11 | Done | Deny-by-default seven-table schema, trigger-owned aggregates, local/staging acceptance |
 | 12 | Done | Least-privilege RLS/grants, authorization tests, local/staging acceptance |
 | 13 | Done | Deterministic complete/sparse product seed, provenance, and same-database idempotency acceptance |
+| 14 | Done | Expo Supabase client, generated types, Query lifecycle/cache foundation, frontend test harness |
 
 Task 2 and Task 5 are fully done; their former “Mostly done” and “Partial”
 labels were stale. Detailed packet histories, reviewer cycles, evidence paths,
@@ -148,8 +152,8 @@ Work in order unless a task explicitly states that it is conditional.
 | Task | Title | Status |
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
-| 14 | Connected Client And Query Foundation | Next — not started |
-| 15 | Real Public Catalog Reads | Pending |
+| 14 | Connected Client And Query Foundation | Done |
+| 15 | Real Public Catalog Reads | Next — not started |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -257,7 +261,7 @@ Non-goals:
 
 ## Task 14: Connected Client And Query Foundation
 
-Status: **Next — not started.**
+Status: **Done — human accepted.**
 
 Depends on: Task 13.
 
@@ -268,48 +272,49 @@ the generic implementer.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is required before Task 15; no environment action
-is implied.
+Human gate: Human acceptance is complete. Task 15 requires separate
+implementation authorization; no environment action is implied.
 
 Goal: install and configure the durable application data layer before any
 screen depends on it.
 
 Deliverables:
 
-- `@supabase/supabase-js`, one supported React Native session-storage adapter,
-  and a URL polyfill only where required.
-- `@tanstack/react-query` and React Native NetInfo integration.
-- Minimal frontend test foundation: `jest-expo`,
-  `@testing-library/react-native`, the `expo-router/testing-library` utilities
-  when route behavior needs them, and a stable `npm test` script.
-- Path-filtered frontend test CI when that harness lands; frontend tests must
-  not remain local-only.
-- One smoke test outside `app/` proving the frontend harness runs.
-- Reproducibly generated Supabase database types.
-- One initialized Supabase client and one Query client.
-- Root providers in `app/_layout.tsx`.
-- A query-key factory with structurally separate public and user-scoped keys.
-- Auth-change utilities that remove the prior user’s scoped queries.
-- Development validation for the Supabase URL and publishable client key.
-- Coordinated AppState/online handling for auth token refresh, Query focus, and
-  NetInfo rather than competing lifecycle listeners.
-- One small total read-retry budget; rating mutations are never automatically
-  retried.
+- `@supabase/supabase-js`, one supported React Native session-storage
+  adapter, and a URL polyfill only where required.
+- `@tanstack/react-query` with React Native NetInfo and AppState lifecycle
+  integration.
+- Minimal frontend test foundation enforced in Expo CI.
+- One smoke test outside `app/` (`src/test/harness.smoke.test.tsx`).
+- Generated Supabase database types from the local schema
+  (`src/types/database.generated.ts`; `npm run types:generate` /
+  `npm run types:check`).
+- One initialized Supabase client and one Query client with root providers in
+  `app/_layout.tsx` via `AppProviders`.
+- Query-key factories with separate public (`catalogKeys`) and user-scoped
+  (`accountKeys`, `ratingKeys`) keys, plus `removeUserScopedQueries`.
+- Development validation for `EXPO_PUBLIC_SUPABASE_URL` and
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- Supported durable session storage; reproducible generated types; coordinated
+  lifecycle handling; public vs user-scoped query-key separation; auth-transition
+  cache cleanup; one small read-retry budget; no automatic rating mutation retry.
 
 Acceptance:
 
 - The app starts with valid development variables and fails clearly when they
-  are missing.
+  are missing (provider bootstrap/render path surfaces `PublicEnvError`).
 - URL and publishable/legacy anon key are treated as public client
   configuration; no secret/service-role value reaches the bundle.
 - Database types regenerate through one documented command.
 - Public and user-scoped query keys cannot collide.
 - Query focus follows foreground/background state and online state follows
   NetInfo.
-- Auth transitions can remove prior user-scoped data.
+- Auth transitions can remove prior user-scoped data
+  (`removeUserScopedQueries`).
 - `npm test` runs the harness smoke test successfully.
-- Relevant frontend paths run that same harness in CI.
+- Frontend unit tests run in the primary Expo CI validation job.
 - Existing mock screens still run at task completion.
+- Staging and production were not contacted.
 
 Non-goals:
 
@@ -317,9 +322,31 @@ Non-goals:
   broad repository framework, universal runtime row validation, or optimistic
   mutation.
 
+### Implementation evidence (PR #31)
+
+Evidence only — does not replace the deliverables or acceptance above.
+
+- Public env module uses static `process.env.EXPO_PUBLIC_*` references in a
+  private frozen runtime bag; validation rejects missing/invalid/placeholder/secret
+  values without echoing credentials. Invalid configuration throws during the
+  `AppProviders` render/bootstrap path when lifecycle is enabled.
+- Auth session storage uses `@react-native-async-storage/async-storage`
+  (iOS/Android/web).
+- Typed `getSupabase()` singleton (no Proxy; no fire-and-forget dynamic import);
+  client construction passes AsyncStorage adapter + `processLock` and issues
+  no network request.
+- Lifecycle cleanup removes AppState/NetInfo subscriptions, stops auth auto
+  refresh, and restores default Query focus/online handling.
+- Frontend unit tests run in the primary Expo CI `validate` job (no separate
+  path-filtered frontend job).
+- Database CI runs `npm run types:check` against local Supabase and also
+  triggers on `scripts/generate-database-types.cjs` and
+  `src/types/database.generated.ts`.
+- Screens remain mock-backed; Task 15 is next and remains not started.
+
 ## Task 15: Real Public Catalog Reads
 
-Status: Pending.
+Status: **Next — not started.**
 
 Depends on: Tasks 13–14.
 
@@ -364,6 +391,15 @@ Remove in this task:
 Acceptance:
 
 - Anonymous users can open connected Browse and Product Detail.
+- Network loss does not block the application shell or navigation from
+  launching, and catalog surfaces show a visible offline state.
+- Cached public catalog data remains visible when available.
+- When no cached catalog data is available, show an explicit offline/error
+  state with a Retry action.
+- Automatically refetch catalog data when connectivity returns.
+- Never leave the user on an indefinite loading indicator.
+- Missing Supabase configuration and temporary network loss use separate error
+  paths; configuration failures must not be mislabeled as offline failures.
 - Only published products appear.
 - Primary image selection is stable across repeated reads.
 - Mixed currencies are never compared numerically.
@@ -373,6 +409,9 @@ Acceptance:
 - No client calculation writes or replaces Community Score.
 - Adapter tests cover no image, no offer, no aggregate, multiple images, and
   mismatched currency.
+
+Persistent offline Query cache remains deferred; Task 15 may satisfy this
+contract with the available in-memory cache.
 
 ## Task 16: Core Authentication And Account State
 
@@ -415,6 +454,18 @@ Acceptance:
 - Sign-out/account switching cannot expose the prior user’s profile or rating
   cache.
 - Session restoration works after app restart.
+- Supabase access and refresh tokens are sensitive authentication material.
+  Profile display data such as name, email, phone, and avatar does not by
+  itself drive the storage decision; the authentication tokens do.
+- AsyncStorage is accepted for the MVP foundation, but before production
+  authentication is finalized Task 16 must document the threat model and
+  either:
+  1. explicitly accept AsyncStorage for the intended risk level; or
+  2. introduce and test an appropriate secure native storage alternative.
+- Service-role keys, passwords, backend secrets, and database credentials must
+  never be stored in client storage.
+- Server-side RLS remains required regardless of local encryption. Encrypted
+  local storage does not replace correct authorization policies.
 
 Non-goals:
 

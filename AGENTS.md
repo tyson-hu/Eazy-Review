@@ -3,7 +3,8 @@
 Eazy Review is a mobile-first sneaker/product review and discovery app.
 Core flow: Browse -> Product Detail -> Eazy Score / Community Score -> My Rating.
 Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase;
-the Expo Supabase client and TanStack Query are planned for Task 14.
+the Expo Supabase client and TanStack Query foundation shipped in Task 14
+(screens still mock-backed until Task 15+).
 
 ## Non-Negotiable Product Rules
 
@@ -56,6 +57,10 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 ## Validation
 
 - `npm run typecheck` for type/logic edits; `npm run lint` when code style changed.
+- `npm test` for jest-expo frontend unit tests (Task 14 harness and later
+  screen tests).
+- `npm run types:generate` / `npm run types:check` for local Supabase database
+  types (`src/types/database.generated.ts`).
 - `npm run test:agent-infra` for the manifest/checker unit suite and
   `npm run check:agent-infra` for the repository document, mirror, dependency,
   stale-term, impact-rule, and task-graph contract.
@@ -67,8 +72,8 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 - `npm run prepare:routes` is parent/CI-owned preparation. After it runs, check
   tracked config drift before delegating read-only verification.
 - `npm run check:expo` is the parent-owned full Expo gate: route preparation,
-  read-only checks, Expo Doctor, and dependency alignment. `npm run check`
-  remains an alias for this full handoff gate.
+  read-only checks, frontend unit tests, Expo Doctor, and dependency alignment.
+  `npm run check` remains an alias for this full handoff gate.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
 - `expo-doctor` / `expo install --check` (and thus `check:expo` / `check`) must
   run **outside the agent sandbox** — sandboxed runs can false-pass doctor or

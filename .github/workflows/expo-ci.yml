@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # Public local-shaped values for boot/export only. Never use service_role.
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -48,6 +53,9 @@ jobs:
 
       - name: Run read-only repository checks
         run: npm run check:readonly
+
+      - name: Frontend unit tests
+        run: npm test
 
       - name: Expo doctor
         run: npx expo-doctor

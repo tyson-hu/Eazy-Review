@@ -166,53 +166,63 @@ Do **not** bind Detail Community Score or review count to `product.communityScor
 src/
   components/
     ui/
-      Screen.tsx
-      Button.tsx
-      Input.tsx
-      Card.tsx
-      AppText.tsx
-      ScoreBadge.tsx
-      ProductCard.tsx
-      RatingRow.tsx
-      RatingInputRow.tsx
-      LoadingState.tsx
-      EmptyState.tsx
-      ErrorState.tsx
+      ...
 
   features/
     products/
-      api.ts
-      queries.ts
-      mutations.ts
-      types.ts
-      mockProducts.ts
+      mockProducts.ts          # Task 6–15 transitional mock catalog
       mockProductDetails.ts
+      # api.ts / queries.ts arrive with Task 15 connected reads
 
     ratings/
-      api.ts
-      queries.ts
-      mutations.ts
-      types.ts
+      # connected modules arrive with Task 17
 
     auth/
-      api.ts
-      queries.ts
-      mutations.ts
-      AuthProvider.tsx
+      # AuthProvider and APIs arrive with Task 16+
 
   lib/
-    supabase.ts
-    queryClient.ts
+    env/
+      publicEnv.ts             # Task 14 public EXPO_PUBLIC_* validation
+    supabase/
+      client.ts                # Task 14 singleton
+      createClient.ts
+      authStorage.ts           # Task 14 AsyncStorage session adapter
+    query/
+      client.ts                # Task 14 QueryClient factory
+      keys.ts                  # public catalog vs user-scoped key factories
+      lifecycle.ts             # NetInfo online + AppState focus (+ auth refresh)
+      userScopedCache.ts       # removeUserScopedQueries for auth transitions
     constants.ts
+
+  providers/
+    AppProviders.tsx           # QueryClientProvider + lifecycle
+
+  test/
+    setup.ts
+    renderWithProviders.tsx    # isolated QueryClient per test
+    harness.smoke.test.tsx
+
+  types/
+    database.generated.ts      # local schema; npm run types:generate
+    product.ts
 
   utils/
     formatPrice.ts
-    formatDate.ts
 ```
 
 Community Score is server-owned; the recommended frontend structure does not
 include a score-calculation utility. Display formatting may live in a focused
 utility only when a concrete caller requires it.
+
+### Public environment contract (Task 14)
+
+Expo may only receive:
+
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (public publishable key or legacy anon JWT)
+
+Validated by `src/lib/env/publicEnv.ts`. Never place `service_role`, database
+passwords, JWT signing secrets, or management tokens in Expo config.
 
 ## Product Card Shape
 
@@ -351,32 +361,46 @@ a PostgREST upsert.
 
 ## Product Query Hooks
 
-File: `src/features/products/queries.ts`
+File: `src/features/products/queries.ts` (Task 15)
 
 Hooks:
 - `useProductsQuery(params)`
-- `useProductQuery(productId)` — public `ProductDetailPublicData` only, keyed
-  by `['product', productId]`
+- `useProductQuery(productId)` — public `ProductDetailPublicData` only
 - `useProductOffersQuery(productId)`
+
+Use the centralized factories in `src/lib/query/keys.ts`:
+
+- Public catalog (never include user id): `catalogKeys.products()`,
+  `catalogKeys.product(productId)`
+- Equivalent historical shapes in prose: `['catalog','products']`,
+  `['catalog','product', productId]` (prefer factories over hand-built arrays)
 
 ## Ratings Query Hooks
 
-File: `src/features/ratings/queries.ts`
+File: `src/features/ratings/queries.ts` (Task 17)
 
 Hooks:
 - `useUserRatingQuery(productId)` — enabled only when an authenticated `userId` is present
 - `useUserRatedProductsQuery()` — enabled only when an authenticated `userId` is present
 
-User-scoped keys must include the account id:
+User-scoped keys must include the account id (factories in
+`src/lib/query/keys.ts`):
 
-- `['userRating', userId, productId]`
-- `['ratedProducts', userId]`
+- `ratingKeys.mine(userId, productId)` → `['rating','mine', userId, productId]`
+- `ratingKeys.ratedProducts(userId)` → `['rating','ratedProducts', userId]`
+- `accountKeys.profile(userId)` → `['account','profile', userId]`
 
-On sign-out or account switch, remove or invalidate the prior user's scoped
-queries. Do not enable either query until `userId` is known. Product Detail
-composes `ProductDetailData` from the public product query plus
-`useUserRatingQuery`; `myRating` must never be stored under the shared
-`['product', productId]` key.
+On sign-out or account switch, call `removeUserScopedQueries(queryClient)` so
+prior user profile/rating cache cannot leak. Do not enable user-scoped queries
+until `userId` is known. Product Detail composes `ProductDetailData` from the
+public product query plus My Rating; `myRating` must never be stored under a
+public catalog key.
+
+Public vs user-scoped distinction (locked):
+
+- Public catalog keys are shareable across anonymous and authenticated sessions.
+- User-owned keys always embed the authenticated user id.
+- Clearing user scopes must leave valid public catalog cache intact.
 
 ## Ratings Mutations
 
@@ -387,10 +411,11 @@ Hooks:
 - `useDeleteRatingMutation()`
 
 After rating mutation succeeds, invalidate:
-- `['product', productId]`
-- `['products']`
-- `['userRating', userId, productId]`
-- `['ratedProducts', userId]`
+
+- `catalogKeys.product(productId)`
+- `catalogKeys.products()`
+- `ratingKeys.mine(userId, productId)`
+- `ratingKeys.ratedProducts(userId)`
 
 ## Task 20 Search, Filter, And Sort Options
 
