@@ -2,13 +2,12 @@
 
 ## Current Repo Status
 
-- Tasks 1–13 are accepted. The Browse → Product Detail → Rating Form mock
+- Tasks 1–14 are accepted. The Browse → Product Detail → Rating Form mock
   journey passed its UX gate, and the Supabase schema, trigger-owned Community
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
   accepted.
-- Task 14: Human accepted — merge pending. Implementation and human acceptance
-  are complete. Expo has a
+- Task 14 is complete and human accepted. Expo has a
   validated public Supabase env module, one typed client, generated local
   database types, TanStack Query providers/lifecycle, public vs user-scoped
   query keys, and a jest-expo frontend test foundation. Browse, Product Detail,
@@ -16,7 +15,7 @@
   Supabase yet.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 13 is accepted in PR #29. Task 15 is blocked pending the Task 14 merge.
+- Task 14 is accepted in PR #31. Task 15 is next and remains not started.
 
 Accepted Tasks 11–12 database evidence is preserved at
 [`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
@@ -42,6 +41,7 @@ publication, and merge are not implied by one another.
 | 11 | Done | Deny-by-default seven-table schema, trigger-owned aggregates, local/staging acceptance |
 | 12 | Done | Least-privilege RLS/grants, authorization tests, local/staging acceptance |
 | 13 | Done | Deterministic complete/sparse product seed, provenance, and same-database idempotency acceptance |
+| 14 | Done | Expo Supabase client, generated types, Query lifecycle/cache foundation, frontend test harness |
 
 Task 2 and Task 5 are fully done; their former “Mostly done” and “Partial”
 labels were stale. Detailed packet histories, reviewer cycles, evidence paths,
@@ -152,8 +152,8 @@ Work in order unless a task explicitly states that it is conditional.
 | Task | Title | Status |
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
-| 14 | Connected Client And Query Foundation | Human accepted — merge pending |
-| 15 | Real Public Catalog Reads | Blocked pending Task 14 merge |
+| 14 | Connected Client And Query Foundation | Done |
+| 15 | Real Public Catalog Reads | Next — not started |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -261,7 +261,7 @@ Non-goals:
 
 ## Task 14: Connected Client And Query Foundation
 
-Status: **Human accepted — merge pending.**
+Status: **Done — human accepted.**
 
 Depends on: Task 13.
 
@@ -272,8 +272,8 @@ the generic implementer.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is complete. Task 14 must merge before Task 15
-begins; no environment action is implied.
+Human gate: Human acceptance is complete. Task 15 requires separate
+implementation authorization; no environment action is implied.
 
 Goal: install and configure the durable application data layer before any
 screen depends on it.
@@ -342,11 +342,11 @@ Evidence only — does not replace the deliverables or acceptance above.
 - Database CI runs `npm run types:check` against local Supabase and also
   triggers on `scripts/generate-database-types.cjs` and
   `src/types/database.generated.ts`.
-- Screens remain mock-backed; Task 15 stays blocked until the Task 14 merge.
+- Screens remain mock-backed; Task 15 is next and remains not started.
 
 ## Task 15: Real Public Catalog Reads
 
-Status: **Blocked pending Task 14 merge.**
+Status: **Next — not started.**
 
 Depends on: Tasks 13–14.
 

@@ -10,11 +10,10 @@ Task detail, dependencies, acceptance, and current status live in
   locally and on explicitly authorized staging; production untouched.
 - Task 13: deterministic complete/sparse local catalog seed accepted;
   staging and production untouched.
-- Task 14: Human accepted — merge pending; implementation and human acceptance
-  are complete, screens remain mock-backed, and staging and production remain
-  untouched.
+- Task 14: accepted; the client/query/test foundation is complete, screens
+  remain mock-backed, and staging and production remain untouched.
 - Post–Task 12 review: **GO with roadmap revision**.
-- Task 15: Blocked pending Task 14 merge (**Real Public Catalog Reads**).
+- Task 15: **Next — not started** (**Real Public Catalog Reads**).
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
 and no-social MVP boundary are locked unless a reproducible defect appears.
