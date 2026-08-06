@@ -8,14 +8,16 @@ A skill is a reusable, parameterized workflow template for an agent. Chat instru
 
 Agent proposes. Human approves. Agent implements after approval.
 
-- Agents may proactively propose a new skill after the same task pattern, convention, or workflow has been explained 3+ times ("You have explained this same workflow 3+ times. This may deserve a skill.").
+- **Agent-proactive path:** Agents may proactively propose a new skill only after the same task pattern, convention, or workflow has been explained 3+ times ("You have explained this same workflow 3+ times. This may deserve a skill."). The three-use threshold gates automatic proposals only.
+- **Human-directed path:** The human may explicitly request or approve adding a reviewed skill without three prior occurrences. That waives the three-use threshold for that skill. The approval gate still applies: no skill files or index edits until the human approves the draft.
 - Agents must not create, delete, merge, or substantially modify skill files without explicit human approval. Requires approval: creating a skill, deleting a skill, merging skills, changing a trigger, changing skill boundaries, adding `scripts/` or `templates/`, and editing the skill indexes in `AGENTS.md`, `docs/LOOP_ENGINEERING.md`, or `skills/manifest.json`.
 - The human decides whether the workflow is common enough, whether it overlaps an existing skill, whether the trigger is too broad, whether it adds too much context, and whether it belongs in a skill at all — versus `AGENTS.md`, `docs/AGENT_WORKFLOW.md`, or just the current task.
 - Skills share context with every other instruction: keep them concise and focused, capturing only specific, useful conventions.
 
 ## When to use
 
-- The same task pattern has been explained at least three times across sessions (for example: the same conventions repeated for every new screen, every migration, every report).
+- The same task pattern has been explained at least three times across sessions (for example: the same conventions repeated for every new screen, every migration, every report) — agent-proactive proposal path.
+- The user explicitly asks to add, draft, or land a reviewed skill even when fewer than three prior uses exist — human-directed path; three-use does not block.
 - The user asks to turn repeated prompts into a skill, tune a skill's trigger description, or test a skill.
 - Existing skills need maintenance: a step was skipped in practice, a convention was misunderstood, a new edge case appeared, or the library needs a periodic review.
 
@@ -23,7 +25,7 @@ Typical patterns worth capturing: add an API endpoint, create a database migrati
 
 ## When not to use
 
-- The pattern has occurred once or twice: keep it in chat; three repetitions is the threshold.
+- The pattern has occurred once or twice and the human has not explicitly directed skill creation: keep it in chat; three repetitions is the agent-proactive threshold.
 - The workflow already matches an existing skill: iterate that skill instead of creating an overlapping one (check the loop index in `docs/LOOP_ENGINEERING.md` first).
 - The "skill" would be one-off business logic with nothing parameterized: that is a task, not a template.
 
@@ -74,14 +76,16 @@ Do not edit either stub by hand. Add or update the sorted `{ "name", "descriptio
 
 ## Routine
 
-1. Confirm the threshold: name the three or more past occurrences of the pattern. Fewer than three, stop — no skill yet.
+1. Choose the creation path, then confirm the matching gate:
+   - **Agent-proactive:** name the three or more past occurrences of the pattern. Fewer than three, stop — no proactive proposal and no skill yet.
+   - **Human-directed:** confirm the human explicitly requested or is reviewing a skill addition. Record that the three-use threshold is waived for this creation; do not invent that waiver.
 2. Check the loop index in `docs/LOOP_ENGINEERING.md` for overlap. If the proposed skill overlaps an existing skill, stop and ask whether to merge, split, replace, or keep it as chat-only guidance — never decide this autonomously.
 3. Extract from the past work: the standard steps in order, the project-specific rules that were restated every time, and the common traps that were hit.
 4. Separate parameters from constants. What varies per use (names, paths, schemas, screens) goes in Inputs expected; what never varies (conventions, commands, exact local paths) goes in the routine and rules. Never hard-code a one-off business detail that makes the skill single-use.
 5. Produce a draft skill proposal for the user with exactly these parts:
    - proposed skill name,
    - trigger,
-   - why this deserves a skill (the 3+ occurrences, named),
+   - why this deserves a skill (named 3+ occurrences on the agent-proactive path, or the human-directed waiver and review reason on the human-directed path),
    - expected inputs,
    - workflow summary,
    - overlap check against existing skills,
@@ -102,6 +106,7 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 ## Verification
 
 - The structured proposal (name, trigger, why, inputs, workflow summary, overlap check, files) was shown and explicitly approved before any files were created or modified.
+- The proposal's "why" either names 3+ occurrences (agent-proactive) or records an explicit human-directed three-use waiver (human-directed).
 - The canonical file exists, `skills/manifest.json` contains its sorted name and one-sentence trigger description, and `npm run skills:generate` produces both identical discovery stubs.
 - `npm run check:skill-wrappers` passes; it validates the manifest, canonical inventory, exact generated output, and generator tests without parsing canonical skill prose or documentation indexes.
 - The loop index in `docs/LOOP_ENGINEERING.md` and the skill index in `AGENTS.md` list the new skill, and no two index rows can fire on the same task.
@@ -110,6 +115,7 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 ## Stop conditions
 
 - Any trigger overlap with an existing skill: stop and ask whether to merge, split, replace, or keep it as chat-only guidance. Overlap decisions affect the whole skill library and are never made autonomously.
+- Agent-proactive path with fewer than three named occurrences: stop — no proactive proposal yet. Do not treat this stop as blocking a human-directed reviewed addition.
 - No explicit approval yet: proposing is autonomous, creating is not. Waiting at the proposal is the correct end state for the session.
 - The pattern turns out to need product or scope decisions (new flows, new features): that is a `docs/BLUEBOOK.md` question, not a skill.
 
@@ -125,7 +131,9 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 - Hard-coding business details that should be parameters, making the skill single-use.
 - Not maintaining — the project structure changes, the skill still references old paths, and it misleads instead of helps.
 - Too many skills — selection cost grows with every addition; prefer a curated few over a mediocre many.
-- Creating the skill on the first or second repetition, before the pattern has stabilized.
+- Creating the skill on the first or second repetition without human direction, before the pattern has stabilized.
+- Treating the three-use threshold as a ban on a human-reviewed manual skill addition.
+- Inventing a three-use waiver the human did not give.
 - Treating a nod in chat as approval for a different scope — approval covers exactly the files listed in the proposal, nothing more.
 - Slipping skill or index edits into an unrelated task because they seemed small.
 - Editing a generated discovery stub instead of changing the manifest and regenerating both trees.

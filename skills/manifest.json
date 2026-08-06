@@ -38,7 +38,7 @@
     },
     {
       "name": "skill-creator",
-      "description": "Use when turning a task pattern explained 3+ times into a new SKILL.md, tuning a skill's trigger description, or iterating/maintaining existing skills."
+      "description": "Use when turning a repeated (3+) or human-directed reviewed workflow into a new SKILL.md, tuning a skill's trigger description, or iterating/maintaining existing skills."
     },
     {
       "name": "supabase-schema-change",

@@ -95,7 +95,7 @@ Outside `docs/notes/`, no scratch files, no notes docs, no status comments in co
 | Evidence-backed simulator / mobile-web journey verification or UX screenshot audit | `skills/interactive-preview-loop` |
 | Session boundary reached or session overloaded — persist state, recommend fresh session | `skills/session-handoff` |
 | Debugging stalled (2+ failures, 20–30+ min, or looping) — persist state, stop attempts | `skills/blocker-note` |
-| Same task pattern explained 3+ times — turn it into a skill, or iterate/maintain an existing one | `skills/skill-creator` |
+| Turn a repeated (3+) or human-directed reviewed workflow into a skill, or iterate/maintain an existing one | `skills/skill-creator` |
 
 ## Disambiguation
 
@@ -124,6 +124,6 @@ When two loops seem to apply, use these precedence rules. Each pair is also cros
 | Standalone, after-the-fact doc drift | `docs-sync-loop` | Per-skill memory steps |
 | Work is going fine but a natural boundary or overloaded session is reached | `session-handoff` | `blocker-note` |
 | Debugging itself is stuck and attempts are repeating | `blocker-note` (handoff may link to it) | `session-handoff` alone |
-| A repeated pattern needs to become or update a skill | `skill-creator` | Editing skill files ad hoc mid-task |
+| A repeated (3+) or human-directed reviewed workflow needs to become or update a skill | `skill-creator` | Editing skill files ad hoc mid-task |
 
 Related boundary: `bugfix-debug-loop` forbids refactoring surrounding code; `refactor-safety-loop` forbids behavior change. If a fix wants to restructure, or a refactor wants to change behavior, that is a scope-growth stop.
