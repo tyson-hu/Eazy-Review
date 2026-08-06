@@ -52,7 +52,7 @@ Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_EN
 
 Generate both discovery-wrapper trees from the manifest with `npm run skills:generate`; do not edit generated wrappers by hand.
 
-Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. The three-use threshold gates agent-proactive proposals only. The human may direct a reviewed skill addition without three prior uses; that waives the threshold for that skill, but creation still requires explicit approval. Never create, delete, merge, or substantially modify skill files — or edit the skill indexes here, in `docs/LOOP_ENGINEERING.md`, or in `skills/manifest.json` — without that approval. Routine and proposal format: `skills/skill-creator`.
+Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. The three-use threshold gates agent-proactive proposals only. The human may direct a reviewed skill addition without three prior uses; that waives **only** the three-use threshold. Explicit intent, scoped draft approval, overlap checks, quality bar, security/abuse bar, and post-write proof still apply on both paths (`skills/skill-creator`, Remaining gate). Never create, delete, merge, or substantially modify skill files — or edit the skill indexes here, in `docs/LOOP_ENGINEERING.md`, or in `skills/manifest.json` — without that approval. Routine and proposal format: `skills/skill-creator`.
 
 ## Validation
 
