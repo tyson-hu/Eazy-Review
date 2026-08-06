@@ -11,9 +11,10 @@ Goal: review one implementation-complete pull request for human acceptance by ex
 ## When not to use
 
 - The request is only to run or interpret project checks: use `skills/test-and-validation-loop`.
-- The request is to interactively verify a journey in a simulator or mobile-web preview: use `skills/interactive-preview-loop`; its evidence may feed this review.
+- The request is to interactively verify a journey in a simulator or mobile-web preview: use `skills/interactive-preview-loop`; cite that evidence here when it already exists, but do not launch the preview loop from this skill.
 - A known defect must be fixed: use `skills/bugfix-debug-loop`, or fix a caused-by-change validation failure inside `skills/test-and-validation-loop`.
 - The user asks for a general line-by-line code review rather than an acceptance decision guide.
+- This skill does not replace automated validation or interactive testing. It consumes their results for a human acceptance decision.
 
 ## Inputs expected
 
@@ -40,7 +41,7 @@ Goal: review one implementation-complete pull request for human acceptance by ex
    - **Mixed:** split desirability from correctness. For example, ask the human whether missing configuration should stop startup, while tests prove that it fails with the documented error and does not leak credentials.
 6. Write **Part 1 — Things only you should decide** with the three to seven highest-value decisions. For each decision, explain as needed:
    - **What this changes:** the visible or operational consequence.
-   - **Try this:** a short real-device or real-workflow scenario only when actual experience matters.
+   - **Try this:** a short real-device or real-workflow scenario for the human to perform only when actual experience matters. Do not treat this as a request to run `interactive-preview-loop`.
    - **You are deciding:** the product, behavior, risk, or sequencing choice.
    - **Recommendation:** one clear recommendation for the current project stage.
    - **Accept when:** the simple human acceptance condition.
@@ -89,6 +90,8 @@ Goal: review one implementation-complete pull request for human acceptance by ex
 - Treating a stale PR description as proof of current implementation.
 - Saying a dependency is unreachable with certainty when only the dependency path was inspected.
 - Generating an implementation prompt when the user asked only for the review report.
+- Running the check suite or an interactive preview walk inside this skill instead of citing existing automated or interactive evidence.
+- Editing the PR, task status, or merge state after recommending acceptance unless the user explicitly authorized that exact write.
 
 ## Human-readable handoff
 
