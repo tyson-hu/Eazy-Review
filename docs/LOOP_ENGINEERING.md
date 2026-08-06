@@ -87,6 +87,7 @@ Outside `docs/notes/`, no scratch files, no notes docs, no status comments in co
 | Build or redesign one Expo / React Native screen's UI | `skills/ui-screen-builder` |
 | Change database schema, RLS, migrations, or rating-summary logic | `skills/supabase-schema-change` |
 | Change frontend product/rating data shape, types, or mock data | `skills/product-data-modeling` |
+| Review an implementation-complete pull request for human acceptance, separating product and behavior decisions from automated verification | `skills/pr-human-review` |
 | Fix a reported bug in existing behavior | `skills/bugfix-debug-loop` |
 | Restructure code without changing behavior | `skills/refactor-safety-loop` |
 | Bring drifted docs back in sync with code | `skills/docs-sync-loop` |
@@ -112,11 +113,12 @@ When two loops seem to apply, use these precedence rules. Each pair is also cros
 | Authenticated rating persistence / Rated Products (schema already shipped) | `feature-slice-builder` (connected-write) | `supabase-schema-change` as the whole task |
 | Frontend-only shape, type, mock, or display change | `product-data-modeling` | `supabase-schema-change` |
 | Validation failure caused by the current change | Fix inside `test-and-validation-loop` (max 2 tries) | `bugfix-debug-loop` |
-| Run TypeScript, lint, Expo Doctor, dependency, or route checks | `test-and-validation-loop` | `interactive-preview-loop` |
-| Verify a user journey in a running simulator or mobile web preview and capture evidence | `interactive-preview-loop` | `test-and-validation-loop` |
+| Run TypeScript, lint, Expo Doctor, dependency, or route checks | `test-and-validation-loop` | `interactive-preview-loop` / `pr-human-review` |
+| Review a finished PR to decide whether its behavior and tradeoffs are acceptable | `pr-human-review` | `test-and-validation-loop` alone |
+| Verify a user journey in a running simulator or mobile web preview and capture evidence | `interactive-preview-loop` | `test-and-validation-loop` / `pr-human-review` alone |
 | Change screen layout, styling, hierarchy, or components | `ui-screen-builder` | `interactive-preview-loop` |
-| Investigate and fix a known behavior defect | `bugfix-debug-loop` | `interactive-preview-loop` |
-| Finish a user-facing feature requiring both kinds of validation | `test-and-validation-loop`, then `interactive-preview-loop` | Treating either loop as replacing the other |
+| Investigate and fix a known behavior defect | `bugfix-debug-loop` | `interactive-preview-loop` / `pr-human-review` |
+| Finish a user-facing feature requiring both kinds of validation | `test-and-validation-loop`, then `interactive-preview-loop`; use their evidence in `pr-human-review` when human acceptance is required | Treating any one loop as replacing the others |
 | Pre-existing bug found during validation | Record in `docs/TASKS.md`; fix later via `bugfix-debug-loop` | Fixing it inside the current loop |
 | Doc updates for the change you just made | The skill's own memory step | `docs-sync-loop` |
 | Standalone, after-the-fact doc drift | `docs-sync-loop` | Per-skill memory steps |
