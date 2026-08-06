@@ -21,6 +21,10 @@
       "description": "Use when a task requires evidence-backed interactive verification of an Expo user journey in iOS Simulator or the project reference mobile-web viewport, or a screenshot-based UX audit with numbered captures and triaged findings — not for automated project checks, UI implementation, or bug fixing."
     },
     {
+      "name": "pr-human-review",
+      "description": "Use when an implementation-complete pull request needs human acceptance — explain the change without line-by-line review, split product and behavior decisions from automated verification, and recommend whether it is ready."
+    },
+    {
       "name": "product-data-modeling",
       "description": "Use for frontend-only product/rating shape changes — types, mock data, and API contracts, with no SQL."
     },
