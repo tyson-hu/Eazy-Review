@@ -4,7 +4,7 @@ Goal: review one implementation-complete pull request for human acceptance by ex
 
 ## When to use
 
-- A pull request is substantially implemented and the user asks what they should personally review or whether it is ready for human acceptance.
+- A pull request is implementation-complete and the user asks what they should personally review or whether it is ready for human acceptance.
 - The user needs a technical PR translated into understandable consequences, tradeoffs, and manual scenarios.
 - Review work must be split into: (1) behavior, product, risk, or sequencing choices only a human can accept, and (2) behavior unit tests, CI, or other automated checks can prove.
 
