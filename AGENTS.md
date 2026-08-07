@@ -48,11 +48,11 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 ## Skill Index
 
 Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`; authoritative discovery metadata in `skills/manifest.json`):
-`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
+`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `pr-human-review`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
 Generate both discovery-wrapper trees from the manifest with `npm run skills:generate`; do not edit generated wrappers by hand.
 
-Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. Proactively propose a skill after the same pattern has been explained 3+ times, but never create, delete, merge, or substantially modify skill files — or edit the skill indexes here, in `docs/LOOP_ENGINEERING.md`, or in `skills/manifest.json` — without explicit approval. Routine and proposal format: `skills/skill-creator`.
+Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the agent implements after approval. The three-use threshold gates agent-proactive proposals only. The human may direct a reviewed skill addition without three prior uses; that waives **only** the three-use threshold. Explicit intent, scoped draft approval, overlap checks, quality bar, security/abuse bar, and post-write proof still apply on both paths (`skills/skill-creator`, Remaining gate). Never create, delete, merge, or substantially modify skill files — or edit the skill indexes here, in `docs/LOOP_ENGINEERING.md`, or in `skills/manifest.json` — without that approval. Routine and proposal format: `skills/skill-creator`.
 
 ## Validation
 
