@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import { AuthProvider, useAuth } from '@/src/features/auth/AuthProvider';
 import { accountKeys, catalogKeys, ratingKeys } from '@/src/lib/query/keys';
 import { createAppQueryClient } from '@/src/lib/query/client';
+import * as userScopedCache from '@/src/lib/query/userScopedCache';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
 
@@ -379,6 +380,151 @@ describe('AuthProvider', () => {
       ),
     );
 
+    await rendered.cleanup();
+  });
+
+  it('lets a newer SIGNED_OUT win over a stale in-flight SIGNED_IN cleanup', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(accountKeys.profile('user-a'), { id: 'user-a' });
+
+    let releaseCleanup: (() => void) | null = null;
+    const cleanupHold = new Promise<void>((resolve) => {
+      releaseCleanup = resolve;
+    });
+    const removeSpy = jest
+      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .mockImplementation(async () => {
+        await cleanupHold;
+      });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|user-a',
+      ),
+    );
+
+    // SIGNED_IN B starts applySession and pauses inside user-scoped cleanup.
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(removeSpy).toHaveBeenCalled());
+
+    // Newer SIGNED_OUT becomes authoritative while B cleanup is still held.
+    await act(async () => {
+      mock.emit('SIGNED_OUT', null);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      releaseCleanup?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none|',
+      ),
+    );
+
+    // Give any stale B commit a chance to overwrite; it must not.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(rendered.getByTestId('auth-probe').props.children).toBe(
+      'signed-out|none|',
+    );
+
+    removeSpy.mockRestore();
+    await rendered.cleanup();
+  });
+
+  it('lets a newer SIGNED_IN principal win over a stale in-flight principal cleanup', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(accountKeys.profile('user-a'), { id: 'user-a' });
+
+    let releaseCleanup: (() => void) | null = null;
+    const cleanupHold = new Promise<void>((resolve) => {
+      releaseCleanup = resolve;
+    });
+    const removeSpy = jest
+      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .mockImplementation(async () => {
+        await cleanupHold;
+      });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|user-a',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(removeSpy).toHaveBeenCalled());
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-c', email: 'c@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      releaseCleanup?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-c|c@example.com',
+      ),
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(rendered.getByTestId('auth-probe').props.children).toBe(
+      'signed-in|user-c|c@example.com',
+    );
+
+    removeSpy.mockRestore();
     await rendered.cleanup();
   });
 });

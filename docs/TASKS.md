@@ -477,8 +477,10 @@ Deliverables:
 - Explicit local/current-device sign-out (`scope: 'local'`) with loading/error UX.
 - User-scoped Query cancel-before-remove on sign-out or account switch.
 - Explicit email-confirmation state when sign-up returns no active session.
-- Focused auth, session-restoration, Rate-gate, navigation-intent, and
-  cache-isolation tests.
+- Focused auth, session-restoration, Rate-gate, navigation-intent,
+  cache-isolation, and overlapping auth-transition generation-race tests.
+- Auth generation guards so stale in-flight applySession / optimistic
+  sign-in/up/out cannot overwrite a newer transition after async cleanup.
 
 Acceptance:
 

@@ -3,7 +3,7 @@
 ## Run report
 
 - **Mode:** `web-preview`
-- **Journey:** Task 16 auth return / Account / isolation (post-correction)
+- **Journey:** Task 16 auth return / Account / isolation (post-`dismissTo` correction)
 - **Viewport:** 393×852
 - **Driver:** Playwright MCP (`user-playwright`) against Expo web (`http://localhost:8081`)
 - **Local backend:** local Supabase auth + catalog (dev keys; disposable local users only)
@@ -13,16 +13,24 @@
 
 | Slot | Status |
 | --- | --- |
-| Web mobile preview (393×852) | **pass** |
-| Physical iPhone | **tested-pass** (human-reported 2026-08-08; agent did not retest device) |
-| iOS Simulator | **not-run** (not required after physical + web) |
+| Web mobile preview (393×852) | **pass** (web stack/navigation evidence) |
+| Physical iPhone | **PENDING HUMAN CONFIRMATION** on the corrected build — web does not substitute |
+| iOS Simulator | **not-run** |
 
 ## Overall result
 
-**PASS** for the web navigation, sign-out, and A→B isolation journeys below.
-Combined with human physical-device pass, interactive verification for the
-correction pass is complete. Final product “Task 16 Done” remains a human
-acceptance step if required by repo workflow.
+**PASS** for the **web** navigation, sign-out, and A→B isolation journeys below.
+
+This is **web stack/navigation evidence only**. It does **not** prove:
+
+- native iOS stack animation;
+- iOS header behavior;
+- native session persistence;
+- physical-device network transitions.
+
+Corrected physical-device re-verification and final human acceptance remain
+**pending**. A prior physical run that discovered the duplicate-Product bug is
+not proof that the corrected `dismissTo` implementation passes on device.
 
 ## Step-by-step
 
@@ -48,7 +56,7 @@ acceptance step if required by repo workflow.
 - `screenshots/web-01-browse.png`
 - `screenshots/web-02-product-signed-out.png`
 - `screenshots/web-03-sign-in.png`
-- `screenshots/web-05-back-to-browse.png` (proves one Back → Browse)
+- `screenshots/web-05-back-to-browse.png` (proves one Back → Browse on web)
 - `screenshots/web-06-account-signed-in-a.png`
 - `screenshots/web-07-account-signed-in-b.png`
 
@@ -63,24 +71,22 @@ None (P0–P3) on the completed web journeys above.
 
 ## Known limitations
 
-- Web does not prove native stack animation or iOS header chrome (physical device covered that).
-- Create-Account full success path was not re-driven on web (physical covered it).
-- Temporary network-loss reconnect was not re-run on web this session.
+- Web does not prove native stack animation or iOS header chrome.
+- Create-Account full success path was not re-driven on web.
+- Temporary network-loss / reconnect was **not** re-run on web this session;
+  final human device acceptance must still verify that journey.
 - Metro process crashed once mid-session (`exit 134`); remaining steps continued after restart.
 - Password was typed into local disposable accounts; do not reuse those credentials outside local Supabase.
 
-## Automated checks run separately
+## Automated checks
 
-Correction-pass automated gate (prior session): `npm test` 172 pass, typecheck,
-lint, `check:readonly`, web export, `check`, `test:db:reset` — all pass. Not
-re-run in this web-preview loop.
+Auth-generation race correction and full automated gate are recorded on the
+branch after this web-preview SHA; see PR #35 and `RESULT.md` Validation
+section for current-head results.
 
 ## Required next decision
 
-Human may mark Task 16 **acceptance complete** if satisfied with:
-
-1. Physical iPhone checklist (already reported pass)
-2. This web verification (pass)
-3. Existing automated gate on branch `c556a14` (and later evidence commits)
+Human must re-run the corrected-build **physical iPhone** checklist before
+Task 16 can be marked human-accepted. Web PASS alone is insufficient.
 
 Do not start Task 17 until Task 16 is human-accepted per `docs/TASKS.md`.

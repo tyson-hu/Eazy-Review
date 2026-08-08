@@ -2,24 +2,27 @@
 
 ## Status
 
-**Correction implementation verified on physical device (human) and web-preview
-(agent). Final formal “Task 16 Done / human accepted” status awaits explicit
-human call if still required by merge workflow.**
+**Task 16 — correction implementation complete.**
+**Automated and web verification pass.**
+**Corrected physical-device re-verification and final human acceptance pending.**
 
 Evidence:
 
-- Physical iPhone: human-reported **tested-pass** (2026-08-08).
-- Web mobile preview: **pass** — see
-  [`WEB_RESULT.md`](WEB_RESULT.md).
+| Surface | Status |
+| --- | --- |
+| Automated (unit / typecheck / lint / export / check / db) | **PASS** (see Validation) |
+| Web mobile preview (393×852) | **PASS** — stack/navigation evidence only; see [`WEB_RESULT.md`](WEB_RESULT.md) |
+| Physical iPhone | **PENDING HUMAN CONFIRMATION** — a prior physical run that found the duplicate-Product bug is **not** proof that the corrected `dismissTo` build passes |
 
+Do not say Task 16 Done or human accepted until the human explicitly reports the corrected-build physical checklist passed.
 Do not start Task 17 until Task 16 is formally accepted.
 
 ## Branch and SHAs
 
 - Branch: `agent/task-16-core-auth-account-state`
 - Starting SHA: `f7cb8856ccdebece51e007df301e4ce578892c1a` (Task 15 merge / PR #32)
-- Previously reviewed head: `16ecbd5fbdf26c663539ff4956b88d435f734335`
-- Correction pass HEAD: `27a266056d5353d83ada65c0ff4e957b378fdc59`
+- Previously reviewed head (pre this race fix): `30688c056aa2bab735422bc6ad4fbc330e02de97`
+- Correction HEAD: update after the auth-generation race commit lands on the branch
 
 ## Human decisions recorded during review
 
@@ -38,13 +41,8 @@ Accepted:
 
 Not yet accepted:
 
-- formal Task 16 Done / merge completion (if still required as a separate
-  human gate after physical + web pass).
-
-Previously blocked and now verified:
-
-- corrected Product auth-return navigation (human physical + web Back→Browse);
-- Account A→B (web) and sign-out (web + human).
+- corrected physical-device re-verification after `dismissTo` + auth-generation race fix;
+- formal Task 16 Done / human acceptance / merge.
 
 ## Human-observed navigation bug
 
@@ -66,17 +64,29 @@ Browse → Product A → Sign in to rate → successful sign in → Product A
 → Back → Browse
 ```
 
-After code correction:
-
-```text
-implementation corrected and re-verified
-- physical iPhone: human tested-pass
-- web 393×852: agent pass (one Back after Product-origin sign-in → Browse)
-```
-
 Implementation: `dismissAuthToReturnPath` → `router.dismissTo(sanitizedReturnTo)`.
 
+| Surface | Status for corrected navigation |
+| --- | --- |
+| Web 393×852 | **PASS** (one Back after Product-origin sign-in → Browse) |
+| Physical iPhone | **PENDING HUMAN CONFIRMATION** on the corrected build |
+
 Web detail report: [`WEB_RESULT.md`](WEB_RESULT.md).
+
+## Auth-generation race correction (this pass)
+
+Problem: event-driven `applySession` (and optimistic sign-in/up/out) awaited
+user-scoped cache cleanup, then committed `setUser` / `setStatus` without
+re-checking the auth generation. A newer `SIGNED_OUT` (or newer principal)
+could become current while an older transition was still awaiting cleanup; the
+stale transition could then overwrite the newer auth state.
+
+Fix: capture the owning generation before async cleanup; after await, commit
+state only when `authGenerationRef.current` still matches. Stale transitions
+exit without modifying auth state. Bootstrap generation checks are preserved.
+
+Regression tests: stale in-flight `SIGNED_IN` vs newer `SIGNED_OUT`; stale
+principal B vs newer principal C; existing delayed-restore bootstrap races.
 
 ## Scope after correction pass
 
@@ -89,8 +99,8 @@ Web detail report: [`WEB_RESULT.md`](WEB_RESULT.md).
 - Uses existing `getSupabase()` singleton; no second client.
 - Session restore on mount; single `onAuthStateChange` subscription; cleanup on
   unmount.
-- Auth generation counter: delayed `restoreSession` cannot overwrite a newer
-  auth event.
+- Auth generation counter: delayed restore and stale in-flight apply/optimistic
+  transitions cannot overwrite a newer auth event.
 - Auth bootstrap failure does not block anonymous Browse.
 - Task 14 owns AppState auto-refresh; AuthProvider does not duplicate it.
 
@@ -150,14 +160,19 @@ Focused suites cover:
 - Profile `abortSignal`; cancel-before-remove; late A isolation; public catalog
   preservation.
 - Auth restore/listener/cleanup; same-user token refresh retain; bootstrap vs
-  event generation race; A→B purge.
+  event generation race; overlapping applySession cleanup races (SIGNED_IN vs
+  newer SIGNED_OUT; principal B vs C); A→B purge.
 
 ## Device and network
 
-- Physical iPhone: **tested-pass** (human, 2026-08-08) for navigation, session,
-  sign-out, and A→B checklist items reported complete.
-- Web mobile preview: **pass** (agent, 393×852 Playwright) — see
-  [`WEB_RESULT.md`](WEB_RESULT.md).
+- Automated: **PASS**.
+- Web mobile preview: **PASS** for web stack/navigation evidence only (does not
+  prove native iOS animation, iOS headers, native session persistence, or
+  physical-device network transitions). See [`WEB_RESULT.md`](WEB_RESULT.md).
+- Physical iPhone: **PENDING HUMAN CONFIRMATION** on the corrected build
+  (navigation, session restore, sign-out, A→B, temporary network loss).
+- Temporary network-loss / reconnect: **not re-run on web**; must be verified
+  on physical device at final human acceptance.
 - Staging/production: untouched.
 
 ## Boundary confirmation
@@ -168,5 +183,6 @@ Focused suites cover:
 - Schema / RLS / grants / migrations / Community Score triggers: **unchanged**.
 - No service-role key in Expo, tests, or evidence.
 - Dependabot PR #30: **not touched**.
-- PR #35 remains draft until you mark ready / merge.
-- Final formal human acceptance label: explicit call still ok if desired; interactive proof is no longer pending.
+- AsyncStorage remains; SecureStore not added.
+- PR #35 remains draft / unmerged.
+- Final Task 16 human acceptance: **not claimed**.

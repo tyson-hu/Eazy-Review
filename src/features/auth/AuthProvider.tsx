@@ -96,8 +96,9 @@ export function AuthProvider({
   const [user, setUser] = useState<AuthUser | null>(null);
   const previousUserIdRef = useRef<string | null>(null);
   /**
-   * Monotonic generation so a delayed restoreSession cannot overwrite a newer
-   * SIGNED_IN / SIGNED_OUT (or other applied session) that arrived mid-bootstrap.
+   * Monotonic generation so a delayed restoreSession or a stale in-flight
+   * applySession / optimistic sign-in/up/out cannot overwrite a newer auth
+   * transition that arrived while async cleanup awaited.
    */
   const authGenerationRef = useRef(0);
 
@@ -118,10 +119,14 @@ export function AuthProvider({
   );
 
   const applySession = useCallback(
-    async (session: Session | null) => {
+    async (session: Session | null, generation: number) => {
       const nextUser = authUserFromSession(session);
       const nextId = userIdFromSession(session);
       await clearUserScopedIfPrincipalChanged(nextId);
+      // A newer auth transition may have started while cleanup awaited.
+      if (authGenerationRef.current !== generation) {
+        return;
+      }
       setUser(nextUser);
       setStatus(nextUser ? 'signed-in' : 'signed-out');
     },
@@ -205,7 +210,7 @@ export function AuthProvider({
         if (authGenerationRef.current !== appliedGeneration) {
           return;
         }
-        void applySession(session);
+        void applySession(session, appliedGeneration);
       });
     });
 
@@ -230,8 +235,12 @@ export function AuthProvider({
       }
       const result = await signInWithPassword(credentials, { client });
       authGenerationRef.current += 1;
+      const generation = authGenerationRef.current;
       // onAuthStateChange will sync status; apply optimistically for UX.
       await clearUserScopedIfPrincipalChanged(result.user.id);
+      if (authGenerationRef.current !== generation) {
+        return result;
+      }
       setUser(result.user);
       setStatus('signed-in');
       return result;
@@ -248,7 +257,11 @@ export function AuthProvider({
       const result = await signUpWithPassword(credentials, { client });
       if (result.kind === 'signed-in') {
         authGenerationRef.current += 1;
+        const generation = authGenerationRef.current;
         await clearUserScopedIfPrincipalChanged(result.user.id);
+        if (authGenerationRef.current !== generation) {
+          return result;
+        }
         setUser(result.user);
         setStatus('signed-in');
       }
@@ -261,14 +274,22 @@ export function AuthProvider({
     const client = resolveClient(clientProp);
     if (!client) {
       authGenerationRef.current += 1;
+      const generation = authGenerationRef.current;
       await clearUserScopedIfPrincipalChanged(null);
+      if (authGenerationRef.current !== generation) {
+        return;
+      }
       setUser(null);
       setStatus('signed-out');
       return;
     }
     await signOutApi({ client });
     authGenerationRef.current += 1;
+    const generation = authGenerationRef.current;
     await clearUserScopedIfPrincipalChanged(null);
+    if (authGenerationRef.current !== generation) {
+      return;
+    }
     setUser(null);
     setStatus('signed-out');
   }, [clearUserScopedIfPrincipalChanged, clientProp]);
