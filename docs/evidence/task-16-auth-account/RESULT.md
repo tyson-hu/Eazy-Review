@@ -22,7 +22,8 @@ Do not start Task 17 until Task 16 is formally accepted.
 - Branch: `agent/task-16-core-auth-account-state`
 - Starting SHA: `f7cb8856ccdebece51e007df301e4ce578892c1a` (Task 15 merge / PR #32)
 - Previously reviewed head (pre this race fix): `30688c056aa2bab735422bc6ad4fbc330e02de97`
-- Correction HEAD (auth-generation race + evidence reconciliation): `97df31b0d84d7592778d52ab5b4a351ac8fa4ccd`
+- Race-fix commit: `97df31b0d84d7592778d52ab5b4a351ac8fa4ccd`
+- Ending SHA (branch tip): `24b40b7d75514d25228d0cabbd1f5b1421dc97de`
 
 ## Human decisions recorded during review
 
