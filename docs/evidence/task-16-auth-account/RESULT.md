@@ -12,7 +12,7 @@ Do not treat this file as final human acceptance of Task 16.
 - Branch: `agent/task-16-core-auth-account-state`
 - Starting SHA: `f7cb8856ccdebece51e007df301e4ce578892c1a` (Task 15 merge / PR #32)
 - Previously reviewed head: `16ecbd5fbdf26c663539ff4956b88d435f734335`
-- Correction pass: (see latest commit on branch after this evidence update)
+- Correction pass HEAD: `3ee9e3ebc71b7fe7532c398aea8932c8f65647f2`
 
 ## Human decisions recorded during review
 
