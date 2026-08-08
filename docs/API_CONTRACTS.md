@@ -20,6 +20,26 @@ export type Product = {
   lowestPrice?: number | null;
 };
 
+/** Anonymous Browse card; contains public catalog data only. */
+export type ProductCardData = {
+  id: string;
+  brand: string;
+  name: string;
+  sku: string | null;
+  imageUrl: string | null;
+  eazyScore: number | null;
+  communityScore: number | null;
+  ratingCount: number;
+  lowestOffer: {
+    retailer: string;
+    amount: number;
+    currency: string;
+    market: string;
+    sizeLabel: string | null;
+    checkedAt: string;
+  } | null;
+};
+
 export type RatingBreakdown = {
   look: number;
   comfort: number;
@@ -49,30 +69,44 @@ export type ProductRatingSummary = {
   communityScore: number | null;
 };
 
+/** Legacy mock-rating offer shape retained outside connected Task 15 screens. */
 export type ProductOffer = {
   id: string;
   productId: string;
   websiteName: string;
   websiteLink: string;
-  /** Null when the offer has no size; DB rejects negative and non-finite values. */
   size: number | null;
-  /** Required size system label; DB enforces non-null MVP whitelist (`US` only until expanded). */
   sizeRegion: string;
-  /** Required ISO 4217 code; DB enforces non-null MVP whitelist (`USD` only until expanded). */
   currency: string;
-  /** Null when unavailable; DB rejects negative and non-finite values. */
   price: number | null;
 };
 
 /** Public/cacheable Product Detail data; never contains viewer-owned state. */
 export type ProductDetailPublicData = {
   product: Product;
-  offers: ProductOffer[];
+  imageUrls: string[];
+  eazyAssessment: {
+    score: number;
+    methodologyVersion: string | null;
+    assessedAt: string | null;
+  } | null;
+  offers: Array<{
+    id: string;
+    retailer: string;
+    amount: number;
+    currency: string;
+    market: string;
+    sizeLabel: string | null;
+    checkedAt: string;
+  }>;
   ratingSummary: ProductRatingSummary;
 };
 
-/** Screen composition. My Rating is loaded from a separate user-scoped source. */
-export type ProductDetailData = ProductDetailPublicData & {
+/** Legacy mock composition. Task 15 public queries never return this shape. */
+export type ProductDetailData = {
+  product: Product;
+  offers: ProductOffer[];
+  ratingSummary: ProductRatingSummary;
   myRating: RatingBreakdown | null;
 };
 
@@ -170,9 +204,12 @@ src/
 
   features/
     products/
-      mockProducts.ts          # Task 6–15 transitional mock catalog
-      mockProductDetails.ts
-      # api.ts / queries.ts arrive with Task 15 connected reads
+      api.ts                    # Task 15 anonymous Supabase reads
+      adapters.ts               # raw response → stable public view models
+      errors.ts                 # catalog domain errors + retry policy
+      queries.ts                # identity-neutral TanStack Query hooks
+      mockProducts.ts           # isolated legacy fixtures; not runtime Browse
+      mockProductDetails.ts     # isolated legacy fixtures; not runtime Detail
 
     ratings/
       # connected modules arrive with Task 17
@@ -238,31 +275,42 @@ type ProductCardData = {
   eazyScore: number | null;
   communityScore: number | null;
   ratingCount: number;
-  lowestPrice: number | null;
-  /** ISO 4217 code for `lowestPrice`; null when there is no displayable price. */
-  lowestPriceCurrency: string | null;
+  lowestOffer: {
+    retailer: string;
+    amount: number;
+    currency: string;
+    market: string;
+    sizeLabel: string | null;
+    checkedAt: string;
+  } | null;
 };
 ```
 
-The database can store this data across relational tables. Frontend code should receive a convenient shape from Supabase select joins, a view, or an RPC function. Supabase select joins are acceptable for MVP. Later, create a view named `product_card_view`.
+Task 15 uses one nested Supabase select for the complete published Browse list;
+it does not issue one request per card. Products are ordered by `created_at`,
+then `id`. The primary image is ordered by `sort_order`, `created_at`, then
+`id`. The adapter sorts displayable verified offers by amount, retailer,
+size/market, verification time, then id and selects the first. Mixed currencies
+are rejected as `invalid-response` rather than compared numerically.
 
-Browse cards must format `lowestPrice` with `lowestPriceCurrency` (via
-`formatPrice` / `Intl.NumberFormat`). Do not hardcode a `$` prefix. When Task 15
-maps a single-currency offer set into Browse, carry that same selected currency
-into `lowestPriceCurrency`. Mock catalog `Product.lowestPrice` has no currency
-field and is treated as USD until offer-backed mapping lands.
+Browse cards format the selected offer with its returned currency via
+`formatPrice` / `Intl.NumberFormat`; they do not hardcode a currency symbol.
+Null image, assessment, Community Score, and lowest offer values remain null.
 
 ## Products API
 
 File: `src/features/products/api.ts`
 
 Functions:
-- `getProducts(params)`
+- `getProducts(options)` — one anonymous request for the published Browse list
 - `getProductById(productId)` — returns `ProductDetailPublicData`; never embeds
-  `myRating`
-- `searchProducts(query)`
-- `getProductOffers(productId)`
-- `getProductImages(productId)`
+  `myRating`; one anonymous request for the published product
+
+Both functions select only their surface's public columns and nested public
+relations. Search is client-side over the returned brand/name/SKU fields for
+the deterministic MVP catalog; there is no separate search request. The detail
+adapter preserves image order and sorts verified offers deterministically.
+Missing or unpublished detail rows become the domain `not-found` result.
 
 ## Auth API
 
@@ -364,9 +412,8 @@ a PostgREST upsert.
 File: `src/features/products/queries.ts` (Task 15)
 
 Hooks:
-- `useProductsQuery(params)`
+- `useProductsQuery()`
 - `useProductQuery(productId)` — public `ProductDetailPublicData` only
-- `useProductOffersQuery(productId)`
 
 Use the centralized factories in `src/lib/query/keys.ts`:
 
@@ -374,6 +421,16 @@ Use the centralized factories in `src/lib/query/keys.ts`:
   `catalogKeys.product(productId)`
 - Equivalent historical shapes in prose: `['catalog','products']`,
   `['catalog','product', productId]` (prefer factories over hand-built arrays)
+
+Task 15 uses the accepted Query Client and defaults; it creates no second
+client and does not persist the cache. Catalog errors are normalized to
+`offline`, `timeout`, `not-found`, `unauthorized`, `invalid-response`, or
+`server-error`, so screens never interpret PostgREST/Supabase errors. Timeout
+and server/transport failures receive at most one TanStack Query retry.
+Offline, unauthorized, not-found, invalid-response, and invalid-configuration
+failures receive no automatic retry. Reconnect/focus behavior remains owned by
+the accepted Task 14 lifecycle, while every surface exposes manual retry where
+the error is recoverable.
 
 ## Ratings Query Hooks
 
@@ -475,20 +532,21 @@ Community Score; they never invent client-side score math.
 
 ## Mock Data Contract
 
-Before connected reads (Tasks 11–14 do not require removing mocks):
+After Task 15, these modules are retained only for tests, isolated component
+fixtures, legacy mock Rating routes, or explicitly named development helpers.
+Runtime Browse and Product Detail must not import them or silently fall back to
+them when a remote request fails:
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
 - Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Unmapped `mock-product://` URIs resolve to no image source so UI shows the "Image coming soon" placeholder. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
-- Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers, `ProductRatingSummary`, and user-specific `myRating` per catalog id, composed via `getMockProductDetailById(productId): ProductDetailData | null`.
-- Mock My Rating write: `saveMockMyRating(productId: string, rating: RatingBreakdown): boolean` in the same file — the frontend mock-data write API for Task 9.
-
-`saveMockMyRating` semantics (session-only; not a backend write):
-
-- Confirms the product/detail fixture exists with the same rules as `getMockProductDetailById`; returns `false` if not.
-- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment (mock alias for private note) is stored as `null`.
-- Returns `true` on success.
-- Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
-- Screens must call this API only — never import or mutate the private map.
+- Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers
+  and `ProductRatingSummary` per catalog id, composed via
+  `getMockProductDetailById(productId): ProductDetailData | null`. After Task 15,
+  `myRating` is always `null` on this helper; the product-ID-only mock session map
+  and `saveMockMyRating` write API were removed so connected Supabase UUIDs cannot
+  claim a fake session save.
+- Legacy `/product/[id]/rate` is an honest **Rating unavailable** screen until
+  Tasks 16–17 own sign-in and durable My Rating. It must not write mock ratings.
 
 When Task 15 switches Browse/Detail to Supabase UUIDs, it does not adapt
 session-only My Rating persistence to connected products. The Rate action stays
@@ -534,36 +592,18 @@ export const mockProducts: Product[] = [
 Detail fixture coverage (aligned to the catalog in `mockProducts.ts`):
 
 - Lookup returns `ProductDetailData` for every catalog id `1`–`8`, or `null` for unknown ids.
-- At least one product has offers + rating summary + non-null `myRating` (id `1`).
-- At least one product has `myRating: null` (e.g. id `2`).
+- After Task 15, every mock detail returns `myRating: null` (session mock map removed).
 - Edge products stay consistent with catalog: id `6` has `ratingCount: 0` / null Community Score summary; id `8` has null Eazy Score on `product` with a present community summary.
 - Empty / unusable offers: id `5` has no offers (catalog `lowestPrice` fallback); id `7` has offers with null prices (same fallback path).
 
 ```ts
-import {
-  getMockProductDetailById,
-  saveMockMyRating,
-} from '@/src/features/products/mockProductDetails';
-import type { RatingBreakdown } from '@/src/types/product';
+import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
 
 const detail = getMockProductDetailById('1');
 // detail.product — from mockProducts
 // detail.offers — ProductOffer[]
 // detail.ratingSummary — ProductRatingSummary
-// detail.myRating — RatingBreakdown | null
-
-const rating: RatingBreakdown = {
-  look: 8,
-  comfort: 7,
-  quality: 8,
-  outfit: 7,
-  value: 7,
-  overall: 8,
-  comment: null,
-};
-const ok = saveMockMyRating('2', rating);
-// true → getMockProductDetailById('2').myRating reflects the copy this session
-// false → unknown / unavailable product; community fixtures unchanged either way
+// detail.myRating — always null on the mock helper after Task 15
 ```
 
 ## Current Product Example

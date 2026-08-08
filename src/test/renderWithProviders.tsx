@@ -49,7 +49,7 @@ export async function renderWithProviders(
     async cleanup() {
       await queryClient.cancelQueries();
       queryClient.clear();
-      result.unmount();
+      await result.unmount();
     },
   };
 }

@@ -22,9 +22,16 @@ export type ProductCardData = {
   eazyScore: number | null;
   communityScore: number | null;
   ratingCount: number;
-  lowestPrice: number | null;
-  /** ISO currency for `lowestPrice`; null when there is no displayable price. */
-  lowestPriceCurrency: string | null;
+  lowestOffer: LowestVerifiedOffer | null;
+};
+
+export type LowestVerifiedOffer = {
+  retailer: string;
+  amount: number;
+  currency: string;
+  market: string;
+  sizeLabel: string | null;
+  checkedAt: string;
 };
 
 export type RatingBreakdown = {
@@ -59,6 +66,25 @@ export type ProductOffer = {
   sizeRegion: string;
   currency: string;
   price: number | null;
+};
+
+export type VerifiedProductOffer = LowestVerifiedOffer & {
+  id: string;
+};
+
+export type EazyAssessmentViewModel = {
+  score: number;
+  methodologyVersion: string | null;
+  assessedAt: string | null;
+};
+
+/** Public/cacheable Product Detail data; never contains viewer-owned state. */
+export type ProductDetailPublicData = {
+  product: Product;
+  imageUrls: string[];
+  eazyAssessment: EazyAssessmentViewModel | null;
+  offers: VerifiedProductOffer[];
+  ratingSummary: ProductRatingSummary;
 };
 
 /** Composed Product Detail payload. My Rating is user-specific, not a catalog Product field. */

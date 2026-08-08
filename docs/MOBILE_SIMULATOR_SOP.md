@@ -1,6 +1,16 @@
 # Mobile Simulator Preview SOP
 
-Canonical procedure for interactive mobile validation on the **iOS Simulator** with Expo Go. Use this for human-walk equivalents, screenshot audits, and parent acceptance of mobile-first flows. Web cross-check procedure: `docs/WEB_MOBILE_PREVIEW_SOP.md`. Orchestrated UX audits: `docs/UX_SCREENSHOT_AUDIT_SOP.md`.
+Canonical procedure for interactive mobile validation on the **iOS Simulator**.
+Simulator walks may still use Expo Go when no custom native module requires a
+development build. Web cross-check procedure: `docs/WEB_MOBILE_PREVIEW_SOP.md`.
+Orchestrated UX audits: `docs/UX_SCREENSHOT_AUDIT_SOP.md`.
+
+For **physical iPhone** daily development, Metro-backed development builds, and
+Task 15 **Metro-independent offline cold-launch** acceptance (local Release
+build + phone Network Link Conditioner only), follow
+`README.md` → **Physical iPhone Development And Offline Testing**. Do not use
+Expo Go as the Task 15 offline acceptance runtime, and do not condition the
+Mac network for that test.
 
 ## When To Use
 
@@ -10,6 +20,8 @@ Canonical procedure for interactive mobile validation on the **iOS Simulator** w
 - Confirming layouts near the design reference width (**393px**).
 
 Do **not** use this SOP to replace `npm run typecheck` / `lint` / `check`. Commands prove types and tooling; this SOP proves interactive UX.
+Do **not** use this SOP alone for Task 15 physical-device offline acceptance
+(see README physical-iPhone section).
 
 ## Prerequisites
 
@@ -36,7 +48,8 @@ Reference layout width from `docs/DESIGN.md`: **393px**.
 2. Boot a phone-class device (prefer a current iPhone):
    `xcrun simctl boot "iPhone 16"` (or equivalent) then `open -a Simulator`.
 3. From the repo root, start Expo against that simulator:
-   `npx expo start --ios --port 8081`
+   `npm run start:ios -- --port 8081`
+   (or `npx expo start --ios --port 8081`).
    Wait until Metro reports the bundle (e.g. `iOS Bundled …`) and Expo Go has opened the project URL (`exp://…`).
 4. Confirm the app is interactive with a probe screenshot (next section). If Expo Go is still installing, wait; do not capture evidence during the install splash.
 
@@ -68,6 +81,11 @@ Rules:
 - Prefer viewport captures for “what the user sees first”; use scrolling + a second shot when the acceptance criterion requires below-the-fold content (e.g. primary CTA).
 - Never put secrets, tokens, or `.env` values in screenshots (`docs/SECURITY.md`).
 
+Mock My Rating session writes were **removed in Task 15**. The legacy rate route
+shows **Rating unavailable**; do not plan capture steps that expect a fake
+session save or reload-reset of mock ratings. Tasks 16–17 reintroduce durable
+rating after sign-in.
+
 ## Navigation Patterns
 
 ### Preferred — real user path
@@ -91,10 +109,7 @@ Limits (must state in findings when relevant):
 - Rapid successive deep links **pollute the navigation stack**. Back button titles may show the previous deep-linked screen, not the product under test.
 - Do **not** file stack-title bugs from deep-link-only sequences unless reproduced on Browse → Detail → Rate.
 - Unknown-id and edge fixtures are fine via deep link (`/product/999`, `/product/6`, `/product/8`).
-
-### Session-only mock state
-
-Mock My Rating writes live in the JS session (`saveMockMyRating`). Reloading the JS context (full app reload / Metro refresh / new Expo Go open that remounts the bundle) **resets** fixtures. Plan capture order so submit → Detail evidence happens **before** an intentional reload-reset check.
+- `/product/:id/rate` shows **Rating unavailable** after Task 15 (no mock session save).
 
 ## What Simulator Proves Well
 

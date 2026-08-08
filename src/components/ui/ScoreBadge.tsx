@@ -7,6 +7,8 @@ type ScoreBadgeProps = {
   label: string;
   score: number | null | undefined;
   className?: string;
+  emptyLabel?: string;
+  sourceLabel?: string;
 };
 
 const toneClasses = {
@@ -16,7 +18,13 @@ const toneClasses = {
   neutral: 'text-secondary',
 } as const;
 
-export function ScoreBadge({ label, score, className }: ScoreBadgeProps) {
+export function ScoreBadge({
+  label,
+  score,
+  className,
+  emptyLabel = 'No score yet',
+  sourceLabel,
+}: ScoreBadgeProps) {
   const tone = getScoreTone(score);
   const scoreLabel = getScoreLabel(score);
 
@@ -27,8 +35,13 @@ export function ScoreBadge({ label, score, className }: ScoreBadgeProps) {
         {score == null ? '—' : score}
       </AppText>
       <AppText variant="caption" className="mt-0.5">
-        {scoreLabel}
+        {score == null ? emptyLabel : scoreLabel}
       </AppText>
+      {sourceLabel ? (
+        <AppText variant="caption" className="mt-0.5">
+          {sourceLabel}
+        </AppText>
+      ) : null}
     </View>
   );
 }

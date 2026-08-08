@@ -2,9 +2,9 @@ import { Image, Platform, Pressable, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
-import { resolveProductImageSource } from '@/src/features/products/mockProductImages';
 import type { ProductCardData } from '@/src/types/product';
 import { formatPrice } from '@/src/utils/formatPrice';
+import { formatVerifiedDate } from '@/src/utils/formatVerifiedDate';
 
 type ProductCardProps = {
   product: ProductCardData;
@@ -24,10 +24,11 @@ const productImageShadow = Platform.select({
 });
 
 export function ProductCard({ product, onPress }: ProductCardProps) {
-  const imageSource = resolveProductImageSource(product.imageUrl);
+  const imageSource = product.imageUrl ? { uri: product.imageUrl } : undefined;
 
   return (
     <Pressable
+      testID={`product-card-${product.id}`}
       accessibilityRole="button"
       accessibilityLabel={`Open ${product.brand} ${product.name}`}
       onPress={onPress}
@@ -38,6 +39,7 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
         <View className="h-40 items-center justify-center overflow-hidden rounded-card">
           {imageSource ? (
             <Image
+              testID={`product-image-${product.id}`}
               source={imageSource}
               resizeMode="contain"
               style={{ width: '100%', height: '100%' }}
@@ -45,7 +47,7 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
               accessibilityIgnoresInvertColors
             />
           ) : (
-            <AppText variant="caption">Image coming soon</AppText>
+            <AppText variant="caption">No image available</AppText>
           )}
         </View>
       </View>
@@ -63,17 +65,45 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
       ) : null}
 
       <View className="mt-5 flex-row gap-5">
-        <ScoreBadge label="Eazy Score" score={product.eazyScore} className="flex-1" />
-        <ScoreBadge label="Community Score" score={product.communityScore} className="flex-1" />
+        <ScoreBadge
+          label="Eazy Score"
+          score={product.eazyScore}
+          emptyLabel="Not assessed yet"
+          sourceLabel="Editorial assessment"
+          className="flex-1"
+        />
+        <ScoreBadge
+          label="Community Score"
+          score={product.communityScore}
+          emptyLabel={product.ratingCount === 0 ? 'No ratings yet' : 'No score yet'}
+          className="flex-1"
+        />
       </View>
 
-      <View className="mt-5 flex-row items-center justify-between">
-        <AppText variant="caption">Lowest price</AppText>
-        <AppText className="text-lg font-semibold">
-          {product.lowestPrice == null || product.lowestPriceCurrency == null
-            ? '—'
-            : formatPrice(product.lowestPrice, product.lowestPriceCurrency)}
-        </AppText>
+      <View className="mt-5">
+        <AppText variant="label">Lowest verified offer</AppText>
+        {product.lowestOffer ? (
+          <View className="mt-2 gap-1">
+            <AppText className="text-lg font-semibold">
+              {formatPrice(
+                product.lowestOffer.amount,
+                product.lowestOffer.currency,
+              )}{' '}
+              {product.lowestOffer.currency}
+            </AppText>
+            <AppText variant="caption">
+              {product.lowestOffer.retailer} ·{' '}
+              {product.lowestOffer.sizeLabel ?? product.lowestOffer.market}
+            </AppText>
+            <AppText variant="caption">
+              Checked {formatVerifiedDate(product.lowestOffer.checkedAt)}
+            </AppText>
+          </View>
+        ) : (
+          <AppText variant="body" className="mt-2">
+            No verified offer available
+          </AppText>
+        )}
       </View>
     </Pressable>
   );

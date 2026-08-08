@@ -1,8 +1,7 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
 import { EmptyState } from '@/src/components/ui/EmptyState';
 import { ErrorState } from '@/src/components/ui/ErrorState';
@@ -10,31 +9,12 @@ import { Input } from '@/src/components/ui/Input';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ProductCard } from '@/src/components/ui/ProductCard';
 import { Screen } from '@/src/components/ui/Screen';
-import { mockProducts } from '@/src/features/products/mockProducts';
-import type { Product, ProductCardData } from '@/src/types/product';
+import { CatalogStatusBanner } from '@/src/features/products/CatalogStatusBanner';
+import { getCatalogErrorPresentation } from '@/src/features/products/errors';
+import { useProductsQuery } from '@/src/features/products/queries';
+import type { ProductCardData } from '@/src/types/product';
 
-/** Deterministic mock-load failure trigger until the real data source can fail. */
-const FORCE_LOAD_ERROR_QUERY = '__error__';
-
-function toCardData(product: Product): ProductCardData {
-  const lowestPrice = product.lowestPrice ?? null;
-  return {
-    id: product.id,
-    brand: product.brand,
-    name: product.name,
-    sku: product.sku,
-    imageUrl: product.imageUrl ?? null,
-    eazyScore: product.eazyScore ?? null,
-    communityScore: product.communityScore ?? null,
-    ratingCount: product.ratingCount ?? 0,
-    lowestPrice,
-    // Mock catalog `Product.lowestPrice` has no currency field; treat as USD.
-    // Task 15 Browse mapping must carry the single selected offer currency instead.
-    lowestPriceCurrency: lowestPrice == null ? null : 'USD',
-  };
-}
-
-function matchesQuery(product: Product, query: string): boolean {
+function matchesQuery(product: ProductCardData, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (q.length === 0) {
     return true;
@@ -49,18 +29,19 @@ function matchesQuery(product: Product, query: string): boolean {
 export default function BrowseScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  // Mimics the async load Supabase will introduce so loading/error UI is
-  // exercised now. Task 14 owns TanStack Query; Task 15 owns this Browse swap.
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadAttempt, setLoadAttempt] = useState(0);
+  const productsQuery = useProductsQuery();
+  const products = productsQuery.data;
+  const hasData = products !== undefined;
+  const results = (products ?? []).filter((product) =>
+    matchesQuery(product, query),
+  );
+  const errorPresentation = productsQuery.error
+    ? getCatalogErrorPresentation(productsQuery.error, 'products')
+    : null;
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, [loadAttempt]);
-
-  const forceLoadError = query.trim().toLowerCase() === FORCE_LOAD_ERROR_QUERY;
-  const results = mockProducts.filter((product) => matchesQuery(product, query));
+  const retry = () => {
+    void productsQuery.refetch();
+  };
 
   return (
     <Screen scroll>
@@ -74,52 +55,67 @@ export default function BrowseScreen() {
         accessibilityLabel="Search products"
       />
 
-      <View className="mt-3 flex-row gap-3">
-        <Button label="Filter" variant="secondary" disabled className="flex-1" />
-        <Button label="Sort" variant="secondary" disabled className="flex-1" />
-      </View>
-      <AppText variant="caption" className="mt-2">
-        Filter and Sort are not available yet.
-      </AppText>
-
-      {isLoading ? (
-        <LoadingState message="Loading products..." />
-      ) : forceLoadError ? (
+      {productsQuery.isOffline && !hasData ? (
         <ErrorState
-          title="Could not load products"
-          message="Mock load failed. Clear the search or tap Try again to recover."
-          onRetry={() => {
-            setQuery('');
-            setIsLoading(true);
-            setLoadAttempt((attempt) => attempt + 1);
-          }}
+          title="You're offline."
+          message="Connect to the internet and try again."
+          onRetry={retry}
         />
-      ) : results.length === 0 ? (
-        <View className="mt-4">
-          <EmptyState
-            title="No products found"
-            message="Try a different brand, name, or SKU."
-          />
-          <Button
-            className="mt-4"
-            label="Clear search"
-            variant="secondary"
-            onPress={() => setQuery('')}
-          />
-        </View>
+      ) : productsQuery.isPending && !hasData ? (
+        <LoadingState message="Loading products..." />
+      ) : productsQuery.error && !hasData && errorPresentation ? (
+        <ErrorState
+          title={errorPresentation.title}
+          message={errorPresentation.message}
+          onRetry={errorPresentation.canRetry ? retry : undefined}
+        />
       ) : (
-        <View className="mt-5 gap-5">
-          {results.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={toCardData(product)}
-              onPress={() => router.push(`/product/${product.id}`)}
+        <>
+          {productsQuery.isOffline ? (
+            <CatalogStatusBanner
+              title="You're offline."
+              message="Prices and availability may have changed."
             />
-          ))}
-          <AppText variant="caption" className="py-3 text-center">
-            You have reached the end — more products load here once the catalog grows.
-          </AppText>
-        </View>
+          ) : productsQuery.isFetching ? (
+            <CatalogStatusBanner title="Refreshing catalog..." />
+          ) : productsQuery.error ? (
+            <CatalogStatusBanner
+              title="Could not refresh catalog."
+              message="Showing the last available product data."
+              onRetry={retry}
+            />
+          ) : null}
+
+          {products?.length === 0 ? (
+            <EmptyState
+              title="No published products yet"
+              message="The public catalog is currently empty."
+            />
+          ) : results.length === 0 ? (
+            <View className="mt-4">
+              <EmptyState
+                title="No products found"
+                message="Try a different brand, name, or SKU."
+              />
+              <Button
+                className="mt-4"
+                label="Clear search"
+                variant="secondary"
+                onPress={() => setQuery('')}
+              />
+            </View>
+          ) : (
+            <View className="mt-5 gap-5">
+              {results.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onPress={() => router.push(`/product/${product.id}`)}
+                />
+              ))}
+            </View>
+          )}
+        </>
       )}
     </Screen>
   );
