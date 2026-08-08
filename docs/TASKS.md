@@ -16,10 +16,16 @@
   Detail read the two deterministic published products through one Supabase
   request per surface, with complete, sparse, loading, cached-refresh, offline,
   error/retry, empty, and not-found behavior. Feed remains mock/placeholder.
-- Task 16 is the current milestone: core authentication and Account state —
-  **correction implementation complete; physical-device re-verification and
-  final human acceptance pending.**
-- Task 17 (My Rating persistence and Rated Products) remains pending.
+- Task 16 is **Done — human accepted.** Core authentication and Account state
+  (email/password sign-in/up/out, session restore, auth-gated Rate, minimal
+  Account, cache isolation, `dismissTo` return navigation, auth-generation
+  race guards). Physical iPhone checklist re-verified on the corrected build
+  (human-reported PASS). Automated and web verification pass. Evidence:
+  [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
+  PR #35 is ready for merge (implementation authorized; merge remains a
+  separate action).
+- Task 17 (My Rating persistence and Rated Products) is **Next — pending
+  authorization.** Do not start until explicitly authorized in a new session.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -166,8 +172,8 @@ Work in order unless a task explicitly states that it is conditional.
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
-| 16 | Core Authentication And Account State | Correction implementation complete — physical-device re-verification and final human acceptance pending |
-| 17 | My Rating Persistence And Rated Products | Pending |
+| 16 | Core Authentication And Account State | Done — human accepted (PR #35 ready for merge) |
+| 17 | My Rating Persistence And Rated Products | Next — pending authorization |
 | 18 | Password Recovery And Deep Links | Pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
@@ -448,7 +454,9 @@ local Supabase only; no staging/production):
 
 ## Task 16: Core Authentication And Account State
 
-Status: **Correction implementation complete — physical-device re-verification and final human acceptance pending.**
+Status: **Done — human accepted.** Corrected physical-device checklist: **PASS**
+(human-reported). PR #35 ready for merge; merge is a separate explicit action.
+Task 17 remains unimplemented and requires separate authorization.
 
 Depends on: Task 15.
 
@@ -459,8 +467,8 @@ only bounded non-sensitive leaf packets.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is required before Tasks 17–18; any staging auth
-configuration is a separate explicit action. Implementation evidence:
+Human gate: **Accepted.** Staging auth configuration for later tasks remains a
+separate explicit action. Implementation evidence:
 [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
@@ -522,7 +530,8 @@ Non-goals (remain later work — do not implement in Task 16):
 
 ## Task 17: My Rating Persistence And Rated Products
 
-Status: Pending.
+Status: **Next — pending authorization.** Not started. Requires an explicit
+start authorization after PR #35 merge (or as separately directed).
 
 Depends on: Task 16.
 
