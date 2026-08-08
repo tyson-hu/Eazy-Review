@@ -139,6 +139,19 @@ Canonical security rules for all agent and human work in this repo, regardless o
   full matched value. Prose mentions of `service_role` are allowed. Wired into
   `npm run check` and Expo CI. Self-test alone: `npm run test:secrets`. Do not
   leave the deliberate token in committed files.
+- Task 16 auth session storage threat model:
+  - Access and refresh tokens are sensitive authentication material.
+  - AsyncStorage is not encrypted at rest.
+  - Profile display fields do not drive the storage decision; tokens do.
+  - Device compromise and local storage inspection are relevant risks.
+  - RLS remains mandatory regardless of local token storage encryption.
+  - SecureStore was evaluated and **not** retained for MVP: a full Supabase
+    session payload can exceed the ~2048-byte iOS SecureStore limit, which
+    would require fragile custom chunking rejected by Task 16 decision rules.
+  - Recommendation (human acceptance pending): keep AsyncStorage with the
+    existing SSR-safe adapter for iPhone-first MVP + static web export.
+  - Never store service-role keys, passwords, or database credentials in
+    client storage. Never log sessions, tokens, or full auth-user objects.
 - Do not print Supabase project refs, keys, tokens, connection strings, or
   dashboard/MCP responses containing them. Report presence and validation
   status without echoing values.

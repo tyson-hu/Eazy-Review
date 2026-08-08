@@ -107,7 +107,7 @@ User opens Product Detail
 -> Honest alert: not saved to a server; resets on reload
 ```
 
-Task 15 connected-read interim:
+Task 15 connected-read interim (historical; superseded by Task 16 gate):
 
 ```txt
 User opens connected Product Detail
@@ -116,10 +116,18 @@ User opens connected Product Detail
 -> No mock save is claimed for the Supabase product
 ```
 
-Task 16 owns the logged-out Sign In gate and return-to-product behavior. After
-sign-in during Task 16, the user returns to Product Detail, where rating remains
-honestly unavailable. Task 17 owns the durable Rate/Edit form, save, and My
-Rating refresh.
+Task 16 rate gate:
+
+```txt
+User opens Product Detail
+-> If signed out: Sign in to rate (return path to this product)
+-> After successful sign-in: return to Product Detail
+-> Rating remains honestly unavailable until Task 17
+-> Signed-in Rate route shows unavailable; no rating write
+-> Sign-out / account switch clears user-scoped Query cache only
+```
+
+Task 17 owns the durable Rate/Edit form, save, and My Rating refresh.
 
 ## Flow 3: Edit Own Rating
 

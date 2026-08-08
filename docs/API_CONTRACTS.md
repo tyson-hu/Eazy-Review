@@ -211,11 +211,20 @@ src/
       mockProducts.ts           # isolated legacy fixtures; not runtime Browse
       mockProductDetails.ts     # isolated legacy fixtures; not runtime Detail
 
+    auth/
+      api.ts                    # Task 16 email/password sign-in, sign-up, sign-out
+      errors.ts                 # Normalized auth errors (no raw SDK text)
+      types.ts
+      returnPath.ts             # Safe internal returnTo allowlist
+      AuthProvider.tsx          # Session state + user-scoped cache isolation
+      hooks.ts
+
+    account/
+      api.ts                    # Owner profile read + member-since format
+      queries.ts                # User-scoped profile query
+
     ratings/
       # connected modules arrive with Task 17
-
-    auth/
-      # AuthProvider and APIs arrive with Task 16+
 
   lib/
     env/
@@ -223,7 +232,7 @@ src/
     supabase/
       client.ts                # Task 14 singleton
       createClient.ts
-      authStorage.ts           # Task 14 AsyncStorage session adapter
+      authStorage.ts           # Task 14/16 AsyncStorage session adapter (SecureStore rejected for MVP)
     query/
       client.ts                # Task 14 QueryClient factory
       keys.ts                  # public catalog vs user-scoped key factories
@@ -232,7 +241,7 @@ src/
     constants.ts
 
   providers/
-    AppProviders.tsx           # QueryClientProvider + lifecycle
+    AppProviders.tsx           # QueryClientProvider + AuthProvider + lifecycle
 
   test/
     setup.ts
@@ -316,13 +325,33 @@ Missing or unpublished detail rows become the domain `not-found` result.
 
 File: `src/features/auth/api.ts`
 
-Functions:
+Task 16 functions (email/password only):
+- `signInWithPassword({ email, password })`
+- `signUpWithPassword({ email, password })` — may return
+  `confirmation-required` when the provider creates a user without a session
+- `signOut()` — current-device local sign-out
+- `restoreSession()` — best-effort session restoration on launch
+
+Task 16 routes:
+- `app/auth/sign-in.tsx`
+- `app/auth/sign-up.tsx`
+
+Safe internal `returnTo` allows primarily `/product/<uuid>` and Account;
+external URLs and schemes are rejected.
+
+Task 16 does **not** implement:
+- password recovery or recovery deep links
+- account deletion
+- social login / MFA / passkeys
+- rating writes
+
+Later (Task 18 / 19) functions remain planned:
 - `requestPasswordReset(email)`
 - `updatePasswordFromRecovery(newPassword)`
 - `deleteCurrentUser()` — calls a protected server endpoint; no user id
   parameter
 
-### Password-recovery completion (required)
+### Password-recovery completion (required for Task 18)
 
 `app/auth/reset-password.tsx` is a recovery-only completion route. It may call
 `updatePasswordFromRecovery` only after the app has exchanged/verified the
@@ -335,7 +364,7 @@ Tests cover a valid recovery session, direct navigation, an ordinary session,
 and expired/invalid recovery state. Successful completion proves the new
 password works and the old password does not.
 
-### Delete-current-user server contract (required)
+### Delete-current-user server contract (required for Task 19)
 
 The client sends its current bearer session to a protected server endpoint and
 never sends an authoritative target user id. The server:

@@ -11,20 +11,20 @@
   env module, one typed client, generated local database types, TanStack Query
   providers/lifecycle, public vs user-scoped query keys, and a jest-expo
   frontend test foundation.
-- Task 15 implementation is complete, with physical-device and offline
-  acceptance recorded. Anonymous Browse and Product Detail read the two
-  deterministic published products through one Supabase request per surface,
-  with complete, sparse, loading, cached-refresh, offline, error/retry, empty,
-  and not-found behavior. Feed, auth, and rating persistence remain
-  mock/placeholder-backed and out of scope.
+- Task 15 is complete, human accepted, and merged in PR #32
+  (`f7cb8856ccdebece51e007df301e4ce578892c1a`). Anonymous Browse and Product
+  Detail read the two deterministic published products through one Supabase
+  request per surface, with complete, sparse, loading, cached-refresh, offline,
+  error/retry, empty, and not-found behavior. Feed remains mock/placeholder.
+- Task 16 is the current milestone: core authentication and Account state.
+- Task 17 (My Rating persistence and Rated Products) remains pending.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
   Development-build cached offline, and Metro-independent Release cold-start
   offline + reconnect refetch were observed on-device (2026-08-07). Human
-  acceptance of the five Part 1 product/architecture decisions is complete;
-  PR #32 merge remains a separate human action. Task 16 must not begin until
-  Task 15 is both accepted and merged. Evidence:
+  acceptance of the five Part 1 product/architecture decisions is complete and
+  PR #32 is merged. Evidence:
   [`docs/evidence/task-15-public-catalog/RESULT.md`](evidence/task-15-public-catalog/RESULT.md).
 
 Accepted Tasks 11–12 database evidence is preserved at
@@ -163,8 +163,8 @@ Work in order unless a task explicitly states that it is conditional.
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
-| 15 | Real Public Catalog Reads | Human acceptance complete — ready for merge |
-| 16 | Core Authentication And Account State | Pending |
+| 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
+| 16 | Core Authentication And Account State | Implementation complete — human acceptance pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
 | 19 | Protected Account Deletion | Pending |
@@ -357,7 +357,7 @@ Evidence only — does not replace the deliverables or acceptance above.
 
 ## Task 15: Real Public Catalog Reads
 
-Status: **Human acceptance complete — ready for merge.**
+Status: **Done — human accepted and merged in PR #32.**
 
 Depends on: Tasks 13–14.
 
@@ -368,10 +368,8 @@ the parent owns scope and acceptance.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is complete. PR #32 must merge before Task 16
-begins. Merge is not automatic acceptance; both human acceptance and merge are
-required before Task 16. Physical-device and offline gates are recorded below
-and in the evidence report.
+Human gate: Human acceptance and PR #32 merge are complete. Task 16 is the
+authorized next milestone.
 
 Goal: replace mock reads on Browse and Product Detail with published Supabase
 data while keeping browsing anonymous.
@@ -448,7 +446,7 @@ local Supabase only; no staging/production):
 
 ## Task 16: Core Authentication And Account State
 
-Status: Pending.
+Status: **Implementation complete — human acceptance pending.**
 
 Depends on: Task 15.
 
@@ -460,8 +458,8 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: None.
 
 Human gate: Human acceptance is required before Tasks 17–18; any staging auth
-configuration is a separate explicit action. Do not start Task 16 until Task 15
-is human-accepted and PR #32 is merged.
+configuration is a separate explicit action. Implementation evidence:
+[`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
 
