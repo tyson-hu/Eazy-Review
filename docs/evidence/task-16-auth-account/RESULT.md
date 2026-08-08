@@ -23,7 +23,7 @@ Do not start Task 17 until Task 16 is formally accepted.
 - Starting SHA: `f7cb8856ccdebece51e007df301e4ce578892c1a` (Task 15 merge / PR #32)
 - Previously reviewed head (pre this race fix): `30688c056aa2bab735422bc6ad4fbc330e02de97`
 - Race-fix commit: `97df31b0d84d7592778d52ab5b4a351ac8fa4ccd`
-- Ending SHA (branch tip): `24b40b7d75514d25228d0cabbd1f5b1421dc97de`
+- Ending SHA: see PR #35 head on `agent/task-16-core-auth-account-state` (evidence-sync commits may follow the race fix)
 
 ## Human decisions recorded during review
 
