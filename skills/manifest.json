@@ -21,6 +21,10 @@
       "description": "Use when a task requires evidence-backed interactive verification of an Expo user journey in iOS Simulator or the project reference mobile-web viewport, or a screenshot-based UX audit with numbered captures and triaged findings — not for automated project checks, UI implementation, or bug fixing."
     },
     {
+      "name": "pr-human-review",
+      "description": "Use when an implementation-complete pull request needs human acceptance — explain the change without line-by-line review, split product and behavior decisions from automated verification, and recommend whether it is ready."
+    },
+    {
       "name": "product-data-modeling",
       "description": "Use for frontend-only product/rating shape changes — types, mock data, and API contracts, with no SQL."
     },
@@ -34,7 +38,7 @@
     },
     {
       "name": "skill-creator",
-      "description": "Use when turning a task pattern explained 3+ times into a new SKILL.md, tuning a skill's trigger description, or iterating/maintaining existing skills."
+      "description": "Use when turning a repeated (3+) or human-directed reviewed workflow into a new SKILL.md, tuning a skill's trigger description, or iterating/maintaining existing skills."
     },
     {
       "name": "supabase-schema-change",

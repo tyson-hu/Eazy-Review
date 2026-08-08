@@ -409,7 +409,7 @@ One home per instruction; everywhere else points, never restates.
 | Evidence GitHub upload selection (proof set vs local raw captures) | `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md` |
 | Handoff note routine and `docs/notes/handoff.md` template | `skills/session-handoff/SKILL.md` |
 | Blocker note routine and `docs/notes/blocker-<topic>.md` template | `skills/blocker-note/SKILL.md` |
-| Skill creation threshold, structure, quality rules, iteration and library maintenance | `skills/skill-creator/SKILL.md` |
+| Skill creation threshold, Remaining gate, structure, quality/security rules, iteration and library maintenance | `skills/skill-creator/SKILL.md` |
 | Loop anatomy, global stop conditions, retry policy, loop index | `docs/LOOP_ENGINEERING.md` |
 | Concrete loop routines | `skills/<name>/SKILL.md` |
 | Task status and build order | `docs/TASKS.md` |

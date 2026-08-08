@@ -24,6 +24,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Architecture | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Accepted | 13, 14, 15, 16, 17, 18, 19 | 2026-07-30 |
 | Architecture | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Accepted | 14, 15, 16, 17 | 2026-07-30 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
+| Agent workflow | [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Accepted | — | 2026-08-06 |
 | Agent workflow | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Accepted | — | 2026-08-01 |
 | Agent workflow | [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) | Accepted | — | 2026-07-26 |
 | Agent workflow | [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) | Accepted | — | 2026-07-25 |
@@ -36,6 +37,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Agent workflow | Accepted | 2026-08-06 |
 | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Agent workflow | Accepted | 2026-08-01 |
 | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-08-01 |
 | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Architecture | Accepted | 2026-07-30 |
@@ -45,7 +47,6 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-30 |
 | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Data and Supabase | Accepted | 2026-07-30 |
 | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Data and Supabase | Accepted | 2026-07-30 |
-| [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Authentication and security | Accepted | 2026-07-30 |
 
 ## Browse by area
 
@@ -80,6 +81,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Agent workflow
 
+- [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) — Accepted.
 - [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) — Accepted.
 - [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) — Accepted.
 - [Use individual ADR records with a generated decision index](decisions/2026-07-25-generated-adr-index.md) — Accepted.
