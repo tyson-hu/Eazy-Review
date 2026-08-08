@@ -11,15 +11,19 @@
   env module, one typed client, generated local database types, TanStack Query
   providers/lifecycle, public vs user-scoped query keys, and a jest-expo
   frontend test foundation.
-- Task 15 implementation is complete and awaits human acceptance. Anonymous
-  Browse and Product Detail now read the two deterministic published products
-  through one Supabase request per surface, with complete, sparse, loading,
-  cached-refresh, offline, error/retry, empty, and not-found behavior. Feed,
-  auth, and rating persistence remain mock/placeholder-backed and out of scope.
+- Task 15 implementation is complete, with physical-device and offline
+  acceptance recorded. Anonymous Browse and Product Detail read the two
+  deterministic published products through one Supabase request per surface,
+  with complete, sparse, loading, cached-refresh, offline, error/retry, empty,
+  and not-found behavior. Feed, auth, and rating persistence remain
+  mock/placeholder-backed and out of scope.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
-- Task 14 is accepted in PR #31. Task 15 must receive human acceptance before
-  Task 16 begins. Task 15 evidence is recorded at
+- Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
+  Development-build cached offline, and Metro-independent Release cold-start
+  offline + reconnect refetch were observed on-device (2026-08-07). Merge is
+  still a human PR decision; Task 16 must not begin until Task 15 is merged and
+  formally accepted. Evidence:
   [`docs/evidence/task-15-public-catalog/RESULT.md`](evidence/task-15-public-catalog/RESULT.md).
 
 Accepted Tasks 11–12 database evidence is preserved at
@@ -158,7 +162,7 @@ Work in order unless a task explicitly states that it is conditional.
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
-| 15 | Real Public Catalog Reads | Implementation complete — human acceptance pending |
+| 15 | Real Public Catalog Reads | Physical-device acceptance complete — ready for merge |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -352,7 +356,7 @@ Evidence only — does not replace the deliverables or acceptance above.
 
 ## Task 15: Real Public Catalog Reads
 
-Status: **Implementation complete — human acceptance pending.**
+Status: **Physical-device acceptance complete — ready for merge.**
 
 Depends on: Tasks 13–14.
 
@@ -363,7 +367,8 @@ the parent owns scope and acceptance.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is required before Task 16.
+Human gate: Merge Task 15 (PR #32) before Task 16 begins; physical-device and
+offline gates are recorded below and in the evidence report.
 
 Goal: replace mock reads on Browse and Product Detail with published Supabase
 data while keeping browsing anonymous.
@@ -421,8 +426,22 @@ contract with the available in-memory cache.
 
 Implementation and validation evidence, including public query/view-model
 contracts, request counts, null/error/retry behavior, test totals, simulator
-results, and known limitations, is recorded at
+results, physical-device LAN wiring, Network Link Conditioner offline/reconnect
+proof (including Metro-independent Release cold start), and remaining
+limitations, is recorded at
 [`docs/evidence/task-15-public-catalog/RESULT.md`](evidence/task-15-public-catalog/RESULT.md).
+
+Physical-device acceptance (observed 2026-08-07, physical iPhone + Mac LAN URL +
+local Supabase only; no staging/production):
+
+- Safari reachability to Mac LAN Supabase API; Development and Release app
+  installs open without Expo Go.
+- Browse and Product Detail load both Task 13 fixtures over the LAN anonymously.
+- Development-build cached offline (app process kept alive) shows catalog +
+  offline banner; reconnect refetches.
+- Release build, Metro stopped, cold start under iPhone Network Link Conditioner
+  **100% Loss**: shell launches without Metro; offline/error + Retry when cache
+  is empty; automatic catalog fetch after network returns.
 
 ## Task 16: Core Authentication And Account State
 
@@ -438,7 +457,8 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: None.
 
 Human gate: Human acceptance is required before Tasks 17–18; any staging auth
-configuration is a separate explicit action.
+configuration is a separate explicit action. Do not start Task 16 until Task 15
+is merged.
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
 

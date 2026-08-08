@@ -8,7 +8,8 @@
     "scheme": "eazyreview",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tysonhu.eazyreview.dev"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +37,8 @@
       ],
       "expo-font",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/withDisableUserScriptSandboxing.js"
     ],
     "experiments": {
       "typedRoutes": true

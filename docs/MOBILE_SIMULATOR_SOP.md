@@ -1,6 +1,16 @@
 # Mobile Simulator Preview SOP
 
-Canonical procedure for interactive mobile validation on the **iOS Simulator** with Expo Go. Use this for human-walk equivalents, screenshot audits, and parent acceptance of mobile-first flows. Web cross-check procedure: `docs/WEB_MOBILE_PREVIEW_SOP.md`. Orchestrated UX audits: `docs/UX_SCREENSHOT_AUDIT_SOP.md`.
+Canonical procedure for interactive mobile validation on the **iOS Simulator**.
+Simulator walks may still use Expo Go when no custom native module requires a
+development build. Web cross-check procedure: `docs/WEB_MOBILE_PREVIEW_SOP.md`.
+Orchestrated UX audits: `docs/UX_SCREENSHOT_AUDIT_SOP.md`.
+
+For **physical iPhone** daily development, Metro-backed development builds, and
+Task 15 **Metro-independent offline cold-launch** acceptance (local Release
+build + phone Network Link Conditioner only), follow
+`README.md` → **Physical iPhone Development And Offline Testing**. Do not use
+Expo Go as the Task 15 offline acceptance runtime, and do not condition the
+Mac network for that test.
 
 ## When To Use
 
@@ -10,6 +20,8 @@ Canonical procedure for interactive mobile validation on the **iOS Simulator** w
 - Confirming layouts near the design reference width (**393px**).
 
 Do **not** use this SOP to replace `npm run typecheck` / `lint` / `check`. Commands prove types and tooling; this SOP proves interactive UX.
+Do **not** use this SOP alone for Task 15 physical-device offline acceptance
+(see README physical-iPhone section).
 
 ## Prerequisites
 

@@ -2,19 +2,18 @@
 
 ## Run report
 
-- **Date:** 2026-08-05
+- **Date:** 2026-08-05 (implementation + simulator); **physical-device update
+  2026-08-07**
 - **Branch:** `agent/task-15-real-public-catalog-reads`
 - **Starting SHA:** `9d298cfe86779f4f2000dbadf1445b28e7a72580`
-- **Final SHA:** the immutable draft-PR head, recorded after commit in the PR
-  description and final handoff (a commit cannot contain its own hash).
+- **Final SHA:** the immutable PR head, recorded in the PR description after
+  each push (a commit cannot contain its own hash).
 - **Mode:** local anonymous Data API acceptance, focused automated coverage,
-  static web export, and iOS Simulator connected-flow acceptance.
-- **Overall result:** implementation passes the automated, local database, and
-  online iOS Simulator acceptance performed here. Human acceptance remains
-  required. Simulator-level offline/reconnect toggling was blocked by the
-  absence of a supported network-condition control on this host; those state
-  transitions are covered by focused query and screen tests and are not
-  claimed as device-tested.
+  static web export, iOS Simulator connected-flow acceptance, and physical
+  iPhone LAN + phone-only Network Link Conditioner offline acceptance.
+- **Overall result:** implementation passes automated, local database, online
+  iOS Simulator, and physical-device (online catalog + offline/reconnect)
+  acceptance. Ready for merge review; Task 16 must wait for merge.
 
 ## Scope and changed files
 
@@ -23,6 +22,17 @@ focused raw-response → adapter → public view-model → identity-neutral quer
 screen boundary, catalog status/error UI, verified-date formatting, and focused
 tests. It also fixes the accepted Task 14 test helper's asynchronous unmount so
 connected hook/screen tests clean up deterministically.
+
+Physical-device developer workflow support (same branch, non-product-scope):
+
+- Tracked Expo `ios.bundleIdentifier` and config plugin for local
+  development-build / Release device installs under Xcode 27
+- `expo-dev-client` dependency and `start:dev-client` / `ios:device` /
+  `ios:device:release` scripts
+- README physical-iPhone LAN / Network Link Conditioner / Release cold-start
+  procedure
+
+Machine-local `.env.local` (Mac LAN Supabase URL) stays untracked.
 
 Changed implementation and tests:
 
@@ -44,20 +54,24 @@ Changed implementation and tests:
 - `src/types/product.ts`
 - `src/utils/formatVerifiedDate.ts`
 
-Changed authoritative/evidence documents:
+Changed authoritative/evidence documents and device tooling:
 
 - `.gitignore`
 - `README.md`
+- `app.json`
+- `package.json` / `package-lock.json`
+- `plugins/withDisableUserScriptSandboxing.js`
 - `docs/API_CONTRACTS.md`
 - `docs/DESIGN.md`
+- `docs/MOBILE_SIMULATOR_SOP.md`
 - `docs/ROADMAP.md`
 - `docs/SECURITY.md`
 - `docs/TASKS.md`
 - `docs/USER_FLOWS.md`
 - this report and its selected proof images
 
-No schema, migration, RLS policy, grant, seed, environment, dependency, or
-accepted Query Client/default file changed.
+No schema, migration, RLS policy, grant, seed, or accepted Query Client/default
+file changed. Staging and production remain untouched.
 
 ## Public query contracts and request counts
 
@@ -138,9 +152,12 @@ Environment matrix:
 
 | Environment | Status |
 | --- | --- |
-| iOS Simulator — iPhone 17 Pro, iOS 27.0, Expo Go | `blocked` (online/lifecycle pass; network transition unavailable) |
+| iOS Simulator — iPhone 17 Pro, iOS 27.0, Expo Go | `pass` (online/lifecycle); network transition unavailable on host |
 | Mobile web interactive preview | `not-run` (static export passed) |
-| Physical device | `not-tested` |
+| Physical device — development build + Mac LAN Supabase | `tested-pass` (2026-08-07) |
+| Physical device — Release cold start, Metro stopped, NLC | `tested-pass` (2026-08-07) |
+
+### iOS Simulator (2026-08-05)
 
 | Required step | Result |
 | --- | --- |
@@ -150,25 +167,45 @@ Environment matrix:
 | Open Samba Detail | **pass** — no image, no assessment, no ratings, and no verified offer are shown honestly |
 | Background app | **pass** |
 | Foreground app | **pass** — cached Samba state retained; no duplicate lifecycle output observed |
-| Go offline | **blocked on device** — no supported simulator network-condition control was exposed |
-| Navigate cached data offline | **blocked on device**; focused hook/screen tests pass |
-| Attempt uncached request offline | **blocked on device**; test proves zero request while paused |
-| Reconnect | **blocked on device**; test proves exactly one request on reconnect |
-| Controlled reconnect refetch | **blocked on device**; automated transition coverage passes |
+| Go offline | **blocked on simulator host** — no supported simulator network-condition control |
+| Navigate cached data offline | **blocked on simulator**; focused hook/screen tests pass |
+| Attempt uncached request offline | **blocked on simulator**; test proves zero request while paused |
+| Reconnect | **blocked on simulator**; test proves exactly one request on reconnect |
+| Controlled reconnect refetch | **blocked on simulator**; automated transition coverage passes |
 | No duplicate listener behavior | **pass** in Task 14 lifecycle tests and observed background/foreground run |
 | No request storm | **pass** in query call-count tests and online simulator observation |
 | No indefinite loading | **pass** in timeout/API tests and simulator observation |
-| Sparse honesty after reconnect | **blocked on device**; sparse normalization/screen tests pass and online state remained honest |
+| Sparse honesty after reconnect | **blocked on simulator**; sparse normalization/screen tests pass online |
+
+### Physical iPhone (2026-08-07)
+
+Topology: Mac local Supabase (`*:54321`) + untracked `.env.local` Mac-LAN URL +
+publishable/anon key only; same Wi-Fi; phone Network Link Conditioner only;
+Mac network left untouched. No tunnel, staging, or production.
+
+| Required step | Result |
+| --- | --- |
+| Mac LAN Supabase reachability | **pass** — PostgREST responded over LAN; iPhone Safari reached Mac API |
+| Development build launches | **pass** |
+| Browse loads Task 13 catalog over LAN | **pass** — CW2288-111 complete + B75806 sparse |
+| Product Detail over LAN (both fixtures) | **pass** — honest sparse empties on Samba |
+| Anonymous public reads (no auth) | **pass** |
+| Dev-build cached offline (process alive, 100% Loss) | **pass** — offline banner; catalog still visible |
+| Release cold start (Metro stopped, 100% Loss) | **pass** — shell launches; offline/error + Try again without catalog |
+| Automatic refetch when network returns | **pass** — observed on device after conditioner off |
+
+Known non-blocker: Expo web static SSR under Metro can log
+`(0 , jsx_runtime_1.jsx) is not a function` on the Mac terminal; that path is
+web-only and did not block native Release install or offline acceptance.
 
 ## Findings and severity
 
 - **Product findings:** no open P0–P3 product finding from the implementation,
-  simulator walk, or independent review.
-- **Acceptance-evidence limitation:** device offline/reconnect steps are
-  **blocked** because this simulator host exposed no supported network-condition
-  control. This is not classified as a product defect; it blocks only the
-  device-level proof for those steps and remains part of the human acceptance
-  gate. Focused automated transition coverage passes.
+  simulator walk, physical-device walk, or independent review of the
+  implementation SHA.
+- **Acceptance-evidence:** simulator network conditioning remains unavailable
+  on the agent host; physical iPhone Network Link Conditioner closes that gap
+  for Task 15 offline proof.
 
 ## Evidence inventory
 
@@ -188,6 +225,10 @@ Local-only capture IDs:
 - `05-browse-after-lifecycle.png` — post-background/foreground Browse capture;
   redundant with the selected clean Browse proof.
 
+Physical-device screenshots from acceptance (2026-08-07) remain local evidence
+unless later uploaded under the evidence SOP; they are not required duplicates
+of the representative simulator set already tracked.
+
 The full non-sensitive raw capture set remains local and is protected by the
 task-specific `.gitignore` allowlist. The selected proof set contains no
 credential or private/user-owned data.
@@ -202,13 +243,13 @@ credential or private/user-owned data.
 - No schema, migration, RLS, grant, aggregate, seed, staging, or production
   change/access occurred.
 - The cache is memory-only, so a cold offline launch correctly has no catalog
-  data to display.
-- Physical-device and on-device offline/reconnect acceptance remain for the
-  human gate. The static export passed, but this run did not perform a separate
-  interactive mobile-web journey.
+  data to display (confirmed on Release with Metro stopped).
+- Physical LAN development uses untracked `.env.local` with the Mac LAN IP;
+  `.env.local` and generated `/ios` remain gitignored and uncommitted.
+- Static web export still passes; interactive mobile-web product walk remains
+  `not-run` and is out of Task 15 merge blockers.
 
 ## Required next decision
 
-Review the draft PR and complete human/device acceptance, especially the real
-offline → cached navigation → uncached request → reconnect path. Do not merge
-or begin Task 16 until Task 15 is explicitly accepted.
+Merge PR #32 after independent review and CI green. Do not begin Task 16 until
+Task 15 is merged. Persistent offline Query storage remains deferred.
