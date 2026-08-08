@@ -539,16 +539,14 @@ them when a remote request fails:
 
 - Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
 - Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Unmapped `mock-product://` URIs resolve to no image source so UI shows the "Image coming soon" placeholder. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
-- Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers, `ProductRatingSummary`, and user-specific `myRating` per catalog id, composed via `getMockProductDetailById(productId): ProductDetailData | null`.
-- Mock My Rating write: `saveMockMyRating(productId: string, rating: RatingBreakdown): boolean` in the same file — the frontend mock-data write API for Task 9.
-
-`saveMockMyRating` semantics (session-only; not a backend write):
-
-- Confirms the product/detail fixture exists with the same rules as `getMockProductDetailById`; returns `false` if not.
-- Stores a **copied** `RatingBreakdown` in a private in-module map (`mockMyRatingsByProductId` is not exported). Empty / omitted comment (mock alias for private note) is stored as `null`.
-- Returns `true` on success.
-- Does **not** update Community Score, community category averages, rating count, catalog card fields, or any persistent storage. Reload resets fixtures.
-- Screens must call this API only — never import or mutate the private map.
+- Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers
+  and `ProductRatingSummary` per catalog id, composed via
+  `getMockProductDetailById(productId): ProductDetailData | null`. After Task 15,
+  `myRating` is always `null` on this helper; the product-ID-only mock session map
+  and `saveMockMyRating` write API were removed so connected Supabase UUIDs cannot
+  claim a fake session save.
+- Legacy `/product/[id]/rate` is an honest **Rating unavailable** screen until
+  Tasks 16–17 own sign-in and durable My Rating. It must not write mock ratings.
 
 When Task 15 switches Browse/Detail to Supabase UUIDs, it does not adapt
 session-only My Rating persistence to connected products. The Rate action stays
@@ -594,36 +592,18 @@ export const mockProducts: Product[] = [
 Detail fixture coverage (aligned to the catalog in `mockProducts.ts`):
 
 - Lookup returns `ProductDetailData` for every catalog id `1`–`8`, or `null` for unknown ids.
-- At least one product has offers + rating summary + non-null `myRating` (id `1`).
-- At least one product has `myRating: null` (e.g. id `2`).
+- After Task 15, every mock detail returns `myRating: null` (session mock map removed).
 - Edge products stay consistent with catalog: id `6` has `ratingCount: 0` / null Community Score summary; id `8` has null Eazy Score on `product` with a present community summary.
 - Empty / unusable offers: id `5` has no offers (catalog `lowestPrice` fallback); id `7` has offers with null prices (same fallback path).
 
 ```ts
-import {
-  getMockProductDetailById,
-  saveMockMyRating,
-} from '@/src/features/products/mockProductDetails';
-import type { RatingBreakdown } from '@/src/types/product';
+import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
 
 const detail = getMockProductDetailById('1');
 // detail.product — from mockProducts
 // detail.offers — ProductOffer[]
 // detail.ratingSummary — ProductRatingSummary
-// detail.myRating — RatingBreakdown | null
-
-const rating: RatingBreakdown = {
-  look: 8,
-  comfort: 7,
-  quality: 8,
-  outfit: 7,
-  value: 7,
-  overall: 8,
-  comment: null,
-};
-const ok = saveMockMyRating('2', rating);
-// true → getMockProductDetailById('2').myRating reflects the copy this session
-// false → unknown / unavailable product; community fixtures unchanged either way
+// detail.myRating — always null on the mock helper after Task 15
 ```
 
 ## Current Product Example

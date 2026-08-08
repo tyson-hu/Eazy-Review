@@ -3,7 +3,6 @@ import type {
   ProductDetailData,
   ProductOffer,
   ProductRatingSummary,
-  RatingBreakdown,
 } from '@/src/types/product';
 
 const mockOffersByProductId: Record<string, ProductOffer[]> = {
@@ -200,46 +199,12 @@ const mockRatingSummariesByProductId: Record<string, ProductRatingSummary> = {
   },
 };
 
-/** User-specific My Rating fixtures. Null means the mock viewer has not rated. */
-const mockMyRatingsByProductId: Record<string, RatingBreakdown | null> = {
-  '1': {
-    look: 8,
-    comfort: 7,
-    quality: 8,
-    outfit: 7,
-    value: 7,
-    overall: 8,
-    comment: 'Great kids colorway; Gore-Tex is a plus.',
-  },
-  '2': null,
-  '3': {
-    look: 9,
-    comfort: 9,
-    quality: 9,
-    outfit: 8,
-    value: 7,
-    overall: 9,
-    comment: null,
-  },
-  '4': null,
-  '5': null,
-  '6': null,
-  '7': {
-    look: 8,
-    comfort: 7,
-    quality: 8,
-    outfit: 9,
-    value: 9,
-    overall: 8,
-    comment: 'Everyday classic.',
-  },
-  '8': null,
-};
-
 /**
  * Lookup-ready Product Detail fixture for a catalog product id.
- * Catalog identity/metadata come from `mockProducts`; offers, rating summary,
- * and My Rating live here so catalog Product records stay card/list-shaped.
+ * Catalog identity/metadata come from `mockProducts`; offers and rating summary
+ * live here so catalog Product records stay card/list-shaped.
+ * Task 15 removed the product-ID-only mock My Rating map and session write API;
+ * `myRating` is always null here until Tasks 16–17 own real persistence.
  */
 export function getMockProductDetailById(
   productId: string,
@@ -258,42 +223,6 @@ export function getMockProductDetailById(
     product,
     offers: mockOffersByProductId[productId] ?? [],
     ratingSummary,
-    myRating: mockMyRatingsByProductId[productId] ?? null,
+    myRating: null,
   };
-}
-
-/**
- * Session-only mock write for My Rating. Mutates the private fixture map;
- * does not touch community score / rating summary fixtures or persist across reload.
- * Returns false when the product/detail fixture does not exist (same rules as get).
- */
-export function saveMockMyRating(
-  productId: string,
-  rating: RatingBreakdown,
-): boolean {
-  const product = mockProducts.find((entry) => entry.id === productId);
-  if (!product) {
-    return false;
-  }
-
-  if (!mockRatingSummariesByProductId[productId]) {
-    return false;
-  }
-
-  const trimmedComment =
-    rating.comment == null || String(rating.comment).trim() === ''
-      ? null
-      : String(rating.comment).trim();
-
-  mockMyRatingsByProductId[productId] = {
-    look: rating.look,
-    comfort: rating.comfort,
-    quality: rating.quality,
-    outfit: rating.outfit,
-    value: rating.value,
-    overall: rating.overall,
-    comment: trimmedComment,
-  };
-
-  return true;
 }

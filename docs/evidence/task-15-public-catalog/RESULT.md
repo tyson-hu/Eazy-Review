@@ -60,7 +60,7 @@ Changed authoritative/evidence documents and device tooling:
 - `README.md`
 - `app.json`
 - `package.json` / `package-lock.json`
-- `plugins/withDisableUserScriptSandboxing.js`
+- `plugins/withIosDeviceBuildFixes.js`
 - `docs/API_CONTRACTS.md`
 - `docs/DESIGN.md`
 - `docs/MOBILE_SIMULATOR_SOP.md`

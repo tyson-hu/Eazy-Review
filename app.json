@@ -38,7 +38,7 @@
       "expo-font",
       "expo-status-bar",
       "expo-web-browser",
-      "./plugins/withDisableUserScriptSandboxing.js"
+      "./plugins/withIosDeviceBuildFixes.js"
     ],
     "experiments": {
       "typedRoutes": true

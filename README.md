@@ -114,11 +114,16 @@ this workflow).
 ### First-time install (development build)
 
 Connect the iPhone (Trust the computer; Developer Mode enabled). With valid
-public env vars in `.env`, install once:
+public env vars in `.env` / `.env.local`, install once:
 
 ```bash
 npm run ios:device
 ```
+
+Tracked Expo `ios.bundleIdentifier` is currently
+`com.tysonhu.eazyreview.dev` for **local development builds only**. Choose a
+non-`.dev` production/distribution bundle ID before TestFlight or App Store
+work; do not assume the tracked ID is final for release.
 
 Xcode compiles a local native project under `ios/` (generated, gitignored —
 never commit it), installs **Eazy Review** on the selected physical device, and
@@ -132,10 +137,10 @@ install fails because **ExpoModulesCore.framework has no code signature**, or
 the app **force-quits at launch** on iOS 27 / Xcode 27 (`EXC_BREAKPOINT` /
 `NoSceneLifecycleAdoption`), regenerate native iOS with the project’s tracked
 plugin applied (`npx expo prebuild --platform ios` then
-`npm run ios:device`). That plugin turns off Xcode User Script Sandboxing,
-builds Expo iOS modules from source for signing, and adopts the UIKit
-**UIScene** life cycle (Info.plist scene manifest + `SceneDelegate`) required
-by the iOS 27 SDK.
+`npm run ios:device`). That plugin (`plugins/withIosDeviceBuildFixes.js`) turns
+off Xcode User Script Sandboxing, builds Expo iOS modules from source for
+signing, and adopts the UIKit **UIScene** life cycle (Info.plist scene
+manifest + `SceneDelegate`) required by the iOS 27 SDK.
 
 ### Daily development
 
@@ -146,6 +151,16 @@ npm run start:dev-client
 TypeScript/JavaScript edits Fast Refresh through Metro. Rebuild native only
 after native dependency or Expo native config changes (`npm run ios:device`
 again).
+
+Script roles (intentional):
+
+| Script | Purpose |
+| --- | --- |
+| `npm start` / `npm run start:dev-client` | Metro only |
+| `npm run start:ios` / `start:android` | Metro + open simulator/emulator |
+| `npm run ios` / `npm run android` | **Native** compile (`expo run:*`), not Metro-only |
+| `npm run ios:device` | Physical device Debug install |
+| `npm run ios:device:release` | Physical device Release (embedded JS; offline cold-start) |
 
 ### Metro-independent offline cold launch (Release)
 
