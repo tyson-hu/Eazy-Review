@@ -454,9 +454,7 @@ local Supabase only; no staging/production):
 
 ## Task 16: Core Authentication And Account State
 
-Status: **Done — human accepted.** Corrected physical-device checklist: **PASS**
-(human-reported). PR #35 ready for merge; merge is a separate explicit action.
-Task 17 remains unimplemented and requires separate authorization.
+Status: **Done — human accepted (PR #35 ready for merge).**
 
 Depends on: Task 15.
 
@@ -467,8 +465,10 @@ only bounded non-sensitive leaf packets.
 
 Parallel-safe with: None.
 
-Human gate: **Accepted.** Staging auth configuration for later tasks remains a
-separate explicit action. Implementation evidence:
+Human gate: **Accepted.** Corrected physical-device checklist **PASS**
+(human-reported). Merge of PR #35 remains a separate explicit action. Staging
+auth configuration for later tasks remains a separate explicit action.
+Implementation evidence:
 [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
@@ -530,8 +530,7 @@ Non-goals (remain later work — do not implement in Task 16):
 
 ## Task 17: My Rating Persistence And Rated Products
 
-Status: **Next — pending authorization.** Not started. Requires an explicit
-start authorization after PR #35 merge (or as separately directed).
+Status: **Next — pending authorization.**
 
 Depends on: Task 16.
 
@@ -543,8 +542,9 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: Task 18 after all prerequisites are accepted and edit
 scopes are file-disjoint.
 
-Human gate: Staging rating writes or acceptance require separate explicit
-approval; production remains forbidden.
+Human gate: Not started — requires explicit start authorization after PR #35
+merge (or as separately directed). Staging rating writes or acceptance require
+separate explicit approval; production remains forbidden.
 
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products.
