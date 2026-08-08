@@ -16,7 +16,9 @@
   Detail read the two deterministic published products through one Supabase
   request per surface, with complete, sparse, loading, cached-refresh, offline,
   error/retry, empty, and not-found behavior. Feed remains mock/placeholder.
-- Task 16 is the current milestone: core authentication and Account state.
+- Task 16 is the current milestone: core authentication and Account state —
+  **correction implementation complete; physical-device re-verification and
+  final human acceptance pending.**
 - Task 17 (My Rating persistence and Rated Products) remains pending.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
@@ -164,7 +166,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
-| 16 | Core Authentication And Account State | Implementation complete — human acceptance pending |
+| 16 | Core Authentication And Account State | Correction implementation complete — physical-device re-verification and final human acceptance pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
 | 19 | Protected Account Deletion | Pending |
@@ -446,7 +448,7 @@ local Supabase only; no staging/production):
 
 ## Task 16: Core Authentication And Account State
 
-Status: **Implementation complete — human acceptance pending.**
+Status: **Correction implementation complete — physical-device re-verification and final human acceptance pending.**
 
 Depends on: Task 15.
 
@@ -470,9 +472,13 @@ Deliverables:
 - Logged-out and logged-in Account states.
 - Owner profile read and joined-date display.
 - Auth-gated Rate route with return-to-product behavior.
-- User-scoped Query cache clearing on sign-out or account switch.
+- Post-auth navigation unwinds to the **existing** destination via
+  `router.dismissTo` (no duplicate Product stack entries).
+- Explicit local/current-device sign-out (`scope: 'local'`) with loading/error UX.
+- User-scoped Query cancel-before-remove on sign-out or account switch.
 - Explicit email-confirmation state when sign-up returns no active session.
-- Focused auth, session-restoration, Rate-gate, and cache-isolation tests.
+- Focused auth, session-restoration, Rate-gate, navigation-intent, and
+  cache-isolation tests.
 
 Acceptance:
 
@@ -480,7 +486,8 @@ Acceptance:
 - Sign-up creates exactly one profile through the accepted database trigger.
 - A signed-in user can read only their own profile.
 - Logged-out Rate action opens sign-in.
-- Successful sign-in returns to the intended product.
+- Successful sign-in returns to the intended **existing** product without a
+  duplicate Product route (one Back → Browse).
 - After sign-in, rating remains honestly unavailable on Product Detail until
   Task 17 connects durable My Rating persistence.
 - Sign-out/account switching cannot expose the prior user’s profile or rating
@@ -489,20 +496,27 @@ Acceptance:
 - Supabase access and refresh tokens are sensitive authentication material.
   Profile display data such as name, email, phone, and avatar does not by
   itself drive the storage decision; the authentication tokens do.
-- AsyncStorage is accepted for the MVP foundation, but before production
-  authentication is finalized Task 16 must document the threat model and
-  either:
-  1. explicitly accept AsyncStorage for the intended risk level; or
-  2. introduce and test an appropriate secure native storage alternative.
+- **HUMAN ACCEPTED (Task 16 MVP tradeoff only):** AsyncStorage for session
+  storage despite unencrypted-at-rest risk. SecureStore lifecycle experiment
+  was **explicitly waived** for Task 16; may be reconsidered in later
+  security/release hardening. Server-side RLS remains required regardless.
 - Service-role keys, passwords, backend secrets, and database credentials must
   never be stored in client storage.
-- Server-side RLS remains required regardless of local encryption. Encrypted
-  local storage does not replace correct authorization policies.
 
-Non-goals:
+Non-goals (remain later work — do not implement in Task 16):
 
-- No recovery, deletion, social login, passkeys, MFA, profile editing,
-  username reservation, avatar upload, or public profiles.
+- **Task 17 owns:** Rate form, create/edit My Rating, durable `user_ratings`,
+  private notes, Rated Products, post-mutation invalidation, Community Score
+  refresh after rating writes.
+- **Task 18 owns:** forgot/reset password, recovery email handling, recovery
+  deep links, app return handling for recovery (and confirmation deep links if
+  canonically assigned there).
+- **Task 19 owns:** protected account-deletion UX, reauthentication as required,
+  destructive deletion path, secure operational handling.
+- **Deferred — not part of Tasks 16–19 unless separately promoted in the
+  roadmap:** Sign in with Apple; Google/social authentication; passkeys; MFA;
+  editable profile; avatar upload; public profile; global/all-device session
+  revocation; stronger native token-storage revisit.
 
 ## Task 17: My Rating Persistence And Rated Products
 

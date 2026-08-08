@@ -10,7 +10,10 @@ import { Input } from '@/src/components/ui/Input';
 import { Screen } from '@/src/components/ui/Screen';
 import { getAuthErrorMessage } from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
-import { sanitizeReturnPath } from '@/src/features/auth/returnPath';
+import {
+  dismissAuthToReturnPath,
+  sanitizeReturnPath,
+} from '@/src/features/auth/returnPath';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -32,7 +35,9 @@ export default function SignInScreen() {
     try {
       await signIn({ email, password });
       setPassword('');
-      router.replace(returnTo as never);
+      // Unwind auth routes to the existing destination — do not replace-forward
+      // onto a new Product instance (duplicate stack).
+      dismissAuthToReturnPath(router, returnTo);
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error));
     } finally {
@@ -54,8 +59,7 @@ export default function SignInScreen() {
       <View className="mt-4 gap-2">
         <AppText variant="title">Sign in</AppText>
         <AppText variant="caption">
-          Sign in to save ratings and access your account. Ratings themselves
-          are connected in a later milestone.
+          Sign in to access your account and prepare for saved ratings.
         </AppText>
       </View>
 

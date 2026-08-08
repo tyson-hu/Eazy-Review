@@ -151,13 +151,14 @@ export async function signUpWithPassword(
 }
 
 /**
- * Current-device sign-out. Clears local session; does not perform account
- * deletion or cross-device refresh-token revocation.
+ * Current-device (local) sign-out. Explicit `scope: 'local'` keeps other
+ * device sessions intact; Task 16 does not implement global revocation.
+ * Does not perform account deletion.
  */
 export async function signOut(options?: AuthApiOptions): Promise<void> {
   try {
     const client = resolveClient(options);
-    const { error } = await client.auth.signOut();
+    const { error } = await client.auth.signOut({ scope: 'local' });
     if (error) {
       throw normalizeAuthError(error, {
         operation: 'sign-out',

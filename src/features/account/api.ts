@@ -10,6 +10,7 @@ export type ProfileRequestOptions = {
 /**
  * Reads the signed-in user's own profile via owner RLS.
  * Select only columns needed by Account. Does not affect auth state.
+ * Propagates TanStack Query's AbortSignal through Supabase `.abortSignal`.
  */
 export async function getMyProfile(
   userId: string,
@@ -20,16 +21,16 @@ export async function getMyProfile(
   }
 
   const client = options?.client ?? getSupabase();
-  const { data, error } = await client
+  let query = client
     .from('profiles')
     .select('id, display_name, username, avatar_url, created_at')
-    .eq('id', userId)
-    .maybeSingle();
+    .eq('id', userId);
 
-  // AbortSignal is intentionally unused: the current PostgREST builder
-  // typing does not expose abortSignal on maybeSingle chains. TanStack
-  // Query still cancels observers; late network responses map to the
-  // current principal via user-scoped keys.
+  if (options?.signal) {
+    query = query.abortSignal(options.signal);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     throw error;

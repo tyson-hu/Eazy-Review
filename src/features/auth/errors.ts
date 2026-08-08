@@ -62,6 +62,7 @@ export const AUTH_USER_MESSAGES = {
   offline: "You're offline. Connect to the internet and try again.",
   invalidCredentials: 'Email or password is incorrect.',
   signInFailed: 'Could not sign in. Please try again.',
+  signOutFailed: 'Could not sign out. Please try again.',
   accountCreationFailed: 'Could not create the account. Please try again.',
   confirmationRequired: 'Check your email to confirm your account.',
   timeout: 'The request took too long. Please try again.',
@@ -164,9 +165,7 @@ export function normalizeAuthError(
       if (isTransportFailure(error)) {
         return new AuthError(
           'temporary-failure',
-          options.operation === 'sign-up'
-            ? AUTH_USER_MESSAGES.accountCreationFailed
-            : AUTH_USER_MESSAGES.signInFailed,
+          userMessageForOperation(options.operation),
           { source: 'transport', status, cause: error },
         );
       }
@@ -209,16 +208,31 @@ export function normalizeAuthError(
   if (status != null && status >= 500) {
     return new AuthError(
       'temporary-failure',
-      AUTH_USER_MESSAGES.temporaryFailure,
+      userMessageForOperation(options.operation),
       { source: 'server', status, cause: error },
     );
   }
 
   return new AuthError(
     'temporary-failure',
-    AUTH_USER_MESSAGES.signInFailed,
+    userMessageForOperation(options.operation),
     { source: 'server', status, cause: error },
   );
+}
+
+function userMessageForOperation(
+  operation: 'sign-in' | 'sign-up' | 'sign-out' | 'session',
+): string {
+  switch (operation) {
+    case 'sign-up':
+      return AUTH_USER_MESSAGES.accountCreationFailed;
+    case 'sign-out':
+      return AUTH_USER_MESSAGES.signOutFailed;
+    case 'sign-in':
+    case 'session':
+    default:
+      return AUTH_USER_MESSAGES.signInFailed;
+  }
 }
 
 export function getAuthErrorMessage(error: unknown): string {

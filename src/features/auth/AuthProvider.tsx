@@ -95,27 +95,33 @@ export function AuthProvider({
   );
   const [user, setUser] = useState<AuthUser | null>(null);
   const previousUserIdRef = useRef<string | null>(null);
+  /**
+   * Monotonic generation so a delayed restoreSession cannot overwrite a newer
+   * SIGNED_IN / SIGNED_OUT (or other applied session) that arrived mid-bootstrap.
+   */
+  const authGenerationRef = useRef(0);
 
   const clearUserScopedIfPrincipalChanged = useCallback(
-    (nextUserId: string | null) => {
+    async (nextUserId: string | null) => {
       const previous = previousUserIdRef.current;
       if (previous === nextUserId) {
         return;
       }
+      // Record the principal first so concurrent events see the new id.
+      previousUserIdRef.current = nextUserId;
       // Only purge when leaving a real principal (sign-out or A→B).
       if (previous != null) {
-        removeUserScopedQueries(queryClient);
+        await removeUserScopedQueries(queryClient);
       }
-      previousUserIdRef.current = nextUserId;
     },
     [queryClient],
   );
 
   const applySession = useCallback(
-    (session: Session | null) => {
+    async (session: Session | null) => {
       const nextUser = authUserFromSession(session);
       const nextId = userIdFromSession(session);
-      clearUserScopedIfPrincipalChanged(nextId);
+      await clearUserScopedIfPrincipalChanged(nextId);
       setUser(nextUser);
       setStatus(nextUser ? 'signed-in' : 'signed-out');
     },
@@ -140,14 +146,22 @@ export function AuthProvider({
 
     let cancelled = false;
     let subscription: { unsubscribe: () => void } | null = null;
+    const generationAtBootstrapStart = authGenerationRef.current;
 
     const bootstrap = async () => {
       const restored = await restoreSession({ client });
       if (cancelled) {
         return;
       }
+      // A newer auth event already applied — do not clobber with stale restore.
+      if (authGenerationRef.current !== generationAtBootstrapStart) {
+        return;
+      }
       const nextId = restored?.id ?? null;
-      clearUserScopedIfPrincipalChanged(nextId);
+      await clearUserScopedIfPrincipalChanged(nextId);
+      if (cancelled || authGenerationRef.current !== generationAtBootstrapStart) {
+        return;
+      }
       setUser(restored);
       setStatus(restored ? 'signed-in' : 'signed-out');
     };
@@ -170,6 +184,8 @@ export function AuthProvider({
           // Refresh identity-bearing fields if email changed, without purge.
           const nextUser = authUserFromSession(session);
           if (nextUser) {
+            // Still advance generation so a late restore cannot overwrite.
+            authGenerationRef.current += 1;
             setUser(nextUser);
             setStatus('signed-in');
           }
@@ -177,12 +193,19 @@ export function AuthProvider({
         }
       }
 
+      // Invalidate any in-flight bootstrap before scheduling application.
+      authGenerationRef.current += 1;
+      const appliedGeneration = authGenerationRef.current;
+
       // Defer state application so we avoid nested client work inside the callback.
       queueMicrotask(() => {
         if (cancelled) {
           return;
         }
-        applySession(session);
+        if (authGenerationRef.current !== appliedGeneration) {
+          return;
+        }
+        void applySession(session);
       });
     });
 
@@ -206,8 +229,9 @@ export function AuthProvider({
         throw new Error('Auth client is unavailable.');
       }
       const result = await signInWithPassword(credentials, { client });
+      authGenerationRef.current += 1;
       // onAuthStateChange will sync status; apply optimistically for UX.
-      clearUserScopedIfPrincipalChanged(result.user.id);
+      await clearUserScopedIfPrincipalChanged(result.user.id);
       setUser(result.user);
       setStatus('signed-in');
       return result;
@@ -223,7 +247,8 @@ export function AuthProvider({
       }
       const result = await signUpWithPassword(credentials, { client });
       if (result.kind === 'signed-in') {
-        clearUserScopedIfPrincipalChanged(result.user.id);
+        authGenerationRef.current += 1;
+        await clearUserScopedIfPrincipalChanged(result.user.id);
         setUser(result.user);
         setStatus('signed-in');
       }
@@ -235,13 +260,15 @@ export function AuthProvider({
   const signOut = useCallback(async () => {
     const client = resolveClient(clientProp);
     if (!client) {
-      clearUserScopedIfPrincipalChanged(null);
+      authGenerationRef.current += 1;
+      await clearUserScopedIfPrincipalChanged(null);
       setUser(null);
       setStatus('signed-out');
       return;
     }
     await signOutApi({ client });
-    clearUserScopedIfPrincipalChanged(null);
+    authGenerationRef.current += 1;
+    await clearUserScopedIfPrincipalChanged(null);
     setUser(null);
     setStatus('signed-out');
   }, [clearUserScopedIfPrincipalChanged, clientProp]);

@@ -3,6 +3,7 @@ import type { UseQueryResult } from '@tanstack/react-query';
 
 import AccountScreen from '@/app/(tabs)/account';
 import { formatMemberSince } from '@/src/features/account/api';
+import { AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import type { AuthStatus } from '@/src/features/auth/types';
 import type { AccountProfile } from '@/src/types/account';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
@@ -37,7 +38,7 @@ let mockProfileQuery: Partial<UseQueryResult<AccountProfile, Error>> = {
 };
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: jest.fn() }),
+  useRouter: () => ({ push: mockPush, replace: jest.fn(), dismissTo: jest.fn() }),
 }));
 
 jest.mock('@/src/features/auth/hooks', () => ({
@@ -69,9 +70,16 @@ describe('Account screen', () => {
     mockPush.mockReset();
   });
 
-  it('renders signed-out state', async () => {
+  it('renders signed-out state with truthful rating copy', async () => {
     const rendered = await renderWithProviders(<AccountScreen />);
     expect(rendered.getByText('Your Eazy Review account')).toBeTruthy();
+    expect(rendered.getByText('Sign in to access your account.')).toBeTruthy();
+    expect(
+      rendered.getByText(
+        'Saved ratings will be available in the next milestone.',
+      ),
+    ).toBeTruthy();
+    expect(rendered.queryByText(/Sign in to save ratings/i)).toBeNull();
     expect(rendered.getByTestId('account-sign-in')).toBeTruthy();
     expect(rendered.getByTestId('account-create-account')).toBeTruthy();
     await rendered.cleanup();
@@ -99,6 +107,7 @@ describe('Account screen', () => {
       error: null,
       refetch: jest.fn(),
     };
+    mockSignOut.mockResolvedValue(undefined);
 
     const rendered = await renderWithProviders(<AccountScreen />);
     expect(rendered.getByTestId('account-email').props.children).toBe(
@@ -112,7 +121,117 @@ describe('Account screen', () => {
     await act(async () => {
       fireEvent.press(rendered.getByTestId('account-sign-out'));
     });
-    expect(mockSignOut).toHaveBeenCalled();
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    await rendered.cleanup();
+  });
+
+  it('shows pending state and prevents duplicate sign-out taps', async () => {
+    let resolveSignOut: (() => void) | undefined;
+    mockSignOut.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSignOut = resolve;
+        }),
+    );
+    mockAuth = {
+      status: 'signed-in',
+      user: { id: 'user-a', email: 'a@example.com' },
+      isSignedIn: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: mockSignOut,
+    };
+    mockProfileQuery = {
+      data: {
+        id: 'user-a',
+        displayName: null,
+        username: null,
+        avatarUrl: null,
+        joinedAt: '2026-08-01T12:00:00.000Z',
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    };
+
+    const rendered = await renderWithProviders(<AccountScreen />);
+    const button = rendered.getByTestId('account-sign-out');
+
+    await act(async () => {
+      fireEvent.press(button);
+    });
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      fireEvent.press(button);
+    });
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+
+    // Button stays disabled while pending.
+    expect(
+      button.props.accessibilityState?.disabled ?? button.props.disabled,
+    ).toBeTruthy();
+
+    await act(async () => {
+      resolveSignOut?.();
+    });
+    await rendered.cleanup();
+  });
+
+  it('keeps the user signed in and shows safe error copy when sign-out fails', async () => {
+    mockSignOut.mockRejectedValue(new Error('raw supabase session boom'));
+    mockAuth = {
+      status: 'signed-in',
+      user: { id: 'user-a', email: 'a@example.com' },
+      isSignedIn: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: mockSignOut,
+    };
+    mockProfileQuery = {
+      data: {
+        id: 'user-a',
+        displayName: null,
+        username: null,
+        avatarUrl: null,
+        joinedAt: '2026-08-01T12:00:00.000Z',
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    };
+
+    const rendered = await renderWithProviders(<AccountScreen />);
+
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('account-sign-out'));
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('account-sign-out-error').props.children).toBe(
+        AUTH_USER_MESSAGES.signOutFailed,
+      ),
+    );
+    expect(rendered.queryByText(/supabase|session boom/i)).toBeNull();
+    // Session mock remains signed-in; failed sign-out must not wipe local auth.
+    expect(mockAuth.isSignedIn).toBe(true);
+    expect(rendered.getByTestId('account-email').props.children).toBe(
+      'a@example.com',
+    );
+
+    // Retry is allowed after failure (button re-enabled).
+    const button = rendered.getByTestId('account-sign-out');
+    expect(
+      button.props.accessibilityState?.disabled ?? button.props.disabled,
+    ).toBeFalsy();
+
+    mockSignOut.mockResolvedValue(undefined);
+    await act(async () => {
+      fireEvent.press(button);
+    });
+    expect(mockSignOut).toHaveBeenCalledTimes(2);
     await rendered.cleanup();
   });
 

@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
@@ -11,12 +12,15 @@ import {
   formatMemberSince,
 } from '@/src/features/account/api';
 import { useMyProfileQuery } from '@/src/features/account/queries';
+import { AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
 
 export default function AccountScreen() {
   const router = useRouter();
   const { status, user, isSignedIn, signOut } = useAuth();
   const profileQuery = useMyProfileQuery();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   if (status === 'initializing') {
     return (
@@ -34,7 +38,10 @@ export default function AccountScreen() {
             Your Eazy Review account
           </AppText>
           <AppText variant="caption" className="mt-3 max-w-xs text-center">
-            Sign in to save ratings and access your account.
+            Sign in to access your account.
+          </AppText>
+          <AppText variant="caption" className="mt-2 max-w-xs text-center">
+            Saved ratings will be available in the next milestone.
           </AppText>
         </View>
 
@@ -61,8 +68,7 @@ export default function AccountScreen() {
             }}
           />
           <AppText variant="caption" className="text-center">
-            You can keep browsing without signing in. Saved ratings are not
-            available yet.
+            You can keep browsing without signing in.
           </AppText>
         </Card>
       </Screen>
@@ -73,6 +79,22 @@ export default function AccountScreen() {
   const joinedLabel = profileQuery.data
     ? formatMemberSince(profileQuery.data.joinedAt)
     : null;
+
+  const onSignOut = async () => {
+    if (signingOut) {
+      return;
+    }
+    setSigningOut(true);
+    setSignOutError(null);
+    try {
+      await signOut();
+    } catch {
+      // Never surface raw SDK text; always the fixed Task 16 copy.
+      setSignOutError(AUTH_USER_MESSAGES.signOutFailed);
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   return (
     <Screen scroll>
@@ -131,12 +153,23 @@ export default function AccountScreen() {
         <AppText variant="caption">
           Rating save is not connected yet. You can still browse the catalog.
         </AppText>
+        {signOutError ? (
+          <AppText
+            testID="account-sign-out-error"
+            variant="caption"
+            className="text-accent"
+            accessibilityRole="alert">
+            {signOutError}
+          </AppText>
+        ) : null}
         <Button
           testID="account-sign-out"
           label="Sign out"
           variant="secondary"
+          loading={signingOut}
+          disabled={signingOut}
           onPress={() => {
-            void signOut();
+            void onSignOut();
           }}
         />
       </Card>

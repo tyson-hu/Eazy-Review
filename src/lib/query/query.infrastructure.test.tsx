@@ -174,7 +174,7 @@ describe('user-scoped cache cleanup', () => {
 
     // Helper purges every user-scoped root (account + rating), not one user only —
     // intentional for sign-out / account-switch safety.
-    removeUserScopedQueries(client);
+    await removeUserScopedQueries(client);
 
     expect(client.getQueryData(catalogKeys.products())).toEqual([{ id: 'p1' }]);
     expect(client.getQueryData(catalogKeys.product('p1'))).toEqual({

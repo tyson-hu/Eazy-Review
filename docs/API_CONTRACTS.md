@@ -232,7 +232,7 @@ src/
     supabase/
       client.ts                # Task 14 singleton
       createClient.ts
-      authStorage.ts           # Task 14/16 AsyncStorage session adapter (SecureStore rejected for MVP)
+      authStorage.ts           # Task 14/16 AsyncStorage session adapter (HUMAN ACCEPTED MVP; SecureStore waived for Task 16)
     query/
       client.ts                # Task 14 QueryClient factory
       keys.ts                  # public catalog vs user-scoped key factories
@@ -329,7 +329,8 @@ Task 16 functions (email/password only):
 - `signInWithPassword({ email, password })`
 - `signUpWithPassword({ email, password })` — may return
   `confirmation-required` when the provider creates a user without a session
-- `signOut()` — current-device local sign-out
+- `signOut()` — current-device local sign-out via
+  `client.auth.signOut({ scope: 'local' })` (explicit; not global revocation)
 - `restoreSession()` — best-effort session restoration on launch
 
 Task 16 routes:
@@ -337,13 +338,15 @@ Task 16 routes:
 - `app/auth/sign-up.tsx`
 
 Safe internal `returnTo` allows primarily `/product/<uuid>` and Account;
-external URLs and schemes are rejected.
+external URLs and schemes are rejected. Post-auth navigation uses
+`router.dismissTo(returnTo)` so existing destinations are revealed rather than
+duplicated via forward `replace`.
 
 Task 16 does **not** implement:
-- password recovery or recovery deep links
-- account deletion
-- social login / MFA / passkeys
-- rating writes
+- password recovery or recovery deep links (Task 18)
+- account deletion (Task 19)
+- social login / MFA / passkeys (deferred unless roadmap promotes)
+- rating writes (Task 17)
 
 Later (Task 18 / 19) functions remain planned:
 - `requestPasswordReset(email)`

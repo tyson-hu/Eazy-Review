@@ -16,20 +16,44 @@ type Listener = (
 
 function createMockAuthClient(options: {
   initialUser?: { id: string; email: string } | null;
+  /**
+   * When true, getSession does not resolve until completeRestore is called.
+   */
+  delayRestore?: boolean;
 }) {
   let listeners: Listener[] = [];
   let sessionUser = options.initialUser ?? null;
+  let resolveRestore:
+    | ((user: { id: string; email: string } | null) => void)
+    | null = null;
+
+  const getSession = options.delayRestore
+    ? jest.fn(
+        () =>
+          new Promise<{
+            data: { session: { user: { id: string; email: string } } | null };
+            error: null;
+          }>((resolve) => {
+            resolveRestore = (user) => {
+              resolve({
+                data: {
+                  session: user ? { user } : null,
+                },
+                error: null,
+              });
+            };
+          }),
+      )
+    : jest.fn(async () => ({
+        data: {
+          session: sessionUser ? { user: sessionUser } : null,
+        },
+        error: null,
+      }));
 
   const client = {
     auth: {
-      getSession: jest.fn(async () => ({
-        data: {
-          session: sessionUser
-            ? { user: sessionUser }
-            : null,
-        },
-        error: null,
-      })),
+      getSession,
       onAuthStateChange: jest.fn((callback: Listener) => {
         listeners.push(callback);
         return {
@@ -76,6 +100,13 @@ function createMockAuthClient(options: {
       for (const listener of listeners) {
         listener(event, session);
       }
+    },
+    completeRestore(user: { id: string; email: string } | null) {
+      if (!resolveRestore) {
+        throw new Error('Restore was not delayed or already completed.');
+      }
+      resolveRestore(user);
+      resolveRestore = null;
     },
     getListenerCount: () => listeners.length,
   };
@@ -263,6 +294,90 @@ describe('AuthProvider', () => {
       id: 'user-b',
       displayName: 'Bee',
     });
+
+    await rendered.cleanup();
+  });
+
+  it('lets a newer SIGNED_IN win over a delayed bootstrap restore', async () => {
+    const mock = createMockAuthClient({
+      initialUser: null,
+      delayRestore: true,
+    });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    // Still initializing while restore is pending.
+    expect(rendered.getByTestId('auth-probe').props.children).toContain(
+      'initializing',
+    );
+
+    // Newer event arrives while restore is still in flight.
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-new', email: 'new@example.com' });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-new|new@example.com',
+      ),
+    );
+
+    // Stale bootstrap reports signed-out after the event.
+    await act(async () => {
+      mock.completeRestore(null);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Newest authentication event must still win.
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-new|new@example.com',
+      ),
+    );
+
+    await rendered.cleanup();
+  });
+
+  it('lets a newer SIGNED_OUT win over a delayed signed-in restore', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-stale', email: 'stale@example.com' },
+      delayRestore: true,
+    });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_OUT', null);
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none|',
+      ),
+    );
+
+    await act(async () => {
+      mock.completeRestore({ id: 'user-stale', email: 'stale@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none|',
+      ),
+    );
 
     await rendered.cleanup();
   });

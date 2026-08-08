@@ -15,10 +15,13 @@ Task detail, dependencies, acceptance, and current status live in
   use the deterministic public catalog locally, including physical iPhone LAN
   loads and phone-only offline/reconnect proof. Staging and production remain
   untouched.
-- Task 16: current milestone — core authentication and Account state.
-  Authentication and rating persistence remain separate; Task 17 owns durable
-  My Rating and Rated Products.
+- Task 16: correction implementation complete — physical-device re-verification
+  and final human acceptance pending. Core authentication and Account state;
+  Task 17 owns durable My Rating and Rated Products.
 - Task 17 remains pending until Task 16 is human-accepted.
+  Excluded identity features (social login, passkeys/MFA, editable/public
+  profile, global session revocation, secure native session storage revisit)
+  are deferred — not part of Tasks 16–19 unless separately promoted.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,

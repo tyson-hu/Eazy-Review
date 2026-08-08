@@ -10,7 +10,10 @@ import { Input } from '@/src/components/ui/Input';
 import { Screen } from '@/src/components/ui/Screen';
 import { AUTH_USER_MESSAGES, getAuthErrorMessage } from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
-import { sanitizeReturnPath } from '@/src/features/auth/returnPath';
+import {
+  dismissAuthToReturnPath,
+  sanitizeReturnPath,
+} from '@/src/features/auth/returnPath';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -40,7 +43,8 @@ export default function SignUpScreen() {
         setConfirmationEmail(result.email);
         return;
       }
-      router.replace(returnTo as never);
+      // Dismiss Sign Up (+ Sign In if present) until the existing destination.
+      dismissAuthToReturnPath(router, returnTo);
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error));
     } finally {
@@ -62,7 +66,7 @@ export default function SignUpScreen() {
       <View className="mt-4 gap-2">
         <AppText variant="title">Create account</AppText>
         <AppText variant="caption">
-          Create an account to rate products later. Ratings are not saved yet.
+          Create an account to access Account and prepare for saved ratings.
         </AppText>
       </View>
 

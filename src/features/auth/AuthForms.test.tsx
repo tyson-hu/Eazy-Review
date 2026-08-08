@@ -106,7 +106,7 @@ describe('auth form behaviors (API + return path)', () => {
     });
   });
 
-  it('sanitizes product returnTo for post-sign-in navigation', () => {
+  it('sanitizes product returnTo for post-sign-in navigation intent (dismissTo)', () => {
     const product = '/product/11111111-1111-4111-8111-111111111111';
     expect(sanitizeReturnPath(product)).toBe(product);
     expect(sanitizeReturnPath('https://evil.example')).toBe('/(tabs)/browse');

@@ -1,25 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * Task 14 auth session storage adapter for Supabase Auth.
+ * Task 14/16 auth session storage adapter for Supabase Auth.
  *
- * Decision (Task 16 recommendation — human acceptance pending): keep
- * AsyncStorage for the MVP. A SecureStore experiment was evaluated and
- * rejected without adding a second package:
+ * HUMAN ACCEPTED (Task 16 MVP tradeoff — not final product-wide acceptance):
+ * keep AsyncStorage for session persistence despite being unencrypted at rest.
  *
  * - Access and refresh tokens are sensitive authentication material.
  * - AsyncStorage is not encrypted at rest on device.
- * - profile display data does not drive this decision; token storage does.
+ * - Profile display data does not drive this decision; token storage does.
  * - Device compromise / local storage inspection remain relevant risks.
  * - Server-side RLS remains mandatory regardless of local encryption.
- * - iOS SecureStore has a ~2048-byte value limit. A full Supabase session
- *   JSON can exceed that limit, which would force fragile custom chunking
- *   or partial token storage — both rejected by the Task 16 decision rule.
+ * - A SecureStore lifecycle experiment was proposed but explicitly waived by
+ *   the human for Task 16. Do not claim that experiment was performed, and do
+ *   not claim Expo enforces a universal hard 2048-byte SecureStore limit as the
+ *   Task 16 rejection reason.
+ * - SecureStore / platform-secure storage may be reconsidered during later
+ *   security/release hardening if a simple, tested Supabase session-storage path
+ *   is available without fragile chunking or custom encryption.
  * - Static web export must remain valid; AsyncStorage covers RN + web with
  *   the existing SSR-safe no-window guard.
- *
- * If a future task proves a chunk-free, Expo-compatible secure session store
- * that restores refresh and clears on sign-out, revisit this choice then.
  *
  * Values are stored as plain strings. Callers (supabase-js) own JSON encoding;
  * this adapter does not double-encode. Storage errors propagate to the caller.

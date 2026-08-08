@@ -131,7 +131,7 @@ describe('auth api', () => {
     });
   });
 
-  it('signs out and restores empty sessions', async () => {
+  it('signs out with explicit local scope only', async () => {
     const signOutMock = jest.fn(async () => ({ error: null }));
     const client = mockClient({
       signOut: signOutMock,
@@ -139,7 +139,7 @@ describe('auth api', () => {
     });
 
     await signOut({ client });
-    expect(signOutMock).toHaveBeenCalled();
+    expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
     await expect(restoreSession({ client })).resolves.toBeNull();
   });
 
