@@ -85,7 +85,7 @@ describe('Account screen', () => {
     await rendered.cleanup();
   });
 
-  it('renders signed-in email, joined date, and sign-out', async () => {
+  it('renders signed-in email, joined date, and sign-out when optional fields are null', async () => {
     mockAuth = {
       status: 'signed-in',
       user: { id: 'user-a', email: 'a@example.com' },
@@ -117,11 +117,60 @@ describe('Account screen', () => {
       'Member since ',
       formatMemberSince('2026-08-01T12:00:00.000Z'),
     ]);
+    expect(rendered.queryByTestId('account-avatar')).toBeNull();
+    expect(rendered.queryByTestId('account-username')).toBeNull();
+    expect(rendered.queryByTestId('account-display-name')).toBeNull();
 
     await act(async () => {
       fireEvent.press(rendered.getByTestId('account-sign-out'));
     });
     expect(mockSignOut).toHaveBeenCalledTimes(1);
+    await rendered.cleanup();
+  });
+
+  it('renders full populated profile identity including avatar and username', async () => {
+    mockAuth = {
+      status: 'signed-in',
+      user: { id: 'user-a', email: 'a@example.com' },
+      isSignedIn: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: mockSignOut,
+    };
+    mockProfileQuery = {
+      data: {
+        id: 'user-a',
+        displayName: 'Tyson',
+        username: 'tyson',
+        avatarUrl: 'https://example.com/avatar.jpg',
+        joinedAt: '2026-08-01T12:00:00.000Z',
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    };
+
+    const rendered = await renderWithProviders(<AccountScreen />);
+    expect(rendered.getByTestId('account-display-name').props.children).toBe(
+      'Tyson',
+    );
+    expect(rendered.getByTestId('account-username').props.children).toBe(
+      '@tyson',
+    );
+    expect(rendered.getByTestId('account-email').props.children).toBe(
+      'a@example.com',
+    );
+    expect(rendered.getByTestId('account-joined').props.children).toEqual([
+      'Member since ',
+      formatMemberSince('2026-08-01T12:00:00.000Z'),
+    ]);
+
+    const avatar = rendered.getByTestId('account-avatar');
+    expect(avatar).toBeTruthy();
+    expect(avatar.props.source).toEqual({
+      uri: 'https://example.com/avatar.jpg',
+    });
     await rendered.cleanup();
   });
 
@@ -280,8 +329,8 @@ describe('Account screen', () => {
       data: {
         id: 'user-b',
         displayName: 'Bee',
-        username: null,
-        avatarUrl: null,
+        username: 'bee',
+        avatarUrl: 'https://example.com/bee.jpg',
         joinedAt: '2026-08-02T00:00:00.000Z',
       },
       isPending: false,
@@ -292,7 +341,13 @@ describe('Account screen', () => {
 
     const rendered = await renderWithProviders(<AccountScreen />);
     await waitFor(() => expect(rendered.getByText('Bee')).toBeTruthy());
+    expect(rendered.getByTestId('account-username').props.children).toBe('@bee');
+    expect(rendered.getByTestId('account-avatar').props.source).toEqual({
+      uri: 'https://example.com/bee.jpg',
+    });
     expect(rendered.queryByText('a@example.com')).toBeNull();
+    expect(rendered.queryByText('Tyson')).toBeNull();
+    expect(rendered.queryByText('@tyson')).toBeNull();
     expect(rendered.getByTestId('account-email').props.children).toBe(
       'b@example.com',
     );

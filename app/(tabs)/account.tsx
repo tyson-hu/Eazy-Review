@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
@@ -14,6 +14,11 @@ import {
 import { useMyProfileQuery } from '@/src/features/account/queries';
 import { AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
+
+/** Prefix `@` only when the stored username does not already start with one. */
+function formatUsername(username: string): string {
+  return username.startsWith('@') ? username : `@${username}`;
+}
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -75,7 +80,9 @@ export default function AccountScreen() {
     );
   }
 
-  const displayName = profileQuery.data?.displayName;
+  const avatarUrl = profileQuery.data?.avatarUrl?.trim() || null;
+  const displayName = profileQuery.data?.displayName?.trim() || null;
+  const username = profileQuery.data?.username?.trim() || null;
   const joinedLabel = profileQuery.data
     ? formatMemberSince(profileQuery.data.joinedAt)
     : null;
@@ -100,14 +107,37 @@ export default function AccountScreen() {
     <Screen scroll>
       <View className="pt-6">
         <AppText variant="title">Account</AppText>
-        <AppText testID="account-email" variant="subtitle" className="mt-3">
-          {user.email ?? 'Signed in'}
-        </AppText>
+        {avatarUrl ? (
+          <Image
+            testID="account-avatar"
+            source={{ uri: avatarUrl }}
+            resizeMode="cover"
+            className="mt-4 h-16 w-16 rounded-full"
+            accessible={false}
+          />
+        ) : null}
         {displayName ? (
-          <AppText testID="account-display-name" variant="body" className="mt-1">
+          <AppText
+            testID="account-display-name"
+            variant="subtitle"
+            className="mt-3">
             {displayName}
           </AppText>
         ) : null}
+        {username ? (
+          <AppText
+            testID="account-username"
+            variant="caption"
+            className={displayName ? 'mt-1' : 'mt-3'}>
+            {formatUsername(username)}
+          </AppText>
+        ) : null}
+        <AppText
+          testID="account-email"
+          variant="body"
+          className={displayName || username || avatarUrl ? 'mt-1' : 'mt-3'}>
+          {user.email ?? 'Signed in'}
+        </AppText>
         {joinedLabel ? (
           <AppText testID="account-joined" variant="caption" className="mt-2">
             Member since {joinedLabel}

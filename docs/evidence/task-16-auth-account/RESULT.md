@@ -27,8 +27,8 @@ Accepted:
 - anonymous catalog remains public;
 - Rate action requires authentication;
 - rating persistence deferred to Task 17;
-- minimal non-editable Account (email, optional display name, member-since,
-  sign out);
+- Minimal non-editable Account: email, optional avatar/display name/username,
+  member-since, sign out;
 - current-device sign-out (not global multi-device revocation);
 - AsyncStorage accepted for MVP with documented unencrypted-at-rest risk;
 - SecureStore lifecycle experiment explicitly waived for Task 16;
@@ -98,7 +98,8 @@ C, and delayed-restore bootstrap races.
 
 - Signed-out: access your account + Sign in / Create account; truthful copy that
   saved ratings arrive in the next milestone.
-- Signed-in: email, optional display name, member-since, Sign out.
+- Signed-in: email, optional avatar/display name/username, member-since,
+  Sign out.
 - Sign-out: pending/disabled button, explicit `signOut({ scope: 'local' })`,
   safe error without raw SDK text; session remains signed in on failure.
 - Owner profile via `profiles` select + existing RLS; `.abortSignal(signal)`.
