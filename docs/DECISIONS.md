@@ -23,6 +23,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
 | Architecture | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Accepted | 13, 14, 15, 16, 17, 18, 19 | 2026-07-30 |
 | Architecture | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Accepted | 14, 15, 16, 17 | 2026-07-30 |
+| Tooling and CI | [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Accepted | 15 | 2026-08-07 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
 | Agent workflow | [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Accepted | — | 2026-08-06 |
 | Agent workflow | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Accepted | — | 2026-08-01 |
@@ -37,6 +38,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Tooling and CI | Accepted | 2026-08-07 |
 | [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Agent workflow | Accepted | 2026-08-06 |
 | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Agent workflow | Accepted | 2026-08-01 |
 | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-08-01 |
@@ -46,7 +48,6 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-07-30 |
 | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Authentication and security | Accepted | 2026-07-30 |
 | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Data and Supabase | Accepted | 2026-07-30 |
-| [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Data and Supabase | Accepted | 2026-07-30 |
 
 ## Browse by area
 
@@ -77,6 +78,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Tooling and CI
 
+- [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) — Accepted; Tasks 15.
 - [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) — Accepted; Tasks 10.
 
 ### Agent workflow

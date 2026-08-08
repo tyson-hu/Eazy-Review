@@ -13,7 +13,8 @@
   iPhone LAN + phone-only Network Link Conditioner offline acceptance.
 - **Overall result:** implementation passes automated, local database, online
   iOS Simulator, and physical-device (online catalog + offline/reconnect)
-  acceptance. Ready for merge review; Task 16 must wait for merge.
+  acceptance. Human acceptance of the five Part 1 decisions is complete;
+  PR merge remains a separate action. Task 16 must wait for both.
 
 ## Scope and changed files
 
@@ -132,8 +133,9 @@ focused signal. Persistent offline cache remains intentionally deferred.
 
 | Check | Result |
 | --- | --- |
-| Focused Task 15 Jest | **pass** — 6 suites, 46 tests |
-| Full frontend Jest | **pass** — 14 suites, 118 tests |
+| Focused Task 15 Jest | **pass** — 6 suites, 46 tests (catalog slices) |
+| iOS CNG plugin generation Jest | **pass** — 1 suite, 2 tests (`plugins/withIosDeviceBuildFixes.test.js`) |
+| Full frontend Jest | **pass** — 15 suites, 120 tests |
 | TypeScript and lint | **pass** |
 | Generated database type parity | **pass** against local schema |
 | Static web export | **pass** — 11 routes exported |
@@ -249,7 +251,66 @@ credential or private/user-owned data.
 - Static web export still passes; interactive mobile-web product walk remains
   `not-run` and is out of Task 15 merge blockers.
 
+## Xcode 27 compatibility reproduction
+
+**Date:** 2026-08-07
+**Device:** physical iPhone (iOS 27.0 beta), local Debug development build only
+**Environment:** Xcode beta / CNG; local machine only; no EAS, staging, or production
+
+### Procedure (uncommitted temporary state only)
+
+1. **Plugin-enabled baseline:** generated `ios/` already applied
+   `plugins/withIosDeviceBuildFixes.js` — `ENABLE_USER_SCRIPT_SANDBOXING = NO`,
+   `EXPO_USE_PRECOMPILED_MODULES = false`, `UIApplicationSceneManifest` +
+   `SceneDelegate.swift` + scene-owned AppDelegate. Typecheck/lint clean.
+2. **Temporary disable:** removed only `./plugins/withIosDeviceBuildFixes.js`
+   from `app.json` (plugin source file kept; change **not** committed).
+3. **Clean regenerate:** `rm -rf ios` then `npx expo prebuild --platform ios`.
+4. **Restored:** put the plugin back in `app.json`, clean-regenerated `ios/`,
+   rebuilt and reinstalled on the same device path.
+
+### No-plugin generated-native differences (observed)
+
+| Surface | Without plugin | With plugin (restored) |
+| --- | --- | --- |
+| `ENABLE_USER_SCRIPT_SANDBOXING` | absent from `project.pbxproj` | `= NO` on configurations |
+| `EXPO_USE_PRECOMPILED_MODULES` | not set in `Podfile.properties.json` (Podfile defaults toward precompiled) | `"false"` |
+| `UIApplicationSceneManifest` | absent | present; multi-scenes false; `SceneDelegate` class |
+| `SceneDelegate.swift` | absent | present + `… in Sources` membership |
+| `AppDelegate` | calls `factory.startReactNative` in `didFinishLaunching` | factory only; window/start in SceneDelegate |
+
+### Device results
+
+| Configuration | Result |
+| --- | --- |
+| Plugin disabled → clean prebuild → Debug device build | **pass** (compile) |
+| Plugin disabled → install + launch | **fail** — process dies at launch with `EXC_BREAKPOINT` / `___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption` (device crash reports `EazyReview-2026-08-07-233149.ips` / `…233150.ips`, non-sensitive frames only) |
+| Plugin restored → clean prebuild → Debug device build | **pass** |
+| Plugin restored → install + repeated launch | **pass** — no new EazyReview crash reports after restore; built `Info.plist` contains scene manifest with `EazyReview.SceneDelegate` |
+
+### Causality judgment
+
+- **Conclusive (proven by reproduction):** UIScene lifecycle sub-fix —
+  stock template without the plugin launches into
+  `NoSceneLifecycleAdoption`; restoring the plugin regenerates scene manifest /
+  SceneDelegate / scene-owned AppDelegate and the same physical-device path
+  launches without that crash.
+- **Not independently re-failed in this A/B run:** User Script Sandbox deny on
+  `ip.txt`, and `ExpoModulesCore` / precompiled-framework
+  `ApplicationVerificationFailed` install failures. Debug build without the
+  plugin still compiled and signed under this environment. Those two sub-fixes
+  are **retained** because the generated-project comparison shows they still
+  change native output on this Expo SDK / Xcode matrix and historically matched
+  device failures; they are **not** claimed as freshly re-proven in isolation
+  here.
+- Temporary no-plugin `app.json` state was **never** committed. Final tree keeps
+  the plugin enabled. Generated `/ios` remains gitignored.
+
+Related ADR:
+`docs/decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md`.
+
 ## Required next decision
 
-Merge PR #32 after independent review and CI green. Do not begin Task 16 until
-Task 15 is merged. Persistent offline Query storage remains deferred.
+Human acceptance of the five Part 1 decisions is complete. Merge PR #32 remains
+a separate human action. Do not begin Task 16 until Task 15 is both accepted and
+merged. Persistent offline Query storage remains deferred.

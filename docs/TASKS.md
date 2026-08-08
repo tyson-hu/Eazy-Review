@@ -21,9 +21,10 @@
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
   Development-build cached offline, and Metro-independent Release cold-start
-  offline + reconnect refetch were observed on-device (2026-08-07). Merge is
-  still a human PR decision; Task 16 must not begin until Task 15 is merged and
-  formally accepted. Evidence:
+  offline + reconnect refetch were observed on-device (2026-08-07). Human
+  acceptance of the five Part 1 product/architecture decisions is complete;
+  PR #32 merge remains a separate human action. Task 16 must not begin until
+  Task 15 is both accepted and merged. Evidence:
   [`docs/evidence/task-15-public-catalog/RESULT.md`](evidence/task-15-public-catalog/RESULT.md).
 
 Accepted Tasks 11–12 database evidence is preserved at
@@ -162,7 +163,7 @@ Work in order unless a task explicitly states that it is conditional.
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
-| 15 | Real Public Catalog Reads | Physical-device acceptance complete — ready for merge |
+| 15 | Real Public Catalog Reads | Human acceptance complete — ready for merge |
 | 16 | Core Authentication And Account State | Pending |
 | 17 | My Rating Persistence And Rated Products | Pending |
 | 18 | Password Recovery And Deep Links | Pending |
@@ -356,7 +357,7 @@ Evidence only — does not replace the deliverables or acceptance above.
 
 ## Task 15: Real Public Catalog Reads
 
-Status: **Physical-device acceptance complete — ready for merge.**
+Status: **Human acceptance complete — ready for merge.**
 
 Depends on: Tasks 13–14.
 
@@ -367,8 +368,10 @@ the parent owns scope and acceptance.
 
 Parallel-safe with: None.
 
-Human gate: Merge Task 15 (PR #32) before Task 16 begins; physical-device and
-offline gates are recorded below and in the evidence report.
+Human gate: Human acceptance is complete. PR #32 must merge before Task 16
+begins. Merge is not automatic acceptance; both human acceptance and merge are
+required before Task 16. Physical-device and offline gates are recorded below
+and in the evidence report.
 
 Goal: replace mock reads on Browse and Product Detail with published Supabase
 data while keeping browsing anonymous.
@@ -458,7 +461,7 @@ Parallel-safe with: None.
 
 Human gate: Human acceptance is required before Tasks 17–18; any staging auth
 configuration is a separate explicit action. Do not start Task 16 until Task 15
-is merged.
+is human-accepted and PR #32 is merged.
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
 

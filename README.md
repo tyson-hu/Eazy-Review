@@ -132,15 +132,24 @@ starts Metro. The app opens as an Expo **development build**, not Expo Go.
 Signing (Apple team selection, device trust) is a human Xcode step. Do not put
 Team IDs, certificates, or provisioning profiles in the repository.
 
-If a fresh local build fails with **Sandbox deny** on writing `ip.txt`, device
-install fails because **ExpoModulesCore.framework has no code signature**, or
-the app **force-quits at launch** on iOS 27 / Xcode 27 (`EXC_BREAKPOINT` /
-`NoSceneLifecycleAdoption`), regenerate native iOS with the project’s tracked
-plugin applied (`npx expo prebuild --platform ios` then
-`npm run ios:device`). That plugin (`plugins/withIosDeviceBuildFixes.js`) turns
-off Xcode User Script Sandboxing, builds Expo iOS modules from source for
-signing, and adopts the UIKit **UIScene** life cycle (Info.plist scene
-manifest + `SceneDelegate`) required by the iOS 27 SDK.
+The tracked compatibility plugin (`plugins/withIosDeviceBuildFixes.js`)
+currently applies three CNG fixes required by the tested Xcode 27 / iOS 27 SDK
+environment: User Script Sandboxing off, Expo iOS modules built from source
+(not precompiled XCFrameworks), and UIKit **UIScene** life cycle generation
+(Info.plist scene manifest + `SceneDelegate` + scene-owned AppDelegate boot).
+If a fresh local device path fails without that plugin, regenerate with it
+applied (`npx expo prebuild --platform ios` then `npm run ios:device`).
+
+Controlled no-plugin reproduction evidence for this branch is in
+`docs/evidence/task-15-public-catalog/RESULT.md` (Xcode 27 compatibility
+reproduction). In that A/B run, removing the plugin regenerated the stock
+template (no scene manifest / SceneDelegate) and the installed app
+force-quit at launch with `EXC_BREAKPOINT` /
+`NoSceneLifecycleAdoption`; restoring the plugin cleared that launch failure
+on the same physical iPhone path. The sandbox and precompiled-module sub-fixes
+remain part of the same plugin for the tested environment; they were not
+independently re-failed in that A/B run. Decision record:
+`docs/decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md`.
 
 ### Daily development
 
