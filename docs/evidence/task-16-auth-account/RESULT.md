@@ -2,10 +2,17 @@
 
 ## Status
 
-**Correction implementation complete — physical-device re-verification and final
-human acceptance pending.**
+**Correction implementation verified on physical device (human) and web-preview
+(agent). Final formal “Task 16 Done / human accepted” status awaits explicit
+human call if still required by merge workflow.**
 
-Do not treat this file as final human acceptance of Task 16.
+Evidence:
+
+- Physical iPhone: human-reported **tested-pass** (2026-08-08).
+- Web mobile preview: **pass** — see
+  [`WEB_RESULT.md`](WEB_RESULT.md).
+
+Do not start Task 17 until Task 16 is formally accepted.
 
 ## Branch and SHAs
 
@@ -31,9 +38,13 @@ Accepted:
 
 Not yet accepted:
 
-- final Task 16 completion;
-- corrected return-navigation behavior until physical-device retest;
-- final physical-device / account-switch / network-loss acceptance.
+- formal Task 16 Done / merge completion (if still required as a separate
+  human gate after physical + web pass).
+
+Previously blocked and now verified:
+
+- corrected Product auth-return navigation (human physical + web Back→Browse);
+- Account A→B (web) and sign-out (web + human).
 
 ## Human-observed navigation bug
 
@@ -58,10 +69,14 @@ Browse → Product A → Sign in to rate → successful sign in → Product A
 After code correction:
 
 ```text
-implementation corrected — physical-device re-verification pending
+implementation corrected and re-verified
+- physical iPhone: human tested-pass
+- web 393×852: agent pass (one Back after Product-origin sign-in → Browse)
 ```
 
 Implementation: `dismissAuthToReturnPath` → `router.dismissTo(sanitizedReturnTo)`.
+
+Web detail report: [`WEB_RESULT.md`](WEB_RESULT.md).
 
 ## Scope after correction pass
 
@@ -139,10 +154,10 @@ Focused suites cover:
 
 ## Device and network
 
-- Physical iPhone re-verification checklist is **required** after this
-  correction and is **not** claimed complete by the agent.
-- Automated proof only: unit tests, cache isolation, web static export,
-  `test:db:reset` (when run in gate).
+- Physical iPhone: **tested-pass** (human, 2026-08-08) for navigation, session,
+  sign-out, and A→B checklist items reported complete.
+- Web mobile preview: **pass** (agent, 393×852 Playwright) — see
+  [`WEB_RESULT.md`](WEB_RESULT.md).
 - Staging/production: untouched.
 
 ## Boundary confirmation
@@ -153,5 +168,5 @@ Focused suites cover:
 - Schema / RLS / grants / migrations / Community Score triggers: **unchanged**.
 - No service-role key in Expo, tests, or evidence.
 - Dependabot PR #30: **not touched**.
-- PR #35 remains draft.
-- Final human acceptance: **not claimed**.
+- PR #35 remains draft until you mark ready / merge.
+- Final formal human acceptance label: explicit call still ok if desired; interactive proof is no longer pending.
