@@ -11,20 +11,28 @@
   env module, one typed client, generated local database types, TanStack Query
   providers/lifecycle, public vs user-scoped query keys, and a jest-expo
   frontend test foundation.
-- Task 15 implementation is complete, with physical-device and offline
-  acceptance recorded. Anonymous Browse and Product Detail read the two
-  deterministic published products through one Supabase request per surface,
-  with complete, sparse, loading, cached-refresh, offline, error/retry, empty,
-  and not-found behavior. Feed, auth, and rating persistence remain
-  mock/placeholder-backed and out of scope.
+- Task 15 is complete, human accepted, and merged in PR #32
+  (`f7cb8856ccdebece51e007df301e4ce578892c1a`). Anonymous Browse and Product
+  Detail read the two deterministic published products through one Supabase
+  request per surface, with complete, sparse, loading, cached-refresh, offline,
+  error/retry, empty, and not-found behavior. Feed remains mock/placeholder.
+- Task 16 is **Done — human accepted.** Core authentication and Account state
+  (email/password sign-in/up/out, session restore, auth-gated Rate, minimal
+  Account, cache isolation, `dismissTo` return navigation, auth-generation
+  race guards). Physical iPhone checklist re-verified on the corrected build
+  (human-reported PASS). Automated and web verification pass. Evidence:
+  [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
+  PR #35 is ready for merge (implementation authorized; merge remains a
+  separate action).
+- Task 17 (My Rating persistence and Rated Products) is **Next — pending
+  authorization.** Do not start until explicitly authorized in a new session.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
   Development-build cached offline, and Metro-independent Release cold-start
   offline + reconnect refetch were observed on-device (2026-08-07). Human
-  acceptance of the five Part 1 product/architecture decisions is complete;
-  PR #32 merge remains a separate human action. Task 16 must not begin until
-  Task 15 is both accepted and merged. Evidence:
+  acceptance of the five Part 1 product/architecture decisions is complete and
+  PR #32 is merged. Evidence:
   [`docs/evidence/task-15-public-catalog/RESULT.md`](evidence/task-15-public-catalog/RESULT.md).
 
 Accepted Tasks 11–12 database evidence is preserved at
@@ -163,9 +171,9 @@ Work in order unless a task explicitly states that it is conditional.
 | --- | --- | --- |
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
-| 15 | Real Public Catalog Reads | Human acceptance complete — ready for merge |
-| 16 | Core Authentication And Account State | Pending |
-| 17 | My Rating Persistence And Rated Products | Pending |
+| 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
+| 16 | Core Authentication And Account State | Done — human accepted (PR #35 ready for merge) |
+| 17 | My Rating Persistence And Rated Products | Next — pending authorization |
 | 18 | Password Recovery And Deep Links | Pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
@@ -357,7 +365,7 @@ Evidence only — does not replace the deliverables or acceptance above.
 
 ## Task 15: Real Public Catalog Reads
 
-Status: **Human acceptance complete — ready for merge.**
+Status: **Done — human accepted and merged in PR #32.**
 
 Depends on: Tasks 13–14.
 
@@ -368,10 +376,8 @@ the parent owns scope and acceptance.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is complete. PR #32 must merge before Task 16
-begins. Merge is not automatic acceptance; both human acceptance and merge are
-required before Task 16. Physical-device and offline gates are recorded below
-and in the evidence report.
+Human gate: Human acceptance and PR #32 merge are complete. Task 16 is the
+authorized next milestone.
 
 Goal: replace mock reads on Browse and Product Detail with published Supabase
 data while keeping browsing anonymous.
@@ -448,7 +454,7 @@ local Supabase only; no staging/production):
 
 ## Task 16: Core Authentication And Account State
 
-Status: Pending.
+Status: **Done — human accepted (PR #35 ready for merge).**
 
 Depends on: Task 15.
 
@@ -459,9 +465,11 @@ only bounded non-sensitive leaf packets.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance is required before Tasks 17–18; any staging auth
-configuration is a separate explicit action. Do not start Task 16 until Task 15
-is human-accepted and PR #32 is merged.
+Human gate: **Accepted.** Corrected physical-device checklist **PASS**
+(human-reported). Merge of PR #35 remains a separate explicit action. Staging
+auth configuration for later tasks remains a separate explicit action.
+Implementation evidence:
+[`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
 
@@ -472,9 +480,15 @@ Deliverables:
 - Logged-out and logged-in Account states.
 - Owner profile read and joined-date display.
 - Auth-gated Rate route with return-to-product behavior.
-- User-scoped Query cache clearing on sign-out or account switch.
+- Post-auth navigation unwinds to the **existing** destination via
+  `router.dismissTo` (no duplicate Product stack entries).
+- Explicit local/current-device sign-out (`scope: 'local'`) with loading/error UX.
+- User-scoped Query cancel-before-remove on sign-out or account switch.
 - Explicit email-confirmation state when sign-up returns no active session.
-- Focused auth, session-restoration, Rate-gate, and cache-isolation tests.
+- Focused auth, session-restoration, Rate-gate, navigation-intent,
+  cache-isolation, and overlapping auth-transition generation-race tests.
+- Auth generation guards so stale in-flight applySession / optimistic
+  sign-in/up/out cannot overwrite a newer transition after async cleanup.
 
 Acceptance:
 
@@ -482,7 +496,8 @@ Acceptance:
 - Sign-up creates exactly one profile through the accepted database trigger.
 - A signed-in user can read only their own profile.
 - Logged-out Rate action opens sign-in.
-- Successful sign-in returns to the intended product.
+- Successful sign-in returns to the intended **existing** product without a
+  duplicate Product route (one Back → Browse).
 - After sign-in, rating remains honestly unavailable on Product Detail until
   Task 17 connects durable My Rating persistence.
 - Sign-out/account switching cannot expose the prior user’s profile or rating
@@ -491,24 +506,31 @@ Acceptance:
 - Supabase access and refresh tokens are sensitive authentication material.
   Profile display data such as name, email, phone, and avatar does not by
   itself drive the storage decision; the authentication tokens do.
-- AsyncStorage is accepted for the MVP foundation, but before production
-  authentication is finalized Task 16 must document the threat model and
-  either:
-  1. explicitly accept AsyncStorage for the intended risk level; or
-  2. introduce and test an appropriate secure native storage alternative.
+- **HUMAN ACCEPTED (Task 16 MVP tradeoff only):** AsyncStorage for session
+  storage despite unencrypted-at-rest risk. SecureStore lifecycle experiment
+  was **explicitly waived** for Task 16; may be reconsidered in later
+  security/release hardening. Server-side RLS remains required regardless.
 - Service-role keys, passwords, backend secrets, and database credentials must
   never be stored in client storage.
-- Server-side RLS remains required regardless of local encryption. Encrypted
-  local storage does not replace correct authorization policies.
 
-Non-goals:
+Non-goals (remain later work — do not implement in Task 16):
 
-- No recovery, deletion, social login, passkeys, MFA, profile editing,
-  username reservation, avatar upload, or public profiles.
+- **Task 17 owns:** Rate form, create/edit My Rating, durable `user_ratings`,
+  private notes, Rated Products, post-mutation invalidation, Community Score
+  refresh after rating writes.
+- **Task 18 owns:** forgot/reset password, recovery email handling, recovery
+  deep links, app return handling for recovery (and confirmation deep links if
+  canonically assigned there).
+- **Task 19 owns:** protected account-deletion UX, reauthentication as required,
+  destructive deletion path, secure operational handling.
+- **Deferred — not part of Tasks 16–19 unless separately promoted in the
+  roadmap:** Sign in with Apple; Google/social authentication; passkeys; MFA;
+  editable profile; avatar upload; public profile; global/all-device session
+  revocation; stronger native token-storage revisit.
 
 ## Task 17: My Rating Persistence And Rated Products
 
-Status: Pending.
+Status: **Next — pending authorization.**
 
 Depends on: Task 16.
 
@@ -520,8 +542,9 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: Task 18 after all prerequisites are accepted and edit
 scopes are file-disjoint.
 
-Human gate: Staging rating writes or acceptance require separate explicit
-approval; production remains forbidden.
+Human gate: Not started — requires explicit start authorization after PR #35
+merge (or as separately directed). Staging rating writes or acceptance require
+separate explicit approval; production remains forbidden.
 
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products.

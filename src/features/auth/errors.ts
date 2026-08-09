@@ -1,0 +1,244 @@
+export type AuthErrorCode =
+  | 'offline'
+  | 'invalid-credentials'
+  | 'account-creation-failed'
+  | 'timeout'
+  | 'temporary-failure'
+  | 'confirmation-required';
+
+export type AuthErrorSource =
+  | 'transport'
+  | 'credentials'
+  | 'server'
+  | 'configuration';
+
+type AuthErrorOptions = {
+  source?: AuthErrorSource;
+  status?: number;
+  cause?: unknown;
+};
+
+/**
+ * Domain error for auth UI. `message` is always safe user-facing copy.
+ * Raw Supabase / network text stays only in optional `cause` for diagnostics.
+ */
+export class AuthError extends Error {
+  readonly code: AuthErrorCode;
+  readonly source: AuthErrorSource;
+  readonly status?: number;
+  override readonly cause?: unknown;
+
+  constructor(
+    code: AuthErrorCode,
+    message: string,
+    options: AuthErrorOptions = {},
+  ) {
+    super(message);
+    this.name = 'AuthError';
+    this.code = code;
+    this.source = options.source ?? defaultSource(code);
+    this.status = options.status;
+    this.cause = options.cause;
+  }
+}
+
+function defaultSource(code: AuthErrorCode): AuthErrorSource {
+  switch (code) {
+    case 'offline':
+    case 'timeout':
+      return 'transport';
+    case 'invalid-credentials':
+      return 'credentials';
+    case 'confirmation-required':
+      return 'credentials';
+    case 'account-creation-failed':
+    case 'temporary-failure':
+      return 'server';
+  }
+}
+
+/** Safe presentation strings for forms (never raw SDK error text). */
+export const AUTH_USER_MESSAGES = {
+  offline: "You're offline. Connect to the internet and try again.",
+  invalidCredentials: 'Email or password is incorrect.',
+  signInFailed: 'Could not sign in. Please try again.',
+  signOutFailed: 'Could not sign out. Please try again.',
+  accountCreationFailed: 'Could not create the account. Please try again.',
+  confirmationRequired: 'Check your email to confirm your account.',
+  timeout: 'The request took too long. Please try again.',
+  temporaryFailure: 'Could not sign in. Please try again.',
+  authStateChanged: 'Your account state changed. Please try again.',
+} as const;
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value != null && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function readStatus(value: unknown): number | undefined {
+  const record = asRecord(value);
+  if (!record) {
+    return undefined;
+  }
+  for (const candidate of [record.status, record.statusCode]) {
+    if (typeof candidate === 'number') {
+      return candidate;
+    }
+    if (typeof candidate === 'string' && /^\d{3}$/.test(candidate)) {
+      return Number(candidate);
+    }
+  }
+  return undefined;
+}
+
+function readCode(value: unknown): string | undefined {
+  const code = asRecord(value)?.code;
+  return typeof code === 'string' ? code : undefined;
+}
+
+function readMessage(value: unknown): string {
+  if (value instanceof Error) {
+    return value.message;
+  }
+  const message = asRecord(value)?.message;
+  return typeof message === 'string' ? message : '';
+}
+
+function isTransportFailure(value: unknown): boolean {
+  return (
+    value instanceof TypeError ||
+    /network request failed|failed to fetch|networkerror|load failed|fetch failed/i.test(
+      readMessage(value),
+    )
+  );
+}
+
+function isInvalidCredentials(value: unknown): boolean {
+  const code = readCode(value)?.toLowerCase() ?? '';
+  const message = readMessage(value).toLowerCase();
+  return (
+    code === 'invalid_credentials' ||
+    code === 'invalid_grant' ||
+    message.includes('invalid login credentials') ||
+    message.includes('invalid email or password') ||
+    message.includes('email not confirmed')
+  );
+}
+
+function isConfirmationRelated(value: unknown): boolean {
+  const code = readCode(value)?.toLowerCase() ?? '';
+  const message = readMessage(value).toLowerCase();
+  return (
+    code === 'email_not_confirmed' || message.includes('email not confirmed')
+  );
+}
+
+/**
+ * Maps SDK/network failures to AuthError with fixed user-facing copy.
+ * Does not surface raw Supabase messages to callers who only read `.message`.
+ */
+export function normalizeAuthError(
+  error: unknown,
+  options: {
+    operation: 'sign-in' | 'sign-up' | 'sign-out' | 'session';
+    isOffline?: boolean;
+  },
+): AuthError {
+  if (error instanceof AuthError) {
+    return error;
+  }
+
+  const status = readStatus(error);
+  const name = asRecord(error)?.name;
+
+  if (options.isOffline || isTransportFailure(error)) {
+    if (options.isOffline || isTransportFailure(error)) {
+      // Prefer offline copy when connectivity is known offline; otherwise
+      // treat pure transport failures as temporary service issues when online.
+      if (options.isOffline) {
+        return new AuthError('offline', AUTH_USER_MESSAGES.offline, {
+          source: 'transport',
+          status,
+          cause: error,
+        });
+      }
+      if (isTransportFailure(error)) {
+        return new AuthError(
+          'temporary-failure',
+          userMessageForOperation(options.operation),
+          { source: 'transport', status, cause: error },
+        );
+      }
+    }
+  }
+
+  if (name === 'TimeoutError' || name === 'AbortError') {
+    return new AuthError('timeout', AUTH_USER_MESSAGES.timeout, {
+      source: 'transport',
+      status,
+      cause: error,
+    });
+  }
+
+  if (options.operation === 'sign-in' && isInvalidCredentials(error)) {
+    // Email-not-confirmed still looks like "cannot use this credential set"
+    // to the user; keep credentials copy, not raw provider wording.
+    if (isConfirmationRelated(error)) {
+      return new AuthError(
+        'confirmation-required',
+        AUTH_USER_MESSAGES.confirmationRequired,
+        { source: 'credentials', status, cause: error },
+      );
+    }
+    return new AuthError(
+      'invalid-credentials',
+      AUTH_USER_MESSAGES.invalidCredentials,
+      { source: 'credentials', status, cause: error },
+    );
+  }
+
+  if (options.operation === 'sign-up') {
+    return new AuthError(
+      'account-creation-failed',
+      AUTH_USER_MESSAGES.accountCreationFailed,
+      { source: 'server', status, cause: error },
+    );
+  }
+
+  if (status != null && status >= 500) {
+    return new AuthError(
+      'temporary-failure',
+      userMessageForOperation(options.operation),
+      { source: 'server', status, cause: error },
+    );
+  }
+
+  return new AuthError(
+    'temporary-failure',
+    userMessageForOperation(options.operation),
+    { source: 'server', status, cause: error },
+  );
+}
+
+function userMessageForOperation(
+  operation: 'sign-in' | 'sign-up' | 'sign-out' | 'session',
+): string {
+  switch (operation) {
+    case 'sign-up':
+      return AUTH_USER_MESSAGES.accountCreationFailed;
+    case 'sign-out':
+      return AUTH_USER_MESSAGES.signOutFailed;
+    case 'sign-in':
+    case 'session':
+    default:
+      return AUTH_USER_MESSAGES.signInFailed;
+  }
+}
+
+export function getAuthErrorMessage(error: unknown): string {
+  if (error instanceof AuthError) {
+    return error.message;
+  }
+  return AUTH_USER_MESSAGES.signInFailed;
+}

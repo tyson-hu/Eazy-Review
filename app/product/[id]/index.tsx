@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
@@ -11,6 +11,8 @@ import { LoadingState } from '@/src/components/ui/LoadingState';
 import { RatingRow } from '@/src/components/ui/RatingRow';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import { Screen } from '@/src/components/ui/Screen';
+import { useAuth } from '@/src/features/auth/hooks';
+import { productDetailReturnPath } from '@/src/features/auth/returnPath';
 import { CatalogStatusBanner } from '@/src/features/products/CatalogStatusBanner';
 import { getCatalogErrorPresentation } from '@/src/features/products/errors';
 import { useProductQuery } from '@/src/features/products/queries';
@@ -111,8 +113,10 @@ function OfferPrice({ offer }: { offer: VerifiedProductOffer }) {
 }
 
 export default function ProductDetailScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const productId = typeof id === 'string' ? id : '';
+  const { isSignedIn, status: authStatus } = useAuth();
   const productQuery = useProductQuery(productId);
   const hasData = productQuery.data !== undefined;
   const retry = () => {
@@ -197,13 +201,31 @@ export default function ProductDetailScreen() {
   const communityHighlights = getCommunityHighlights(ratingSummary);
   const communityCategoryRows = getCommunityCategoryRows(ratingSummary);
   const lowestOffer = offers[0] ?? null;
+  const showSignInCta = authStatus !== 'initializing' && !isSignedIn;
 
   return (
     <Screen
       scroll
       footer={
         <View className="border-t border-border bg-background px-4 py-3">
-          <Button label="Rating unavailable" disabled />
+          {showSignInCta ? (
+            <Button
+              testID="sign-in-to-rate"
+              label="Sign in to rate"
+              onPress={() => {
+                router.push({
+                  pathname: '/auth/sign-in',
+                  params: { returnTo: productDetailReturnPath(productId) },
+                });
+              }}
+            />
+          ) : (
+            <Button
+              testID="rating-unavailable"
+              label="Rating unavailable"
+              disabled
+            />
+          )}
         </View>
       }>
       <ProductHeader title={product.name} />
@@ -364,12 +386,25 @@ export default function ProductDetailScreen() {
 
       <Card className="mt-5 border-accent">
         <AppText variant="label">My Rating</AppText>
-        <AppText variant="body" className="mt-2">
-          Rating is temporarily unavailable.
-        </AppText>
-        <AppText variant="caption" className="mt-1">
-          Sign-in and saved ratings are not part of this catalog task.
-        </AppText>
+        {isSignedIn ? (
+          <>
+            <AppText variant="body" className="mt-2">
+              {"Rating isn't available yet."}
+            </AppText>
+            <AppText variant="caption" className="mt-1">
+              Saved ratings will be connected in the next milestone.
+            </AppText>
+          </>
+        ) : (
+          <>
+            <AppText variant="body" className="mt-2">
+              Sign in to rate this product.
+            </AppText>
+            <AppText variant="caption" className="mt-1">
+              Saved ratings are not connected yet.
+            </AppText>
+          </>
+        )}
       </Card>
 
       <Card className="mt-5">

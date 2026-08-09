@@ -1,12 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * Auth session storage adapter for Supabase Auth.
+ * Task 14/16 auth session storage adapter for Supabase Auth.
  *
- * Uses `@react-native-async-storage/async-storage` on every platform Expo
- * supports for this app (iOS, Android, and web). Session JSON can exceed the
- * ~2048-byte iOS SecureStore value limit; AsyncStorage does not have that
- * limit, and it is the storage option documented by Supabase for React Native.
+ * HUMAN ACCEPTED (Task 16 MVP tradeoff — not final product-wide acceptance):
+ * keep AsyncStorage for session persistence despite being unencrypted at rest.
+ *
+ * - Access and refresh tokens are sensitive authentication material.
+ * - AsyncStorage is not encrypted at rest on device.
+ * - Profile display data does not drive this decision; token storage does.
+ * - Device compromise / local storage inspection remain relevant risks.
+ * - Server-side RLS remains mandatory regardless of local encryption.
+ * - A SecureStore lifecycle experiment was proposed but explicitly waived by
+ *   the human for Task 16. Do not claim that experiment was performed, and do
+ *   not claim Expo enforces a universal hard 2048-byte SecureStore limit as the
+ *   Task 16 rejection reason.
+ * - SecureStore / platform-secure storage may be reconsidered during later
+ *   security/release hardening if a simple, tested Supabase session-storage path
+ *   is available without fragile chunking or custom encryption.
+ * - Static web export must remain valid; AsyncStorage covers RN + web with
+ *   the existing SSR-safe no-window guard.
  *
  * Values are stored as plain strings. Callers (supabase-js) own JSON encoding;
  * this adapter does not double-encode. Storage errors propagate to the caller.

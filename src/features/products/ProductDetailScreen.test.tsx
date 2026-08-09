@@ -22,7 +22,10 @@ jest.mock('expo-router', () => ({
   Stack: { Screen: () => null },
   useFocusEffect: () => undefined,
   useLocalSearchParams: () => ({ id: mockRouteId }),
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+  }),
 }));
 
 jest.mock('@/src/features/products/api', () => ({
@@ -88,7 +91,8 @@ describe('connected Product Detail screen', () => {
     expect(
       rendered.getAllByTestId(/^verified-offer-/).map((node) => node.props.testID),
     ).toEqual(['verified-offer-offer-dicks', 'verified-offer-offer-finish-line']);
-    expect(rendered.getByText('Rating is temporarily unavailable.')).toBeTruthy();
+    expect(rendered.getByText('Sign in to rate this product.')).toBeTruthy();
+    expect(rendered.getByText('Sign in to rate')).toBeTruthy();
     expect(rendered.queryByText(/private note|profile|myRating|raw rating/i)).toBeNull();
     await rendered.cleanup();
   });
