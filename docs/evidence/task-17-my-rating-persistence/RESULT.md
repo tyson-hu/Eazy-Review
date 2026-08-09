@@ -1,61 +1,99 @@
-# Task 17 — My Rating Persistence And Rated Products
+# Task 17 — My Rating Persistence (rubric + offline reliability)
 
 ## Status
 
-**Task 17 — implementation complete for human review. Not accepted. Not merged.**
+**Task 17 — defect corrections implemented for human review. Not accepted. Not merged.**
+
+Physical-device acceptance exposed two blockers after the first Task 17 commit
+(`8c3e648`). Both are corrected on this branch under Task 17 (no Task 17.5).
 
 | Surface | Status |
 | --- | --- |
-| Automated (unit / typecheck / lint / check:readonly / check) | **PASS** (see commands below) |
-| Local database (`npm run test:db:reset`) | **PASS** — 8 pgTAP files / 456 tests; concurrency harness pass |
-| Simulator / web mobile preview | **Not run** in this session |
-| Physical iPhone | **PENDING HUMAN** |
+| Automated (unit / typecheck / lint / check:readonly) | See latest agent run in this document |
+| Local database (`npm run test:db` / `test:db:reset`) | PASS after sneaker-10-v1 migration (pgTAP plan counts updated) |
+| Simulator / web mobile preview | Not required for this correction pass unless re-run |
+| Physical iPhone matrix A–F | **PENDING HUMAN** |
 | Human acceptance | **NOT CLAIMED** |
 | Merge | **NOT AUTHORIZED** |
 
 ## Branch and SHAs
 
 - Branch: `agent/task-17-my-rating-persistence`
-- Starting SHA: `75967c820dc950c66ed05fdd85f811f7c9fe9ce2` (Task 16 merge / PR #35 on `master`)
-- Ending SHA: recorded at PR open / final commit on branch
+- Prior delivered commit (kept intact): `8c3e648` — Implement Task 17 My Rating
+  persistence and Rated Products
+- Correction work: uncommitted / pending commit sequence (model → offline → UI
+  → docs) until human review
 
-## Scope delivered
+## Defects corrected
 
-1. **Cleanup:** Task 16 Done (merged PR #35); Task 17 authorized/in progress in active status docs.
-2. **Connected My Rating API:** `getUserRating`, `saveUserRating` (read → update/insert → 23505 update recovery; no PostgREST upsert), `getUserRatedProducts`.
-3. **Query keys:** `ratingKeys.mine(userId, productId)`, `ratingKeys.ratedProducts(userId)`; public catalog keys unchanged.
-4. **Invalidation after save:** product detail, product list, My Rating, Rated Products — server truth only for Community Score.
-5. **Rate / Edit UI:** `app/product/[id]/rate.tsx` with Private note (max 500), whole scores 1–10, duplicate-submit guard.
-6. **Product Detail:** public `useProductQuery` + owner `useUserRatingQuery`; Rate/Edit CTA.
-7. **Account + Rated Products:** count/link + `app/account/rated-products.tsx`.
-8. **Isolation:** user-scoped rating keys remain under `USER_SCOPED_KEY_ROOTS` (Task 16 path).
+### A — Rating model / score contract
+
+- Root cause: editable Overall 1–10 was shown through 0–100 ScoreBadge semantics;
+  Community dimensions did not match Eazy structure.
+- Fix: shared **sneaker-10-v1** ten-dimension rubric; composites always 0–100
+  derived by `round(sum of dimensions)`; no client-written composite;
+  forward-only migration; ScoreBadge `score100`; RatingRow `score10`.
+
+### B — Offline / timeout / infinite pending
+
+- Root cause: TanStack mutation `networkMode: 'online'` paused save offline;
+  UI treated any pending as “Saving…”; no bounded abort for unreachable host.
+- Fix: save mutation `networkMode: 'always'`; NetInfo fail-fast offline;
+  `withRequestTimeout` (10s) aborting PostgREST; paused query/mutation
+  presentation; form state preserved; no offline write queue.
+
+## Scope delivered (correction)
+
+1. Forward migration
+   `supabase/migrations/20260809151511_task_17_sneaker10_rating_rubric.sql`
+2. Regenerated `src/types/database.generated.ts` and deliberate seed fixtures
+3. Domain: dimensions, score formula, validation, errors, API, queries, mutations
+4. UI: Rate form groups + steppers; Product Detail Eazy vs Community comparison;
+   Rated Products `myScore100`
+5. Network: `src/lib/network/requestTimeout.ts` (`DEFAULT_REQUEST_TIMEOUT_MS = 10000`)
+6. Docs + ADRs: `sneaker-10-v1` rubric; connected request reliability
+7. Focused tests for formula, offline settle, timeout, queries, lifecycle
+
+## Physical-device checklist (human)
+
+Record PASS/FAIL with date and build/Expo channel notes.
+
+| ID | Scenario | Expected | Result |
+| --- | --- | --- | --- |
+| A | Online normal save | Spinner ends; back to Detail; My Rating + Community refresh | PENDING |
+| B | Known offline before Save | Immediate offline feedback; no endless spinner; form kept; retry after reconnect | PENDING |
+| C | Drop connection during request | Settles via timeout/transport; form kept | PENDING |
+| D | Device online, local Supabase unreachable | Timeout/unreachable (not “you're offline”); no spinner | PENDING |
+| E | Rate offline, no cached owner rating | Explicit offline, not infinite Loading | PENDING |
+| F | Offline with cached Detail/owner data | Cached readable; offline/stale clear; reconnect refresh | PENDING |
 
 ## Security / privacy notes
 
-- Identity columns never appear in UPDATE payloads (`user_id`, `product_id`, `id`, timestamps).
-- Private note is owner-only and excluded from Rated Products list view model.
+- Identity columns never appear in UPDATE payloads.
+- Private note is owner-only.
 - No service-role credential in Expo.
-- Client never writes `rating_aggregates` or computes Community Score.
-- Schema / RLS / grants / migrations: **unchanged**.
+- Client never writes `rating_aggregates` or `score` / `methodology_version`.
+- Previously applied migrations: **unchanged** (forward-only correction only).
+- Staging / production databases: **untouched**.
 
-## Automated commands run
+## Automated commands (re-run before handoff)
+
+Update table when this correction suite is re-executed.
 
 | Command | Result |
 | --- | --- |
 | `npm run typecheck` | PASS |
 | `npm run lint` | PASS |
-| `npm test` | PASS — 31 suites, 218 tests |
-| `npm run check:readonly` | PASS |
-| `npm run check` | PASS (including Expo Doctor 20/20, deps up to date) |
-| `npm run test:db:reset` | PASS — pgTAP 456 tests; concurrency harness 2 scenarios |
+| `npm test` | PASS — 33 suites, 232 tests |
+| `npm run types:check` | PASS — generated types match local schema |
+| `npm run check:readonly` | PASS (via `npm run check`) |
+| `npm run check` | PASS — full Expo handoff gate incl. expo-doctor 20/20 |
+| `npm run test:db:reset` | PASS — pgTAP 479 tests; concurrency harness 2 scenarios |
 | `git diff --check` | PASS |
 
 ## Explicit non-claims
 
-- Physical-device journey: **PENDING HUMAN**
-- Human acceptance: **NOT CLAIMED**
-- Merge: **NOT AUTHORIZED**
-- Task 18: **not started**
-- Staging: **untouched**
-- Production: **untouched**
-- Dependabot PR #30: **untouched**
+- Physical-device matrix A–F: **PENDING HUMAN**
+- Human acceptance / merge: **NOT CLAIMED / NOT AUTHORIZED**
+- Staging / production: **untouched**
+- Offline write queue / optimistic rating: **not implemented**
