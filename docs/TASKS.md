@@ -77,8 +77,9 @@ This is a planning/architecture gate, not a feature task or migration.
   rating per user/product, owner-only `private_note`, anonymous
   published-product reads, and least-privilege grants/RLS.
 - Keep `Eazy Score`, `Community Score`, and `My Rating` exactly.
-- Keep Browse → Product Detail → Rate as the core journey and the six 1–10
-  rating fields: look, comfort, quality, outfit, value, and overall.
+- Keep Browse → Product Detail → Rate as the core journey and the shared
+  sneaker-10-v1 ten-dimension 0–10 form with derived 0–100 composites (no
+  manual overall).
 - Keep social content outside the MVP.
 - No service-role credential may enter Expo.
 - Applied migrations remain unchanged; any proven schema correction must be a
@@ -530,6 +531,16 @@ Non-goals (remain later work — do not implement in Task 16):
 
 Status: **In progress — explicitly authorized.**
 
+**Scope correction (physical-device):** While validating the first Task 17
+implementation, two reproducible defects blocked acceptance: (A) Overall on a
+1–10 form was rendered as a 0–100 score (for example Overall 9 → “Risky”), and
+Eazy vs Community were not structurally comparable; (B) offline/unreachable
+saves could leave Save in an indefinite spinner with no recovery path. Task 17
+now includes the shared **sneaker-10-v1** ten-dimension rubric, derived 0–100
+My Rating, direct Eazy/Community comparison UI, and a reusable fail-fast
+offline + bounded-request timeout contract. Do not treat superseded six-field /
+manual-overall docs as authoritative when they conflict with this correction.
+
 Depends on: Task 16.
 
 Unlocks: Task 19, Task 21, and contributes to Task 22.
@@ -545,31 +556,50 @@ checklist, and merge are **not claimed**. Staging rating writes or acceptance
 require separate explicit approval; production remains forbidden.
 
 Goal: complete the first real value loop:
-Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products.
+Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products
+with honest comparable scores and resilient connected save UX.
 
 Write contract:
 
 1. Read the owner’s current rating.
-2. Update score fields and `private_note` only when it exists.
-3. Insert when it does not exist.
-4. On unique violation `23505`, retry as a score/private-note-only update.
+2. Update the ten dimension columns and `private_note` only when a row exists.
+3. Insert when it does not exist (dimensions + note only; server derives score).
+4. On unique violation `23505`, retry as a dimensions/private-note-only update.
+5. Clients never write `score`, `methodology_version`, or `rating_aggregates`.
+6. Do not use PostgREST upsert for Task 17.
 
 Do not add a `SECURITY DEFINER` save RPC unless the accepted direct,
 RLS-protected path proves insufficient.
 
 Deliverables:
 
-- Rename `comment` to `privateNote`; visible label becomes **Private note**.
-- Enforce the 500-character limit in the form.
-- Real Rate/Edit behavior with duplicate-submit prevention.
-- Complete query invalidation for public product, product list, user rating,
-  and Rated Products.
-- `app/account/rated-products.tsx` and Account → Rated Products → Detail
-  navigation.
+- Shared `RATING_DIMENSIONS` / methodology `sneaker-10-v1` (ten dimensions).
+- Form: 0–10 half-step dimensions only; no editable Overall; live 0–100 My
+  Rating preview; optional Private note (500-char limit).
+- Grouped UI: Style; Build and Wear; Market and Ownership.
+- Product Detail: Eazy Score and Community Score as 0–100 counterparts plus
+  one-to-one dimension comparison (0–10). Explicit `score100` / `score10` (or
+  equivalent) props — never a scale-ambiguous generic “score”.
+- Real Rate/Edit with duplicate-submit prevention and required cache
+  invalidations (public product, list, user rating, Rated Products).
+- Fail-fast when known offline; bounded request timeout (~10s);
+  `networkMode: 'always'` on the explicit rating save mutation so offline is
+  not an indefinite paused pending state.
+- Paused-query presentation for My Rating / Rate init / Rated Products /
+  Detail owner refresh: no endless Loading spinner; cache when available;
+  explicit offline when not.
+- Preserve dimension + private-note form input after offline/timeout/transport
+  failures; user retries after reconnect — **no** offline write queue.
+- `app/account/rated-products.tsx` and Account → Rated Products → Detail.
 - Empty Rated Products state.
-- App-level verification that server-owned aggregates reflect real saves and
-  edits; do not reopen the aggregate mechanism.
-- Focused rating mutation, invalidation, and Rated Products behavior tests.
+- Forward-only schema migration + regenerated DB types + deterministic seed
+  under sneaker-10-v1 (deliberate fixtures; no fake remapping of old quality
+  into resale/acquisition).
+- Focused tests for composite formula, mutation offline/timeout settlement,
+  paused queries, invalidation, `23505` recovery, NetInfo lifecycle.
+- Physical-device evidence for online save, known-offline save, mid-request
+  disconnect, reachable-network/unreachable local Supabase, offline open
+  without cache, offline with cache.
 
 Acceptance:
 
@@ -577,16 +607,29 @@ Acceptance:
   user/product pair; no pair can contain more than one row.
 - Concurrent first saves do not expose an unhandled unique error.
 - Cross-user reads never return `private_note`.
+- Derived My Rating is 0–100; ten 9.0 dims → 90; 81.5 sum → 82; 0 is valid;
+  null is unanswered (not zero); half steps accepted; invalid increments
+  rejected; client cannot persist a disagreeing composite.
+- Community derivation mirrors Eazy; methodology mismatch is not silently
+  aggregated.
 - My Rating and server-owned rating count/averages refresh from the database.
 - Browse, Detail, user rating, and Rated Products caches invalidate correctly.
+- Known offline Save: fail-fast offline copy, no endless spinner, form kept.
+- Timeout/transport: settled error, form kept, not mislabeled as offline when
+  the device is online.
+- Paused/offline queries never show infinite “Loading your rating…”.
 - The client never writes `rating_aggregates`.
 - No optimistic rating behavior or temporary connected-session map remains.
 - Existing database concurrency and forgery suites still pass.
+- Physical-device matrix A–F recorded under `docs/evidence/` before human
+  acceptance.
 
 Non-goals:
 
 - No public written review, likes/helpful votes, rating-delete UI, optimistic
-  update, or new aggregate implementation.
+  update, durable offline mutation queue, new aggregate ownership model, or
+  silent scale conversion heuristics (`score <= 10 ? score * 10`).
+- No Task 17.5 — corrections remain under Task 17 until accepted.
 
 ## Task 18: Password Recovery And Deep Links
 

@@ -301,13 +301,36 @@ Do not add description, long metadata, comments, likes, or social UI to MVP prod
 
 ### Rating Breakdown
 
-- Category breakdowns use a label, numeric average, and a simple horizontal score bar.
-- Prefer compact category rows, expandable detail sections, and top strengths/weaknesses.
-- User rating categories are look, comfort, quality, outfit, value, and overall.
-- Prefer layered data: overall score first, top strengths/weaknesses second,
-  category breakdown third, and public written reviews only in post-MVP social
-  work.
+- Composite labels use **0–100**: `Eazy Score`, `Community Score`, `My Rating`.
+- Dimension rows use **0–10** (half-step display such as `9.0`).
+- Prefer explicitly named props such as `score100` and `score10` (or typed view
+  models). Never feed a dimension into a 0–100 badge or a composite into a
+  0–10 row.
+- Do **not** fix scale mixups with heuristics like
+  `score <= 10 ? score * 10 : score`.
+- Shared ordered dimensions: Appearance, Styling, Materials, Craftsmanship,
+  Care, Comfort, Collectibility, Product Value, Resale Potential, Acquisition
+  Ease.
+- Product Detail: Eazy Score and Community Score side by side, then one-to-one
+  Eazy vs Community dimension columns.
+- Layered data: composite scores first, strengths/weaknesses when useful,
+  category comparison third. Public written reviews remain post-MVP.
 - Avoid complex charts unless they remain clear on mobile.
+
+### Connected-action and query state (Task 15/17)
+
+- Loading/fetching: show LoadingState only while a fetch is actively in flight.
+- Offline (known): compact non-spammy feedback before/after Save on connected
+  screens; fail-fast offline message for writes.
+- Timeout: bounded request deadline (~10s); clear retry copy.
+- Transport/backend unreachable: distinct from offline when the device is
+  networked.
+- Retry: keep entered form values; user initiates retry after reconnect.
+- Cached offline: keep showing cached data with stale/offline context when
+  useful.
+- No infinite spinner for `isPending` + paused mutations/queries, or for
+  `status: pending` + `fetchStatus: paused` with no cache.
+- Preserve user input after transport failures (no silent form wipe).
 
 ### Reusable UI Components
 
@@ -321,7 +344,7 @@ Initial reusable UI components:
 - `ScoreBadge`
 - `ProductCard`
 - `RatingRow`
-- `RatingInputRow`
+- `DimensionStepperRow`
 - `LoadingState`
 - `EmptyState`
 - `ErrorState`
@@ -379,19 +402,31 @@ Phased CTA ownership:
 ### Rating Submission
 
 - Job: make it easy and satisfying to rate a product.
-- Focal point: rating input.
-- Show: product preview, overall rating emphasized first, supporting category rating rows, optional private note, submit button, progress feedback.
-- Keep single-line score inputs pill-shaped; use the 18px utility-card radius for the multiline Private note field so its taller shape does not become an oversized capsule.
-- Avoid: long intimidating forms, too many required fields, confusing category names, no save/progress feedback.
+- Focal point: shared ten-dimension form with a live derived **My Rating** (0–100).
+- Show: product preview; groups Style / Build and Wear / Market and Ownership;
+  dimension steppers (0–10, 0.5 step; Clear = unanswered; 0 is valid); live My
+  Rating preview when complete (explicit incomplete state when not); optional
+  private note; submit; progress feedback that is never an endless offline
+  spinner.
+- Avoid: editable Overall; long intimidating free-text score fields; confusing
+  category names; no save/progress feedback; offline write queues.
 
-Form fields (keep the first rating form short):
-- Look: 1-10.
-- Comfort: 1-10.
-- Quality: 1-10.
-- Outfit: 1-10.
-- Value: 1-10.
-- Overall: 1-10.
-- Private note: optional (owner-only; not a public comment). Max 500 characters on the connected form (Task 17).
+Form fields (methodology `sneaker-10-v1`):
+
+| Group | UI label | Field |
+| --- | --- | --- |
+| Style | Appearance | look |
+| Style | Styling | outfit |
+| Build and Wear | Materials | material |
+| Build and Wear | Craftsmanship | craftsmanship |
+| Build and Wear | Care | maintenance (10 = easy to maintain) |
+| Build and Wear | Comfort | comfort |
+| Market and Ownership | Collectibility | collection |
+| Market and Ownership | Product Value | value |
+| Market and Ownership | Resale Potential | resalePotential |
+| Market and Ownership | Acquisition Ease | acquisitionEase |
+
+- Private note: optional (owner-only; not a public comment). Max 500 characters.
 
 Validation:
 - Numeric fields are required.
