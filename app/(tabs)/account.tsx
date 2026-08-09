@@ -39,8 +39,15 @@ export default function AccountScreen() {
     return (
       <Screen scroll>
         <View className="items-center pt-8">
-          <AppText variant="title" className="text-center">
-            Your Eazy Review account
+          <Image
+            testID="account-app-logo"
+            source={require('../../assets/images/icon.png')}
+            resizeMode="contain"
+            className="h-16 w-16 rounded-2xl"
+            accessible={false}
+          />
+          <AppText variant="title" className="mt-4 text-center">
+            Eazy Review
           </AppText>
           <AppText variant="caption" className="mt-3 max-w-xs text-center">
             Sign in to access your account.

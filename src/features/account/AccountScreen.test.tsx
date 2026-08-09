@@ -70,9 +70,10 @@ describe('Account screen', () => {
     mockPush.mockReset();
   });
 
-  it('renders signed-out state with truthful rating copy', async () => {
+  it('renders signed-out state with app logo and truthful rating copy', async () => {
     const rendered = await renderWithProviders(<AccountScreen />);
-    expect(rendered.getByText('Your Eazy Review account')).toBeTruthy();
+    expect(rendered.getByTestId('account-app-logo')).toBeTruthy();
+    expect(rendered.getByText('Eazy Review')).toBeTruthy();
     expect(rendered.getByText('Sign in to access your account.')).toBeTruthy();
     expect(
       rendered.getByText(
@@ -82,6 +83,7 @@ describe('Account screen', () => {
     expect(rendered.queryByText(/Sign in to save ratings/i)).toBeNull();
     expect(rendered.getByTestId('account-sign-in')).toBeTruthy();
     expect(rendered.getByTestId('account-create-account')).toBeTruthy();
+    expect(rendered.getByText('You can keep browsing without signing in.')).toBeTruthy();
     await rendered.cleanup();
   });
 
