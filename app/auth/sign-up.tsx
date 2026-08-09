@@ -43,6 +43,11 @@ export default function SignUpScreen() {
         setConfirmationEmail(result.email);
         return;
       }
+      // Superseded: stay on Sign Up with a safe retry message (no dismiss).
+      if (result.kind === 'superseded') {
+        setErrorMessage(AUTH_USER_MESSAGES.authStateChanged);
+        return;
+      }
       // Dismiss Sign Up (+ Sign In if present) until the existing destination.
       dismissAuthToReturnPath(router, returnTo);
     } catch (error) {

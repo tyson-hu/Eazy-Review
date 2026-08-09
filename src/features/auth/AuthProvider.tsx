@@ -19,9 +19,11 @@ import {
   signUpWithPassword,
 } from '@/src/features/auth/api';
 import type {
+  AuthOperationSuperseded,
   AuthStatus,
   AuthUser,
   SignInCredentials,
+  SignInResult,
   SignInSuccess,
   SignUpCredentials,
   SignUpResult,
@@ -35,7 +37,7 @@ export type AuthContextValue = {
   user: AuthUser | null;
   /** True when status is signed-in and a user is present. */
   isSignedIn: boolean;
-  signIn: (credentials: SignInCredentials) => Promise<SignInSuccess>;
+  signIn: (credentials: SignInCredentials) => Promise<SignInResult>;
   signUp: (credentials: SignUpCredentials) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
 };
@@ -227,8 +229,30 @@ export function AuthProvider({
     enableSession,
   ]);
 
+  /**
+   * After optimistic principal cleanup: a generation mismatch means a newer
+   * transition arrived. Same principal (SDK SIGNED_IN confirmation / same-user
+   * refresh) may still report signed-in success. Different principal or
+   * signed-out is superseded for the caller — state must not look successful.
+   */
+  const resolveOptimisticSignedIn = useCallback(
+    (
+      result: SignInSuccess,
+      generation: number,
+    ): SignInSuccess | AuthOperationSuperseded => {
+      if (authGenerationRef.current === generation) {
+        return result;
+      }
+      if (previousUserIdRef.current === result.user.id) {
+        return result;
+      }
+      return { kind: 'superseded' };
+    },
+    [],
+  );
+
   const signIn = useCallback(
-    async (credentials: SignInCredentials) => {
+    async (credentials: SignInCredentials): Promise<SignInResult> => {
       const client = resolveClient(clientProp);
       if (!client) {
         throw new Error('Auth client is unavailable.');
@@ -238,18 +262,23 @@ export function AuthProvider({
       const generation = authGenerationRef.current;
       // onAuthStateChange will sync status; apply optimistically for UX.
       await clearUserScopedIfPrincipalChanged(result.user.id);
+      const resolved = resolveOptimisticSignedIn(result, generation);
+      if (resolved.kind === 'superseded') {
+        return resolved;
+      }
       if (authGenerationRef.current !== generation) {
-        return result;
+        // Same principal confirmed by a newer transition — do not re-apply.
+        return resolved;
       }
       setUser(result.user);
       setStatus('signed-in');
-      return result;
+      return resolved;
     },
-    [clearUserScopedIfPrincipalChanged, clientProp],
+    [clearUserScopedIfPrincipalChanged, clientProp, resolveOptimisticSignedIn],
   );
 
   const signUp = useCallback(
-    async (credentials: SignUpCredentials) => {
+    async (credentials: SignUpCredentials): Promise<SignUpResult> => {
       const client = resolveClient(clientProp);
       if (!client) {
         throw new Error('Auth client is unavailable.');
@@ -259,15 +288,20 @@ export function AuthProvider({
         authGenerationRef.current += 1;
         const generation = authGenerationRef.current;
         await clearUserScopedIfPrincipalChanged(result.user.id);
+        const resolved = resolveOptimisticSignedIn(result, generation);
+        if (resolved.kind === 'superseded') {
+          return resolved;
+        }
         if (authGenerationRef.current !== generation) {
-          return result;
+          return resolved;
         }
         setUser(result.user);
         setStatus('signed-in');
+        return resolved;
       }
       return result;
     },
-    [clearUserScopedIfPrincipalChanged, clientProp],
+    [clearUserScopedIfPrincipalChanged, clientProp, resolveOptimisticSignedIn],
   );
 
   const signOut = useCallback(async () => {

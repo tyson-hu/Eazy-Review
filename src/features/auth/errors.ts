@@ -67,6 +67,7 @@ export const AUTH_USER_MESSAGES = {
   confirmationRequired: 'Check your email to confirm your account.',
   timeout: 'The request took too long. Please try again.',
   temporaryFailure: 'Could not sign in. Please try again.',
+  authStateChanged: 'Your account state changed. Please try again.',
 } as const;
 
 function asRecord(value: unknown): Record<string, unknown> | null {

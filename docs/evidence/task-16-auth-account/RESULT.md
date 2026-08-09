@@ -91,6 +91,8 @@ C, and delayed-restore bootstrap races.
 - Session restore on mount; single `onAuthStateChange` subscription; cleanup on
   unmount.
 - Auth generation counter for bootstrap and overlapping async transitions.
+- Explicit sign-in/up results report `superseded` when a different principal or
+  signed-out wins mid-cleanup; screens dismiss only on authoritative `signed-in`.
 - Auth bootstrap failure does not block anonymous Browse.
 - Task 14 owns AppState auto-refresh; AuthProvider does not duplicate it.
 

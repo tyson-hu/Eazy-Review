@@ -24,6 +24,17 @@ export type SignInSuccess = {
   user: AuthUser;
 };
 
+/**
+ * Explicit sign-in/up finished, but a newer auth transition (different principal
+ * or signed-out) became authoritative before the optimistic apply committed.
+ * Callers must not navigate as if this operation signed the user in.
+ */
+export type AuthOperationSuperseded = {
+  kind: 'superseded';
+};
+
+export type SignInResult = SignInSuccess | AuthOperationSuperseded;
+
 export type SignUpSuccess = {
   kind: 'signed-in';
   user: AuthUser;
@@ -34,4 +45,7 @@ export type SignUpConfirmationRequired = {
   email: string;
 };
 
-export type SignUpResult = SignUpSuccess | SignUpConfirmationRequired;
+export type SignUpResult =
+  | SignUpSuccess
+  | SignUpConfirmationRequired
+  | AuthOperationSuperseded;

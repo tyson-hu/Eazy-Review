@@ -8,7 +8,10 @@ import { Card } from '@/src/components/ui/Card';
 import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { Input } from '@/src/components/ui/Input';
 import { Screen } from '@/src/components/ui/Screen';
-import { getAuthErrorMessage } from '@/src/features/auth/errors';
+import {
+  AUTH_USER_MESSAGES,
+  getAuthErrorMessage,
+} from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
 import {
   dismissAuthToReturnPath,
@@ -33,8 +36,13 @@ export default function SignInScreen() {
     setPending(true);
     setErrorMessage(null);
     try {
-      await signIn({ email, password });
+      const result = await signIn({ email, password });
       setPassword('');
+      // Superseded: a newer auth transition won — stay on Sign In, no dismiss.
+      if (result.kind === 'superseded') {
+        setErrorMessage(AUTH_USER_MESSAGES.authStateChanged);
+        return;
+      }
       // Unwind auth routes to the existing destination — do not replace-forward
       // onto a new Product instance (duplicate stack).
       dismissAuthToReturnPath(router, returnTo);
