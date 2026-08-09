@@ -751,6 +751,14 @@ describe('AuthProvider', () => {
       await Promise.resolve();
       await Promise.resolve();
 
+      // B must not publish while A→B cache purge is still held.
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'user-a',
+      );
+      expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+        'user-b',
+      );
+
       releaseCleanup?.();
       await Promise.resolve();
       await Promise.resolve();
@@ -766,6 +774,358 @@ describe('AuthProvider', () => {
         'signed-in|user-b|b@example.com',
       ),
     );
+
+    removeSpy.mockRestore();
+    await rendered.cleanup();
+  });
+
+  it('does not publish B while A→B purge is held on duplicate SIGNED_IN B', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(accountKeys.profile('user-a'), { id: 'user-a' });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'p1' }]);
+
+    let releaseCleanup: (() => void) | null = null;
+    const cleanupHold = new Promise<void>((resolve) => {
+      releaseCleanup = resolve;
+    });
+    const removeSpy = jest
+      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .mockImplementation(async () => {
+        await cleanupHold;
+      });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|user-a',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(removeSpy).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Critical: B must not publish while the serialized A→B purge is held.
+    expect(rendered.getByTestId('auth-probe').props.children).toContain(
+      'user-a',
+    );
+    expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+      'user-b',
+    );
+
+    await act(async () => {
+      releaseCleanup?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b@example.com',
+      ),
+    );
+
+    removeSpy.mockRestore();
+    await rendered.cleanup();
+  });
+
+  it('does not publish TOKEN_REFRESHED B early during an A→B purge', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(accountKeys.profile('user-a'), { id: 'user-a' });
+    queryClient.setQueryData(accountKeys.profile('user-b'), {
+      id: 'user-b',
+      displayName: 'Bee',
+    });
+
+    let releaseCleanup: (() => void) | null = null;
+    const cleanupHold = new Promise<void>((resolve) => {
+      releaseCleanup = resolve;
+    });
+    const removeSpy = jest
+      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .mockImplementation(async () => {
+        await cleanupHold;
+      });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|user-a',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(removeSpy).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      mock.emit('TOKEN_REFRESHED', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(rendered.getByTestId('auth-probe').props.children).toContain(
+      'user-a',
+    );
+    expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+      'user-b',
+    );
+
+    await act(async () => {
+      releaseCleanup?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b@example.com',
+      ),
+    );
+
+    // A→B purge ran once; same-user TOKEN_REFRESHED after cache prep must not
+    // start a second destructive purge.
+    expect(removeSpy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      mock.emit('TOKEN_REFRESHED', {
+        id: 'user-b',
+        email: 'b-refreshed@example.com',
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b-refreshed@example.com',
+      ),
+    );
+    expect(removeSpy).toHaveBeenCalledTimes(1);
+
+    removeSpy.mockRestore();
+    await rendered.cleanup();
+  });
+
+  it('leaves no stale purge that can remove B queries after B is visible', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(accountKeys.profile('user-a'), { id: 'user-a' });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'p1' }]);
+
+    let releaseCleanup: (() => void) | null = null;
+    const cleanupHold = new Promise<void>((resolve) => {
+      releaseCleanup = resolve;
+    });
+    const removeSpy = jest
+      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .mockImplementation(async () => {
+        await cleanupHold;
+      });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|user-a',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(removeSpy).toHaveBeenCalled());
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+      'user-b',
+    );
+
+    await act(async () => {
+      releaseCleanup?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b@example.com',
+      ),
+    );
+
+    queryClient.setQueryData(accountKeys.profile('user-b'), { id: 'user-b' });
+
+    // Flush any lingering transition tail work — nothing should remove B data.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(queryClient.getQueryData(accountKeys.profile('user-b'))).toEqual({
+      id: 'user-b',
+    });
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'p1' },
+    ]);
+
+    removeSpy.mockRestore();
+    await rendered.cleanup();
+  });
+
+  it('serializes A → B → C cache transitions without publishing during open purges', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(accountKeys.profile('user-a'), { id: 'user-a' });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'p1' }]);
+
+    const cleanupHolds: (() => void)[] = [];
+    const removeSpy = jest
+      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            cleanupHolds.push(resolve);
+          }),
+      );
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|user-a',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(cleanupHolds.length).toBe(1));
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-c', email: 'c@example.com' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Neither B nor C may publish while purge #1 (A→B) is still open.
+    expect(rendered.getByTestId('auth-probe').props.children).toContain(
+      'user-a',
+    );
+    expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+      'user-b',
+    );
+    expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+      'user-c',
+    );
+
+    await act(async () => {
+      cleanupHolds[0]!();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // After A→B purge, C's transition may need a second purge (B→C).
+    await waitFor(() => expect(cleanupHolds.length).toBe(2));
+
+    expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+      'user-c',
+    );
+
+    await act(async () => {
+      cleanupHolds[1]!();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-c|c@example.com',
+      ),
+    );
+
+    queryClient.setQueryData(accountKeys.profile('user-c'), { id: 'user-c' });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(queryClient.getQueryData(accountKeys.profile('user-c'))).toEqual({
+      id: 'user-c',
+    });
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'p1' },
+    ]);
+    expect(removeSpy).toHaveBeenCalledTimes(2);
 
     removeSpy.mockRestore();
     await rendered.cleanup();

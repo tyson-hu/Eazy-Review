@@ -18,6 +18,7 @@ Task 17 is **Next — pending authorization** and is **not** implemented.
 - Starting SHA: `f7cb8856ccdebece51e007df301e4ce578892c1a` (Task 15 merge / PR #32)
 - Race-fix commit: `97df31b0d84d7592778d52ab5b4a351ac8fa4ccd`
 - Head at acceptance-prep: see PR #35 head OID (updated on closeout commit)
+- Serialized cache-transition P2: see current PR #35 head after push
 
 ## Human decisions recorded during review
 
@@ -79,6 +80,27 @@ when generation is still current. Bootstrap generation checks preserved.
 Regression tests cover stale `SIGNED_IN` vs newer `SIGNED_OUT`, principal B vs
 C, and delayed-restore bootstrap races.
 
+## Serialized principal-cache transitions (P2 post-acceptance)
+
+Problem: the principal ref advanced before prior-user cache cleanup completed.
+A duplicate same-principal event (or `TOKEN_REFRESHED`) could publish B while
+an older A→B global user-cache purge was still open, so B's newly started
+queries could still be cancelled/removed.
+
+Fix: split tracking into latest announced principal, cache-prepared principal,
+and published React auth state; serialize cache preparation on a promise tail;
+publish user/status only after that principal's cache prep finishes.
+`TOKEN_REFRESHED` uses the same path (no same-user publication bypass).
+
+Regression tests: duplicate `SIGNED_IN` B during held A→B purge;
+`TOKEN_REFRESHED` B during held purge; no stale purge after B is visible;
+A→B→C serialization; same-principal explicit sign-in; prior superseded-result
+cases.
+
+Physical-device acceptance evidence for normal auth/navigation remains valid;
+this correction is covered by deterministic automated race tests (no new
+fabricated device claim).
+
 ## Scope delivered
 
 ### Auth architecture
@@ -91,6 +113,7 @@ C, and delayed-restore bootstrap races.
 - Session restore on mount; single `onAuthStateChange` subscription; cleanup on
   unmount.
 - Auth generation counter for bootstrap and overlapping async transitions.
+- Serialized principal-cache preparation (queue tail) before publishing state.
 - Explicit sign-in/up results report `superseded` when a different principal or
   signed-out wins mid-cleanup; screens dismiss only on authoritative `signed-in`.
 - Auth bootstrap failure does not block anonymous Browse.
@@ -140,7 +163,9 @@ C, and delayed-restore bootstrap races.
 
 - Navigation intent (`dismissTo`); local sign-out; Account pending/error UX;
   profile abortSignal; cancel-before-remove; A→B isolation; bootstrap races;
-  overlapping applySession cleanup races; 174 frontend unit tests at acceptance.
+  overlapping applySession cleanup races; serialized A→B/A→B→C cache
+  transitions; superseded explicit operations; 188 frontend unit tests after
+  the P2 serialized-cache fix (174 at human acceptance).
 
 ## Device and network
 

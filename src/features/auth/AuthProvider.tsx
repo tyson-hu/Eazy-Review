@@ -85,6 +85,12 @@ function resolveClient(
 /**
  * Application auth state. Exposes identity presence only — never tokens.
  * Clears user-scoped Query cache on principal change; leaves public catalog.
+ *
+ * Principal tracking is split into three concepts:
+ * - latestAuthPrincipal: newest principal announced by an authoritative auth
+ *   transition (used for superseded-operation decisions)
+ * - cachePrincipal: principal whose user-scoped cache is already prepared
+ * - React user/status: published only after that principal's cache prep finishes
  */
 export function AuthProvider({
   children,
@@ -96,7 +102,18 @@ export function AuthProvider({
     enableSession ? 'initializing' : 'signed-out',
   );
   const [user, setUser] = useState<AuthUser | null>(null);
-  const previousUserIdRef = useRef<string | null>(null);
+  /**
+   * Newest principal announced by the latest authoritative auth transition.
+   * Used for explicit sign-in/up superseded decisions — not for cache ownership.
+   */
+  const latestAuthPrincipalRef = useRef<string | null>(null);
+  /**
+   * Principal for which user-scoped cache has been safely transitioned.
+   * Advanced only after any prior-principal purge has fully completed.
+   */
+  const cachePrincipalRef = useRef<string | null>(null);
+  /** Serializes principal-cache transitions so only one purge runs at a time. */
+  const cacheTransitionTailRef = useRef<Promise<void>>(Promise.resolve());
   /**
    * Monotonic generation so a delayed restoreSession or a stale in-flight
    * applySession / optimistic sign-in/up/out cannot overwrite a newer auth
@@ -104,18 +121,30 @@ export function AuthProvider({
    */
   const authGenerationRef = useRef(0);
 
-  const clearUserScopedIfPrincipalChanged = useCallback(
-    async (nextUserId: string | null) => {
-      const previous = previousUserIdRef.current;
-      if (previous === nextUserId) {
-        return;
-      }
-      // Record the principal first so concurrent events see the new id.
-      previousUserIdRef.current = nextUserId;
-      // Only purge when leaving a real principal (sign-out or A→B).
-      if (previous != null) {
-        await removeUserScopedQueries(queryClient);
-      }
+  /**
+   * Queue a cache transition for `nextUserId`. Transitions run in order;
+   * a failed purge rejects to the current caller but does not poison later
+   * transitions (tail continues via catch).
+   */
+  const prepareUserScopedCacheForPrincipal = useCallback(
+    (nextUserId: string | null): Promise<void> => {
+      const transition = cacheTransitionTailRef.current
+        .catch(() => undefined)
+        .then(async () => {
+          const previous = cachePrincipalRef.current;
+          if (previous === nextUserId) {
+            return;
+          }
+          // Only purge when leaving a real principal (sign-out or A→B).
+          if (previous != null) {
+            await removeUserScopedQueries(queryClient);
+          }
+          // Claim the cache for the new principal only after cleanup completes.
+          cachePrincipalRef.current = nextUserId;
+        });
+
+      cacheTransitionTailRef.current = transition;
+      return transition;
     },
     [queryClient],
   );
@@ -124,7 +153,7 @@ export function AuthProvider({
     async (session: Session | null, generation: number) => {
       const nextUser = authUserFromSession(session);
       const nextId = userIdFromSession(session);
-      await clearUserScopedIfPrincipalChanged(nextId);
+      await prepareUserScopedCacheForPrincipal(nextId);
       // A newer auth transition may have started while cleanup awaited.
       if (authGenerationRef.current !== generation) {
         return;
@@ -132,7 +161,7 @@ export function AuthProvider({
       setUser(nextUser);
       setStatus(nextUser ? 'signed-in' : 'signed-out');
     },
-    [clearUserScopedIfPrincipalChanged],
+    [prepareUserScopedCacheForPrincipal],
   );
 
   useEffect(() => {
@@ -165,7 +194,8 @@ export function AuthProvider({
         return;
       }
       const nextId = restored?.id ?? null;
-      await clearUserScopedIfPrincipalChanged(nextId);
+      latestAuthPrincipalRef.current = nextId;
+      await prepareUserScopedCacheForPrincipal(nextId);
       if (cancelled || authGenerationRef.current !== generationAtBootstrapStart) {
         return;
       }
@@ -177,32 +207,19 @@ export function AuthProvider({
 
     const {
       data: { subscription: authSubscription },
-    } = client.auth.onAuthStateChange((event, session) => {
+    } = client.auth.onAuthStateChange((_event, session) => {
       // Keep the callback minimal: schedule React state after the event.
       // Do not perform nested Supabase auth calls here.
+      // TOKEN_REFRESHED uses the same serialized path as SIGNED_IN so a
+      // same-principal refresh cannot publish B while an A→B purge is open.
       if (cancelled) {
         return;
-      }
-
-      // TOKEN_REFRESHED for the same user must not clear user-scoped cache.
-      if (event === 'TOKEN_REFRESHED') {
-        const nextId = userIdFromSession(session);
-        if (nextId != null && nextId === previousUserIdRef.current) {
-          // Refresh identity-bearing fields if email changed, without purge.
-          const nextUser = authUserFromSession(session);
-          if (nextUser) {
-            // Still advance generation so a late restore cannot overwrite.
-            authGenerationRef.current += 1;
-            setUser(nextUser);
-            setStatus('signed-in');
-          }
-          return;
-        }
       }
 
       // Invalidate any in-flight bootstrap before scheduling application.
       authGenerationRef.current += 1;
       const appliedGeneration = authGenerationRef.current;
+      latestAuthPrincipalRef.current = userIdFromSession(session);
 
       // Defer state application so we avoid nested client work inside the callback.
       queueMicrotask(() => {
@@ -222,18 +239,16 @@ export function AuthProvider({
       cancelled = true;
       subscription?.unsubscribe();
     };
-  }, [
-    applySession,
-    clearUserScopedIfPrincipalChanged,
-    clientProp,
-    enableSession,
-  ]);
+  }, [applySession, clientProp, enableSession, prepareUserScopedCacheForPrincipal]);
 
   /**
    * After optimistic principal cleanup: a generation mismatch means a newer
    * transition arrived. Same principal (SDK SIGNED_IN confirmation / same-user
    * refresh) may still report signed-in success. Different principal or
    * signed-out is superseded for the caller — state must not look successful.
+   *
+   * Authority is `latestAuthPrincipalRef` (not cache-prepared principal): a
+   * newer C may already be announced while cache is still preparing B.
    */
   const resolveOptimisticSignedIn = useCallback(
     (
@@ -243,7 +258,7 @@ export function AuthProvider({
       if (authGenerationRef.current === generation) {
         return result;
       }
-      if (previousUserIdRef.current === result.user.id) {
+      if (latestAuthPrincipalRef.current === result.user.id) {
         return result;
       }
       return { kind: 'superseded' };
@@ -260,8 +275,9 @@ export function AuthProvider({
       const result = await signInWithPassword(credentials, { client });
       authGenerationRef.current += 1;
       const generation = authGenerationRef.current;
+      latestAuthPrincipalRef.current = result.user.id;
       // onAuthStateChange will sync status; apply optimistically for UX.
-      await clearUserScopedIfPrincipalChanged(result.user.id);
+      await prepareUserScopedCacheForPrincipal(result.user.id);
       const resolved = resolveOptimisticSignedIn(result, generation);
       if (resolved.kind === 'superseded') {
         return resolved;
@@ -274,7 +290,7 @@ export function AuthProvider({
       setStatus('signed-in');
       return resolved;
     },
-    [clearUserScopedIfPrincipalChanged, clientProp, resolveOptimisticSignedIn],
+    [clientProp, prepareUserScopedCacheForPrincipal, resolveOptimisticSignedIn],
   );
 
   const signUp = useCallback(
@@ -287,7 +303,8 @@ export function AuthProvider({
       if (result.kind === 'signed-in') {
         authGenerationRef.current += 1;
         const generation = authGenerationRef.current;
-        await clearUserScopedIfPrincipalChanged(result.user.id);
+        latestAuthPrincipalRef.current = result.user.id;
+        await prepareUserScopedCacheForPrincipal(result.user.id);
         const resolved = resolveOptimisticSignedIn(result, generation);
         if (resolved.kind === 'superseded') {
           return resolved;
@@ -301,7 +318,7 @@ export function AuthProvider({
       }
       return result;
     },
-    [clearUserScopedIfPrincipalChanged, clientProp, resolveOptimisticSignedIn],
+    [clientProp, prepareUserScopedCacheForPrincipal, resolveOptimisticSignedIn],
   );
 
   const signOut = useCallback(async () => {
@@ -309,7 +326,8 @@ export function AuthProvider({
     if (!client) {
       authGenerationRef.current += 1;
       const generation = authGenerationRef.current;
-      await clearUserScopedIfPrincipalChanged(null);
+      latestAuthPrincipalRef.current = null;
+      await prepareUserScopedCacheForPrincipal(null);
       if (authGenerationRef.current !== generation) {
         return;
       }
@@ -320,13 +338,14 @@ export function AuthProvider({
     await signOutApi({ client });
     authGenerationRef.current += 1;
     const generation = authGenerationRef.current;
-    await clearUserScopedIfPrincipalChanged(null);
+    latestAuthPrincipalRef.current = null;
+    await prepareUserScopedCacheForPrincipal(null);
     if (authGenerationRef.current !== generation) {
       return;
     }
     setUser(null);
     setStatus('signed-out');
-  }, [clearUserScopedIfPrincipalChanged, clientProp]);
+  }, [clientProp, prepareUserScopedCacheForPrincipal]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
