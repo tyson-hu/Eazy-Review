@@ -41,7 +41,13 @@ export type RatingBreakdown = {
   outfit: number;
   value: number;
   overall: number;
+  /**
+   * Connected My Rating uses `privateNote` (DB `private_note`).
+   * Legacy mock-era name retained only for historical fixtures/tests.
+   */
   comment?: string | null;
+  /** Owner-only optional note; max 500 characters. */
+  privateNote?: string | null;
 };
 
 export type ProductRatingSummary = {

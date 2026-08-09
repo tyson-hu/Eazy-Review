@@ -116,18 +116,25 @@ User opens connected Product Detail
 -> No mock save is claimed for the Supabase product
 ```
 
-Task 16 rate gate:
+Task 16 rate gate (signed-out remains authoritative):
 
 ```txt
 User opens Product Detail
 -> If signed out: Sign in to rate (return path to this product)
 -> After successful sign-in: return to Product Detail
--> Rating remains honestly unavailable until Task 17
--> Signed-in Rate route shows unavailable; no rating write
 -> Sign-out / account switch clears user-scoped Query cache only
 ```
 
-Task 17 owns the durable Rate/Edit form, save, and My Rating refresh.
+Task 17 durable Rate/Edit path:
+
+```txt
+User opens Product Detail while signed in
+-> If no My Rating: CTA Rate this product; form empty
+-> If My Rating exists: CTA Edit my rating; form prefilled
+-> Save uses read then insert/update (23505 recovers to update)
+-> Product Detail refetches My Rating + server-owned Community Score
+-> Account shows rated-product count and Rated Products list
+```
 
 ## Flow 3: Edit Own Rating
 

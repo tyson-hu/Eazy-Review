@@ -34,6 +34,10 @@ export default function RootLayout() {
           name="auth/sign-up"
           options={{ title: 'Create account', presentation: 'card' }}
         />
+        <Stack.Screen
+          name="account/rated-products"
+          options={{ title: 'Rated Products' }}
+        />
         <Stack.Screen name="product/[id]/index" options={{ title: 'Product' }} />
         <Stack.Screen name="product/[id]/rate" options={{ title: 'Rate' }} />
       </Stack>

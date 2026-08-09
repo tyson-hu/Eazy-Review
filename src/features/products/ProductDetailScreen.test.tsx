@@ -93,7 +93,10 @@ describe('connected Product Detail screen', () => {
     ).toEqual(['verified-offer-offer-dicks', 'verified-offer-offer-finish-line']);
     expect(rendered.getByText('Sign in to rate this product.')).toBeTruthy();
     expect(rendered.getByText('Sign in to rate')).toBeTruthy();
-    expect(rendered.queryByText(/private note|profile|myRating|raw rating/i)).toBeNull();
+    expect(
+      rendered.getByText('Your scores and private note stay owner-only.'),
+    ).toBeTruthy();
+    expect(rendered.queryByText(/myRating|raw rating/i)).toBeNull();
     await rendered.cleanup();
   });
 

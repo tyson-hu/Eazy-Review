@@ -15,12 +15,12 @@ Task detail, dependencies, acceptance, and current status live in
   use the deterministic public catalog locally, including physical iPhone LAN
   loads and phone-only offline/reconnect proof. Staging and production remain
   untouched.
-- Task 16: **Done — human accepted.** Core authentication and Account state;
-  corrected physical iPhone checklist PASS; automated and web verification
-  PASS. PR #35 ready for merge (merge remains separate). Task 17 owns durable
-  My Rating and Rated Products.
-- Task 17: **Next — pending authorization.** Do not start until explicitly
-  authorized. Excluded identity features (social login, passkeys/MFA,
+- Task 16: **Done — human accepted and merged in PR #35 on 2026-08-09.** Core
+  authentication and Account state; corrected physical iPhone checklist PASS;
+  automated and web verification PASS. Task 17 owns durable My Rating and
+  Rated Products.
+- Task 17: **In progress — explicitly authorized.** Human acceptance and merge
+  are not claimed. Excluded identity features (social login, passkeys/MFA,
   editable/public profile, global session revocation, secure native session
   storage revisit) are deferred — not part of Tasks 16–19 unless separately
   promoted.

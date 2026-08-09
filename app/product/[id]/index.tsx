@@ -16,6 +16,7 @@ import { productDetailReturnPath } from '@/src/features/auth/returnPath';
 import { CatalogStatusBanner } from '@/src/features/products/CatalogStatusBanner';
 import { getCatalogErrorPresentation } from '@/src/features/products/errors';
 import { useProductQuery } from '@/src/features/products/queries';
+import { useUserRatingQuery } from '@/src/features/ratings/queries';
 import type {
   ProductRatingSummary,
   VerifiedProductOffer,
@@ -118,9 +119,14 @@ export default function ProductDetailScreen() {
   const productId = typeof id === 'string' ? id : '';
   const { isSignedIn, status: authStatus } = useAuth();
   const productQuery = useProductQuery(productId);
+  // My Rating is owner-scoped; never stored under public catalog keys.
+  const myRatingQuery = useUserRatingQuery(productId);
   const hasData = productQuery.data !== undefined;
   const retry = () => {
     void productQuery.refetch();
+    if (isSignedIn) {
+      void myRatingQuery.refetch();
+    }
   };
 
   if (!productId) {
@@ -202,6 +208,12 @@ export default function ProductDetailScreen() {
   const communityCategoryRows = getCommunityCategoryRows(ratingSummary);
   const lowestOffer = offers[0] ?? null;
   const showSignInCta = authStatus !== 'initializing' && !isSignedIn;
+  const myRating = isSignedIn ? (myRatingQuery.data ?? null) : null;
+  const hasMyRating = myRating != null;
+  const myRatingLoading =
+    isSignedIn && myRatingQuery.isPending && myRatingQuery.data === undefined;
+  const publicRefreshing =
+    productQuery.isFetching || (isSignedIn && myRatingQuery.isFetching);
 
   return (
     <Screen
@@ -219,10 +231,18 @@ export default function ProductDetailScreen() {
                 });
               }}
             />
+          ) : isSignedIn ? (
+            <Button
+              testID={hasMyRating ? 'edit-my-rating' : 'rate-this-product'}
+              label={hasMyRating ? 'Edit my rating' : 'Rate this product'}
+              onPress={() => {
+                router.push(`/product/${productId}/rate`);
+              }}
+            />
           ) : (
             <Button
-              testID="rating-unavailable"
-              label="Rating unavailable"
+              testID="rating-cta-loading"
+              label="Checking account..."
               disabled
             />
           )}
@@ -235,7 +255,7 @@ export default function ProductDetailScreen() {
           title="You're offline."
           message="Prices and availability may have changed."
         />
-      ) : productQuery.isFetching ? (
+      ) : publicRefreshing ? (
         <CatalogStatusBanner title="Refreshing product..." />
       ) : productQuery.error ? (
         <CatalogStatusBanner
@@ -386,24 +406,49 @@ export default function ProductDetailScreen() {
 
       <Card className="mt-5 border-accent">
         <AppText variant="label">My Rating</AppText>
-        {isSignedIn ? (
-          <>
-            <AppText variant="body" className="mt-2">
-              {"Rating isn't available yet."}
-            </AppText>
-            <AppText variant="caption" className="mt-1">
-              Saved ratings will be connected in the next milestone.
-            </AppText>
-          </>
-        ) : (
+        {!isSignedIn ? (
           <>
             <AppText variant="body" className="mt-2">
               Sign in to rate this product.
             </AppText>
             <AppText variant="caption" className="mt-1">
-              Saved ratings are not connected yet.
+              Your scores and private note stay owner-only.
             </AppText>
           </>
+        ) : myRatingLoading ? (
+          <AppText variant="body" className="mt-2">
+            Loading your rating...
+          </AppText>
+        ) : myRatingQuery.isError && !hasMyRating ? (
+          <>
+            <AppText variant="body" className="mt-2">
+              Could not load your rating.
+            </AppText>
+            <Button
+              className="mt-3"
+              label="Retry"
+              variant="secondary"
+              onPress={() => {
+                void myRatingQuery.refetch();
+              }}
+            />
+          </>
+        ) : hasMyRating && myRating ? (
+          <View className="mt-3 gap-3">
+            <RatingRow label="Overall" value={myRating.overall} />
+            <RatingRow label="Look" value={myRating.look} />
+            <RatingRow label="Comfort" value={myRating.comfort} />
+            <RatingRow label="Quality" value={myRating.quality} />
+            <RatingRow label="Outfit" value={myRating.outfit} />
+            <RatingRow label="Value" value={myRating.value} />
+            <AppText variant="caption">
+              Private note stays on the Rate form — only you can see it.
+            </AppText>
+          </View>
+        ) : (
+          <AppText variant="body" className="mt-2">
+            Not rated yet
+          </AppText>
         )}
       </Card>
 

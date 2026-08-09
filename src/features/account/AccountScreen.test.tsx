@@ -37,6 +37,16 @@ let mockProfileQuery: Partial<UseQueryResult<AccountProfile, Error>> = {
   refetch: jest.fn(),
 };
 
+let mockRatedProductsQuery: Partial<
+  UseQueryResult<{ productId: string }[], Error>
+> = {
+  data: undefined,
+  isPending: false,
+  isError: false,
+  error: null,
+  refetch: jest.fn(),
+};
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: jest.fn(), dismissTo: jest.fn() }),
 }));
@@ -47,6 +57,10 @@ jest.mock('@/src/features/auth/hooks', () => ({
 
 jest.mock('@/src/features/account/queries', () => ({
   useMyProfileQuery: () => mockProfileQuery,
+}));
+
+jest.mock('@/src/features/ratings/queries', () => ({
+  useUserRatedProductsQuery: () => mockRatedProductsQuery,
 }));
 
 describe('Account screen', () => {
@@ -66,21 +80,27 @@ describe('Account screen', () => {
       error: null,
       refetch: jest.fn(),
     };
+    mockRatedProductsQuery = {
+      data: undefined,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    };
     mockSignOut.mockReset();
     mockPush.mockReset();
   });
 
-  it('renders signed-out state with app logo and truthful rating copy', async () => {
+  it('renders signed-out state with app logo and rating history promise', async () => {
     const rendered = await renderWithProviders(<AccountScreen />);
     expect(rendered.getByTestId('account-app-logo')).toBeTruthy();
     expect(rendered.getByText('Eazy Review')).toBeTruthy();
     expect(rendered.getByText('Sign in to access your account.')).toBeTruthy();
     expect(
       rendered.getByText(
-        'Saved ratings will be available in the next milestone.',
+        'Save ratings and revisit products you have rated.',
       ),
     ).toBeTruthy();
-    expect(rendered.queryByText(/Sign in to save ratings/i)).toBeNull();
     expect(rendered.getByTestId('account-sign-in')).toBeTruthy();
     expect(rendered.getByTestId('account-create-account')).toBeTruthy();
     expect(rendered.getByText('You can keep browsing without signing in.')).toBeTruthy();
@@ -109,6 +129,13 @@ describe('Account screen', () => {
       error: null,
       refetch: jest.fn(),
     };
+    mockRatedProductsQuery = {
+      data: [],
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    };
     mockSignOut.mockResolvedValue(undefined);
 
     const rendered = await renderWithProviders(<AccountScreen />);
@@ -119,9 +146,20 @@ describe('Account screen', () => {
       'Member since ',
       formatMemberSince('2026-08-01T12:00:00.000Z'),
     ]);
+    expect(rendered.getByTestId('account-rated-count').props.children).toEqual([
+      '0',
+      ' ',
+      'products rated',
+    ]);
+    expect(rendered.getByTestId('account-rated-products')).toBeTruthy();
     expect(rendered.queryByTestId('account-avatar')).toBeNull();
     expect(rendered.queryByTestId('account-username')).toBeNull();
     expect(rendered.queryByTestId('account-display-name')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('account-rated-products'));
+    });
+    expect(mockPush).toHaveBeenCalledWith('/account/rated-products');
 
     await act(async () => {
       fireEvent.press(rendered.getByTestId('account-sign-out'));

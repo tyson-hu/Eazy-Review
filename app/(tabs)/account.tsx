@@ -8,12 +8,11 @@ import { Card } from '@/src/components/ui/Card';
 import { ErrorState } from '@/src/components/ui/ErrorState';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { Screen } from '@/src/components/ui/Screen';
-import {
-  formatMemberSince,
-} from '@/src/features/account/api';
+import { formatMemberSince } from '@/src/features/account/api';
 import { useMyProfileQuery } from '@/src/features/account/queries';
 import { AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
+import { useUserRatedProductsQuery } from '@/src/features/ratings/queries';
 
 /** Prefix `@` only when the stored username does not already start with one. */
 function formatUsername(username: string): string {
@@ -24,6 +23,7 @@ export default function AccountScreen() {
   const router = useRouter();
   const { status, user, isSignedIn, signOut } = useAuth();
   const profileQuery = useMyProfileQuery();
+  const ratedProductsQuery = useUserRatedProductsQuery();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
 
@@ -53,7 +53,7 @@ export default function AccountScreen() {
             Sign in to access your account.
           </AppText>
           <AppText variant="caption" className="mt-2 max-w-xs text-center">
-            Saved ratings will be available in the next milestone.
+            Save ratings and revisit products you have rated.
           </AppText>
         </View>
 
@@ -93,6 +93,15 @@ export default function AccountScreen() {
   const joinedLabel = profileQuery.data
     ? formatMemberSince(profileQuery.data.joinedAt)
     : null;
+  const ratedCount = ratedProductsQuery.data?.length;
+  const ratedCountLabel =
+    ratedCount === undefined
+      ? ratedProductsQuery.isPending
+        ? '…'
+        : ratedProductsQuery.isError
+          ? '—'
+          : '0'
+      : String(ratedCount);
 
   const onSignOut = async () => {
     if (signingOut) {
@@ -186,10 +195,23 @@ export default function AccountScreen() {
         </Card>
       ) : null}
 
-      <Card className="mt-8 gap-3">
-        <AppText variant="caption">
-          Rating save is not connected yet. You can still browse the catalog.
+      <Card className="mt-6 gap-3">
+        <AppText variant="label">Rated Products</AppText>
+        <AppText testID="account-rated-count" variant="body">
+          {ratedCountLabel}{' '}
+          {ratedCount === 1 ? 'product rated' : 'products rated'}
         </AppText>
+        <Button
+          testID="account-rated-products"
+          label="Rated Products"
+          variant="secondary"
+          onPress={() => {
+            router.push('/account/rated-products');
+          }}
+        />
+      </Card>
+
+      <Card className="mt-8 gap-3">
         {signOutError ? (
           <AppText
             testID="account-sign-out-error"

@@ -136,7 +136,7 @@ acceptance results are preserved in
 | `products.is_published` | Anonymous Browse/Detail adapters must eventually select published products only; Tasks 11–12 add no runtime adapter |
 | Current `eazy_assessments` row | Future source for `Product.eazyScore`; select `is_current = true` |
 | `rating_aggregates` | Future source for `ProductRatingSummary` and Community Score; clients never calculate or write it |
-| `user_ratings.private_note` | Future Task 17 `privateNote`; maximum 500 characters and owner-only |
+| `user_ratings.private_note` | Task 17 `privateNote`; maximum 500 characters and owner-only |
 | `profiles.created_at` | Non-null `AccountProfile.joinedAt`; optional mutable profile fields may remain null |
 | Immutable `user_ratings.product_id` / `user_id` | Identity is set on insert and cannot appear in a client update |
 | `product_offers.size_region` / `currency` | Required strings; MVP database allowlists are `US` and `USD` |

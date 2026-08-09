@@ -16,16 +16,15 @@
   Detail read the two deterministic published products through one Supabase
   request per surface, with complete, sparse, loading, cached-refresh, offline,
   error/retry, empty, and not-found behavior. Feed remains mock/placeholder.
-- Task 16 is **Done — human accepted.** Core authentication and Account state
-  (email/password sign-in/up/out, session restore, auth-gated Rate, minimal
-  Account, cache isolation, `dismissTo` return navigation, auth-generation
-  race guards). Physical iPhone checklist re-verified on the corrected build
-  (human-reported PASS). Automated and web verification pass. Evidence:
+- Task 16 is **Done — human accepted and merged in PR #35 on 2026-08-09.**
+  Core authentication and Account state (email/password sign-in/up/out,
+  session restore, auth-gated Rate, minimal Account, cache isolation,
+  `dismissTo` return navigation, auth-generation race guards). Physical
+  iPhone checklist re-verified on the corrected build (human-reported PASS).
+  Automated and web verification pass. Evidence:
   [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
-  PR #35 is ready for merge (implementation authorized; merge remains a
-  separate action).
-- Task 17 (My Rating persistence and Rated Products) is **Next — pending
-  authorization.** Do not start until explicitly authorized in a new session.
+- Task 17 (My Rating persistence and Rated Products) is **In progress —
+  explicitly authorized.** Human acceptance and merge are not claimed.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -172,8 +171,8 @@ Work in order unless a task explicitly states that it is conditional.
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
-| 16 | Core Authentication And Account State | Done — human accepted (PR #35 ready for merge) |
-| 17 | My Rating Persistence And Rated Products | Next — pending authorization |
+| 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
+| 17 | My Rating Persistence And Rated Products | In progress — explicitly authorized |
 | 18 | Password Recovery And Deep Links | Pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
@@ -454,7 +453,7 @@ local Supabase only; no staging/production):
 
 ## Task 16: Core Authentication And Account State
 
-Status: **Done — human accepted (PR #35 ready for merge).**
+Status: **Done — human accepted and merged in PR #35 on 2026-08-09.**
 
 Depends on: Task 15.
 
@@ -466,9 +465,8 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: None.
 
 Human gate: **Accepted.** Corrected physical-device checklist **PASS**
-(human-reported). Merge of PR #35 remains a separate explicit action. Staging
-auth configuration for later tasks remains a separate explicit action.
-Implementation evidence:
+(human-reported). PR #35 merged. Staging auth configuration for later tasks
+remains a separate explicit action. Implementation evidence:
 [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
@@ -530,7 +528,7 @@ Non-goals (remain later work — do not implement in Task 16):
 
 ## Task 17: My Rating Persistence And Rated Products
 
-Status: **Next — pending authorization.**
+Status: **In progress — explicitly authorized.**
 
 Depends on: Task 16.
 
@@ -542,9 +540,9 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: Task 18 after all prerequisites are accepted and edit
 scopes are file-disjoint.
 
-Human gate: Not started — requires explicit start authorization after PR #35
-merge (or as separately directed). Staging rating writes or acceptance require
-separate explicit approval; production remains forbidden.
+Human gate: Implementation authorized. Human acceptance, physical-device
+checklist, and merge are **not claimed**. Staging rating writes or acceptance
+require separate explicit approval; production remains forbidden.
 
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products.
