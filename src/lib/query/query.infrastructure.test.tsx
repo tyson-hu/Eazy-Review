@@ -161,7 +161,7 @@ describe('user-scoped cache cleanup', () => {
     });
     await client.prefetchQuery({
       queryKey: ratingKeys.mine('user-1', 'p1'),
-      queryFn: async () => ({ overall: 8 }),
+      queryFn: async () => ({ score100: 80 }),
     });
     await client.prefetchQuery({
       queryKey: ratingKeys.ratedProducts('user-1'),

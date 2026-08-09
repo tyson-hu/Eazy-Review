@@ -67,14 +67,14 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
       <View className="mt-5 flex-row gap-5">
         <ScoreBadge
           label="Eazy Score"
-          score={product.eazyScore}
+          score100={product.eazyScore}
           emptyLabel="Not assessed yet"
           sourceLabel="Editorial assessment"
           className="flex-1"
         />
         <ScoreBadge
           label="Community Score"
-          score={product.communityScore}
+          score100={product.communityScore}
           emptyLabel={product.ratingCount === 0 ? 'No ratings yet' : 'No score yet'}
           className="flex-1"
         />

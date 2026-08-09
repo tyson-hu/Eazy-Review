@@ -301,27 +301,27 @@ const setupSql = `
     ('${deleteProductBId}'::uuid, 'Race Brand', 'Delete Aggregate Fixture B');
 
   insert into public.user_ratings (
-    product_id, user_id, look, comfort, quality, outfit, value, overall
+    product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
   ) values
     (
       '${deleteProductAId}'::uuid,
       '${deleteUserAId}'::uuid,
-      4, 4, 4, 4, 4, 4
+      4, 4, 4, 4, 4, 4, 4, 4, 4, 4
     ),
     (
       '${deleteProductBId}'::uuid,
       '${deleteUserAId}'::uuid,
-      6, 6, 6, 6, 6, 6
+      6, 6, 6, 6, 6, 6, 6, 6, 6, 6
     ),
     (
       '${deleteProductBId}'::uuid,
       '${deleteUserBId}'::uuid,
-      8, 8, 8, 8, 8, 8
+      8, 8, 8, 8, 8, 8, 8, 8, 8, 8
     ),
     (
       '${deleteProductAId}'::uuid,
       '${deleteUserBId}'::uuid,
-      10, 10, 10, 10, 10, 10
+      10, 10, 10, 10, 10, 10, 10, 10, 10, 10
     );
 `;
 
@@ -335,11 +335,11 @@ async function runSameProductInsertRace() {
     sessionA.stdin.write(`
       begin;
       insert into public.user_ratings (
-        product_id, user_id, look, comfort, quality, outfit, value, overall
+        product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
       ) values (
         '${productId}'::uuid,
         '${userAId}'::uuid,
-        4, 4, 4, 4, 4, 4
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4
       );
       select 'SESSION_A_READY';
     `);
@@ -350,11 +350,11 @@ async function runSameProductInsertRace() {
     sessionB.stdin.end(`
       begin;
       insert into public.user_ratings (
-        product_id, user_id, look, comfort, quality, outfit, value, overall
+        product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
       ) values (
         '${productId}'::uuid,
         '${userBId}'::uuid,
-        8, 8, 8, 8, 8, 8
+        8, 8, 8, 8, 8, 8, 8, 8, 8, 8
       );
       select 'SESSION_B_READY';
       commit;
@@ -369,7 +369,7 @@ async function runSameProductInsertRace() {
     assert.equal(await waitForExit(sessionB), 0);
 
     const finalAggregate = runSql(`
-      select rating_count || '|' || overall_avg || '|' || score
+      select rating_count || '|' || look_avg || '|' || score
       from public.rating_aggregates
       where product_id = '${productId}'::uuid;
     `);

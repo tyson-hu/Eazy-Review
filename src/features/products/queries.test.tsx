@@ -64,9 +64,10 @@ const completeDetail: ProductDetailPublicData = {
   },
   imageUrls: ['https://example.test/air-force.png'],
   eazyAssessment: {
-    score: 79,
+    score100: 79,
     methodologyVersion: 'task13-seed-v1',
     assessedAt: '2026-08-03T16:17:14.000Z',
+    dimensions: null,
   },
   offers: [
     {
@@ -83,12 +84,17 @@ const completeDetail: ProductDetailPublicData = {
     productId: COMPLETE_PRODUCT_ID,
     ratingCount: 0,
     lookAvg: null,
-    comfortAvg: null,
-    qualityAvg: null,
     outfitAvg: null,
+    materialAvg: null,
+    craftsmanshipAvg: null,
+    maintenanceAvg: null,
+    comfortAvg: null,
+    collectionAvg: null,
     valueAvg: null,
-    overallAvg: null,
+    resalePotentialAvg: null,
+    acquisitionEaseAvg: null,
     communityScore: null,
+    methodologyVersion: null,
   },
 };
 

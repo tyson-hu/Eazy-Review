@@ -23,10 +23,12 @@ export type SubmitRatingVariables = Omit<SaveUserRatingInput, 'userId'> & {
 /**
  * Create or edit My Rating for the signed-in owner.
  *
- * Mutation retries are disabled (global defaults + explicit false).
- * On success, invalidates public product caches and owner rating scopes so
- * Community Score / count and My Rating refresh from server truth.
- * Never optimistically writes aggregates or predicts Community Score.
+ * networkMode: 'always' so offline still enters mutationFn and fails fast via
+ * RatingError rather than pausing indefinitely (TanStack default 'online').
+ *
+ * Mutation retries are disabled. On success, invalidates public product caches
+ * and owner rating scopes so Community Score / count and My Rating refresh
+ * from server truth. Never optimistically writes aggregates.
  */
 export function useSubmitRatingMutation(): UseMutationResult<
   MyRating,
@@ -37,6 +39,7 @@ export function useSubmitRatingMutation(): UseMutationResult<
   const { user } = useAuth();
 
   return useMutation<MyRating, RatingErrorType, SubmitRatingVariables>({
+    networkMode: 'always',
     mutationFn: async (variables) => {
       const userId = variables.userId ?? user?.id;
       if (!userId) {
@@ -52,11 +55,15 @@ export function useSubmitRatingMutation(): UseMutationResult<
             productId: variables.productId,
             userId,
             look: variables.look,
-            comfort: variables.comfort,
-            quality: variables.quality,
             outfit: variables.outfit,
+            material: variables.material,
+            craftsmanship: variables.craftsmanship,
+            maintenance: variables.maintenance,
+            comfort: variables.comfort,
+            collection: variables.collection,
             value: variables.value,
-            overall: variables.overall,
+            resalePotential: variables.resalePotential,
+            acquisitionEase: variables.acquisitionEase,
             privateNote: variables.privateNote,
           },
           { isOnline: () => onlineManager.isOnline() },

@@ -80,7 +80,7 @@ describe('connected Product Detail screen', () => {
       uri: completeProductDetail.imageUrls[0],
     });
     expect(rendered.getByText('Eazy Score')).toBeTruthy();
-    expect(rendered.getByText('79')).toBeTruthy();
+    expect(rendered.getByText('79 / 100')).toBeTruthy();
     expect(rendered.getByText('Eazy Assessment · Editorial evaluation')).toBeTruthy();
     expect(rendered.getByText('Community Score')).toBeTruthy();
     expect(rendered.getAllByText('No ratings yet').length).toBeGreaterThan(0);

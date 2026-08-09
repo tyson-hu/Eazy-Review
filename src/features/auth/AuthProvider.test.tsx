@@ -212,7 +212,7 @@ describe('AuthProvider', () => {
       id: 'user-a',
       displayName: 'A',
     });
-    queryClient.setQueryData(ratingKeys.mine('user-a', 'p1'), { overall: 9 });
+    queryClient.setQueryData(ratingKeys.mine('user-a', 'p1'), { score100: 90 });
 
     const rendered = await renderWithProviders(
       <AuthProvider client={mock.client} enableSession>

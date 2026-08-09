@@ -11,7 +11,12 @@ import {
 import type { RatingError } from '@/src/features/ratings/errors';
 import type { MyRating, RatedProductItem } from '@/src/features/ratings/types';
 import { useAuth } from '@/src/features/auth/hooks';
+import { useCatalogOnlineStatus } from '@/src/features/products/queries';
 import { ratingKeys } from '@/src/lib/query/keys';
+
+export type RatingQueryResult<T> = UseQueryResult<T, RatingError> & {
+  isOffline: boolean;
+};
 
 /**
  * Owner My Rating for Product Detail / Rate form.
@@ -20,11 +25,12 @@ import { ratingKeys } from '@/src/lib/query/keys';
  */
 export function useUserRatingQuery(
   productId: string,
-): UseQueryResult<MyRating | null, RatingError> {
+): RatingQueryResult<MyRating | null> {
   const { user, isSignedIn } = useAuth();
   const userId = user?.id ?? '';
+  const isOnline = useCatalogOnlineStatus();
 
-  return useQuery<MyRating | null, RatingError>({
+  const query = useQuery<MyRating | null, RatingError>({
     queryKey: ratingKeys.mine(userId || 'anonymous', productId || 'unknown'),
     queryFn: ({ signal }) =>
       getUserRating(productId, userId, {
@@ -35,20 +41,22 @@ export function useUserRatingQuery(
     staleTime: 30_000,
     retry: 0,
   });
+
+  return { ...query, isOffline: !isOnline };
 }
 
 /**
  * Owner Rated Products list.
  * Key family: `ratingKeys.ratedProducts(userId)`.
  */
-export function useUserRatedProductsQuery(): UseQueryResult<
-  RatedProductItem[],
-  RatingError
+export function useUserRatedProductsQuery(): RatingQueryResult<
+  RatedProductItem[]
 > {
   const { user, isSignedIn } = useAuth();
   const userId = user?.id ?? '';
+  const isOnline = useCatalogOnlineStatus();
 
-  return useQuery<RatedProductItem[], RatingError>({
+  const query = useQuery<RatedProductItem[], RatingError>({
     queryKey: ratingKeys.ratedProducts(userId || 'anonymous'),
     queryFn: ({ signal }) =>
       getUserRatedProducts(userId, {
@@ -59,4 +67,6 @@ export function useUserRatedProductsQuery(): UseQueryResult<
     staleTime: 30_000,
     retry: 0,
   });
+
+  return { ...query, isOffline: !isOnline };
 }

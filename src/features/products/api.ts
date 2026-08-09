@@ -59,18 +59,33 @@ const PRODUCT_DETAIL_SELECT = `
     score,
     methodology_version,
     created_at,
-    is_current
+    is_current,
+    look,
+    outfit,
+    material,
+    craftsmanship,
+    maintenance,
+    comfort,
+    collection,
+    value,
+    resale_potential,
+    acquisition_ease
   ),
   rating_aggregates (
     product_id,
     rating_count,
     look_avg,
-    comfort_avg,
-    quality_avg,
     outfit_avg,
+    material_avg,
+    craftsmanship_avg,
+    maintenance_avg,
+    comfort_avg,
+    collection_avg,
     value_avg,
-    overall_avg,
-    score
+    resale_potential_avg,
+    acquisition_ease_avg,
+    score,
+    methodology_version
   ),
   product_offers (
     id,

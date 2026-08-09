@@ -9,8 +9,11 @@ import {
   getUserRating,
   saveUserRating,
 } from '@/src/features/ratings/api';
+import { RATING_DIMENSIONS } from '@/src/features/ratings/dimensions';
+import { sampleMyRating, uniformDimensions } from '@/src/features/ratings/testFixtures';
 import type { MyRating } from '@/src/features/ratings/types';
 import { createAppQueryClient } from '@/src/lib/query/client';
+import { ratingKeys } from '@/src/lib/query/keys';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
 
 const mockPush = jest.fn();
@@ -79,6 +82,45 @@ function signInAsA() {
   };
 }
 
+/** Fill every dimension to a given 0–10 value via the stepper + button. */
+async function fillAllDimensions(
+  rendered: Awaited<ReturnType<typeof renderWithProviders>>,
+  value: number,
+) {
+  for (const dim of RATING_DIMENSIONS) {
+    const clearId = `rate-dim-${dim.key}-clear`;
+    // Start from unanswered if clear exists; otherwise ensure we can set.
+    if (rendered.queryByTestId(clearId)) {
+      await act(async () => {
+        fireEvent.press(rendered.getByTestId(clearId));
+      });
+    }
+    // First + sets 0.5 from unanswered, then keep incrementing.
+    // Faster path: from unanswered press + until target, or set by repeated + from 0.
+    // Unanswered: first + -> 0.5. For integer targets, clear and use loops.
+    // From unanswered: first dec goes to 0 (per Component), then + to target.
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId(`rate-dim-${dim.key}-dec`));
+    });
+    // Now at 0 if was unanswered, or one step down.
+    // Clear to unanswered then set via + chain from 0.5 — simpler reset then:
+    if (rendered.queryByTestId(clearId)) {
+      await act(async () => {
+        fireEvent.press(rendered.getByTestId(clearId));
+      });
+    }
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId(`rate-dim-${dim.key}-dec`)); // → 0
+    });
+    const steps = Math.round(value / 0.5);
+    for (let i = 0; i < steps; i += 1) {
+      await act(async () => {
+        fireEvent.press(rendered.getByTestId(`rate-dim-${dim.key}-inc`));
+      });
+    }
+  }
+}
+
 describe('Task 17 rate gate and My Rating composition', () => {
   beforeEach(() => {
     mockRouteId = COMPLETE_PRODUCT_ID;
@@ -130,21 +172,12 @@ describe('Task 17 rate gate and My Rating composition', () => {
       expect(rendered.getByTestId('rate-this-product')).toBeTruthy(),
     );
     expect(rendered.getByText('Not rated yet')).toBeTruthy();
-    expect(rendered.queryByText(/Rating isn't available yet/i)).toBeNull();
     await rendered.cleanup();
   });
 
-  it('shows Edit my rating when signed in with an existing rating', async () => {
+  it('shows Edit my rating with 0–100 My Rating when signed in with a rating', async () => {
     signInAsA();
-    mockGetUserRating.mockResolvedValue({
-      look: 8,
-      comfort: 7,
-      quality: 9,
-      outfit: 6,
-      value: 8,
-      overall: 9,
-      privateNote: 'owner only',
-    });
+    mockGetUserRating.mockResolvedValue(sampleMyRating({ score100: 90, look: 9 }));
 
     const rendered = await renderWithProviders(<ProductDetailScreen />, {
       queryClient: testClient(),
@@ -153,8 +186,7 @@ describe('Task 17 rate gate and My Rating composition', () => {
     await waitFor(() =>
       expect(rendered.getByTestId('edit-my-rating')).toBeTruthy(),
     );
-    expect(rendered.getAllByText('9/10').length).toBeGreaterThan(0);
-    // Private note must not appear in the public Detail composition.
+    expect(rendered.getByText('90 / 100')).toBeTruthy();
     expect(rendered.queryByText('owner only')).toBeNull();
     await rendered.cleanup();
   });
@@ -182,72 +214,128 @@ describe('Task 17 rate gate and My Rating composition', () => {
     });
 
     await waitFor(() =>
-      expect(rendered.getByLabelText('Overall')).toBeTruthy(),
+      expect(rendered.getByTestId('rate-dim-look')).toBeTruthy(),
     );
-    expect(rendered.getByLabelText('Look').props.value).toBe('');
+    expect(rendered.getByTestId('rate-dim-look-value').props.children).toBe('—');
     expect(rendered.getByTestId('rate-private-note').props.value).toBe('');
     expect(rendered.getByText('Private note')).toBeTruthy();
+    expect(rendered.getByText(/— \/ 100/)).toBeTruthy();
     await rendered.cleanup();
   });
 
   it('loads existing rating values into the edit form', async () => {
     signInAsA();
-    mockGetUserRating.mockResolvedValue({
-      look: 8,
-      comfort: 7,
-      quality: 9,
-      outfit: 6,
-      value: 8,
-      overall: 9,
-      privateNote: 'keep private',
-    });
+    mockGetUserRating.mockResolvedValue(
+      sampleMyRating({
+        ...uniformDimensions(8),
+        score100: 80,
+        privateNote: 'keep private',
+      }),
+    );
 
     const rendered = await renderWithProviders(<RateProductScreen />, {
       queryClient: testClient(),
     });
 
     await waitFor(() =>
-      expect(rendered.getByLabelText('Overall').props.value).toBe('9'),
+      expect(rendered.getByTestId('rate-dim-look-value').props.children).toBe(
+        '8',
+      ),
     );
-    expect(rendered.getByLabelText('Look').props.value).toBe('8');
     expect(rendered.getByTestId('rate-private-note').props.value).toBe(
       'keep private',
+    );
+    expect(rendered.getByText('80 / 100')).toBeTruthy();
+    await rendered.cleanup();
+  });
+
+  it('preserves in-progress dimensions and private note across owner rating refetch', async () => {
+    signInAsA();
+    mockGetUserRating.mockResolvedValue(
+      sampleMyRating({
+        ...uniformDimensions(8),
+        score100: 80,
+        privateNote: 'server-note',
+      }),
+    );
+
+    const client = testClient();
+    const rendered = await renderWithProviders(<RateProductScreen />, {
+      queryClient: client,
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('rate-private-note').props.value).toBe(
+        'server-note',
+      ),
+    );
+
+    await act(async () => {
+      fireEvent.changeText(
+        rendered.getByTestId('rate-private-note'),
+        'draft while reconnecting',
+      );
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('rate-dim-look-clear'));
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('rate-dim-look-dec')); // → 0
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('rate-dim-look-inc')); // → 0.5
+    });
+
+    mockGetUserRating.mockResolvedValue(
+      sampleMyRating({
+        ...uniformDimensions(9),
+        score100: 90,
+        privateNote: 'server-note-refreshed',
+      }),
+    );
+
+    await act(async () => {
+      await client.refetchQueries({
+        queryKey: ratingKeys.mine('user-a', COMPLETE_PRODUCT_ID),
+      });
+    });
+
+    await waitFor(() =>
+      expect(mockGetUserRating.mock.calls.length).toBeGreaterThan(1),
+    );
+
+    // Soft-refetch must not remount and wipe draft form state.
+    expect(rendered.getByTestId('rate-private-note').props.value).toBe(
+      'draft while reconnecting',
+    );
+    expect(rendered.getByTestId('rate-dim-look-value').props.children).toBe(
+      '0.5',
     );
     await rendered.cleanup();
   });
 
-  it('rejects non-whole scores and preserves values on failed save', async () => {
+  it('preserves form values on failed save', async () => {
     signInAsA();
     mockGetUserRating.mockResolvedValue(null);
-    mockSaveUserRating.mockRejectedValue(new Error('network boom'));
+    mockSaveUserRating.mockRejectedValue(
+      new Error('network boom'),
+    );
 
     const rendered = await renderWithProviders(<RateProductScreen />, {
       queryClient: testClient(),
     });
 
     await waitFor(() =>
-      expect(rendered.getByLabelText('Overall')).toBeTruthy(),
+      expect(rendered.getByTestId('rate-dim-look')).toBeTruthy(),
     );
 
-    await act(async () => {
-      fireEvent.changeText(rendered.getByLabelText('Overall'), '5.5');
-      fireEvent.changeText(rendered.getByLabelText('Look'), '8');
-      fireEvent.changeText(rendered.getByLabelText('Comfort'), '7');
-      fireEvent.changeText(rendered.getByLabelText('Quality'), '9');
-      fireEvent.changeText(rendered.getByLabelText('Outfit'), '6');
-      fireEvent.changeText(rendered.getByLabelText('Value'), '8');
-    });
+    await fillAllDimensions(rendered, 9);
 
     await act(async () => {
-      fireEvent.press(rendered.getByTestId('rate-submit'));
-    });
-
-    expect(mockSaveUserRating).not.toHaveBeenCalled();
-    expect(rendered.getByText(/whole number from 1 to 10/i)).toBeTruthy();
-
-    // Fix overall and leave others; force save failure.
-    await act(async () => {
-      fireEvent.changeText(rendered.getByDisplayValue('5.5'), '9');
+      fireEvent.changeText(
+        rendered.getByTestId('rate-private-note'),
+        'note preserved',
+      );
     });
 
     await act(async () => {
@@ -257,8 +345,12 @@ describe('Task 17 rate gate and My Rating composition', () => {
     await waitFor(() =>
       expect(rendered.getByTestId('rate-form-error')).toBeTruthy(),
     );
-    expect(rendered.getAllByDisplayValue('9').length).toBeGreaterThan(0);
-    expect(rendered.getAllByDisplayValue('8').length).toBeGreaterThan(0);
+    expect(rendered.getByTestId('rate-dim-look-value').props.children).toBe(
+      '9',
+    );
+    expect(rendered.getByTestId('rate-private-note').props.value).toBe(
+      'note preserved',
+    );
     expect(mockDismissTo).not.toHaveBeenCalled();
     await rendered.cleanup();
   });
@@ -280,21 +372,10 @@ describe('Task 17 rate gate and My Rating composition', () => {
     });
 
     await waitFor(() =>
-      expect(rendered.getByLabelText('Overall')).toBeTruthy(),
+      expect(rendered.getByTestId('rate-dim-look')).toBeTruthy(),
     );
 
-    await act(async () => {
-      for (const [label, value] of [
-        ['Overall', '9'],
-        ['Look', '8'],
-        ['Comfort', '7'],
-        ['Quality', '9'],
-        ['Outfit', '6'],
-        ['Value', '8'],
-      ] as const) {
-        fireEvent.changeText(rendered.getByLabelText(label), value);
-      }
-    });
+    await fillAllDimensions(rendered, 8);
 
     await act(async () => {
       fireEvent.press(rendered.getByTestId('rate-submit'));
@@ -306,15 +387,7 @@ describe('Task 17 rate gate and My Rating composition', () => {
     expect(mockSaveUserRating).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      resolveSave?.({
-        look: 8,
-        comfort: 7,
-        quality: 9,
-        outfit: 6,
-        value: 8,
-        overall: 9,
-        privateNote: null,
-      });
+      resolveSave?.(sampleMyRating());
     });
 
     await waitFor(() =>
@@ -329,15 +402,7 @@ describe('Task 17 rate gate and My Rating composition', () => {
     signInAsA();
     mockGetUserRating.mockImplementation(async (_productId, userId) => {
       if (userId === 'user-a') {
-        return {
-          look: 8,
-          comfort: 7,
-          quality: 9,
-          outfit: 6,
-          value: 8,
-          overall: 9,
-          privateNote: 'a-secret',
-        };
+        return sampleMyRating({ score100: 90, privateNote: 'a-secret' });
       }
       return null;
     });
@@ -350,7 +415,7 @@ describe('Task 17 rate gate and My Rating composition', () => {
     await waitFor(() =>
       expect(renderedA.getByTestId('edit-my-rating')).toBeTruthy(),
     );
-    expect(renderedA.getAllByText('9/10').length).toBeGreaterThan(0);
+    expect(renderedA.getByText('90 / 100')).toBeTruthy();
     await renderedA.cleanup();
 
     mockAuth = {

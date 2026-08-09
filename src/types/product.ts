@@ -1,3 +1,5 @@
+import type { RatingDimensionScores } from '@/src/features/ratings/dimensions';
+
 export type Product = {
   id: string;
   brand: string;
@@ -7,7 +9,9 @@ export type Product = {
   releaseDate: string | null;
   description: string | null;
   imageUrl?: string | null;
+  /** Eazy Score 0–100. */
   eazyScore?: number | null;
+  /** Community Score 0–100. */
   communityScore?: number | null;
   ratingCount?: number;
   lowestPrice?: number | null;
@@ -34,13 +38,10 @@ export type LowestVerifiedOffer = {
   checkedAt: string;
 };
 
-export type RatingBreakdown = {
-  look: number;
-  comfort: number;
-  quality: number;
-  outfit: number;
-  value: number;
-  overall: number;
+/** Ten canonical 0–10 dimensions (shared Eazy / Community / My Rating). */
+export type RatingBreakdown = RatingDimensionScores & {
+  /** Derived 0–100 composite when complete. */
+  score100?: number | null;
   /**
    * Connected My Rating uses `privateNote` (DB `private_note`).
    * Legacy mock-era name retained only for historical fixtures/tests.
@@ -50,17 +51,23 @@ export type RatingBreakdown = {
   privateNote?: string | null;
 };
 
+/** Category averages on the 0–10 scale (community aggregate). */
 export type ProductRatingSummary = {
   productId: string;
   ratingCount: number;
   lookAvg: number | null;
-  comfortAvg: number | null;
-  qualityAvg: number | null;
   outfitAvg: number | null;
+  materialAvg: number | null;
+  craftsmanshipAvg: number | null;
+  maintenanceAvg: number | null;
+  comfortAvg: number | null;
+  collectionAvg: number | null;
   valueAvg: number | null;
-  overallAvg: number | null;
-  /** Community aggregate; maps from DB rating_aggregates.score. */
+  resalePotentialAvg: number | null;
+  acquisitionEaseAvg: number | null;
+  /** Community Score 0–100; maps from DB rating_aggregates.score. */
   communityScore: number | null;
+  methodologyVersion?: string | null;
 };
 
 export type ProductOffer = {
@@ -78,10 +85,15 @@ export type VerifiedProductOffer = LowestVerifiedOffer & {
   id: string;
 };
 
+/** Ten 0–10 Eazy dimensions when assessment is complete. */
+export type EazyAssessmentDimensions = RatingDimensionScores;
+
 export type EazyAssessmentViewModel = {
-  score: number;
+  /** Eazy Score 0–100. */
+  score100: number;
   methodologyVersion: string | null;
   assessedAt: string | null;
+  dimensions: EazyAssessmentDimensions | null;
 };
 
 /** Public/cacheable Product Detail data; never contains viewer-owned state. */

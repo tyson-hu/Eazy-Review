@@ -1,23 +1,23 @@
-import type { RatingBreakdown } from '@/src/types/product';
+import type {
+  RatingDimensionScores,
+} from '@/src/features/ratings/dimensions';
+import { RATING_METHODOLOGY_VERSION } from '@/src/features/ratings/dimensions';
 
 /** Owner My Rating as displayed/composed with Product Detail. */
-export type MyRating = RatingBreakdown & {
+export type MyRating = RatingDimensionScores & {
+  /** Derived 0–100 composite; never user-entered. */
+  score100: number;
   privateNote: string | null;
+  methodologyVersion: typeof RATING_METHODOLOGY_VERSION;
 };
 
-export type RatingScoreFields = {
-  look: number;
-  comfort: number;
-  quality: number;
-  outfit: number;
-  value: number;
-  overall: number;
-};
-
-export type SaveUserRatingInput = RatingScoreFields & {
+export type SaveUserRatingInput = RatingDimensionScores & {
   productId: string;
   userId: string;
   privateNote?: string | null;
+  /** Optional defensive client check; must match derived composite when set. */
+  score100?: number | null;
+  methodologyVersion?: string;
 };
 
 /**
@@ -32,21 +32,17 @@ export type RatedProductItem = {
   imageUrl: string | null;
   communityScore: number | null;
   ratingCount: number;
-  myOverall: number;
-  myScores: RatingScoreFields;
+  /** Derived 0–100 My Rating. */
+  myScore100: number;
+  myDimensions: RatingDimensionScores;
   /** `user_ratings.updated_at` for deterministic ordering. */
   ratedAt: string;
 };
 
-export const PRIVATE_NOTE_MAX_LENGTH = 500;
-export const RATING_SCORE_MIN = 1;
-export const RATING_SCORE_MAX = 10;
+export {
+  PRIVATE_NOTE_MAX_LENGTH,
+  RATING_DIMENSION_MAX,
+  RATING_DIMENSION_MIN,
+  RATING_DIMENSION_STEP,
+} from '@/src/features/ratings/validation';
 
-export const RATING_SCORE_KEYS = [
-  'look',
-  'comfort',
-  'quality',
-  'outfit',
-  'value',
-  'overall',
-] as const satisfies readonly (keyof RatingScoreFields)[];

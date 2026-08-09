@@ -4,60 +4,52 @@ import { View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
+import { DimensionStepperRow } from '@/src/components/ui/DimensionStepperRow';
 import { EmptyState } from '@/src/components/ui/EmptyState';
 import { ErrorState } from '@/src/components/ui/ErrorState';
 import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { Input } from '@/src/components/ui/Input';
 import { LoadingState } from '@/src/components/ui/LoadingState';
-import { RatingInputRow } from '@/src/components/ui/RatingInputRow';
 import { Screen } from '@/src/components/ui/Screen';
 import { useAuth } from '@/src/features/auth/hooks';
 import { productDetailReturnPath } from '@/src/features/auth/returnPath';
 import {
+  RATING_DIMENSION_GROUPS,
+  RATING_DIMENSIONS,
+  type PartialRatingDimensions,
+  type RatingDimensionKey,
+} from '@/src/features/ratings/dimensions';
+import {
   getRatingErrorMessage,
   RATING_USER_MESSAGES,
+  type RatingError,
 } from '@/src/features/ratings/errors';
 import { useSubmitRatingMutation } from '@/src/features/ratings/mutations';
 import { useUserRatingQuery } from '@/src/features/ratings/queries';
 import {
   PRIVATE_NOTE_MAX_LENGTH,
   type MyRating,
-  type RatingScoreFields,
 } from '@/src/features/ratings/types';
-import { parseRatingScore } from '@/src/features/ratings/validation';
+import {
+  computeCompositeScore100,
+  emptyPartialDimensions,
+  isCompleteDimensionSet,
+} from '@/src/features/ratings/score';
+import { assertCompleteDimensions } from '@/src/features/ratings/validation';
 import { useProductQuery } from '@/src/features/products/queries';
 
-type ScoreField = keyof RatingScoreFields;
-
-const SCORE_FIELDS: { key: ScoreField; label: string; emphasized?: boolean }[] =
-  [
-    { key: 'overall', label: 'Overall', emphasized: true },
-    { key: 'look', label: 'Look' },
-    { key: 'comfort', label: 'Comfort' },
-    { key: 'quality', label: 'Quality' },
-    { key: 'outfit', label: 'Outfit' },
-    { key: 'value', label: 'Value' },
-  ];
-
-type FormScores = Record<ScoreField, string>;
-
-const EMPTY_SCORES: FormScores = {
-  look: '',
-  comfort: '',
-  quality: '',
-  outfit: '',
-  value: '',
-  overall: '',
-};
-
-function scoresFromRating(rating: RatingScoreFields): FormScores {
+function dimensionsFromRating(rating: MyRating): PartialRatingDimensions {
   return {
-    look: String(rating.look),
-    comfort: String(rating.comfort),
-    quality: String(rating.quality),
-    outfit: String(rating.outfit),
-    value: String(rating.value),
-    overall: String(rating.overall),
+    look: rating.look,
+    outfit: rating.outfit,
+    material: rating.material,
+    craftsmanship: rating.craftsmanship,
+    maintenance: rating.maintenance,
+    comfort: rating.comfort,
+    collection: rating.collection,
+    value: rating.value,
+    resalePotential: rating.resalePotential,
+    acquisitionEase: rating.acquisitionEase,
   };
 }
 
@@ -66,8 +58,9 @@ type RateFormProps = {
   userId: string;
   productName?: string;
   isEdit: boolean;
-  initialScores: FormScores;
+  initialDimensions: PartialRatingDimensions;
   initialPrivateNote: string;
+  isOffline: boolean;
 };
 
 /**
@@ -79,25 +72,34 @@ function RateForm({
   userId,
   productName,
   isEdit,
-  initialScores,
+  initialDimensions,
   initialPrivateNote,
+  isOffline,
 }: RateFormProps) {
   const router = useRouter();
   const submitMutation = useSubmitRatingMutation();
-  const [scores, setScores] = useState<FormScores>(initialScores);
+  const [dimensions, setDimensions] =
+    useState<PartialRatingDimensions>(initialDimensions);
   const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<ScoreField | 'privateNote', string>>
+    Partial<Record<RatingDimensionKey | 'privateNote', string>>
   >({});
   const [privateNote, setPrivateNote] = useState(initialPrivateNote);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const saving = submitMutation.isPending;
+  // Active in-flight network work only — paused mutations must not spin forever.
+  const saving =
+    submitMutation.isPending && !submitMutation.isPaused;
   const privateNoteLength = privateNote.length;
   const noteOverLimit = privateNoteLength > PRIVATE_NOTE_MAX_LENGTH;
-  const canSubmit = useMemo(() => !saving && !noteOverLimit, [noteOverLimit, saving]);
+  const score100 = computeCompositeScore100(dimensions);
+  const allComplete = isCompleteDimensionSet(dimensions);
+  const canSubmit = useMemo(
+    () => !saving && !noteOverLimit,
+    [noteOverLimit, saving],
+  );
 
-  const updateScore = (key: ScoreField, value: string) => {
-    setScores((prev) => ({ ...prev, [key]: value }));
+  const updateDimension = (key: RatingDimensionKey, value: number | null) => {
+    setDimensions((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => {
       if (!prev[key]) {
         return prev;
@@ -109,16 +111,14 @@ function RateForm({
     setFormError(null);
   };
 
-  const validate = (): RatingScoreFields | null => {
-    const nextErrors: Partial<Record<ScoreField | 'privateNote', string>> = {};
-    const parsed: Partial<Record<ScoreField, number>> = {};
+  const validate = (): PartialRatingDimensions | null => {
+    const nextErrors: Partial<
+      Record<RatingDimensionKey | 'privateNote', string>
+    > = {};
 
-    for (const field of SCORE_FIELDS) {
-      const value = parseRatingScore(scores[field.key]);
-      if (value == null) {
-        nextErrors[field.key] = RATING_USER_MESSAGES.scoreInvalid;
-      } else {
-        parsed[field.key] = value;
+    for (const dim of RATING_DIMENSIONS) {
+      if (dimensions[dim.key] == null) {
+        nextErrors[dim.key] = RATING_USER_MESSAGES.scoreIncomplete;
       }
     }
 
@@ -132,14 +132,14 @@ function RateForm({
       return null;
     }
 
-    return {
-      look: parsed.look!,
-      comfort: parsed.comfort!,
-      quality: parsed.quality!,
-      outfit: parsed.outfit!,
-      value: parsed.value!,
-      overall: parsed.overall!,
-    };
+    try {
+      assertCompleteDimensions(dimensions);
+    } catch {
+      setFormError(RATING_USER_MESSAGES.validation);
+      return null;
+    }
+
+    return dimensions;
   };
 
   const onSubmit = async () => {
@@ -147,8 +147,14 @@ function RateForm({
       return;
     }
     setFormError(null);
+
+    if (isOffline) {
+      setFormError(RATING_USER_MESSAGES.offline);
+      return;
+    }
+
     const parsed = validate();
-    if (!parsed) {
+    if (!parsed || !isCompleteDimensionSet(parsed)) {
       return;
     }
 
@@ -161,6 +167,7 @@ function RateForm({
       });
       router.dismissTo(`/product/${productId}` as never);
     } catch (error) {
+      // Domain error only; form state is intentionally preserved.
       setFormError(getRatingErrorMessage(error));
     }
   };
@@ -172,6 +179,15 @@ function RateForm({
       scroll
       footer={
         <View className="border-t border-border bg-background px-4 py-3">
+          {isOffline ? (
+            <AppText
+              testID="rate-offline-banner"
+              variant="caption"
+              className="mb-2 text-center text-warning"
+              accessibilityRole="text">
+              You&apos;re offline. Connect to save this rating.
+            </AppText>
+          ) : null}
           {formError ? (
             <AppText
               testID="rate-form-error"
@@ -183,7 +199,9 @@ function RateForm({
           ) : null}
           <Button
             testID="rate-submit"
-            label={saving ? 'Saving...' : isEdit ? 'Save changes' : 'Save rating'}
+            label={
+              saving ? 'Saving...' : isEdit ? 'Save changes' : 'Save rating'
+            }
             loading={saving}
             disabled={!canSubmit}
             onPress={() => {
@@ -208,22 +226,45 @@ function RateForm({
           </AppText>
         ) : null}
         <AppText variant="caption" className="mt-1">
-          Rate each category from 1 to 10. Only you can see your private note.
+          Rate each category from 0 to 10 (half steps). My Rating is calculated
+          automatically on a 0–100 scale. Private notes stay owner-only.
         </AppText>
       </View>
 
-      <View className="mt-6 gap-5">
-        {SCORE_FIELDS.map((field) => (
-          <RatingInputRow
-            key={field.key}
-            label={field.label}
-            value={scores[field.key]}
-            onChangeText={(value) => updateScore(field.key, value)}
-            error={fieldErrors[field.key]}
-            emphasized={field.emphasized}
-          />
-        ))}
+      <View
+        testID="rate-my-rating-preview"
+        className="mt-5 rounded-card border border-border bg-card px-4 py-3">
+        <AppText variant="label">My Rating</AppText>
+        <AppText className="mt-1 text-2xl font-semibold text-primary">
+          {score100 == null ? '— / 100' : `${score100} / 100`}
+        </AppText>
+        <AppText variant="caption" className="mt-1">
+          {allComplete
+            ? 'Derived evenly from all ten categories.'
+            : 'Complete every category to calculate My Rating.'}
+        </AppText>
       </View>
+
+      {RATING_DIMENSION_GROUPS.map((group) => (
+        <View key={group.id} className="mt-6">
+          <AppText variant="label">{group.label}</AppText>
+          <View className="mt-3 gap-4">
+            {RATING_DIMENSIONS.filter((d) => d.groupId === group.id).map(
+              (dim) => (
+                <DimensionStepperRow
+                  key={dim.key}
+                  testID={`rate-dim-${dim.key}`}
+                  label={dim.label}
+                  description={dim.description}
+                  value={dimensions[dim.key]}
+                  error={fieldErrors[dim.key]}
+                  onChange={(value) => updateDimension(dim.key, value)}
+                />
+              ),
+            )}
+          </View>
+        </View>
+      ))}
 
       <View className="mt-6">
         <AppText variant="label">Private note</AppText>
@@ -281,6 +322,7 @@ export default function RateProductScreen() {
   const { status, isSignedIn, user } = useAuth();
   const productQuery = useProductQuery(productId);
   const ratingQuery = useUserRatingQuery(productId);
+  const offline = productQuery.isOffline || ratingQuery.isOffline;
 
   useEffect(() => {
     if (status === 'initializing') {
@@ -329,6 +371,28 @@ export default function RateProductScreen() {
     );
   }
 
+  if (productQuery.isPending && productQuery.fetchStatus === 'paused' && !productQuery.data) {
+    return (
+      <Screen>
+        <Stack.Screen
+          options={{
+            title: 'Rate',
+            headerLeft: ({ canGoBack }) => (
+              <HeaderBackButton canGoBack={canGoBack} />
+            ),
+          }}
+        />
+        <ErrorState
+          title="You're offline."
+          message="Connect to the internet and try again."
+          onRetry={() => {
+            void productQuery.refetch();
+          }}
+        />
+      </Screen>
+    );
+  }
+
   if (productQuery.isPending && !productQuery.data) {
     return (
       <Screen>
@@ -367,7 +431,34 @@ export default function RateProductScreen() {
     );
   }
 
-  if (ratingQuery.isPending) {
+  // Offline + no cached owner rating: never infinite LoadingState.
+  if (
+    ratingQuery.isPending &&
+    ratingQuery.fetchStatus === 'paused' &&
+    ratingQuery.data === undefined
+  ) {
+    return (
+      <Screen>
+        <Stack.Screen
+          options={{
+            title: 'Rate',
+            headerLeft: ({ canGoBack }) => (
+              <HeaderBackButton canGoBack={canGoBack} />
+            ),
+          }}
+        />
+        <ErrorState
+          title="You're offline."
+          message="Connect to load your existing rating, or reconnect and try again."
+          onRetry={() => {
+            void ratingQuery.refetch();
+          }}
+        />
+      </Screen>
+    );
+  }
+
+  if (ratingQuery.isPending && ratingQuery.data === undefined) {
     return (
       <Screen>
         <Stack.Screen
@@ -383,7 +474,8 @@ export default function RateProductScreen() {
     );
   }
 
-  if (ratingQuery.isError) {
+  if (ratingQuery.isError && ratingQuery.data === undefined) {
+    const code = (ratingQuery.error as RatingError | null)?.code;
     return (
       <Screen>
         <Stack.Screen
@@ -395,7 +487,9 @@ export default function RateProductScreen() {
           }}
         />
         <ErrorState
-          title="Could not load your rating"
+          title={
+            code === 'offline' ? "You're offline." : 'Could not load your rating'
+          }
           message={getRatingErrorMessage(ratingQuery.error)}
           onRetry={() => {
             void ratingQuery.refetch();
@@ -406,9 +500,10 @@ export default function RateProductScreen() {
   }
 
   const existing: MyRating | null = ratingQuery.data ?? null;
-  const formKey = `${user?.id ?? ''}:${productId}:${ratingQuery.dataUpdatedAt}:${
-    existing ? 'edit' : 'new'
-  }`;
+  // Remount only when the owner/product identity changes. Do NOT key on
+  // dataUpdatedAt — reconnect/refocus refetches would wipe in-progress
+  // dimensions and the private note (Task 17 preserve-form contract).
+  const formKey = `${user!.id}:${productId}`;
 
   return (
     <RateForm
@@ -417,8 +512,11 @@ export default function RateProductScreen() {
       userId={user!.id}
       productName={productQuery.data?.product.name}
       isEdit={existing != null}
-      initialScores={existing ? scoresFromRating(existing) : EMPTY_SCORES}
+      initialDimensions={
+        existing ? dimensionsFromRating(existing) : emptyPartialDimensions()
+      }
       initialPrivateNote={existing?.privateNote ?? ''}
+      isOffline={offline}
     />
   );
 }

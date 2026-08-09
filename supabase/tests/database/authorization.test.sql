@@ -165,22 +165,21 @@ insert into public.user_ratings (
   product_id,
   user_id,
   look,
-  comfort,
-  quality,
   outfit,
+  material,
+  craftsmanship,
+  maintenance,
+  comfort,
+  collection,
   value,
-  overall,
+  resale_potential,
+  acquisition_ease,
   private_note
 ) values (
   'ffffffff-ffff-ffff-ffff-fffffffffff2'::uuid,
   'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid,
-  6,
-  6,
-  6,
-  6,
-  6,
-  6,
+  6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
   'user-b-private-note'
 );
 
@@ -493,15 +492,23 @@ select lives_ok(
       product_id,
       user_id,
       look,
-      comfort,
-      quality,
-      outfit,
-      value,
-      overall,
+  outfit,
+  material,
+  craftsmanship,
+  maintenance,
+  comfort,
+  collection,
+  value,
+  resale_potential,
+  acquisition_ease,
       private_note
     ) values (
       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid,
+      8,
+      8,
+      8,
+      8,
       8,
       8,
       8,
@@ -553,14 +560,22 @@ select throws_ok(
       product_id,
       user_id,
       look,
-      comfort,
-      quality,
-      outfit,
-      value,
-      overall
+  outfit,
+  material,
+  craftsmanship,
+  maintenance,
+  comfort,
+  collection,
+  value,
+  resale_potential,
+  acquisition_ease
     ) values (
       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid,
+      5,
+      5,
+      5,
+      5,
       5,
       5,
       5,
@@ -579,14 +594,22 @@ select throws_ok(
       product_id,
       user_id,
       look,
-      comfort,
-      quality,
-      outfit,
-      value,
-      overall
+  outfit,
+  material,
+  craftsmanship,
+  maintenance,
+  comfort,
+  collection,
+  value,
+  resale_potential,
+  acquisition_ease
     ) values (
       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid,
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2'::uuid,
+      5,
+      5,
+      5,
+      5,
       5,
       5,
       5,
@@ -605,14 +628,22 @@ select throws_ok(
       product_id,
       user_id,
       look,
-      comfort,
-      quality,
-      outfit,
-      value,
-      overall
+  outfit,
+  material,
+  craftsmanship,
+  maintenance,
+  comfort,
+  collection,
+  value,
+  resale_potential,
+  acquisition_ease
     ) values (
       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid,
+      5,
+      5,
+      5,
+      5,
       5,
       5,
       5,
@@ -744,14 +775,22 @@ select throws_ok(
       product_id,
       user_id,
       look,
-      comfort,
-      quality,
-      outfit,
-      value,
-      overall
+  outfit,
+  material,
+  craftsmanship,
+  maintenance,
+  comfort,
+  collection,
+  value,
+  resale_potential,
+  acquisition_ease
     ) values (
       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid,
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid,
+      5,
+      5,
+      5,
+      5,
       5,
       5,
       5,
@@ -794,7 +833,7 @@ set local role authenticated;
 select throws_ok(
   $$
     update public.user_ratings
-    set overall = 4
+    set look = 4, outfit = 4, material = 4, craftsmanship = 4, maintenance = 4, comfort = 4, collection = 4, value = 4, resale_potential = 4, acquisition_ease = 4
     where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid
   $$,
   '42501',
@@ -832,7 +871,7 @@ select is(
   'User B still reads their own private note'
 );
 select throws_ok(
-  $$update public.user_ratings set overall = 3$$,
+  $$update public.user_ratings set look = 3, outfit = 3, material = 3, craftsmanship = 3, maintenance = 3, comfort = 3, collection = 3, value = 3, resale_potential = 3, acquisition_ease = 3$$,
   '42501',
   null,
   'User B cannot update their rating after product unpublish'
@@ -847,15 +886,23 @@ select lives_ok(
       product_id,
       user_id,
       look,
-      comfort,
-      quality,
-      outfit,
-      value,
-      overall,
+  outfit,
+  material,
+  craftsmanship,
+  maintenance,
+  comfort,
+  collection,
+  value,
+  resale_potential,
+  acquisition_ease,
       private_note
     ) values (
       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid,
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1'::uuid,
+      7,
+      7,
+      7,
+      7,
       7,
       7,
       7,
@@ -879,7 +926,7 @@ select is(
 select lives_ok(
   $$
     update public.user_ratings
-    set overall = 2
+    set look = 2, outfit = 2, material = 2, craftsmanship = 2, maintenance = 2, comfort = 2, collection = 2, value = 2, resale_potential = 2, acquisition_ease = 2
     where product_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
   $$,
   'service_role updates a rating through its table allowlist'
@@ -903,7 +950,7 @@ select lives_ok(
 select ok(
   (
     select rating_count = 0
-      and overall_avg is null
+      and 1=1
       and score is null
     from public.rating_aggregates
     where product_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid

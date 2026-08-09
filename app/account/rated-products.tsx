@@ -26,7 +26,7 @@ function RatedProductRow({
     <Pressable
       testID={`rated-product-${item.productId}`}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${item.brand} ${item.name}, your rating ${item.myOverall} out of 10`}
+      accessibilityLabel={`Open ${item.brand} ${item.name}, your rating ${item.myScore100} out of 100`}
       onPress={onPress}
       className="rounded-card border border-border bg-card p-5"
       style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
@@ -57,13 +57,13 @@ function RatedProductRow({
           <View className="mt-3 flex-row gap-3">
             <ScoreBadge
               label="My Rating"
-              score={item.myOverall}
+              score100={item.myScore100}
               emptyLabel="No score"
               className="flex-1"
             />
             <ScoreBadge
               label="Community Score"
-              score={item.communityScore}
+              score100={item.communityScore}
               emptyLabel={
                 item.ratingCount === 0 ? 'No ratings yet' : 'No score yet'
               }
@@ -115,6 +115,28 @@ export default function RatedProductsScreen() {
         <EmptyState
           title="Sign in required"
           message="Sign in to see products you have rated."
+        />
+      </Screen>
+    );
+  }
+
+  if (query.isPending && query.fetchStatus === 'paused' && query.data === undefined) {
+    return (
+      <Screen>
+        <Stack.Screen
+          options={{
+            title: 'Rated Products',
+            headerLeft: ({ canGoBack }) => (
+              <HeaderBackButton canGoBack={canGoBack} />
+            ),
+          }}
+        />
+        <ErrorState
+          title="You're offline."
+          message="Connect to the internet and try again."
+          onRetry={() => {
+            void query.refetch();
+          }}
         />
       </Screen>
     );

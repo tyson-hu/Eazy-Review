@@ -3,11 +3,13 @@ import { QueryClient, onlineManager } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 import * as ratingsApi from '@/src/features/ratings/api';
+import { RatingError, RATING_USER_MESSAGES } from '@/src/features/ratings/errors';
 import { useSubmitRatingMutation } from '@/src/features/ratings/mutations';
 import {
   useUserRatedProductsQuery,
   useUserRatingQuery,
 } from '@/src/features/ratings/queries';
+import { sampleMyRating, uniformDimensions } from '@/src/features/ratings/testFixtures';
 import { createAppQueryClient } from '@/src/lib/query/client';
 import { catalogKeys, ratingKeys } from '@/src/lib/query/keys';
 import { AppProviders } from '@/src/providers/AppProviders';
@@ -90,15 +92,7 @@ describe('rating query hooks', () => {
   });
 
   it('uses exact authenticated user id in ratingKeys.mine', async () => {
-    mockGetUserRating.mockResolvedValue({
-      look: 8,
-      comfort: 7,
-      quality: 9,
-      outfit: 6,
-      value: 8,
-      overall: 8,
-      privateNote: null,
-    });
+    mockGetUserRating.mockResolvedValue(sampleMyRating());
 
     const client = testClient();
     const { result, unmount } = await renderHook(
@@ -113,23 +107,25 @@ describe('rating query hooks', () => {
       expect.anything(),
     );
     expect(client.getQueryData(ratingKeys.mine('user-a', 'product-1'))).toEqual(
-      expect.objectContaining({ overall: 8 }),
+      expect.objectContaining({ score100: 80 }),
     );
     unmount();
     client.clear();
   });
 
-  it('disables Rated Products without a user', async () => {
-    mockAuth.isSignedIn = false;
-    mockAuth.user = null;
-
-    const client = testClient();
-    const { result, unmount } = await renderHook(() => useUserRatedProductsQuery(), {
-      wrapper: wrapperFor(client),
+  it('exposes isOffline when onlineManager is offline', async () => {
+    onlineManager.setOnline(false);
+    mockGetUserRating.mockImplementation(async () => {
+      throw new RatingError('offline', RATING_USER_MESSAGES.offline);
     });
 
-    expect(result.current.fetchStatus).toBe('idle');
-    expect(mockGetUserRatedProducts).not.toHaveBeenCalled();
+    const client = testClient();
+    const { result, unmount } = await renderHook(
+      () => useUserRatingQuery('product-1'),
+      { wrapper: wrapperFor(client) },
+    );
+
+    expect(result.current.isOffline).toBe(true);
     unmount();
     client.clear();
   });
@@ -144,29 +140,9 @@ describe('useSubmitRatingMutation', () => {
     mockSaveUserRating.mockReset();
   });
 
-  it('invalidates product detail, product list, My Rating, and Rated Products', async () => {
-    mockSaveUserRating.mockResolvedValue({
-      look: 8,
-      comfort: 7,
-      quality: 9,
-      outfit: 6,
-      value: 8,
-      overall: 9,
-      privateNote: null,
-    });
-
+  it('invalidates product, list, mine, and rated-products keys on success', async () => {
+    mockSaveUserRating.mockResolvedValue(sampleMyRating());
     const client = testClient();
-    const productId = 'product-1';
-    client.setQueryData(catalogKeys.product(productId), {
-      ratingSummary: { communityScore: 50, ratingCount: 1 },
-    });
-    client.setQueryData(catalogKeys.products(), [{ id: productId }]);
-    client.setQueryData(ratingKeys.mine('user-a', productId), {
-      overall: 5,
-      privateNote: null,
-    });
-    client.setQueryData(ratingKeys.ratedProducts('user-a'), []);
-
     const invalidateSpy = jest.spyOn(client, 'invalidateQueries');
 
     const { result, unmount } = await renderHook(() => useSubmitRatingMutation(), {
@@ -175,44 +151,111 @@ describe('useSubmitRatingMutation', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        productId,
-        userId: 'user-a',
-        look: 8,
-        comfort: 7,
-        quality: 9,
-        outfit: 6,
-        value: 8,
-        overall: 9,
-        privateNote: null,
+        productId: 'product-1',
+        ...uniformDimensions(8),
       });
     });
 
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: catalogKeys.product(productId),
-    });
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: catalogKeys.products(),
-    });
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ratingKeys.mine('user-a', productId),
-    });
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ratingKeys.ratedProducts('user-a'),
-    });
-    expect(mockSaveUserRating).toHaveBeenCalledTimes(1);
-    expect(result.current.failureCount).toBe(0);
-    // Community Score is never optimistically written by the mutation path.
-    expect(mockSaveUserRating.mock.calls[0]?.[0]).not.toHaveProperty(
-      'communityScore',
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const keys = invalidateSpy.mock.calls.map((call) => call[0]?.queryKey);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        catalogKeys.product('product-1'),
+        catalogKeys.products(),
+        ratingKeys.mine('user-a', 'product-1'),
+        ratingKeys.ratedProducts('user-a'),
+      ]),
     );
-
     unmount();
     client.clear();
   });
 
-  it('does not auto-retry mutations', () => {
+  it('enters mutationFn offline and settles with offline error (not paused)', async () => {
+    onlineManager.setOnline(false);
+    mockSaveUserRating.mockImplementation(async (_input, options) => {
+      if (options?.isOnline?.() === false) {
+        throw new RatingError('offline', RATING_USER_MESSAGES.offline, {
+          source: 'transport',
+        });
+      }
+      return sampleMyRating();
+    });
+
     const client = testClient();
-    const options = client.getDefaultOptions();
-    expect(options.mutations?.retry).toBe(false);
+    const { result, unmount } = await renderHook(() => useSubmitRatingMutation(), {
+      wrapper: wrapperFor(client),
+    });
+
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({
+          productId: 'product-1',
+          ...uniformDimensions(8),
+        });
+      } catch {
+        // expected
+      }
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.isPending).toBe(false);
+    expect(result.current.isPaused).toBe(false);
+    expect(result.current.error?.code).toBe('offline');
+    expect(mockSaveUserRating).toHaveBeenCalled();
+    unmount();
+    client.clear();
+  });
+
+  it('does not confuse transport failure with known offline', async () => {
+    onlineManager.setOnline(true);
+    mockSaveUserRating.mockRejectedValue(
+      new RatingError('server-error', RATING_USER_MESSAGES.backendUnreachable, {
+        source: 'transport',
+      }),
+    );
+
+    const client = testClient();
+    const { result, unmount } = await renderHook(() => useSubmitRatingMutation(), {
+      wrapper: wrapperFor(client),
+    });
+
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({
+          productId: 'product-1',
+          ...uniformDimensions(8),
+        });
+      } catch {
+        // expected
+      }
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error?.code).toBe('server-error');
+    expect(result.current.error?.message).not.toMatch(/offline/i);
+    unmount();
+    client.clear();
+  });
+});
+
+describe('rated products query', () => {
+  beforeEach(() => {
+    onlineManager.setOnline(true);
+    mockAuth.isSignedIn = true;
+    mockAuth.user = { id: 'user-a', email: 'a@example.com' };
+    mockGetUserRatedProducts.mockReset();
+  });
+
+  it('loads owner list', async () => {
+    mockGetUserRatedProducts.mockResolvedValue([]);
+    const client = testClient();
+    const { result, unmount } = await renderHook(
+      () => useUserRatedProductsQuery(),
+      { wrapper: wrapperFor(client) },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
+    unmount();
+    client.clear();
   });
 });

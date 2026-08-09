@@ -1,8 +1,14 @@
+import {
+  isRequestAbortedError,
+  isRequestTimeoutError,
+} from '@/src/lib/network/requestTimeout';
+
 export type RatingErrorCode =
   | 'offline'
   | 'unauthorized'
   | 'validation'
   | 'timeout'
+  | 'aborted'
   | 'server-error'
   | 'invalid-response';
 
@@ -47,6 +53,7 @@ function defaultSource(code: RatingErrorCode): RatingErrorSource {
   switch (code) {
     case 'offline':
     case 'timeout':
+    case 'aborted':
       return 'transport';
     case 'validation':
       return 'validation';
@@ -69,7 +76,14 @@ export const RATING_USER_MESSAGES = {
   invalidResponse: 'Rating data could not be read. Please try again.',
   validation: 'Check your scores and private note, then try again.',
   privateNoteTooLong: 'Private note must be 500 characters or fewer.',
-  scoreInvalid: 'Enter a whole number from 1 to 10.',
+  scoreInvalid: 'Enter a score from 0 to 10 in half-point steps.',
+  scoreIncomplete: 'Rate every category from 0 to 10 before saving.',
+  scoreInconsistent:
+    'My Rating must be calculated from your category scores.',
+  methodologyMismatch:
+    'This rating uses an unsupported scoring method. Please update the app.',
+  backendUnreachable:
+    'Could not reach the server. Check your connection and try again.',
 } as const;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -135,8 +149,29 @@ export function normalizeRatingError(
   const code = readCode(error);
   const name = asRecord(error)?.name;
 
-  if (options.isOffline) {
+  if (options.isOffline === true) {
     return new RatingError('offline', RATING_USER_MESSAGES.offline, {
+      source: 'transport',
+      status,
+      cause: error,
+    });
+  }
+
+  if (isRequestTimeoutError(error) || name === 'TimeoutError' || name === 'RequestTimeoutError') {
+    return new RatingError('timeout', RATING_USER_MESSAGES.timeout, {
+      source: 'transport',
+      status,
+      cause: error,
+    });
+  }
+
+  // Query cancellation / navigation abort — not presented as a user timeout.
+  if (
+    isRequestAbortedError(error) ||
+    name === 'AbortError' ||
+    name === 'RequestAbortedError'
+  ) {
+    return new RatingError('aborted', RATING_USER_MESSAGES.loadFailed, {
       source: 'transport',
       status,
       cause: error,
@@ -150,20 +185,17 @@ export function normalizeRatingError(
     });
   }
 
-  if (name === 'TimeoutError' || name === 'AbortError') {
-    return new RatingError('timeout', RATING_USER_MESSAGES.timeout, {
-      source: 'transport',
-      status,
-      cause: error,
-    });
-  }
-
   if (isTransportFailure(error)) {
-    return new RatingError('server-error', messageForOperation(options.operation), {
-      source: 'transport',
-      status,
-      cause: error,
-    });
+    // Connected but backend unreachable — not "you're offline".
+    return new RatingError(
+      'server-error',
+      RATING_USER_MESSAGES.backendUnreachable,
+      {
+        source: 'transport',
+        status,
+        cause: error,
+      },
+    );
   }
 
   if (status != null && status >= 500) {
@@ -194,6 +226,10 @@ function messageForOperation(operation: 'read' | 'list' | 'save'): string {
 
 export function getRatingErrorMessage(error: unknown): string {
   if (error instanceof RatingError) {
+    if (error.code === 'aborted') {
+      // Navigation cancellation should not surface noisy copy.
+      return RATING_USER_MESSAGES.loadFailed;
+    }
     return error.message;
   }
   return RATING_USER_MESSAGES.saveFailed;

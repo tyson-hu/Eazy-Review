@@ -119,7 +119,7 @@ describe('public catalog API', () => {
       /profiles|user_ratings|private_note|user_id|website_link/,
     );
     expect(selected).not.toMatch(
-      /size_type|release_date|description|methodology_version|look_avg|comfort_avg|quality_avg|outfit_avg|value_avg|overall_avg/,
+      /size_type|release_date|description|methodology_version|look_avg|outfit_avg|material_avg|craftsmanship_avg|maintenance_avg|comfort_avg|collection_avg|value_avg|resale_potential_avg|acquisition_ease_avg/,
     );
     expect(fake.calls).toContainEqual({ method: 'retry', args: [false] });
     expect(fake.calls.filter((call) => call.method === 'order')).toEqual(

@@ -48,14 +48,18 @@ const item: RatedProductItem = {
   imageUrl: 'https://example.test/a.png',
   communityScore: 80,
   ratingCount: 2,
-  myOverall: 9,
-  myScores: {
-    look: 8,
-    comfort: 7,
-    quality: 9,
-    outfit: 6,
-    value: 8,
-    overall: 9,
+  myScore100: 90,
+  myDimensions: {
+    look: 9,
+    outfit: 9,
+    material: 9,
+    craftsmanship: 9,
+    maintenance: 9,
+    comfort: 9,
+    collection: 9,
+    value: 9,
+    resalePotential: 9,
+    acquisitionEase: 9,
   },
   ratedAt: '2026-08-09T12:00:00.000Z',
 };
@@ -124,7 +128,7 @@ describe('Rated Products screen', () => {
     );
     expect(rendered.getByText('My Rating')).toBeTruthy();
     expect(rendered.getByText('Community Score')).toBeTruthy();
-    expect(rendered.getByText('9')).toBeTruthy();
+    expect(rendered.getByText('90 / 100')).toBeTruthy();
     expect(rendered.queryByText(/private|secret note/i)).toBeNull();
     await rendered.cleanup();
   });

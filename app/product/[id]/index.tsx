@@ -16,7 +16,9 @@ import { productDetailReturnPath } from '@/src/features/auth/returnPath';
 import { CatalogStatusBanner } from '@/src/features/products/CatalogStatusBanner';
 import { getCatalogErrorPresentation } from '@/src/features/products/errors';
 import { useProductQuery } from '@/src/features/products/queries';
+import { RATING_DIMENSIONS } from '@/src/features/ratings/dimensions';
 import { useUserRatingQuery } from '@/src/features/ratings/queries';
+import { formatDimensionScore10 } from '@/src/features/ratings/score';
 import type {
   ProductRatingSummary,
   VerifiedProductOffer,
@@ -24,68 +26,32 @@ import type {
 import { formatPrice } from '@/src/utils/formatPrice';
 import { formatVerifiedDate } from '@/src/utils/formatVerifiedDate';
 
-type CommunityCategoryAvg = { label: string; value: number | null };
-type CommunityHighlight = { label: string; value: number };
-
-const COMMUNITY_CATEGORY_FIELDS: {
-  label: string;
-  avgKey: keyof Pick<
-    ProductRatingSummary,
-    'lookAvg' | 'comfortAvg' | 'qualityAvg' | 'outfitAvg' | 'valueAvg'
-  >;
-}[] = [
-  { label: 'Look', avgKey: 'lookAvg' },
-  { label: 'Comfort', avgKey: 'comfortAvg' },
-  { label: 'Quality', avgKey: 'qualityAvg' },
-  { label: 'Outfit', avgKey: 'outfitAvg' },
-  { label: 'Value', avgKey: 'valueAvg' },
-];
-
-function getCommunityCategoryAvgs(
+function avgForDimension(
   summary: ProductRatingSummary,
-): CommunityCategoryAvg[] {
-  return COMMUNITY_CATEGORY_FIELDS.map(({ label, avgKey }) => ({
-    label,
-    value: summary[avgKey],
-  }));
-}
-
-function getCommunityCategoryRows(
-  summary: ProductRatingSummary,
-): CommunityCategoryAvg[] {
-  return [
-    { label: 'Overall', value: summary.overallAvg },
-    ...getCommunityCategoryAvgs(summary),
-  ];
-}
-
-function hasMeaningfulCommunityCategories(
-  summary: ProductRatingSummary,
-): boolean {
-  return (
-    summary.ratingCount > 0 &&
-    getCommunityCategoryRows(summary).some((row) => row.value != null)
-  );
-}
-
-function getCommunityHighlights(
-  summary: ProductRatingSummary,
-): { strongest: CommunityHighlight; weakest: CommunityHighlight } | null {
-  if (summary.ratingCount <= 0) {
-    return null;
+  key: (typeof RATING_DIMENSIONS)[number]['key'],
+): number | null {
+  switch (key) {
+    case 'look':
+      return summary.lookAvg;
+    case 'outfit':
+      return summary.outfitAvg;
+    case 'material':
+      return summary.materialAvg;
+    case 'craftsmanship':
+      return summary.craftsmanshipAvg;
+    case 'maintenance':
+      return summary.maintenanceAvg;
+    case 'comfort':
+      return summary.comfortAvg;
+    case 'collection':
+      return summary.collectionAvg;
+    case 'value':
+      return summary.valueAvg;
+    case 'resalePotential':
+      return summary.resalePotentialAvg;
+    case 'acquisitionEase':
+      return summary.acquisitionEaseAvg;
   }
-  const categories = getCommunityCategoryAvgs(summary).filter(
-    (category): category is CommunityHighlight => category.value != null,
-  );
-  if (categories.length < 2) {
-    return null;
-  }
-  const ranked = [...categories].sort((a, b) => b.value - a.value);
-  const strongest = ranked[0];
-  const weakest = ranked[ranked.length - 1];
-  return strongest.value.toFixed(1) === weakest.value.toFixed(1)
-    ? null
-    : { strongest, weakest };
 }
 
 function ProductHeader({ title = 'Product' }: { title?: string }) {
@@ -202,18 +168,28 @@ export default function ProductDetailScreen() {
     product.releaseDate,
     product.sizeType,
   ].filter((part): part is string => Boolean(part));
-  const showCommunityBreakdown =
-    hasMeaningfulCommunityCategories(ratingSummary);
-  const communityHighlights = getCommunityHighlights(ratingSummary);
-  const communityCategoryRows = getCommunityCategoryRows(ratingSummary);
   const lowestOffer = offers[0] ?? null;
   const showSignInCta = authStatus !== 'initializing' && !isSignedIn;
   const myRating = isSignedIn ? (myRatingQuery.data ?? null) : null;
   const hasMyRating = myRating != null;
+  const myRatingPausedOffline =
+    isSignedIn &&
+    myRatingQuery.isOffline &&
+    myRatingQuery.fetchStatus === 'paused' &&
+    myRatingQuery.data === undefined;
   const myRatingLoading =
-    isSignedIn && myRatingQuery.isPending && myRatingQuery.data === undefined;
+    isSignedIn &&
+    myRatingQuery.isPending &&
+    myRatingQuery.data === undefined &&
+    myRatingQuery.fetchStatus !== 'paused';
   const publicRefreshing =
-    productQuery.isFetching || (isSignedIn && myRatingQuery.isFetching);
+    productQuery.isFetching || (isSignedIn && myRatingQuery.isFetching && !myRatingQuery.isOffline);
+  const showDimensionComparison =
+    eazyAssessment?.dimensions != null ||
+    (ratingSummary.ratingCount > 0 &&
+      RATING_DIMENSIONS.some(
+        (d) => avgForDimension(ratingSummary, d.key) != null,
+      ));
 
   return (
     <Screen
@@ -295,14 +271,14 @@ export default function ProductDetailScreen() {
       <View className="mt-5 flex-row gap-5">
         <ScoreBadge
           label="Eazy Score"
-          score={eazyAssessment?.score ?? null}
+          score100={eazyAssessment?.score100 ?? null}
           emptyLabel="Not assessed yet"
           sourceLabel="Eazy Assessment · Editorial evaluation"
           className="flex-1"
         />
         <ScoreBadge
           label="Community Score"
-          score={ratingSummary.communityScore}
+          score100={ratingSummary.communityScore}
           emptyLabel={
             ratingSummary.ratingCount === 0
               ? 'No ratings yet'
@@ -321,47 +297,48 @@ export default function ProductDetailScreen() {
       ) : null}
 
       <Card className="mt-5">
-        <AppText variant="label">Decision summary</AppText>
-        {communityHighlights ? (
-          <View className="mt-4 gap-4">
-            <View>
-              <AppText variant="caption">Top strength</AppText>
-              <AppText variant="subtitle" className="mt-1">
-                {communityHighlights.strongest.label} ·{' '}
-                {communityHighlights.strongest.value.toFixed(1)}/10
+        <AppText variant="label">Score comparison</AppText>
+        <AppText variant="caption" className="mt-1">
+          Shared 0–10 categories; composites are 0–100.
+        </AppText>
+        {showDimensionComparison ? (
+          <View className="mt-4">
+            <View className="mb-2 flex-row items-center">
+              <AppText variant="caption" className="flex-1">
+                Category
+              </AppText>
+              <AppText variant="caption" className="w-16 text-right">
+                Eazy
+              </AppText>
+              <AppText variant="caption" className="w-20 text-right">
+                Community
               </AppText>
             </View>
-            <View>
-              <AppText variant="caption">Weakest category</AppText>
-              <AppText variant="subtitle" className="mt-1">
-                {communityHighlights.weakest.label} ·{' '}
-                {communityHighlights.weakest.value.toFixed(1)}/10
-              </AppText>
-            </View>
-            <AppText variant="caption">
-              Based on community category averages.
-            </AppText>
+            {RATING_DIMENSIONS.map((dim) => {
+              const eazy =
+                eazyAssessment?.dimensions?.[dim.key] ?? null;
+              const community = avgForDimension(ratingSummary, dim.key);
+              return (
+                <View
+                  key={dim.key}
+                  testID={`score-compare-${dim.key}`}
+                  className="flex-row items-center border-t border-border py-2">
+                  <AppText variant="body" className="flex-1">
+                    {dim.label}
+                  </AppText>
+                  <AppText variant="caption" className="w-16 text-right">
+                    {formatDimensionScore10(eazy)}
+                  </AppText>
+                  <AppText variant="caption" className="w-20 text-right">
+                    {formatDimensionScore10(community)}
+                  </AppText>
+                </View>
+              );
+            })}
           </View>
         ) : (
           <AppText variant="body" className="mt-2">
-            {ratingSummary.ratingCount > 0
-              ? 'No clear category strengths or weaknesses yet.'
-              : 'No ratings yet'}
-          </AppText>
-        )}
-      </Card>
-
-      <Card className="mt-5">
-        <AppText variant="label">Community ratings</AppText>
-        {showCommunityBreakdown ? (
-          <View className="mt-3 gap-3">
-            {communityCategoryRows.map((row) => (
-              <RatingRow key={row.label} label={row.label} value={row.value} />
-            ))}
-          </View>
-        ) : (
-          <AppText variant="body" className="mt-2">
-            No ratings yet
+            No category comparison yet.
           </AppText>
         )}
       </Card>
@@ -415,6 +392,23 @@ export default function ProductDetailScreen() {
               Your scores and private note stay owner-only.
             </AppText>
           </>
+        ) : myRatingPausedOffline ? (
+          <>
+            <AppText variant="body" className="mt-2">
+              You&apos;re offline.
+            </AppText>
+            <AppText variant="caption" className="mt-1">
+              Connect to load or save your rating.
+            </AppText>
+            <Button
+              className="mt-3"
+              label="Retry"
+              variant="secondary"
+              onPress={() => {
+                void myRatingQuery.refetch();
+              }}
+            />
+          </>
         ) : myRatingLoading ? (
           <AppText variant="body" className="mt-2">
             Loading your rating...
@@ -435,12 +429,16 @@ export default function ProductDetailScreen() {
           </>
         ) : hasMyRating && myRating ? (
           <View className="mt-3 gap-3">
-            <RatingRow label="Overall" value={myRating.overall} />
-            <RatingRow label="Look" value={myRating.look} />
-            <RatingRow label="Comfort" value={myRating.comfort} />
-            <RatingRow label="Quality" value={myRating.quality} />
-            <RatingRow label="Outfit" value={myRating.outfit} />
-            <RatingRow label="Value" value={myRating.value} />
+            <AppText className="text-xl font-semibold text-primary">
+              {myRating.score100} / 100
+            </AppText>
+            {RATING_DIMENSIONS.map((dim) => (
+              <RatingRow
+                key={dim.key}
+                label={dim.label}
+                score10={myRating[dim.key]}
+              />
+            ))}
             <AppText variant="caption">
               Private note stays on the Rate form — only you can see it.
             </AppText>
