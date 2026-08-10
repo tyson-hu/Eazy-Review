@@ -3,23 +3,25 @@
 ## Status
 
 **Task 17 — In progress.** Physical-device matrix A–G (and related checklist
-items below) were recorded from human testing on **2026-08-10**. One remaining
-implementation blocker is maximum Dynamic Type layout on physical hardware;
-a focused correction is on this branch and awaits a **targeted** human retest
-(not a full A–G re-run of network/auth).
+items below) were recorded from human testing on **2026-08-10**. Human
+acceptance and merge are **not claimed**.
 
 | Surface | Status |
 | --- | --- |
 | Automated (unit / typecheck / lint / check:readonly) | See Final automated validation |
-| Local database (`npm run test:db` / `test:db:reset`) | No DB change on Dynamic Type / incomplete-submit / evidence packets |
+| Local database (`npm run test:db` / `test:db:reset`) | No DB schema change in cleanup / reverify packets |
 | Physical iPhone matrix A–G | **PASS** on SHA `1325198` (see provenance) |
-| VoiceOver | **DEFERRED BY HUMAN SCOPE DECISION** → Task 23 |
-| XXL / maximum Dynamic Type | **FAIL** on SHA `1325198`; correction on later tip; **targeted retest pending** |
-| Human acceptance / merge | **NOT CLAIMED / NOT AUTHORIZED** (PR #36 remains draft) |
+| Slider gestures (physical) | **PASS** on SHA `1325198` |
+| Product Detail normal text size (physical) | **PASS** on SHA `1325198` |
+| VoiceOver | **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27 |
+| XXL / maximum Dynamic Type | Physical **FAIL** (initial + post-fix retest); **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27 |
+| Web verification (agent) | See web packet section / final tip evidence |
+| iOS Simulator (agent, normal text size) | See simulator packet section / final tip evidence |
+| Human acceptance / merge | **NOT CLAIMED / NOT AUTHORIZED** (PR #36) |
 
 ## Branch and SHAs
 
-- Branch: `agent/task-17-my-rating-persistence` (PR #36, draft)
+- Branch: `agent/task-17-my-rating-persistence` (PR #36)
 - Prior delivered commit (kept intact): `8c3e648` — Implement Task 17 My Rating
   persistence and Rated Products
 - Rubric + offline reliability correction: `2c21317`
@@ -29,7 +31,11 @@ a focused correction is on this branch and awaits a **targeted** human retest
 - Auth zombie-session restore hardening: **`1325198`**
 - Incomplete-submit UI feedback (sticky footer + field errors): `2c4c7f2`
 - Incomplete-submit tip SHA bookkeeping: `09075af`
-- Maximum Dynamic Type layout correction: `a635251`
+- Maximum Dynamic Type layout attempt (did **not** resolve physical FAIL):
+  `a635251`
+- Dynamic Type attempt record / first accessibility deferral docs: `2ad4794`
+- Revert of `a635251` (cleanup; human deferred XXL work post-launch): see
+  branch tip history after `2ad4794`
 
 ### Physical evidence provenance (critical)
 
@@ -40,16 +46,21 @@ hierarchy** were performed on:
 1325198f19efb871e61badcf2065675bf283c5a1
 ```
 
-Do **not** attribute that matrix to `2c4c7f2`, `09075af`, or any later Dynamic
-Type fix SHA. Those later commits are incomplete-submit UI, evidence
-bookkeeping, and layout/a11y correction only.
+Do **not** attribute that full A–G matrix to `2c4c7f2`, `09075af`, `a635251`,
+the revert of `a635251`, or any later tip SHA. Later commits are incomplete-
+submit UI, evidence bookkeeping, a failed Dynamic Type layout attempt,
+revert, accessibility ownership cleanup, Expo dependency alignment, and
+agent web/simulator verification only.
 
 | Commit | Role |
 | --- | --- |
-| `1325198` | Physically tested Release build for A–G, sliders, Product Detail (normal size), XXL FAIL, VoiceOver not tested |
+| `1325198` | Physically tested Release build for full A–G, sliders, Product Detail (normal size), initial XXL FAIL, VoiceOver not tested |
 | `2c4c7f2` | Incomplete-submit sticky footer + field errors (after physical SHA) |
 | `09075af` | Evidence bookkeeping for incomplete-submit tip |
-| Later tip | Dynamic Type adaptive layouts; **targeted retest pending** |
+| `a635251` | Attempted maximum Dynamic Type adaptive-layout correction |
+| Post-`a635251` human retest | Targeted XXL retest only — **STILL FAIL** |
+| Revert of `a635251` | Removes failed XXL patch after human post-launch deferral |
+| Later tip | Docs ownership (Task 27), Expo SDK patch alignment, web + iOS simulator agent verification |
 
 ## Human physical test environment (2026-08-10)
 
@@ -59,7 +70,7 @@ bookkeeping, and layout/a11y correction only.
 | Device | iPhone 17 Pro Max |
 | OS | iOS 27 Beta 5 |
 | Build | Release physical-device build |
-| Git SHA physically tested | `1325198f19efb871e61badcf2065675bf283c5a1` |
+| Git SHA physically tested (full A–G) | `1325198f19efb871e61badcf2065675bf283c5a1` |
 | Backend | Local Supabase on Mac; phone via LAN / Mac-reachable local URL (not phone `localhost`) |
 | Scenario G wipe | Local Auth/database reset only; **staging and production untouched** |
 
@@ -146,20 +157,24 @@ Eazy/Community → Decision → offers → comparison → My Rating → descript
 Rate/Edit CTA. Offers ahead of long comparison. Early community presentation
 acceptable.
 
-### VoiceOver — **DEFERRED BY HUMAN SCOPE DECISION**
+### VoiceOver — **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH**
 
-VoiceOver was **not** tested. Human decision: defer deeper accessibility /
-VoiceOver verification to later release accessibility work (**Task 23**).
+VoiceOver was **not** tested. Human decision (updated): defer VoiceOver
+end-to-end verification and related extreme accessibility work until
+**after the initial product ships**, owned by **Task 27** (Post-Launch
+Operations). Task 23 may still own ordinary release reliability / device QA,
+but VoiceOver physical acceptance no longer blocks Task 17 or initial release
+acceptance for Tasks 23/26 after this scope decision.
 
 - Do **not** mark PASS
 - Do **not** mark FAIL
-- Do **not** treat as Task 17 merge blocker after this scope decision
+- Do **not** treat as a Task 17 merge blocker
 
-### XXL / maximum Dynamic Type — **FAIL** (physical, SHA `1325198`)
+### XXL / maximum Dynamic Type — chronological physical FAIL record
 
-Task 17 **blocker** for acceptance until targeted retest of the layout fix.
+#### Initial physical FAIL (SHA `1325198`)
 
-Device: iPhone 17 Pro Max, iOS 27 Beta 5, Release, SHA `1325198`.
+**FAIL** on iPhone 17 Pro Max, iOS 27 Beta 5, Release, SHA `1325198`.
 
 | Surface | Human observations |
 | --- | --- |
@@ -170,21 +185,35 @@ Device: iPhone 17 Pro Max, iOS 27 Beta 5, Release, SHA `1325198`.
 Not polish-only: content becomes unreadable or poorly usable at maximum Dynamic
 Type.
 
-#### Layout correction (post-physical SHA)
+#### Layout correction attempt (`a635251`)
 
-Focused adaptive layout work (component-level score caps where needed; no
-global `allowFontScaling={false}`):
+Commit `a635251` attempted adaptive layout correction (component-level score
+caps, stacking, content-growing cards; no global `allowFontScaling={false}`).
 
-- Score pairs stack at large font scale; chips use deliberate
-  `maxFontSizeMultiplier` on large score display only
-- Dimension steppers restack slider vs ±/Clear; min height touch targets
-- Product Detail comparison stacks at large scale; normal size keeps columns
-- Buttons allow vertical growth; chrome labels lightly capped
-- LoadingState `fill={false}` inside Account profile card
-- Rated Products / Browse use adaptive score stacking
+That attempt **did not** solve the physical-device failure.
 
-**Targeted human retest** (new tip, not full A–G network matrix): see bottom of
-this file.
+#### Second physical FAIL (targeted retest after `a635251`)
+
+Human targeted physical retest after `a635251`:
+
+| Item | Result |
+| --- | --- |
+| Maximum / XXL Dynamic Type | **STILL FAIL** |
+
+The adaptive-layout patch is **not** accepted as having passed. History must
+not be rewritten to imply the attempt succeeded.
+
+#### Human scope decision (post-second FAIL)
+
+Because UI continues to evolve before launch, further extreme Dynamic Type /
+VoiceOver hardening is **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** to
+**Task 27**. Commit `a635251` was **reverted** on the Task 17 branch so the
+failed XXL-specific complexity is not retained on the accepted-path UI.
+
+- Do **not** mark maximum Dynamic Type PASS
+- Do **not** treat XXL Dynamic Type as a Task 17 merge blocker after this decision
+- Do **not** claim the full A–G matrix re-ran on post-`1325198` tips
+- Historical FAIL (initial + second) remains documented
 
 ## Defects corrected (earlier packets; historical)
 
@@ -221,12 +250,14 @@ this file.
 - Fix (`2c4c7f2`): sticky footer summary plus per-field incomplete copy; no
   network write until all ten dimensions are set.
 
-### E — Maximum Dynamic Type clipping (physical FAIL → fix pending retest)
+### E — Maximum Dynamic Type clipping (physical FAIL → deferred post-launch)
 
-- Root cause: dense horizontal score/control rows and expanding Typography
-  inside half-width or fixed-height chrome at accessibility font scales.
-- Fix: adaptive stacking + deliberate score/chrome scale caps (see layout
-  correction). Physical retest required on new tip.
+- Observed: dense horizontal score/control rows and expanding Typography at
+  maximum accessibility font scales (initial physical FAIL on `1325198`).
+- Attempt: `a635251` adaptive stacking + deliberate score/chrome caps — **did
+  not pass** targeted physical retest (second FAIL).
+- Disposition: patch **reverted**; ownership moved to **Task 27** post-launch
+  accessibility hardening. Initial + second FAIL history retained.
 
 ## Companion Task 17 UX packets (same branch / PR #36)
 
@@ -262,32 +293,22 @@ this file.
 | `npm test` | PASS — 33 suites, 232 tests (pre-slider packet) |
 | `npm run test:db:reset` | PASS — pgTAP 479 tests; concurrency harness 2 scenarios |
 
-### Final automated validation (Dynamic Type packet)
+### Dynamic Type attempt era (historical; pre-revert)
 
-| Command | Result |
+| Command | Result (historical) |
 | --- | --- |
-| Focused Dynamic Type / surface suites | PASS (fontScale, ProductCard, DimensionStepperRow, RateAndDetail, Browse, Account, Product Detail) |
-| Full suite / typecheck / lint / check | Recorded at commit time |
+| Focused Dynamic Type / surface suites | PASS at `a635251` tip (later reverted) |
 
-## Targeted human retest checklist (post Dynamic Type fix SHA only)
-
-Unless the fix touches auth/network/data unexpectedly (it should not):
-
-1. Browse at largest Dynamic Type
-2. Product Detail at largest Dynamic Type
-3. Authenticated Rate/Edit at largest Dynamic Type
-4. Account / Rated Products at largest Dynamic Type
-5. Normal text-size Rate/Edit smoke
-6. Incomplete Save feedback (`2c4c7f2` behavior)
-7. One normal successful rating save
-8. Quick slider horizontal/vertical gesture regression
-
-**Do not** re-require full B/C/D/F/G matrix for this layout-only tip.
+Final cleanup validation is recorded on the final tip after revert,
+dependency alignment, and agent web/simulator verification.
 
 ## Explicit non-claims
 
 - Human acceptance / merge: **NOT CLAIMED / NOT AUTHORIZED**
 - Staging / production: **untouched**
-- VoiceOver: **not completed**; deferred to Task 23
+- VoiceOver: **not completed**; **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** (Task 27)
+- Maximum Dynamic Type: **physical FAIL (twice)**; fix attempt reverted; **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** (Task 27)
+- Full physical A–G matrix: belongs **only** to SHA `1325198` — not re-run on
+  the final tip
 - Offline write queue / optimistic rating: **not implemented**
 - Task 18: **not started**

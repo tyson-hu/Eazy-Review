@@ -15,7 +15,7 @@
 | --- | --- | --- |
 | iOS Simulator | `pass` | Eazy-Review-iPhone-15, iOS 26.5; 1179×2556 pixels at 3× = 393×852 logical points |
 | Mobile web | `blocked` | Existing Metro web route returned 500; isolated Metro start hit host `EMFILE`. A 393×852 static-export adjunct was captured and is not counted as the canonical live-Metro result. |
-| Physical device | `pass` (normal text size, 2026-08-10) | iPhone 17 Pro Max, iOS 27 Beta 5, Release build, SHA `1325198`. Hierarchy and readability PASS at the main verification text size. Maximum Dynamic Type on other surfaces failed the same day (see Task 17 main evidence); layout correction retest is separate. |
+| Physical device | `pass` (normal text size, 2026-08-10) | iPhone 17 Pro Max, iOS 27 Beta 5, Release build, SHA `1325198`. Hierarchy and readability PASS at the main verification text size. Maximum Dynamic Type failed on physical hardware the same day and again after fix attempt `a635251`; deferred post-launch to Task 27 (see Task 17 main evidence). |
 
 ## Step results
 
@@ -71,9 +71,9 @@ remain non-sensitive local working-tree files under `screenshots/`.
   offline, error, and unrated branches are covered by automated tests rather
   than this screenshot set.
 - No physical keyboard, performance, or VoiceOver claim is made. VoiceOver is
-  **DEFERRED BY HUMAN SCOPE DECISION** to Task 23 (2026-08-10).
+  **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** to Task 27 (2026-08-10).
 - Physical Product Detail at normal size: **PASS** on SHA `1325198`
-  (2026-08-10). Full matrix and XXL notes live in
+  (2026-08-10). Full matrix and XXL FAIL history live in
   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](../task-17-my-rating-persistence/RESULT.md).
 
 ## Automated checks

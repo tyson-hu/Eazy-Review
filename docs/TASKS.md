@@ -25,9 +25,11 @@
   [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 - Task 17 (My Rating persistence and Rated Products) is **In progress —
   explicitly authorized.** Physical A–G matrix PASS on SHA `1325198`
-  (2026-08-10); VoiceOver deferred to Task 23; maximum Dynamic Type FAIL with
-  layout fix awaiting targeted retest. Human acceptance and merge are not
-  claimed.
+  (2026-08-10). VoiceOver and maximum Dynamic Type are **DEFERRED BY HUMAN
+  SCOPE DECISION — POST-LAUNCH** to Task 27 (Dynamic Type failed on physical
+  hardware twice, including after fix attempt `a635251`, which was then
+  reverted). Agent web + iOS simulator normal-text verification pending final
+  tip record. Human acceptance and merge are not claimed.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -573,9 +575,10 @@ Detail at normal text size: **PASS** on SHA `1325198` (2026-08-10). See
 
 Local rating-slider gesture evidence (2026-08-09): automated gates `pass`.
 Physical slider gestures: **PASS** on SHA `1325198` (2026-08-10). VoiceOver:
-**DEFERRED BY HUMAN SCOPE DECISION** to Task 23. XXL Dynamic Type: physical
-**FAIL** on SHA `1325198`; adaptive layout correction on branch tip awaits
-targeted retest. See
+**DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27. XXL Dynamic Type:
+physical **FAIL** on SHA `1325198`; second targeted FAIL after `a635251`;
+attempt reverted; **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** →
+Task 27. See
 [`docs/evidence/task-17-rating-slider-gesture/RESULT.md`](evidence/task-17-rating-slider-gesture/RESULT.md)
 and
 [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
@@ -591,11 +594,11 @@ SHA **`1325198` only** for full A–G):
 | F–G | PASS |
 | Slider gestures | PASS |
 | Product Detail (normal size) | PASS |
-| VoiceOver | DEFERRED → Task 23 |
-| XXL Dynamic Type | FAIL (blocker; fix retest pending on later tip) |
+| VoiceOver | DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH → Task 27 |
+| XXL Dynamic Type | FAIL (twice; deferred post-launch → Task 27; not a Task 17 blocker) |
 
-Later commits `2c4c7f2` / `09075af` are incomplete-submit UI and bookkeeping —
-do not reattribute the full physical matrix to them.
+Later commits (`2c4c7f2`, `09075af`, failed XXL attempt `a635251` + revert,
+docs/Expo/web/simulator cleanup) are **not** the physical A–G provenance SHA.
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products
 with honest comparable scores and resilient connected save UX.
@@ -671,14 +674,13 @@ Acceptance:
   horizontal activation does not lose the active slider.
 - Slider drags never dismiss Rate/Edit; the iOS leading-edge Back gesture still
   works outside slider interaction.
-- XXL / maximum Dynamic Type: Browse product cards, Rate/Edit controls and
-  sticky footer, Account cards, and Product Detail remain readable and operable
-  via adaptive stacking (not by globally disabling font scaling). Score display
-  and compact chrome may use deliberate component-level
-  `maxFontSizeMultiplier` caps per `docs/DESIGN.md`.
-- VoiceOver half-step adjustment is owned by **Task 23** (human-deferred from
-  Task 17 on 2026-08-10) and is not a Task 17 merge blocker after that scope
-  decision.
+- Normal system text size remains the Task 17 layout acceptance bar for
+  Browse, Product Detail, Rate/Edit, Account, and Rated Products. Maximum /
+  XXL Dynamic Type and VoiceOver end-to-end acceptance were physically
+  failed or not completed during Task 17 and are **DEFERRED BY HUMAN SCOPE
+  DECISION — POST-LAUNCH** to **Task 27** (not Task 17 merge blockers after
+  that decision). Design may still prefer adaptive layout when practical;
+  extreme accessibility hardening is not required to close Task 17.
 - Community derivation mirrors Eazy; methodology mismatch is not silently
   aggregated.
 - Product Detail keeps verified offer price, seller, size, currency, and
@@ -942,8 +944,8 @@ device QA.
 
 Parallel-safe with: None.
 
-Human gate: Physical-device, accessibility, and platform acceptance require
-recorded human evidence.
+Human gate: Physical-device, ordinary release accessibility checks that remain
+in this task's scope, and platform acceptance require recorded human evidence.
 
 Goal: prepare a stable release candidate without adding a telemetry or
 animation program.
@@ -952,10 +954,9 @@ Deliverables:
 
 - One clear retry policy across Supabase and TanStack Query.
 - Offline/reconnect states and root error recovery.
-- VoiceOver labels, logical reading order, Dynamic Type regression at
-  accessibility content sizes (including Rate/Edit half-step VoiceOver
-  adjustment deferred from Task 17 by human scope decision on 2026-08-10),
-  and touch-target checks.
+- Ordinary release accessibility/device QA on **normal and common text sizes**
+  (readable labels where already implemented, basic touch-target comfort, light
+  smoke for large-but-not-maximum content sizes when practical).
 - Loading and disabled-submit behavior.
 - Small-screen keyboard/scrolling validation.
 - Real iPhone validation plus one Android compatibility smoke.
@@ -966,6 +967,12 @@ Non-goals:
 
 - No persistent offline cache, elaborate telemetry platform, or animation
   system.
+- Full VoiceOver end-to-end verification, Rate/Edit half-step VoiceOver
+  interaction, logical reading-order audit at extreme accessibility sizes,
+  maximum / XXL Dynamic Type acceptance, and an accessibility-size regression
+  matrix are **not** Task 23 release blockers. Those were deferred by human
+  scope decision to **Task 27** post-launch hardening after Task 17 physical
+  evidence (2026-08-10).
 
 ## Task 24: Privacy, Legal, And Store Disclosures
 
@@ -1091,7 +1098,12 @@ Acceptance:
   external deletion-request URL and complete the Google Play Data Safety
   deletion declarations at the Android submission boundary.
 - Production variables, schema, and grants match the approved release plan.
-- Known limitations and rollback decision are written.
+- Known limitations and rollback decision are written. Known
+  **initial-release limitations** (must not be claimed complete in App Store
+  evidence):
+  - Full VoiceOver verification deferred to Task 27 post-launch.
+  - Maximum / XXL Dynamic Type not supported/accepted at accessibility extremes
+    (physical FAIL recorded in Task 17; deferred to Task 27).
 - A human chooses staged/manual release and completes App Review submission.
 
 Boundaries:
@@ -1132,6 +1144,19 @@ Deliverables:
   rollback decision, root cause, and durable correction.
 - Add Sentry only when built-in logs and beta/production evidence justify the
   SDK and disclosure cost.
+- **Post-launch accessibility hardening** (bounded; not a large redesign until
+  the shipped UI stabilizes), owned here after human scope decision on
+  2026-08-10:
+  - VoiceOver end-to-end verification
+  - Logical reading-order audit where still needed
+  - Maximum Dynamic Type / accessibility content-size layouts
+  - Rate/Edit half-step VoiceOver interaction
+  - Accessibility-size regression matrix
+  - Touch-target / accessibility QA at extremes
+  - Fixes based on the stabilized post-launch UI
+
+Do not expand this into an unbounded accessibility redesign project without a
+separate scoped plan.
 
 ## Task 28: Catalog Import And Admin Pipeline
 

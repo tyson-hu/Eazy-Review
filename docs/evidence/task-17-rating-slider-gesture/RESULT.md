@@ -84,12 +84,12 @@ The following acceptance rows remain unclaimed:
   `text` such as `7 of 10` / `not rated`), label, and half-step actions:
   **pass**.
 - VoiceOver announcement and adjustment on the native control:
-  **DEFERRED BY HUMAN SCOPE DECISION** (not tested on physical device; owned
-  by Task 23 release accessibility work — not a Task 17 merge blocker after
-  the 2026-08-10 scope decision).
+  **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** (not tested on physical
+  device; owned by Task 27 — not a Task 17 merge blocker after the 2026-08-10
+  scope decision).
 - XXL Dynamic Type on the authenticated Rate/Edit form: physical **FAIL** on
-  SHA `1325198` (see parent Task 17 evidence); adaptive layout fix is a
-  separate later tip requiring **targeted** human retest.
+  SHA `1325198`; second FAIL after attempt `a635251`; attempt reverted;
+  **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27.
 - Minus, plus, and Clear keep ≥44-point control heights (`min-h-11`) in
   component tests: **pass**.
 

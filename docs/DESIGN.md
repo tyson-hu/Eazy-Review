@@ -242,14 +242,17 @@ Typography:
 - Avoid marketing copy in core app surfaces.
 - Avoid decorative fonts and overly playful typography.
 - Use `Eazy Score`, `Community Score`, and `My Rating` exactly.
-- Respect system Dynamic Type. Prefer adaptive layout (vertical stacking,
-  content-driven card height, scroll) over dense fixed rows at large content
-  sizes. Do **not** disable `allowFontScaling` globally.
-- Deliberate **component-level** `maxFontSizeMultiplier` is allowed only for
+- Respect system Dynamic Type when practical. Prefer adaptive layout (vertical
+  stacking, content-driven card height, scroll) over dense fixed rows as the
+  UI is hardened. Do **not** disable `allowFontScaling` globally.
+- Deliberate **component-level** `maxFontSizeMultiplier` may be used only for
   large score displays and compact UI chrome (stepper symbols, primary button
-  labels) so maximum accessibility sizes stay operable. Body, captions, and
-  product identity keep full system scaling unless a later accessibility task
-  revisits the caps.
+  labels) when a measured layout defect requires it. Body, captions, and
+  product identity keep full system scaling unless a later accessibility
+  task revisits the caps.
+- Maximum / XXL Dynamic Type acceptance and full VoiceOver verification are
+  **post-launch** (Task 27) after the 2026-08-10 human scope decision.
+  Initial-release QA still targets normal text size and ordinary readability.
 
 Card style:
 - White background.
@@ -258,8 +261,11 @@ Card style:
 - Rounded at 18px (utility card), not childish.
 - Internal padding ~24px; clear spacing between stacked content.
 - Consistent image area.
-- Product cards and Account cards grow with content; fixed card heights that
-  clip text at large Dynamic Type are not allowed.
+- Product cards and Account cards grow with content where the current design
+  already allows it. Fixed heights that clip identity text at normal sizes are
+  defects. Extreme accessibility content-size clipping is a known
+  initial-release limitation tracked under Task 27, not a Task 17 acceptance
+  reset.
 
 Interaction:
 - All button press feedback: `scale(0.95)` (also applied to tappable product cards). Action inputs do not use press scale.

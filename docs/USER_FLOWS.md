@@ -297,14 +297,16 @@ Interaction:
 - Slider interaction never dismisses Rate/Edit. Standard leading-edge Back
   remains available on iOS.
 - VoiceOver announces the dimension and value and can increment or decrement
-  in half steps (Task 23 release accessibility ownership; deferred from Task 17
-  by human scope decision on 2026-08-10 — not a Task 17 merge blocker).
+  in half steps (post-launch accessibility ownership under Task 27; deferred
+  from Task 17 by human scope decision on 2026-08-10 — not a Task 17 merge
+  blocker and not an initial-release Task 23/26 blocker).
 - Save with unanswered categories: no network write; sticky footer reports how
   many categories still need a score; each unanswered row shows an inline error
   that clears when that category is set.
-- At maximum Dynamic Type, Rate/Edit keeps dimension labels, values, slider,
-  ±/Clear, private note, My Rating preview, and Save footer readable and
-  operable via adaptive stacking (Task 17 layout contract).
+- At maximum Dynamic Type, Rate/Edit should keep dimension labels, values,
+  slider, ±/Clear, private note, My Rating preview, and Save footer readable
+  and operable (Task 27 post-launch accessibility hardening; Task 17 recorded
+  physical FAIL and deferred this work — not a Task 17 merge blocker).
 
 ### Task 9 mock behavior
 

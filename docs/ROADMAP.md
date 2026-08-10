@@ -21,12 +21,13 @@ Task detail, dependencies, acceptance, and current status live in
   Rated Products.
 - Task 17: **In progress — explicitly authorized.** Physical matrix A–G, slider
   gestures, and normal Product Detail **PASS** on SHA `1325198` (2026-08-10).
-  VoiceOver is **human-deferred** to Task 23. Maximum Dynamic Type **FAIL** on
-  that SHA; adaptive layout fix on the branch tip requires targeted retest.
-  Human acceptance and merge are not claimed. Excluded identity features
-  (social login, passkeys/MFA, editable/public profile, global session
-  revocation, secure native session storage revisit) are deferred — not part of
-  Tasks 16–19 unless separately promoted.
+  VoiceOver and maximum Dynamic Type are **DEFERRED BY HUMAN SCOPE DECISION —
+  POST-LAUNCH** to Task 27 (Dynamic Type failed twice on physical hardware;
+  failed fix attempt `a635251` was reverted). Human acceptance and merge are
+  not claimed. Excluded identity features (social login, passkeys/MFA,
+  editable/public profile, global session revocation, secure native session
+  storage revisit) are deferred — not part of Tasks 16–19 unless separately
+  promoted.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
@@ -65,7 +66,8 @@ dependencies and parallel-safety live only in `docs/TASKS.md`.
 must become useful or be removed. Connected work adds focused tests as it
 lands, while Task 22 closes cross-feature gaps, adds a deliberately triggered
 E2E smoke, and optimizes the already-present CI lanes. Task 23 owns release
-reliability, accessibility, and device QA.
+reliability, ordinary device QA, and non-extreme accessibility smoke. Full
+VoiceOver and maximum Dynamic Type hardening are post-launch (Task 27).
 
 Task 21 must replace or remove the primary Feed placeholder before beta. Task
 20 does not start merely because Filter/Sort existed in the mock design.

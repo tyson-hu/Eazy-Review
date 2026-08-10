@@ -50,7 +50,11 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 - Touch targets are comfortable.
 - Navigation back behavior is predictable.
 - Keyboard does not block rating inputs or the Private note field.
-- VoiceOver labels/reading order and Dynamic Type behavior are verified.
+- Ordinary label/readability smoke at normal text size for release surfaces.
+  Full VoiceOver end-to-end verification and maximum / XXL Dynamic Type
+  acceptance are **known initial-release limitations** deferred to Task 27
+  post-launch (see Task 26 known limitations). Do not claim those advanced
+  checks passed if they were not completed.
 - Light-only appearance is explicit and no unreviewed dark-mode surface ships.
 - iPad support remains disabled unless an iPad QA matrix is completed.
 - Release candidate passes on a real iPhone plus one Android smoke device.
