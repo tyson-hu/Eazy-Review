@@ -9,7 +9,6 @@ import { ErrorState } from '@/src/components/ui/ErrorState';
 import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
-import { ScoreBadgePair } from '@/src/components/ui/ScoreBadgePair';
 import { Screen } from '@/src/components/ui/Screen';
 import { useAuth } from '@/src/features/auth/hooks';
 import { productDetailReturnPath } from '@/src/features/auth/returnPath';
@@ -19,7 +18,6 @@ import { useProductQuery } from '@/src/features/products/queries';
 import { RATING_DIMENSIONS } from '@/src/features/ratings/dimensions';
 import { useUserRatingQuery } from '@/src/features/ratings/queries';
 import { formatDimensionScore10 } from '@/src/features/ratings/score';
-import { useIsLargeContentSize } from '@/src/lib/accessibility/fontScale';
 import { getScoreLabel } from '@/src/lib/constants';
 import type {
   ProductRatingSummary,
@@ -160,7 +158,6 @@ export default function ProductDetailScreen() {
   const productQuery = useProductQuery(productId);
   // My Rating is owner-scoped; never stored under public catalog keys.
   const myRatingQuery = useUserRatingQuery(productId);
-  const largeContent = useIsLargeContentSize();
   const hasData = productQuery.data !== undefined;
   const retry = () => {
     void productQuery.refetch();
@@ -357,30 +354,26 @@ export default function ProductDetailScreen() {
         ) : null}
       </View>
 
-      <ScoreBadgePair
-        testID="product-detail-score-overview"
-        className="mt-5"
-        eazy={
-          <ScoreBadge
-            label="Eazy Score"
-            score100={eazyAssessment?.score100 ?? null}
-            emptyLabel="Not assessed yet"
-            sourceLabel="Editorial assessment"
-          />
-        }
-        community={
-          <ScoreBadge
-            label="Community Score"
-            score100={ratingSummary.communityScore}
-            emptyLabel={
-              ratingSummary.ratingCount === 0
-                ? 'No ratings yet'
-                : 'No score yet'
-            }
-            sourceLabel={communityRatingContext(ratingSummary.ratingCount)}
-          />
-        }
-      />
+      <View className="mt-5 flex-row gap-5">
+        <ScoreBadge
+          label="Eazy Score"
+          score100={eazyAssessment?.score100 ?? null}
+          emptyLabel="Not assessed yet"
+          sourceLabel="Editorial assessment"
+          className="flex-1"
+        />
+        <ScoreBadge
+          label="Community Score"
+          score100={ratingSummary.communityScore}
+          emptyLabel={
+            ratingSummary.ratingCount === 0
+              ? 'No ratings yet'
+              : 'No score yet'
+          }
+          sourceLabel={communityRatingContext(ratingSummary.ratingCount)}
+          className="flex-1"
+        />
+      </View>
 
       <Card testID="product-detail-section-decision" className="mt-5">
         <AppText variant="label">Decision summary</AppText>
@@ -470,21 +463,19 @@ export default function ProductDetailScreen() {
               Both scores use the same 10 dimensions, scored from 0 to 10.
             </AppText>
             <View className="mt-4">
-              {largeContent ? null : (
-                <View className="mb-2 flex-row items-center">
-                  <AppText variant="caption" className="min-w-0 flex-1">
-                    Dimension
+              <View className="mb-2 flex-row items-center">
+                <AppText variant="caption" className="flex-1">
+                  Dimension
+                </AppText>
+                <View className="ml-4 flex-row gap-5">
+                  <AppText variant="caption" className="w-12 text-right">
+                    Eazy
                   </AppText>
-                  <View className="ml-4 flex-row gap-5">
-                    <AppText variant="caption" className="w-12 text-right">
-                      Eazy
-                    </AppText>
-                    <AppText variant="caption" className="w-20 text-right">
-                      Community
-                    </AppText>
-                  </View>
+                  <AppText variant="caption" className="w-20 text-right">
+                    Community
+                  </AppText>
                 </View>
-              )}
+              </View>
               {RATING_DIMENSIONS.map((dim) => {
                 const eazy =
                   eazyAssessment?.dimensions?.[dim.key] ?? null;
@@ -499,33 +490,18 @@ export default function ProductDetailScreen() {
                       eazy,
                       community,
                     )}
-                    className={`border-t border-border py-2 ${
-                      largeContent ? 'gap-1' : 'flex-row items-center'
-                    }`}>
-                    <AppText
-                      variant="body"
-                      className={largeContent ? undefined : 'min-w-0 flex-1'}>
+                    className="flex-row items-center border-t border-border py-2">
+                    <AppText variant="body" className="flex-1">
                       {dim.label}
                     </AppText>
-                    {largeContent ? (
-                      <View className="flex-row flex-wrap gap-x-5 gap-y-1">
-                        <AppText variant="caption">
-                          Eazy {formatDimensionScore10(eazy)}/10
-                        </AppText>
-                        <AppText variant="caption">
-                          Community {formatDimensionScore10(community)}/10
-                        </AppText>
-                      </View>
-                    ) : (
-                      <View className="ml-4 flex-row gap-5">
-                        <AppText variant="caption" className="w-12 text-right">
-                          {formatDimensionScore10(eazy)}
-                        </AppText>
-                        <AppText variant="caption" className="w-20 text-right">
-                          {formatDimensionScore10(community)}
-                        </AppText>
-                      </View>
-                    )}
+                    <View className="ml-4 flex-row gap-5">
+                      <AppText variant="caption" className="w-12 text-right">
+                        {formatDimensionScore10(eazy)}
+                      </AppText>
+                      <AppText variant="caption" className="w-20 text-right">
+                        {formatDimensionScore10(community)}
+                      </AppText>
+                    </View>
                   </View>
                 );
               })}

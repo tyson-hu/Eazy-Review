@@ -1,7 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 
 import { DimensionStepperRow } from '@/src/components/ui/DimensionStepperRow';
-import { useIsLargeContentSize } from '@/src/lib/accessibility/fontScale';
 
 jest.mock('@react-native-community/slider', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- Jest mock factory
@@ -9,23 +8,7 @@ jest.mock('@react-native-community/slider', () => {
   return { __esModule: true, default: View };
 });
 
-jest.mock('@/src/lib/accessibility/fontScale', () => {
-  const actual = jest.requireActual<
-    typeof import('@/src/lib/accessibility/fontScale')
-  >('@/src/lib/accessibility/fontScale');
-  return {
-    ...actual,
-    useIsLargeContentSize: jest.fn(() => false),
-  };
-});
-
-const mockUseIsLargeContentSize = jest.mocked(useIsLargeContentSize);
-
 describe('DimensionStepperRow', () => {
-  beforeEach(() => {
-    mockUseIsLargeContentSize.mockReturnValue(false);
-  });
-
   it('configures 0–10 half steps without turning unanswered into zero', async () => {
     const onChange = jest.fn();
     const rendered = await render(
@@ -114,9 +97,9 @@ describe('DimensionStepperRow', () => {
     const increment = rendered.getByTestId('dim-inc');
     const decrement = rendered.getByTestId('dim-dec');
     const clear = rendered.getByTestId('dim-clear');
-    expect(increment.props.className).toContain('min-h-11');
-    expect(decrement.props.className).toContain('min-h-11');
-    expect(clear.props.className).toContain('min-h-11');
+    expect(increment.props.className).toContain('h-11');
+    expect(decrement.props.className).toContain('h-11');
+    expect(clear.props.className).toContain('h-11');
 
     await act(async () => {
       fireEvent.press(increment);
@@ -132,29 +115,5 @@ describe('DimensionStepperRow', () => {
       fireEvent.press(clear);
     });
     expect(onChange).toHaveBeenLastCalledWith(null);
-  });
-
-  it('restacks controls when Dynamic Type is large', async () => {
-    mockUseIsLargeContentSize.mockReturnValue(true);
-
-    const rendered = await render(
-      <DimensionStepperRow
-        label="Appearance"
-        description="How it looks on foot and in photos"
-        value={7}
-        onChange={jest.fn()}
-        testID="dim"
-      />,
-    );
-
-    expect(rendered.getByText('Appearance')).toBeTruthy();
-    expect(
-      rendered.getByText('How it looks on foot and in photos'),
-    ).toBeTruthy();
-    expect(rendered.getByTestId('dim-value').props.children).toBe('7');
-    expect(rendered.getByTestId('dim-slider')).toBeTruthy();
-    expect(rendered.getByTestId('dim-dec')).toBeTruthy();
-    expect(rendered.getByTestId('dim-inc')).toBeTruthy();
-    expect(rendered.getByTestId('dim-clear')).toBeTruthy();
   });
 });

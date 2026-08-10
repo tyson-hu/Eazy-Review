@@ -2,7 +2,6 @@ import type { PressableProps } from 'react-native';
 import { ActivityIndicator, Pressable } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
-import { UI_CHROME_MAX_FONT_SIZE_MULTIPLIER } from '@/src/lib/accessibility/fontScale';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
@@ -40,7 +39,7 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       disabled={isDisabled}
-      className={`min-h-12 items-center justify-center rounded-button px-5 py-3 ${variantClasses[variant]} ${
+      className={`min-h-12 items-center justify-center rounded-button px-5 ${variantClasses[variant]} ${
         isDisabled ? 'opacity-50' : ''
       } ${className ?? ''}`}
       style={(state) => [
@@ -51,11 +50,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? '#ffffff' : '#0066cc'} />
       ) : (
-        <AppText
-          maxFontSizeMultiplier={UI_CHROME_MAX_FONT_SIZE_MULTIPLIER}
-          className={`text-center font-normal ${labelClasses[variant]}`}>
-          {label}
-        </AppText>
+        <AppText className={`font-normal ${labelClasses[variant]}`}>{label}</AppText>
       )}
     </Pressable>
   );
