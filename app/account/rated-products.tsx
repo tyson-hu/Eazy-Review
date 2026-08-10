@@ -7,11 +7,13 @@ import { ErrorState } from '@/src/components/ui/ErrorState';
 import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
+import { ScoreBadgePair } from '@/src/components/ui/ScoreBadgePair';
 import { Screen } from '@/src/components/ui/Screen';
 import { useAuth } from '@/src/features/auth/hooks';
 import { getRatingErrorMessage } from '@/src/features/ratings/errors';
 import { useUserRatedProductsQuery } from '@/src/features/ratings/queries';
 import type { RatedProductItem } from '@/src/features/ratings/types';
+import { useIsLargeContentSize } from '@/src/lib/accessibility/fontScale';
 
 function RatedProductRow({
   item,
@@ -20,7 +22,29 @@ function RatedProductRow({
   item: RatedProductItem;
   onPress: () => void;
 }) {
+  const largeContent = useIsLargeContentSize();
   const imageSource = item.imageUrl ? { uri: item.imageUrl } : undefined;
+  const scores = (
+    <ScoreBadgePair
+      className="mt-3"
+      eazy={
+        <ScoreBadge
+          label="My Rating"
+          score100={item.myScore100}
+          emptyLabel="No score"
+        />
+      }
+      community={
+        <ScoreBadge
+          label="Community Score"
+          score100={item.communityScore}
+          emptyLabel={
+            item.ratingCount === 0 ? 'No ratings yet' : 'No score yet'
+          }
+        />
+      }
+    />
+  );
 
   return (
     <Pressable
@@ -30,48 +54,63 @@ function RatedProductRow({
       onPress={onPress}
       className="rounded-card border border-border bg-card p-5"
       style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
-      <View className="flex-row gap-4">
-        <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-card bg-background">
-          {imageSource ? (
-            <Image
-              source={imageSource}
-              resizeMode="contain"
-              style={{ width: '100%', height: '100%' }}
-              accessible={false}
-              accessibilityIgnoresInvertColors
-            />
-          ) : (
-            <AppText variant="caption">No image</AppText>
-          )}
-        </View>
-        <View className="min-w-0 flex-1">
-          <AppText variant="label">{item.brand}</AppText>
-          <AppText variant="subtitle" className="mt-1">
-            {item.name}
-          </AppText>
-          {item.sku ? (
-            <AppText variant="caption" className="mt-1">
-              {item.sku}
+      {largeContent ? (
+        <View className="gap-3">
+          <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-card bg-background">
+            {imageSource ? (
+              <Image
+                source={imageSource}
+                resizeMode="contain"
+                style={{ width: '100%', height: '100%' }}
+                accessible={false}
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <AppText variant="caption">No image</AppText>
+            )}
+          </View>
+          <View>
+            <AppText variant="label">{item.brand}</AppText>
+            <AppText variant="subtitle" className="mt-1">
+              {item.name}
             </AppText>
-          ) : null}
-          <View className="mt-3 flex-row gap-3">
-            <ScoreBadge
-              label="My Rating"
-              score100={item.myScore100}
-              emptyLabel="No score"
-              className="flex-1"
-            />
-            <ScoreBadge
-              label="Community Score"
-              score100={item.communityScore}
-              emptyLabel={
-                item.ratingCount === 0 ? 'No ratings yet' : 'No score yet'
-              }
-              className="flex-1"
-            />
+            {item.sku ? (
+              <AppText variant="caption" className="mt-1">
+                {item.sku}
+              </AppText>
+            ) : null}
+            {scores}
           </View>
         </View>
-      </View>
+      ) : (
+        <View className="flex-row gap-4">
+          <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-card bg-background">
+            {imageSource ? (
+              <Image
+                source={imageSource}
+                resizeMode="contain"
+                style={{ width: '100%', height: '100%' }}
+                accessible={false}
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <AppText variant="caption">No image</AppText>
+            )}
+          </View>
+          <View className="min-w-0 flex-1">
+            <AppText variant="label">{item.brand}</AppText>
+            <AppText variant="subtitle" className="mt-1">
+              {item.name}
+            </AppText>
+            {item.sku ? (
+              <AppText variant="caption" className="mt-1">
+                {item.sku}
+              </AppText>
+            ) : null}
+            {scores}
+          </View>
+        </View>
+      )}
     </Pressable>
   );
 }

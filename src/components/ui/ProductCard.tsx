@@ -2,6 +2,7 @@ import { Image, Platform, Pressable, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
+import { ScoreBadgePair } from '@/src/components/ui/ScoreBadgePair';
 import type { ProductCardData } from '@/src/types/product';
 import { formatPrice } from '@/src/utils/formatPrice';
 import { formatVerifiedDate } from '@/src/utils/formatVerifiedDate';
@@ -64,21 +65,27 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
         </AppText>
       ) : null}
 
-      <View className="mt-5 flex-row gap-5">
-        <ScoreBadge
-          label="Eazy Score"
-          score100={product.eazyScore}
-          emptyLabel="Not assessed yet"
-          sourceLabel="Editorial assessment"
-          className="flex-1"
-        />
-        <ScoreBadge
-          label="Community Score"
-          score100={product.communityScore}
-          emptyLabel={product.ratingCount === 0 ? 'No ratings yet' : 'No score yet'}
-          className="flex-1"
-        />
-      </View>
+      <ScoreBadgePair
+        testID={`product-scores-${product.id}`}
+        className="mt-5"
+        eazy={
+          <ScoreBadge
+            label="Eazy Score"
+            score100={product.eazyScore}
+            emptyLabel="Not assessed yet"
+            sourceLabel="Editorial assessment"
+          />
+        }
+        community={
+          <ScoreBadge
+            label="Community Score"
+            score100={product.communityScore}
+            emptyLabel={
+              product.ratingCount === 0 ? 'No ratings yet' : 'No score yet'
+            }
+          />
+        }
+      />
 
       <View className="mt-5">
         <AppText variant="label">Lowest verified offer</AppText>

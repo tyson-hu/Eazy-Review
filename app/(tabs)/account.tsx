@@ -163,7 +163,7 @@ export default function AccountScreen() {
 
       {profileQuery.isPending && !profileQuery.data ? (
         <Card className="mt-6">
-          <LoadingState message="Loading profile..." />
+          <LoadingState fill={false} message="Loading profile..." />
         </Card>
       ) : null}
 

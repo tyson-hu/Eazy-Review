@@ -37,6 +37,7 @@ import {
 } from '@/src/features/ratings/score';
 import { assertCompleteDimensions } from '@/src/features/ratings/validation';
 import { useProductQuery } from '@/src/features/products/queries';
+import { SCORE_DISPLAY_MAX_FONT_SIZE_MULTIPLIER } from '@/src/lib/accessibility/fontScale';
 
 function dimensionsFromRating(rating: MyRating): PartialRatingDimensions {
   return {
@@ -242,7 +243,7 @@ function RateForm({
       }>
       <RateStackScreen title={title} />
 
-      <View className="mt-2">
+      <View className="mt-2 pb-2">
         {productName ? (
           <AppText variant="subtitle" testID="rate-product-name">
             {productName}
@@ -258,7 +259,9 @@ function RateForm({
         testID="rate-my-rating-preview"
         className="mt-5 rounded-card border border-border bg-card px-4 py-3">
         <AppText variant="label">My Rating</AppText>
-        <AppText className="mt-1 text-2xl font-semibold text-primary">
+        <AppText
+          maxFontSizeMultiplier={SCORE_DISPLAY_MAX_FONT_SIZE_MULTIPLIER}
+          className="mt-1 text-2xl font-semibold text-primary">
           {score100 == null ? '— / 100' : `${score100} / 100`}
         </AppText>
         <AppText variant="caption" className="mt-1">
