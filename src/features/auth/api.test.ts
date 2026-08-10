@@ -12,6 +12,7 @@ function mockClient(auth: {
   signUp?: jest.Mock;
   signOut?: jest.Mock;
   getSession?: jest.Mock;
+  getUser?: jest.Mock;
 }): AppSupabaseClient {
   return {
     auth: {
@@ -22,6 +23,9 @@ function mockClient(auth: {
       getSession:
         auth.getSession ??
         jest.fn(async () => ({ data: { session: null }, error: null })),
+      getUser:
+        auth.getUser ??
+        jest.fn(async () => ({ data: { user: null }, error: null })),
     },
   } as unknown as AppSupabaseClient;
 }
@@ -140,22 +144,260 @@ describe('auth api', () => {
 
     await signOut({ client });
     expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
-    await expect(restoreSession({ client })).resolves.toBeNull();
+    await expect(
+      restoreSession({ client, isOnline: () => true }),
+    ).resolves.toBeNull();
   });
 
-  it('restores a persisted session user', async () => {
-    const client = mockClient({
-      getSession: jest.fn(async () => ({
-        data: {
-          session: { user: { id: 'restored', email: 'r@example.com' } },
-        },
-        error: null,
-      })),
+  describe('restoreSession', () => {
+    const localSession = {
+      user: { id: 'restored', email: 'r@example.com' },
+    };
+
+    it('A: returns null when no stored session', async () => {
+      const getUser = jest.fn();
+      const client = mockClient({
+        getSession: jest.fn(async () => ({
+          data: { session: null },
+          error: null,
+        })),
+        getUser,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toBeNull();
+      expect(getUser).not.toHaveBeenCalled();
     });
 
-    await expect(restoreSession({ client })).resolves.toEqual({
-      id: 'restored',
-      email: 'r@example.com',
+    it('B: validates online with getUser and returns the server-backed user', async () => {
+      const getUser = jest.fn(async () => ({
+        data: { user: { id: 'restored', email: 'r@example.com' } },
+        error: null,
+      }));
+      const signOutMock = jest.fn();
+      const client = mockClient({
+        getSession: jest.fn(async () => ({
+          data: { session: localSession },
+          error: null,
+        })),
+        getUser,
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toEqual({
+        id: 'restored',
+        email: 'r@example.com',
+      });
+      expect(getUser).toHaveBeenCalledTimes(1);
+      expect(signOutMock).not.toHaveBeenCalled();
+    });
+
+    it('C: clears a zombie local session when getUser definitively rejects it', async () => {
+      const signOutMock = jest.fn(async () => ({ error: null }));
+      const client = mockClient({
+        getSession: jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: { session: localSession },
+            error: null,
+          })
+          .mockResolvedValueOnce({
+            data: { session: localSession },
+            error: null,
+          }),
+        getUser: jest.fn(async () => ({
+          data: { user: null },
+          error: {
+            name: 'AuthApiError',
+            message: 'User from sub claim in JWT does not exist',
+            status: 403,
+            code: 'user_not_found',
+          },
+        })),
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toBeNull();
+      expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
+    });
+
+    it('D: preserves local session when offline without calling getUser', async () => {
+      const getUser = jest.fn();
+      const signOutMock = jest.fn();
+      const client = mockClient({
+        getSession: jest.fn(async () => ({
+          data: { session: localSession },
+          error: null,
+        })),
+        getUser,
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => false }),
+      ).resolves.toEqual({
+        id: 'restored',
+        email: 'r@example.com',
+      });
+      expect(getUser).not.toHaveBeenCalled();
+      expect(signOutMock).not.toHaveBeenCalled();
+    });
+
+    it('E: preserves local session on transient getUser transport failure', async () => {
+      const signOutMock = jest.fn();
+      const client = mockClient({
+        getSession: jest.fn(async () => ({
+          data: { session: localSession },
+          error: null,
+        })),
+        getUser: jest.fn(async () => {
+          throw new TypeError('Network request failed');
+        }),
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toEqual({
+        id: 'restored',
+        email: 'r@example.com',
+      });
+      expect(signOutMock).not.toHaveBeenCalled();
+    });
+
+    it('E: preserves local session on transient getUser 5xx error object', async () => {
+      const signOutMock = jest.fn();
+      const client = mockClient({
+        getSession: jest.fn(async () => ({
+          data: { session: localSession },
+          error: null,
+        })),
+        getUser: jest.fn(async () => ({
+          data: { user: null },
+          error: {
+            name: 'AuthApiError',
+            message: 'Internal server error',
+            status: 503,
+            code: 'unexpected_failure',
+          },
+        })),
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toEqual({
+        id: 'restored',
+        email: 'r@example.com',
+      });
+      expect(signOutMock).not.toHaveBeenCalled();
+    });
+
+    it('does not clear a newer principal after delayed invalid getUser for an old user', async () => {
+      const signOutMock = jest.fn(async () => ({ error: null }));
+      const client = mockClient({
+        getSession: jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: {
+              session: { user: { id: 'zombie-a', email: 'a@example.com' } },
+            },
+            error: null,
+          })
+          // Principal re-check after definitive invalid: B signed in mid-flight.
+          .mockResolvedValueOnce({
+            data: {
+              session: { user: { id: 'user-b', email: 'b@example.com' } },
+            },
+            error: null,
+          }),
+        getUser: jest.fn(async () => ({
+          data: { user: null },
+          error: {
+            name: 'AuthApiError',
+            code: 'user_not_found',
+            status: 403,
+            message: 'User from sub claim in JWT does not exist',
+          },
+        })),
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toEqual({
+        id: 'user-b',
+        email: 'b@example.com',
+      });
+      expect(signOutMock).not.toHaveBeenCalled();
+    });
+
+    it('G: still returns signed-out when local cleanup fails after invalid session', async () => {
+      const signOutMock = jest.fn(async () => {
+        throw new Error('storage write failed');
+      });
+      const client = mockClient({
+        getSession: jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: { session: localSession },
+            error: null,
+          })
+          .mockResolvedValueOnce({
+            data: { session: localSession },
+            error: null,
+          }),
+        getUser: jest.fn(async () => ({
+          data: { user: null },
+          error: {
+            name: 'AuthSessionMissingError',
+            message: 'Auth session missing!',
+            status: 400,
+          },
+        })),
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toBeNull();
+      expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
+    });
+
+    it('clears on session_not_found without leaving signed-in state', async () => {
+      const signOutMock = jest.fn(async () => ({ error: null }));
+      const client = mockClient({
+        getSession: jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: { session: localSession },
+            error: null,
+          })
+          .mockResolvedValueOnce({
+            data: { session: localSession },
+            error: null,
+          }),
+        getUser: jest.fn(async () => ({
+          data: { user: null },
+          error: {
+            name: 'AuthApiError',
+            code: 'session_not_found',
+            status: 403,
+            message: 'Session from session_id claim in JWT does not exist',
+          },
+        })),
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toBeNull();
+      expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
     });
   });
 });

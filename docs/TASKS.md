@@ -541,6 +541,13 @@ My Rating, direct Eazy/Community comparison UI, and a reusable fail-fast
 offline + bounded-request timeout contract. Do not treat superseded six-field /
 manual-overall docs as authoritative when they conflict with this correction.
 
+**Auth restore hardening (physical-device):** Local AsyncStorage can retain a
+session after a local Supabase `db reset` wipes the matching Auth principal.
+`restoreSession()` no longer treats local `getSession()` alone as proof of
+identity when online; it validates with Auth `getUser()` and clears only the
+current-device session on definitive invalid principal/session responses while
+preserving offline/transient restored sessions.
+
 Depends on: Task 16.
 
 Unlocks: Task 19, Task 21, and contributes to Task 22.

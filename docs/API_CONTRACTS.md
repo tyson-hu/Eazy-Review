@@ -372,7 +372,12 @@ Task 16 functions (email/password only):
   `confirmation-required` when the provider creates a user without a session
 - `signOut()` — current-device local sign-out via
   `client.auth.signOut({ scope: 'local' })` (explicit; not global revocation)
-- `restoreSession()` — best-effort session restoration on launch
+- `restoreSession()` — best-effort session restoration on launch. Reads the
+  local persisted session with `getSession()`, then when the device is online
+  validates the principal with Auth `getUser()` (server-backed). Definitive
+  invalid identity/session errors clear the local session only (scope
+  `local`); offline and transient transport/5xx validation failures preserve
+  the local principal. Profile rows are not the identity validity check.
 
 Task 16 routes:
 - `app/auth/sign-in.tsx`

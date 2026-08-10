@@ -2,20 +2,22 @@
 
 ## Status
 
-**Task 17 — defect corrections and UX packets are committed on PR #36 for
-human physical-device review. Not accepted. Not merged.**
+**Task 17 — defect corrections, UX packets, and auth-restore hardening are
+committed on PR #36 for human physical-device review. Not accepted. Not merged.**
 
 Physical-device acceptance exposed two blockers after the first Task 17 commit
 (`8c3e648`). Both are corrected on this branch under Task 17 (no Task 17.5).
 Later Product Detail restoration and Rate/Edit slider presentation work also
-landed on the same branch without changing rating write contracts.
+landed on the same branch without changing rating write contracts. A further
+physical validation defect (zombie restored session after local Supabase reset)
+is hardened on this patch tip without broadening into general auth redesign.
 
 | Surface | Status |
 | --- | --- |
 | Automated (unit / typecheck / lint / check:readonly) | PASS on final tree (see Final automated validation) |
-| Local database (`npm run test:db` / `test:db:reset`) | PASS on final tree (pgTAP + concurrency harness) |
+| Local database (`npm run test:db` / `test:db:reset`) | PASS on prior tip; **no DB change** on this auth-restore patch |
 | Simulator / web mobile preview | See companion UX packets; not re-run in this reliability packet |
-| Physical iPhone matrix A–F | **PENDING HUMAN** |
+| Physical iPhone matrix A–G | **PENDING HUMAN** |
 | Human acceptance | **NOT CLAIMED** |
 | Merge | **NOT AUTHORIZED** |
 
@@ -28,9 +30,8 @@ landed on the same branch without changing rating write contracts.
 - Docs/ADR sync: `221396a`
 - Evidence matrix update: `34ca88b`
 - Product Detail restoration + Rate/Edit native slider: `6863a91`
-- Final pre-physical-acceptance review correction: **this commit** (mismatch
-  caption honesty, Slider VoiceOver absolute-scale text, removal of temporary
-  `docs/superpowers` planning artifacts, evidence SHA sync)
+- Prior tip before this auth patch: `6863a91a0333b64f3a1ae15468aa6bee41db98ff`
+- Auth zombie-session restore hardening: **this commit** (record SHA after land)
 
 Record the pushed tip from `git rev-parse HEAD` after this commit lands; physical
 testing must use that exact tip SHA, not an intermediate commit.
@@ -53,6 +54,18 @@ testing must use that exact tip SHA, not an intermediate commit.
   `withRequestTimeout` (10s) aborting PostgREST; paused query/mutation
   presentation; form state preserved; no offline write queue.
 
+### C — Zombie restored local session after local Auth wipe
+
+- Root cause: `restoreSession()` used local `getSession()` only. After local
+  Supabase reset, AsyncStorage could still hold tokens for a deleted principal;
+  the app published signed-in while Account/Rate could not operate against a
+  missing Auth user / profile.
+- Fix (this patch): when online, validate with Auth `getUser()`; clear
+  current-device session only on definitive invalid identity/session Auth
+  errors; preserve local session when offline or validation fails transiently;
+  keep Task 16 generation / user-scoped cache safety. Profile existence is not
+  the identity validity check.
+
 ## Scope delivered (correction)
 
 1. Forward migration
@@ -64,6 +77,8 @@ testing must use that exact tip SHA, not an intermediate commit.
 5. Network: `src/lib/network/requestTimeout.ts` (`DEFAULT_REQUEST_TIMEOUT_MS = 10000`)
 6. Docs + ADRs: `sneaker-10-v1` rubric; connected request reliability
 7. Focused tests for formula, offline settle, timeout, queries, lifecycle
+8. Auth restore validation + definitive-invalid classification + focused
+   restore regression tests (zombie / offline / transient)
 
 ## Companion Task 17 UX packets (same branch / PR #36)
 
@@ -89,6 +104,21 @@ substitute acceptance.
 | D | Device online, local Supabase unreachable | Timeout/unreachable (not “you're offline”); no spinner | PENDING |
 | E | Rate offline, no cached owner rating | Explicit offline, not infinite Loading | PENDING |
 | F | Offline with cached Detail/owner data | Cached readable; offline/stale clear; reconnect refresh | PENDING |
+| G | Zombie local session recovery | After local Supabase wipe with phone session kept, relaunch online → signed-out, no stale user-scoped data, sign-up/sign-in works | PENDING |
+
+### Scenario G procedure (human-only)
+
+1. Sign in on the physical device against local Supabase.
+2. Confirm Account is valid.
+3. Reset/wipe the local Supabase stack so that user no longer exists.
+4. Keep the app's local persisted session intact (do not Sign out first).
+5. Relaunch/reload the app while the phone can reach local Supabase.
+6. Expected:
+   - app does not remain falsely signed in
+   - stale principal is removed locally
+   - Account shows signed-out state
+   - prior user-scoped data is not visible
+   - user can sign up/sign in again normally
 
 ## Security / privacy notes
 
@@ -98,6 +128,8 @@ substitute acceptance.
 - Client never writes `rating_aggregates` or `score` / `methodology_version`.
 - Previously applied migrations: **unchanged** (forward-only correction only).
 - Staging / production databases: **untouched**.
+- Auth restore cleanup uses local/current-device session scope only — no global
+  revocation, no account deletion, no staging/production contact.
 
 ## Automated validation history
 
@@ -116,22 +148,19 @@ gesture commit `6863a91` and the final review tip.
 
 | Command | Result |
 | --- | --- |
-| Focused Product Detail / Rate/Edit / slider Jest | PASS — 3 suites, 30 tests |
-| `npm run typecheck` | PASS (via `npm run check`) |
-| `npm run lint` | PASS (via `npm run check`) |
-| `npm test` | PASS — 34 suites, 243 tests |
-| `npm run types:check` | Not re-run this pass; generated types unchanged by the final tip |
-| `npm run check:readonly` | PASS (via `npm run check`) |
-| `npm run check` | PASS — full Expo handoff gate incl. expo-doctor 20/20 and dependency alignment |
-| `npm run test:db:reset` | PASS — pgTAP 481 tests; concurrency harness 2 scenarios |
+| Focused auth restore / AuthProvider / errors Jest | PASS — 3 suites, 41 tests |
+| `npm run typecheck` | PASS |
+| `npm run lint` | PASS |
+| `npm test` | PASS — 34 suites, 255 tests |
+| `npm run types:check` | Not required — generated types unchanged by this patch |
+| `npm run check:readonly` | PASS |
+| `npm run check` | Not required for this auth-only parent gate; readonly + full unit suite used |
+| `npm run test:db:reset` | Not required for this auth-only patch (no schema change) |
 | `git diff --check` | PASS |
-
-Jest retained pre-existing asynchronous teardown warnings (overlapping `act()`
-and a worker forced to exit) while returning exit code 0.
 
 ## Explicit non-claims
 
-- Physical-device matrix A–F: **PENDING HUMAN**
+- Physical-device matrix A–G: **PENDING HUMAN**
 - Authenticated slider gestures / VoiceOver / physical Product Detail:
   **PENDING HUMAN** (see companion UX packets)
 - Human acceptance / merge: **NOT CLAIMED / NOT AUTHORIZED**

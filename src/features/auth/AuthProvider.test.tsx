@@ -27,6 +27,10 @@ function createMockAuthClient(options: {
    * When true, getSession does not resolve until completeRestore is called.
    */
   delayRestore?: boolean;
+  /**
+   * Override online `getUser` validation. Default: accept current sessionUser.
+   */
+  getUser?: jest.Mock;
 }) {
   let listeners: Listener[] = [];
   let sessionUser = options.initialUser ?? null;
@@ -42,6 +46,8 @@ function createMockAuthClient(options: {
             error: null;
           }>((resolve) => {
             resolveRestore = (user) => {
+              // Keep getUser principal in sync with the restored session shape.
+              sessionUser = user;
               resolve({
                 data: {
                   session: user ? { user } : null,
@@ -58,9 +64,26 @@ function createMockAuthClient(options: {
         error: null,
       }));
 
+  const getUser =
+    options.getUser ??
+    jest.fn(async () => {
+      if (!sessionUser) {
+        return {
+          data: { user: null },
+          error: {
+            name: 'AuthSessionMissingError',
+            message: 'Auth session missing!',
+            status: 400,
+          },
+        };
+      }
+      return { data: { user: sessionUser }, error: null };
+    });
+
   const client = {
     auth: {
       getSession,
+      getUser,
       onAuthStateChange: jest.fn((callback: Listener) => {
         listeners.push(callback);
         return {
@@ -197,6 +220,134 @@ describe('AuthProvider', () => {
         'signed-out|none|',
       ),
     );
+    await rendered.cleanup();
+  });
+
+  it('clears zombie restored session online and removes user-scoped cache', async () => {
+    const zombie = { id: 'user-zombie', email: 'zombie@example.com' };
+    const getUser = jest.fn(async () => ({
+      data: { user: null },
+      error: {
+        name: 'AuthApiError',
+        code: 'user_not_found',
+        status: 403,
+        message: 'User from sub claim in JWT does not exist',
+      },
+    }));
+    const mock = createMockAuthClient({
+      initialUser: zombie,
+      getUser,
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'p1' }]);
+    queryClient.setQueryData(accountKeys.profile('user-zombie'), {
+      id: 'user-zombie',
+      displayName: 'Ghost',
+    });
+    queryClient.setQueryData(ratingKeys.mine('user-zombie', 'p1'), {
+      score100: 80,
+    });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none|',
+      ),
+    );
+    expect(mock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'p1' },
+    ]);
+    expect(
+      queryClient.getQueryData(accountKeys.profile('user-zombie')),
+    ).toBeUndefined();
+    expect(
+      queryClient.getQueryData(ratingKeys.mine('user-zombie', 'p1')),
+    ).toBeUndefined();
+
+    await rendered.cleanup();
+  });
+
+  it('does not let delayed zombie cleanup sign out a newer signed-in principal', async () => {
+    const delayedGetUser = jest.fn(
+      () =>
+        new Promise<{
+          data: { user: null };
+          error: {
+            name: string;
+            code: string;
+            status: number;
+            message: string;
+          };
+        }>((resolve) => {
+          setTimeout(() => {
+            resolve({
+              data: { user: null },
+              error: {
+                name: 'AuthApiError',
+                code: 'user_not_found',
+                status: 403,
+                message: 'User from sub claim in JWT does not exist',
+              },
+            });
+          }, 40);
+        }),
+    );
+
+    const mock = createMockAuthClient({
+      initialUser: { id: 'zombie-a', email: 'a@example.com' },
+      getUser: delayedGetUser,
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    queryClient.setQueryData(accountKeys.profile('zombie-a'), {
+      id: 'zombie-a',
+    });
+
+    const authRef: MutableRefObject<AuthContextValue | null> = {
+      current: null,
+    };
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession>
+        <AuthControllerProbe authRef={authRef} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    // While zombie validation is still in flight, a real user signs in.
+    await act(async () => {
+      await authRef.current?.signIn({
+        email: 'fresh@example.com',
+        password: 'secret-pass',
+      });
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|id-fresh@example.com|fresh@example.com',
+      ),
+    );
+
+    // Let delayed zombie getUser finish + any cleanup attempt settle.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    });
+
+    // Newer principal must remain signed in; only a same-principal cleanup
+    // is allowed to wipe storage, and re-check must skip when ids diverge.
+    expect(rendered.getByTestId('auth-probe').props.children).toBe(
+      'signed-in|id-fresh@example.com|fresh@example.com',
+    );
+
     await rendered.cleanup();
   });
 

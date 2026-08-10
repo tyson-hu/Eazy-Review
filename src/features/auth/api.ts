@@ -3,6 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 import {
   AuthError,
   AUTH_USER_MESSAGES,
+  isDefinitiveInvalidSessionError,
   normalizeAuthError,
 } from '@/src/features/auth/errors';
 import type {
@@ -177,8 +178,33 @@ export async function signOut(options?: AuthApiOptions): Promise<void> {
 }
 
 /**
- * Best-effort session restoration. Failures resolve to signed-out rather than
- * blocking anonymous Browse.
+ * Best-effort local session wipe (current device only). Used when Auth
+ * definitively rejects a restored principal. Does not require a successful
+ * remote revoke — supabase-js still clears storage for 401/403/404 / missing
+ * session and on many network failures (`scope: 'local'` only).
+ */
+async function clearInvalidLocalSession(
+  client: AppSupabaseClient,
+): Promise<void> {
+  try {
+    await client.auth.signOut({ scope: 'local' });
+  } catch {
+    // Best-effort. The restore path still returns signed-out so the UI does
+    // not publish a known-invalid principal even if storage wipe fails once.
+  }
+}
+
+/**
+ * Best-effort session restoration on launch.
+ *
+ * 1. No local session → signed out
+ * 2. Local session + explicitly offline → keep local principal (no getUser)
+ * 3. Local session + online getUser success → server-backed principal
+ * 4. Local session + definitive Auth rejection → local sign-out, signed out
+ * 5. Local session + transient validation failure → keep local principal
+ *
+ * Does not use profiles (or any app table) as the identity validity check.
+ * Identity validity is Auth-server only via `getUser()`.
  */
 export async function restoreSession(
   options?: AuthApiOptions,
@@ -189,7 +215,53 @@ export async function restoreSession(
     if (error || !data.session?.user) {
       return null;
     }
-    return toAuthUser(data.session.user);
+
+    const localUser = toAuthUser(data.session.user);
+
+    // Offline: cannot validate without risking false logout. Keep local state.
+    if (!isOnline(options)) {
+      return localUser;
+    }
+
+    let userData: { user: { id: string; email?: string | null } | null } | null =
+      null;
+    let userError: unknown = null;
+    try {
+      const result = await client.auth.getUser();
+      userData = result.data;
+      userError = result.error;
+    } catch {
+      // Network throws (TypeError, etc.) — preserve local session.
+      return localUser;
+    }
+
+    if (userData?.user) {
+      return toAuthUser(userData.user);
+    }
+
+    // Definitive invalid principal/session — clear only if the same principal
+    // is still restored. A newer sign-in while getUser was in flight must not
+    // be wiped by stale zombie cleanup.
+    if (isDefinitiveInvalidSessionError(userError)) {
+      try {
+        const current = await client.auth.getSession();
+        const currentId = current.data.session?.user?.id ?? null;
+        if (currentId != null && currentId !== localUser.id) {
+          // Principal changed during validation; keep the newer local session.
+          return current.data.session?.user
+            ? toAuthUser(current.data.session.user)
+            : null;
+        }
+      } catch {
+        // Fall through to cleanup of the known-invalid principal.
+      }
+
+      await clearInvalidLocalSession(client);
+      return null;
+    }
+
+    // Transient / unclassifiable: preserve local restored principal.
+    return localUser;
   } catch {
     return null;
   }

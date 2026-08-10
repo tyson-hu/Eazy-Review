@@ -133,9 +133,16 @@ export function AuthProvider({
         .then(async () => {
           const previous = cachePrincipalRef.current;
           if (previous === nextUserId) {
+            // Same principal is normally a no-op. Settling signed-out while
+            // the cache principal was never claimed (null → null) still purges
+            // user-scoped keys so orphan zombie-restore data cannot remain.
+            if (nextUserId == null) {
+              await removeUserScopedQueries(queryClient);
+            }
             return;
           }
           // Only purge when leaving a real principal (sign-out or A→B).
+          // Do not block null → user bootstrap on a purge (Task 16 contract).
           if (previous != null) {
             await removeUserScopedQueries(queryClient);
           }
