@@ -283,8 +283,9 @@ Layout rules:
 - Use consistent score color meaning.
 - Display `No score yet` when score is null.
 - Eazy Score and Community Score should be easy to compare; My Rating should be visually distinct from aggregate scores.
-- Side-by-side score pairs may stack vertically when system font scale reaches
-  the large-content threshold (`ScoreBadgePair`) so chips are not clipped.
+- Side-by-side score pairs remain the normal-size layout. Vertical restacking
+  at extreme accessibility content sizes is post-launch work (Task 27), not a
+  Task 17 requirement after the 2026-08-10 human scope decision.
 - Product Detail labels the Eazy source `Editorial assessment`. Community count
   belongs inside the Community Score badge: fewer than five ratings use
   `Early score · N rating(s)`; five or more use `N ratings`.

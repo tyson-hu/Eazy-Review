@@ -22,8 +22,12 @@
 1. **Native first viewport — pass.** `Editorial assessment` and
    `Early score · 1 rating` stay on one line. Decision summary follows the
    score overview, and the persistent Sign in to rate footer remains clear.
-2. **XXL Dynamic Type — pass.** Product identity, score metadata, decision
-   summary, and persistent footer remain readable without horizontal clipping.
+2. **XXL Dynamic Type — pass (simulator-only, 2026-08-09).** Product identity,
+   score metadata, decision summary, and persistent footer remained readable
+   without horizontal clipping on the simulator at XXL that day. This does
+   **not** contradict the later physical-device maximum Dynamic Type **FAIL**
+   records in
+   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](../task-17-my-rating-persistence/RESULT.md).
    The simulator was restored to the standard `large` content size afterward.
 3. **Adjunct section order — pass.** Verified offers appear before Score
    comparison; My Rating and Description follow the expanded comparison.
