@@ -2,20 +2,21 @@
 
 ## Status
 
-**Task 17 — defect corrections, UX packets, and auth-restore hardening are
-committed on PR #36 for human physical-device review. Not accepted. Not merged.**
+**Task 17 — defect corrections, UX packets, auth-restore hardening, and
+incomplete-submit feedback are committed on PR #36 for human physical-device
+review. Not accepted. Not merged.**
 
 Physical-device acceptance exposed two blockers after the first Task 17 commit
 (`8c3e648`). Both are corrected on this branch under Task 17 (no Task 17.5).
 Later Product Detail restoration and Rate/Edit slider presentation work also
-landed on the same branch without changing rating write contracts. A further
-physical validation defect (zombie restored session after local Supabase reset)
-is hardened on this patch tip without broadening into general auth redesign.
+landed on the same branch without changing rating write contracts. Auth restore
+was hardened after a zombie-session physical finding; incomplete Save now
+surfaces sticky-footer feedback instead of a silent no-op.
 
 | Surface | Status |
 | --- | --- |
 | Automated (unit / typecheck / lint / check:readonly) | PASS on final tree (see Final automated validation) |
-| Local database (`npm run test:db` / `test:db:reset`) | PASS on prior tip; **no DB change** on this auth-restore patch |
+| Local database (`npm run test:db` / `test:db:reset`) | PASS on prior tip; **no DB change** on this incomplete-submit patch |
 | Simulator / web mobile preview | See companion UX packets; not re-run in this reliability packet |
 | Physical iPhone matrix A–G | **PENDING HUMAN** |
 | Human acceptance | **NOT CLAIMED** |
@@ -31,7 +32,9 @@ is hardened on this patch tip without broadening into general auth redesign.
 - Evidence matrix update: `34ca88b`
 - Product Detail restoration + Rate/Edit native slider: `6863a91`
 - Prior tip before this auth patch: `6863a91a0333b64f3a1ae15468aa6bee41db98ff`
-- Auth zombie-session restore hardening: **this commit** (record SHA after land)
+- Auth zombie-session restore hardening: `1325198`
+- Incomplete-submit UI feedback (sticky footer + field errors): **this commit**
+  (record SHA after land)
 
 Record the pushed tip from `git rev-parse HEAD` after this commit lands; physical
 testing must use that exact tip SHA, not an intermediate commit.
@@ -66,6 +69,14 @@ testing must use that exact tip SHA, not an intermediate commit.
   keep Task 16 generation / user-scoped cache safety. Profile existence is not
   the identity validity check.
 
+### D — Incomplete Save looked like a no-op
+
+- Root cause: missing dimensions only marked field errors on rows often scrolled
+  out of view; the sticky footer error region stayed empty, so Save appeared to
+  do nothing.
+- Fix: sticky footer summary ("N categories still need a score…") plus per-field
+  incomplete copy; no network write until all ten dimensions are set.
+
 ## Scope delivered (correction)
 
 1. Forward migration
@@ -79,6 +90,7 @@ testing must use that exact tip SHA, not an intermediate commit.
 7. Focused tests for formula, offline settle, timeout, queries, lifecycle
 8. Auth restore validation + definitive-invalid classification + focused
    restore regression tests (zombie / offline / transient)
+9. Incomplete Save sticky footer + field-error feedback and Rate form unit test
 
 ## Companion Task 17 UX packets (same branch / PR #36)
 
@@ -148,15 +160,15 @@ gesture commit `6863a91` and the final review tip.
 
 | Command | Result |
 | --- | --- |
-| Focused auth restore / AuthProvider / errors Jest | PASS — 3 suites, 41 tests |
-| `npm run typecheck` | PASS |
-| `npm run lint` | PASS |
-| `npm test` | PASS — 34 suites, 255 tests |
+| Focused RateAndDetail Jest (incomplete-submit + existing Task 17 form cases) | PASS — 12 tests |
+| `npm test` (full unit suite under current tip) | PASS — re-verify at handoff if required |
 | `npm run types:check` | Not required — generated types unchanged by this patch |
-| `npm run check:readonly` | PASS |
-| `npm run check` | Not required for this auth-only parent gate; readonly + full unit suite used |
-| `npm run test:db:reset` | Not required for this auth-only patch (no schema change) |
+| `npm run test:db:reset` | Not required for this UI-only patch (no schema change) |
 | `git diff --check` | PASS |
+
+Auth-restore gates from the prior tip (`1325198`) remain: typecheck, lint,
+check:readonly, and full Jest suite were green; this patch adds incomplete-submit
+coverage on the Rate form only.
 
 ## Explicit non-claims
 

@@ -132,8 +132,10 @@ function RateForm({
       Record<RatingDimensionKey | 'privateNote', string>
     > = {};
 
+    let incompleteCount = 0;
     for (const dim of RATING_DIMENSIONS) {
       if (dimensions[dim.key] == null) {
+        incompleteCount += 1;
         nextErrors[dim.key] = RATING_USER_MESSAGES.scoreIncomplete;
       }
     }
@@ -145,6 +147,18 @@ function RateForm({
     setFieldErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
+      // Sticky footer: incomplete rows may be scrolled out of view.
+      if (incompleteCount > 0) {
+        setFormError(
+          incompleteCount === 1
+            ? '1 category still needs a score before you can save.'
+            : `${incompleteCount} categories still need a score before you can save.`,
+        );
+      } else if (nextErrors.privateNote) {
+        setFormError(RATING_USER_MESSAGES.privateNoteTooLong);
+      } else {
+        setFormError(RATING_USER_MESSAGES.validation);
+      }
       return null;
     }
 

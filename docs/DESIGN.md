@@ -432,6 +432,10 @@ Phased CTA ownership:
   controls; Clear = unanswered; 0 is valid; live My Rating preview when
   complete (explicit incomplete state when not); optional private note;
   submit; progress feedback that is never an endless offline spinner.
+- Incomplete save must not be a silent no-op: tapping Save with missing
+  categories shows a sticky footer summary (how many categories still need a
+  score) plus per-field errors on unanswered rows. Offline and failed save
+  reuse the same footer error region.
 - Gesture ownership: horizontal and naturally curved horizontal drags adjust
   the slider without scrolling; vertical-biased drags scroll without changing
   the value. Rate/Edit disables iOS full-screen Back while preserving the

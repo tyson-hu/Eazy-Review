@@ -10,6 +10,7 @@ import {
   saveUserRating,
 } from '@/src/features/ratings/api';
 import { RATING_DIMENSIONS } from '@/src/features/ratings/dimensions';
+import { RATING_USER_MESSAGES } from '@/src/features/ratings/errors';
 import { sampleMyRating, uniformDimensions } from '@/src/features/ratings/testFixtures';
 import type { MyRating } from '@/src/features/ratings/types';
 import { createAppQueryClient } from '@/src/lib/query/client';
@@ -331,6 +332,46 @@ describe('Task 17 rate gate and My Rating composition', () => {
     expect(rendered.getByTestId('rate-dim-look-value').props.children).toBe(
       '0.5',
     );
+    await rendered.cleanup();
+  });
+
+  it('shows why submit cannot proceed when dimensions are incomplete', async () => {
+    signInAsA();
+    mockGetUserRating.mockResolvedValue(null);
+
+    const rendered = await renderWithProviders(<RateProductScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('rate-dim-look')).toBeTruthy(),
+    );
+
+    // Rate only Look — leave the other nine unanswered.
+    await act(async () => {
+      fireEvent(
+        rendered.getByTestId('rate-dim-look-slider'),
+        'valueChange',
+        8,
+      );
+    });
+
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('rate-submit'));
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('rate-form-error')).toBeTruthy(),
+    );
+    expect(rendered.getByTestId('rate-form-error').props.children).toBe(
+      '9 categories still need a score before you can save.',
+    );
+    // Incomplete fields show the same inline copy under each unanswered row.
+    expect(
+      rendered.getAllByText(RATING_USER_MESSAGES.scoreIncomplete).length,
+    ).toBe(9);
+    expect(mockSaveUserRating).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
     await rendered.cleanup();
   });
 

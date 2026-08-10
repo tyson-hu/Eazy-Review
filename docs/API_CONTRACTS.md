@@ -189,7 +189,7 @@ Rating write transport errors (Task 17):
 | timeout | Bounded request deadline (~10s) aborted the request | The request took too long. Please try again. |
 | transport / unreachable | Network present but backend failed | Cannot reach the server. Please try again. |
 | unauthorized | Session missing / not allowed | Session-safe sign-in guidance |
-| validation | Client or DB constraint failure | Field-level or short form error |
+| validation | Client or DB constraint failure | Field-level and sticky footer form error (incomplete dimensions report remaining count; no silent fail) |
 | server | Other PostgREST / unexpected | Generic retry-safe message |
 
 Do not label every transport failure as offline. Do not surface raw SDK errors.

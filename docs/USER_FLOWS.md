@@ -131,7 +131,8 @@ Task 17 durable Rate/Edit path:
 User opens Product Detail while signed in
 -> If no My Rating: CTA Rate this product; form empty
 -> If My Rating exists: CTA Edit my rating; form prefilled
--> Save uses read then insert/update (23505 recovers to update)
+-> Incomplete Save: sticky footer explains remaining categories + field errors; no network write
+-> Complete Save uses read then insert/update (23505 recovers to update)
 -> Product Detail refetches My Rating + server-owned Community Score
 -> Account shows rated-product count and Rated Products list
 ```
@@ -297,6 +298,9 @@ Interaction:
   remains available on iOS.
 - VoiceOver announces the dimension and value and can increment or decrement
   in half steps.
+- Save with unanswered categories: no network write; sticky footer reports how
+  many categories still need a score; each unanswered row shows an inline error
+  that clears when that category is set.
 
 ### Task 9 mock behavior
 

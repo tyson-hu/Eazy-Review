@@ -612,7 +612,8 @@ Deliverables:
   partial, and methodology-mismatch handling. Community rating count stays in
   its score card (`Early score` below five); comparison rows name both values
   for accessibility.
-- Real Rate/Edit with duplicate-submit prevention and required cache
+- Real Rate/Edit with duplicate-submit prevention, incomplete-submit feedback
+  (sticky footer count + per-field errors; no silent no-op), and required cache
   invalidations (public product, list, user rating, Rated Products).
 - Fail-fast when known offline; bounded request timeout (~10s);
   `networkMode: 'always'` on the explicit rating save mutation so offline is
@@ -661,6 +662,8 @@ Acceptance:
   remain explicit.
 - My Rating and server-owned rating count/averages refresh from the database.
 - Browse, Detail, user rating, and Rated Products caches invalidate correctly.
+- Incomplete Save: sticky footer explains remaining categories; unanswered
+  rows show inline errors; no API write until all ten dimensions are set.
 - Known offline Save: fail-fast offline copy, no endless spinner, form kept.
 - Timeout/transport: settled error, form kept, not mislabeled as offline when
   the device is online.
