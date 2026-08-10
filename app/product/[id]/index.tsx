@@ -452,58 +452,60 @@ export default function ProductDetailScreen() {
 
       <Card testID="product-detail-section-comparison" className="mt-5">
         <AppText variant="label">Score comparison</AppText>
-        <AppText variant="caption" className="mt-1">
-          Both scores use the same 10 dimensions, scored from 0 to 10.
-        </AppText>
         {comparisonMethodologyMismatch ? (
           <AppText variant="body" className="mt-2">
             Direct comparison is unavailable because these scores use different
             methods.
           </AppText>
         ) : showDimensionComparison ? (
-          <View className="mt-4">
-            <View className="mb-2 flex-row items-center">
-              <AppText variant="caption" className="flex-1">
-                Dimension
-              </AppText>
-              <View className="ml-4 flex-row gap-5">
-                <AppText variant="caption" className="w-12 text-right">
-                  Eazy
+          <View className="mt-1">
+            <AppText variant="caption">
+              Both scores use the same 10 dimensions, scored from 0 to 10.
+            </AppText>
+            <View className="mt-4">
+              <View className="mb-2 flex-row items-center">
+                <AppText variant="caption" className="flex-1">
+                  Dimension
                 </AppText>
-                <AppText variant="caption" className="w-20 text-right">
-                  Community
-                </AppText>
-              </View>
-            </View>
-            {RATING_DIMENSIONS.map((dim) => {
-              const eazy =
-                eazyAssessment?.dimensions?.[dim.key] ?? null;
-              const community = avgForDimension(ratingSummary, dim.key);
-              return (
-                <View
-                  key={dim.key}
-                  testID={`score-compare-${dim.key}`}
-                  accessible
-                  accessibilityLabel={comparisonRowAccessibilityLabel(
-                    dim.label,
-                    eazy,
-                    community,
-                  )}
-                  className="flex-row items-center border-t border-border py-2">
-                  <AppText variant="body" className="flex-1">
-                    {dim.label}
+                <View className="ml-4 flex-row gap-5">
+                  <AppText variant="caption" className="w-12 text-right">
+                    Eazy
                   </AppText>
-                  <View className="ml-4 flex-row gap-5">
-                    <AppText variant="caption" className="w-12 text-right">
-                      {formatDimensionScore10(eazy)}
-                    </AppText>
-                    <AppText variant="caption" className="w-20 text-right">
-                      {formatDimensionScore10(community)}
-                    </AppText>
-                  </View>
+                  <AppText variant="caption" className="w-20 text-right">
+                    Community
+                  </AppText>
                 </View>
-              );
-            })}
+              </View>
+              {RATING_DIMENSIONS.map((dim) => {
+                const eazy =
+                  eazyAssessment?.dimensions?.[dim.key] ?? null;
+                const community = avgForDimension(ratingSummary, dim.key);
+                return (
+                  <View
+                    key={dim.key}
+                    testID={`score-compare-${dim.key}`}
+                    accessible
+                    accessibilityLabel={comparisonRowAccessibilityLabel(
+                      dim.label,
+                      eazy,
+                      community,
+                    )}
+                    className="flex-row items-center border-t border-border py-2">
+                    <AppText variant="body" className="flex-1">
+                      {dim.label}
+                    </AppText>
+                    <View className="ml-4 flex-row gap-5">
+                      <AppText variant="caption" className="w-12 text-right">
+                        {formatDimensionScore10(eazy)}
+                      </AppText>
+                      <AppText variant="caption" className="w-20 text-right">
+                        {formatDimensionScore10(community)}
+                      </AppText>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         ) : (
           <AppText variant="body" className="mt-2">

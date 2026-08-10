@@ -242,6 +242,11 @@ describe('connected Product Detail screen', () => {
       ),
     ).toBeTruthy();
     expect(
+      rendered.queryByText(
+        'Both scores use the same 10 dimensions, scored from 0 to 10.',
+      ),
+    ).toBeNull();
+    expect(
       rendered.queryByText('Community is 8 points below Eazy.'),
     ).toBeNull();
     expect(rendered.queryByTestId('score-compare-look')).toBeNull();

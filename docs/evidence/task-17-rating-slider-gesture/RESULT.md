@@ -1,6 +1,7 @@
 # Task 17 Rating Slider Gesture Evidence
 
-Date: 2026-08-09
+Date: 2026-08-09 (packet captured); evidence status synchronized 2026-08-09
+for the committed/pushed PR #36 tip.
 
 ## Scope
 
@@ -11,25 +12,44 @@ competing with slider adjustment on the Rate/Edit route.
 
 ## Build And Device
 
-- Checkout: `agent/task-17-my-rating-persistence` (uncommitted local changes).
+- Branch / checkout: `agent/task-17-my-rating-persistence` (PR #36 draft),
+  committed and pushed. Gesture implementation lands in `6863a91`; human
+  physical testing must use the **final pushed tip SHA** after the
+  pre-physical-acceptance review correction commit (not intermediate local
+  worktrees, not uncommitted files).
 - Simulator: `Eazy-Review-iPhone-15`, iOS 26.5.
 - Logical viewport: 393 x 852 points.
 - Runtime: Expo Go with the local Expo SDK 57 Metro bundle.
 - Product route: Nike Air Force 1 Low White,
   `a1000000-0000-4000-8000-000000000001`.
+- Dependency: `@react-native-community/slider@5.2.0` (Expo SDK 57-aligned).
 
 ## Automated Validation
 
-Status: **pass**
+Status: **pass** on the final tip (see counts below).
+
+### Earlier gesture-packet run (at implementation commit era)
+
+Retained as historical record of the first post-implementation gate run:
 
 - Focused slider, Rate/Edit, and authentication tests: 3 suites, 17 tests
-  passed.
+  passed (narrower selector used during implementation).
 - Full repository Jest run: 34 suites, 243 tests passed.
-- `npm run typecheck`: passed.
-- `npm run lint`: passed.
-- `npm run check:readonly`: passed.
-- `npm run check` outside the agent sandbox: passed, including Expo Doctor
-  20/20 and Expo dependency alignment.
+- `npm run typecheck` / `lint` / `check:readonly` / full `npm run check`
+  outside the agent sandbox: passed, including Expo Doctor 20/20 and Expo
+  dependency alignment.
+- `git diff --check`: passed.
+
+### Final-tree automated run (pre-physical-acceptance review tip)
+
+Revalidated after the mismatch-caption and VoiceOver-value text fixes:
+
+- Focused slider, Product Detail, and Rate/Edit suites: 3 suites, 30 tests
+  passed (`DimensionStepperRow`, `ProductDetailScreen`, `RateAndDetail`).
+- Full repository Jest run (via `npm run check`): 34 suites, 243 tests passed.
+- `npm run check` outside the agent sandbox: passed (route prepare, readonly
+  gates, Jest, Expo Doctor 20/20, dependency alignment).
+- `npm run test:db:reset`: passed (pgTAP 481; concurrency 2 scenarios).
 - `git diff --check`: passed.
 
 The Jest run retained pre-existing asynchronous teardown warnings (overlapping
@@ -47,15 +67,21 @@ post-activation drift, or leading-edge Back testing.
 
 The following acceptance rows remain unclaimed:
 
-- Approximately 60 points horizontal / 20 points vertical: blocked.
-- Approximately 10 points horizontal / 60 points vertical: blocked.
-- At least 40 points vertical drift after horizontal activation: blocked.
-- Slider drag cannot dismiss Rate/Edit: blocked.
-- Leading-edge Back outside the slider still works: blocked.
+- Approximately 60 points horizontal / 20 points vertical: **blocked**.
+- Approximately 10 points horizontal / 60 points vertical: **blocked**.
+- At least 40 points vertical drift after horizontal activation: **blocked**.
+- Slider drag cannot dismiss Rate/Edit: **blocked**.
+- Leading-edge Back outside the slider still works: **blocked**.
+- Fresh unanswered row stays `—` until the user touches the slider or ±:
+  **blocked** (native slider / Clear contract; unit tests mock the module).
+- Set a value → Clear → value returns to `—` and stays there without an
+  accidental answered `0`: **blocked**.
+- One-handed thumb feel: **blocked**.
 
 ## Accessibility And Dynamic Type
 
-- Unit-level adjustable role, accessible value, label, and half-step actions:
+- Unit-level adjustable role, accessible value (including absolute-scale
+  `text` such as `7 of 10` / `not rated`), label, and half-step actions:
   **pass**.
 - VoiceOver announcement and adjustment on the native control: **not-tested**.
 - XXL Dynamic Type visual overlap on the authenticated Rate/Edit form:

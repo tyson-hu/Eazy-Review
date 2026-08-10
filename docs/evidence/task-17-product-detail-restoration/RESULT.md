@@ -72,7 +72,9 @@ remain non-sensitive local working-tree files under `screenshots/`.
   than this screenshot set.
 - No physical-device, keyboard, performance, or touch-feel claim is made.
 
-## Automated checks run separately
+## Automated checks
+
+### Earlier packet run (implementation era; historical)
 
 - Focused Product Detail and Rate/Edit Jest suites.
 - `npm run typecheck`.
@@ -81,7 +83,25 @@ remain non-sensitive local working-tree files under `screenshots/`.
 - Full `npm run check` outside the sandbox, including all Jest suites, Expo
   Doctor, and Expo dependency alignment.
 
+### Final-tree revalidation (pre-physical-acceptance review tip)
+
+Revalidated after the Score comparison methodology-mismatch caption honesty
+fix on the same Product Detail surface:
+
+- Focused Product Detail, Rate/Edit, and slider suites: 3 suites, 30 tests
+  passed.
+- Full `npm run check` outside the sandbox: passed (34 suites / 243 tests,
+  Expo Doctor 20/20, dependency alignment).
+- `npm run test:db:reset`: passed (pgTAP 481; concurrency 2 scenarios).
+- Branch state: committed on `agent/task-17-my-rating-persistence` (PR #36
+  draft). Physical testing must use the final pushed tip SHA, not intermediate
+  commits or uncommitted worktrees.
+
+Physical-device Product Detail hierarchy, offer placement, and comparison
+readability remain **not-tested** / **PENDING HUMAN**. Task 17 is not accepted.
+
 ## Required next decision
 
 Human review should accept the restored hierarchy or request a targeted visual
-refinement. Physical-device completion remains pending a separate rerun.
+refinement. Physical-device completion remains pending a separate run on the
+exact final SHA returned by the pre-physical-acceptance handoff.

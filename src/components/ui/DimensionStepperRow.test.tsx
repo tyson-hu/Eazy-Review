@@ -51,6 +51,7 @@ describe('DimensionStepperRow', () => {
       min: 0,
       max: 10,
       now: 7,
+      text: '7 of 10',
     });
 
     await act(async () => {
@@ -76,6 +77,7 @@ describe('DimensionStepperRow', () => {
         min: 0,
         max: 10,
         now: 0,
+        text: '0 of 10',
       },
     );
   });

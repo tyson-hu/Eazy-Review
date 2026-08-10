@@ -131,6 +131,8 @@ export function DimensionStepperRow({
                     min: RATING_DIMENSION_MIN,
                     max: RATING_DIMENSION_MAX,
                     now: value!,
+                    // Prefer absolute scale over iOS % of track range.
+                    text: `${formatDimensionScore10(value)} of 10`,
                   }
             }
             accessibilityActions={[
