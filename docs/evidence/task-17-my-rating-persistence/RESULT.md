@@ -2,25 +2,20 @@
 
 ## Status
 
-**Task 17 — defect corrections, UX packets, auth-restore hardening, and
-incomplete-submit feedback are committed on PR #36 for human physical-device
-review. Not accepted. Not merged.**
-
-Physical-device acceptance exposed two blockers after the first Task 17 commit
-(`8c3e648`). Both are corrected on this branch under Task 17 (no Task 17.5).
-Later Product Detail restoration and Rate/Edit slider presentation work also
-landed on the same branch without changing rating write contracts. Auth restore
-was hardened after a zombie-session physical finding; incomplete Save now
-surfaces sticky-footer feedback instead of a silent no-op.
+**Task 17 — In progress.** Physical-device matrix A–G (and related checklist
+items below) were recorded from human testing on **2026-08-10**. One remaining
+implementation blocker is maximum Dynamic Type layout on physical hardware;
+a focused correction is on this branch and awaits a **targeted** human retest
+(not a full A–G re-run of network/auth).
 
 | Surface | Status |
 | --- | --- |
-| Automated (unit / typecheck / lint / check:readonly) | PASS on final tree (see Final automated validation) |
-| Local database (`npm run test:db` / `test:db:reset`) | PASS on prior tip; **no DB change** on this incomplete-submit patch |
-| Simulator / web mobile preview | See companion UX packets; not re-run in this reliability packet |
-| Physical iPhone matrix A–G | **PENDING HUMAN** |
-| Human acceptance | **NOT CLAIMED** |
-| Merge | **NOT AUTHORIZED** |
+| Automated (unit / typecheck / lint / check:readonly) | See Final automated validation |
+| Local database (`npm run test:db` / `test:db:reset`) | No DB change on Dynamic Type / incomplete-submit / evidence packets |
+| Physical iPhone matrix A–G | **PASS** on SHA `1325198` (see provenance) |
+| VoiceOver | **DEFERRED BY HUMAN SCOPE DECISION** → Task 23 |
+| XXL / maximum Dynamic Type | **FAIL** on SHA `1325198`; correction on later tip; **targeted retest pending** |
+| Human acceptance / merge | **NOT CLAIMED / NOT AUTHORIZED** (PR #36 remains draft) |
 
 ## Branch and SHAs
 
@@ -31,14 +26,167 @@ surfaces sticky-footer feedback instead of a silent no-op.
 - Docs/ADR sync: `221396a`
 - Evidence matrix update: `34ca88b`
 - Product Detail restoration + Rate/Edit native slider: `6863a91`
-- Prior tip before this auth patch: `6863a91a0333b64f3a1ae15468aa6bee41db98ff`
-- Auth zombie-session restore hardening: `1325198`
+- Auth zombie-session restore hardening: **`1325198`**
 - Incomplete-submit UI feedback (sticky footer + field errors): `2c4c7f2`
+- Incomplete-submit tip SHA bookkeeping: `09075af`
+- Maximum Dynamic Type layout correction: `a635251`
 
-Physical testing must use tip `2c4c7f2` (or later on this branch), not an
-intermediate commit.
+### Physical evidence provenance (critical)
 
-## Defects corrected
+**Full physical matrix A–G, slider gestures, and normal Product Detail
+hierarchy** were performed on:
+
+```txt
+1325198f19efb871e61badcf2065675bf283c5a1
+```
+
+Do **not** attribute that matrix to `2c4c7f2`, `09075af`, or any later Dynamic
+Type fix SHA. Those later commits are incomplete-submit UI, evidence
+bookkeeping, and layout/a11y correction only.
+
+| Commit | Role |
+| --- | --- |
+| `1325198` | Physically tested Release build for A–G, sliders, Product Detail (normal size), XXL FAIL, VoiceOver not tested |
+| `2c4c7f2` | Incomplete-submit sticky footer + field errors (after physical SHA) |
+| `09075af` | Evidence bookkeeping for incomplete-submit tip |
+| Later tip | Dynamic Type adaptive layouts; **targeted retest pending** |
+
+## Human physical test environment (2026-08-10)
+
+| Field | Value |
+| --- | --- |
+| Date | 2026-08-10 |
+| Device | iPhone 17 Pro Max |
+| OS | iOS 27 Beta 5 |
+| Build | Release physical-device build |
+| Git SHA physically tested | `1325198f19efb871e61badcf2065675bf283c5a1` |
+| Backend | Local Supabase on Mac; phone via LAN / Mac-reachable local URL (not phone `localhost`) |
+| Scenario G wipe | Local Auth/database reset only; **staging and production untouched** |
+
+## Physical-device checklist (human)
+
+### A — Normal online rating save/edit — **PASS**
+
+Human verified: online save completes; spinner terminates; navigation returns;
+My Rating refreshes; Community data refreshes; Edit flow works.
+
+#### A1 — score-scale regression — **PASS**
+
+Human verified sneaker-10-v1 0–100 composite behavior; prior 1–10 vs 0–100
+defect (e.g. all 9.0 → 90, not 9/100) no longer reproduced.
+
+#### A2 — zero vs unanswered — **PASS**
+
+Human verified unanswered/null remains distinct from a real zero rating.
+
+### B — Known offline before Save — **PASS**
+
+Observed copy: `You're offline. Connect to save this rating.`
+
+Immediate feedback; no endless spinner; form intact; reconnect Save succeeds.
+
+### C — Connection drops during request — **PASS**
+
+Observed sequence included `The request took too long`, then offline
+presentation once connectivity state changed. Acceptable settlement:
+
+- in-flight request settled via timeout
+- offline presentation after connectivity change
+- form preserved
+- no indefinite spinner
+
+Do not summarize as a single static message only.
+
+### D — Device online, local Supabase unreachable — **PASS**
+
+Observed copy: `Could not reach the server.`
+
+Device/network remained available; local Supabase unreachable; **not**
+mislabeled as “You're offline”; request settled; no infinite Saving.
+
+### E — Rate offline, no cached owner rating — **PASS WITH COPY NOTE**
+
+Functional accept: no infinite `Loading your rating...`; settled explicit
+error; Retry available.
+
+After Retry (observed copy): `Could not load your rating`.
+
+**Copy note:** when known offline, preferred offline-specific wording is more
+explicit than the generic load-failure title. **Not** a Task 17 blocker unless
+code inspection shows a real offline/state misclassification bug (none filed as
+blocker here). No opportunistic copy redesign.
+
+### F — Offline with cached data — **PASS**
+
+Cached Product Detail / owner data remain usable; no endless loading.
+
+### G — Zombie local session recovery — **PASS**
+
+Human local Auth-reset scenario (do last):
+
+- phone retained pre-reset local session (no Sign out first)
+- local Supabase/Auth user wiped via local reset
+- app relaunched while local Supabase reachable
+- stale principal did **not** remain falsely signed in
+- settled signed-out; stale user-scoped data not exposed
+- authentication usable again afterward
+
+Physically validates `restoreSession` hardening in `1325198`.
+
+### Slider gestures — **PASS**
+
+On physical hardware: horizontal slider adjustment; vertical form scroll;
+curved-thumb interaction; slider does not dismiss Rate/Edit; normal Back
+usable. Does **not** include VoiceOver.
+
+### Product Detail (normal text size) — **PASS**
+
+Physical hierarchy/readability at the main verification text size: identity →
+Eazy/Community → Decision → offers → comparison → My Rating → description →
+Rate/Edit CTA. Offers ahead of long comparison. Early community presentation
+acceptable.
+
+### VoiceOver — **DEFERRED BY HUMAN SCOPE DECISION**
+
+VoiceOver was **not** tested. Human decision: defer deeper accessibility /
+VoiceOver verification to later release accessibility work (**Task 23**).
+
+- Do **not** mark PASS
+- Do **not** mark FAIL
+- Do **not** treat as Task 17 merge blocker after this scope decision
+
+### XXL / maximum Dynamic Type — **FAIL** (physical, SHA `1325198`)
+
+Task 17 **blocker** for acceptance until targeted retest of the layout fix.
+
+Device: iPhone 17 Pro Max, iOS 27 Beta 5, Release, SHA `1325198`.
+
+| Surface | Human observations |
+| --- | --- |
+| Browse | Product-card text heavily clipped; score/metadata cut off; large text exceeds container bounds; portions unreadable |
+| Rate/Edit | Descriptions grow dramatically; row composition excessively tall/wide; slider/value/controls awkward; Save footer extremely large; not acceptably usable at maximum setting |
+| Account | Profile/account card content substantially clipped; text partially or almost entirely hidden in constrained containers |
+
+Not polish-only: content becomes unreadable or poorly usable at maximum Dynamic
+Type.
+
+#### Layout correction (post-physical SHA)
+
+Focused adaptive layout work (component-level score caps where needed; no
+global `allowFontScaling={false}`):
+
+- Score pairs stack at large font scale; chips use deliberate
+  `maxFontSizeMultiplier` on large score display only
+- Dimension steppers restack slider vs ±/Clear; min height touch targets
+- Product Detail comparison stacks at large scale; normal size keeps columns
+- Buttons allow vertical growth; chrome labels lightly capped
+- LoadingState `fill={false}` inside Account profile card
+- Rated Products / Browse use adaptive score stacking
+
+**Targeted human retest** (new tip, not full A–G network matrix): see bottom of
+this file.
+
+## Defects corrected (earlier packets; historical)
 
 ### A — Rating model / score contract
 
@@ -62,74 +210,39 @@ intermediate commit.
   Supabase reset, AsyncStorage could still hold tokens for a deleted principal;
   the app published signed-in while Account/Rate could not operate against a
   missing Auth user / profile.
-- Fix (this patch): when online, validate with Auth `getUser()`; clear
-  current-device session only on definitive invalid identity/session Auth
-  errors; preserve local session when offline or validation fails transiently;
-  keep Task 16 generation / user-scoped cache safety. Profile existence is not
-  the identity validity check.
+- Fix: when online, validate with Auth `getUser()`; clear current-device
+  session only on definitive invalid identity/session Auth errors; preserve
+  local session when offline or validation fails transiently.
 
 ### D — Incomplete Save looked like a no-op
 
 - Root cause: missing dimensions only marked field errors on rows often scrolled
-  out of view; the sticky footer error region stayed empty, so Save appeared to
-  do nothing.
-- Fix: sticky footer summary ("N categories still need a score…") plus per-field
-  incomplete copy; no network write until all ten dimensions are set.
+  out of view; sticky footer error region stayed empty.
+- Fix (`2c4c7f2`): sticky footer summary plus per-field incomplete copy; no
+  network write until all ten dimensions are set.
 
-## Scope delivered (correction)
+### E — Maximum Dynamic Type clipping (physical FAIL → fix pending retest)
 
-1. Forward migration
-   `supabase/migrations/20260809151511_task_17_sneaker10_rating_rubric.sql`
-2. Regenerated `src/types/database.generated.ts` and deliberate seed fixtures
-3. Domain: dimensions, score formula, validation, errors, API, queries, mutations
-4. UI: Rate form groups + steppers; Product Detail Eazy vs Community comparison;
-   Rated Products `myScore100`
-5. Network: `src/lib/network/requestTimeout.ts` (`DEFAULT_REQUEST_TIMEOUT_MS = 10000`)
-6. Docs + ADRs: `sneaker-10-v1` rubric; connected request reliability
-7. Focused tests for formula, offline settle, timeout, queries, lifecycle
-8. Auth restore validation + definitive-invalid classification + focused
-   restore regression tests (zombie / offline / transient)
-9. Incomplete Save sticky footer + field-error feedback and Rate form unit test
+- Root cause: dense horizontal score/control rows and expanding Typography
+  inside half-width or fixed-height chrome at accessibility font scales.
+- Fix: adaptive stacking + deliberate score/chrome scale caps (see layout
+  correction). Physical retest required on new tip.
 
 ## Companion Task 17 UX packets (same branch / PR #36)
-
-These do not change rating write contracts. Presentation and gesture evidence
-remain separately recorded; human device verification is still required:
 
 - Product Detail restoration:
   [`docs/evidence/task-17-product-detail-restoration/RESULT.md`](../task-17-product-detail-restoration/RESULT.md)
 - Rate/Edit native slider gesture:
   [`docs/evidence/task-17-rating-slider-gesture/RESULT.md`](../task-17-rating-slider-gesture/RESULT.md)
 
-## Physical-device checklist (human)
-
-Record PASS/FAIL with date and build/Expo channel notes. **All rows remain
-PENDING HUMAN** — do not treat earlier automated or simulator packets as
-substitute acceptance.
-
-| ID | Scenario | Expected | Result |
-| --- | --- | --- | --- |
-| A | Online normal save | Spinner ends; back to Detail; My Rating + Community refresh | PENDING |
-| B | Known offline before Save | Immediate offline feedback; no endless spinner; form kept; retry after reconnect | PENDING |
-| C | Drop connection during request | Settles via timeout/transport; form kept | PENDING |
-| D | Device online, local Supabase unreachable | Timeout/unreachable (not “you're offline”); no spinner | PENDING |
-| E | Rate offline, no cached owner rating | Explicit offline, not infinite Loading | PENDING |
-| F | Offline with cached Detail/owner data | Cached readable; offline/stale clear; reconnect refresh | PENDING |
-| G | Zombie local session recovery | After local Supabase wipe with phone session kept, relaunch online → signed-out, no stale user-scoped data, sign-up/sign-in works | PENDING |
-
-### Scenario G procedure (human-only)
+## Scenario G procedure (human-only; retained)
 
 1. Sign in on the physical device against local Supabase.
 2. Confirm Account is valid.
 3. Reset/wipe the local Supabase stack so that user no longer exists.
 4. Keep the app's local persisted session intact (do not Sign out first).
 5. Relaunch/reload the app while the phone can reach local Supabase.
-6. Expected:
-   - app does not remain falsely signed in
-   - stale principal is removed locally
-   - Account shows signed-out state
-   - prior user-scoped data is not visible
-   - user can sign up/sign in again normally
+6. Expected: signed out, no stale user-scoped data, new sign-up/sign-in works.
 
 ## Security / privacy notes
 
@@ -137,44 +250,44 @@ substitute acceptance.
 - Private note is owner-only.
 - No service-role credential in Expo.
 - Client never writes `rating_aggregates` or `score` / `methodology_version`.
-- Previously applied migrations: **unchanged** (forward-only correction only).
 - Staging / production databases: **untouched**.
-- Auth restore cleanup uses local/current-device session scope only — no global
-  revocation, no account deletion, no staging/production contact.
+- Auth restore cleanup uses local/current-device session scope only.
 
 ## Automated validation history
 
 ### Earlier branch run (correction-era record; not the final tip)
-
-Retained for chronology only. Counts describe the tree when the correction suite
-was first recorded on this branch, **before** Product Detail restoration / slider
-gesture commit `6863a91` and the final review tip.
 
 | Command | Result (historical) |
 | --- | --- |
 | `npm test` | PASS — 33 suites, 232 tests (pre-slider packet) |
 | `npm run test:db:reset` | PASS — pgTAP 479 tests; concurrency harness 2 scenarios |
 
-### Final automated validation (this packet + tree under final tip)
+### Final automated validation (Dynamic Type packet)
 
 | Command | Result |
 | --- | --- |
-| Focused RateAndDetail Jest (incomplete-submit + existing Task 17 form cases) | PASS — 12 tests |
-| `npm test` (full unit suite under current tip) | PASS — re-verify at handoff if required |
-| `npm run types:check` | Not required — generated types unchanged by this patch |
-| `npm run test:db:reset` | Not required for this UI-only patch (no schema change) |
-| `git diff --check` | PASS |
+| Focused Dynamic Type / surface suites | PASS (fontScale, ProductCard, DimensionStepperRow, RateAndDetail, Browse, Account, Product Detail) |
+| Full suite / typecheck / lint / check | Recorded at commit time |
 
-Auth-restore gates from the prior tip (`1325198`) remain: typecheck, lint,
-check:readonly, and full Jest suite were green; this patch adds incomplete-submit
-coverage on the Rate form only.
+## Targeted human retest checklist (post Dynamic Type fix SHA only)
+
+Unless the fix touches auth/network/data unexpectedly (it should not):
+
+1. Browse at largest Dynamic Type
+2. Product Detail at largest Dynamic Type
+3. Authenticated Rate/Edit at largest Dynamic Type
+4. Account / Rated Products at largest Dynamic Type
+5. Normal text-size Rate/Edit smoke
+6. Incomplete Save feedback (`2c4c7f2` behavior)
+7. One normal successful rating save
+8. Quick slider horizontal/vertical gesture regression
+
+**Do not** re-require full B/C/D/F/G matrix for this layout-only tip.
 
 ## Explicit non-claims
 
-- Physical-device matrix A–G: **PENDING HUMAN**
-- Authenticated slider gestures / VoiceOver / physical Product Detail:
-  **PENDING HUMAN** (see companion UX packets)
 - Human acceptance / merge: **NOT CLAIMED / NOT AUTHORIZED**
 - Staging / production: **untouched**
+- VoiceOver: **not completed**; deferred to Task 23
 - Offline write queue / optimistic rating: **not implemented**
 - Task 18: **not started**

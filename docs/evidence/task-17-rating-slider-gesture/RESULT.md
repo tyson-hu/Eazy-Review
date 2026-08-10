@@ -83,19 +83,27 @@ The following acceptance rows remain unclaimed:
 - Unit-level adjustable role, accessible value (including absolute-scale
   `text` such as `7 of 10` / `not rated`), label, and half-step actions:
   **pass**.
-- VoiceOver announcement and adjustment on the native control: **not-tested**.
-- XXL Dynamic Type visual overlap on the authenticated Rate/Edit form:
-  **not-tested**.
-- Minus, plus, and Clear keep 44-point control heights in component tests:
-  **pass**.
+- VoiceOver announcement and adjustment on the native control:
+  **DEFERRED BY HUMAN SCOPE DECISION** (not tested on physical device; owned
+  by Task 23 release accessibility work — not a Task 17 merge blocker after
+  the 2026-08-10 scope decision).
+- XXL Dynamic Type on the authenticated Rate/Edit form: physical **FAIL** on
+  SHA `1325198` (see parent Task 17 evidence); adaptive layout fix is a
+  separate later tip requiring **targeted** human retest.
+- Minus, plus, and Clear keep ≥44-point control heights (`min-h-11`) in
+  component tests: **pass**.
 
 ## Physical Device
 
-Status: **not-tested**
+Status: **PASS** for slider gestures on 2026-08-10 (Release build, SHA
+`1325198`, iPhone 17 Pro Max, iOS 27 Beta 5). Human verified horizontal
+adjustment, vertical scroll arbitration, curved-thumb use, Rate/Edit not
+dismissed by slider drags, and normal Back outside the slider.
 
-One-handed curved-thumb behavior, scroll arbitration, Back isolation,
-VoiceOver, and Dynamic Type still require the Task 17 physical-device matrix.
-Human acceptance is not claimed.
+VoiceOver is **not** claimed by this PASS.
+
+Canonical matrix and Dynamic Type FAIL notes:
+[`docs/evidence/task-17-my-rating-persistence/RESULT.md`](../task-17-my-rating-persistence/RESULT.md).
 
 ## Accepted Screenshots
 
@@ -116,6 +124,5 @@ claimed or uploaded.
 ## Limits
 
 Automated tests verify the native slider contract and route configuration, not
-UIKit gesture arbitration under a real curved thumb. This packet deliberately
-does not infer simulator or physical-device acceptance from unit tests or from
-the Sign in screenshot.
+UIKit gesture arbitration under a real curved thumb. Physical gesture PASS is
+recorded only for SHA `1325198` as above.

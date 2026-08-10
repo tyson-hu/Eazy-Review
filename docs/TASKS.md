@@ -24,7 +24,10 @@
   Automated and web verification pass. Evidence:
   [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 - Task 17 (My Rating persistence and Rated Products) is **In progress —
-  explicitly authorized.** Human acceptance and merge are not claimed.
+  explicitly authorized.** Physical A–G matrix PASS on SHA `1325198`
+  (2026-08-10); VoiceOver deferred to Task 23; maximum Dynamic Type FAIL with
+  layout fix awaiting targeted retest. Human acceptance and merge are not
+  claimed.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -564,17 +567,35 @@ require separate explicit approval; production remains forbidden.
 
 Local Product Detail restoration evidence (2026-08-09): iOS Simulator
 `pass` at 393×852, canonical live-Metro web preview `blocked` by the host
-environment with a static-export visual adjunct completed, and physical device
-`not-tested`. See
+environment with a static-export visual adjunct completed. Physical Product
+Detail at normal text size: **PASS** on SHA `1325198` (2026-08-10). See
 [`docs/evidence/task-17-product-detail-restoration/RESULT.md`](evidence/task-17-product-detail-restoration/RESULT.md).
 
-Local rating-slider gesture evidence (2026-08-09): automated component,
-route, type, lint, repository, Expo Doctor, and dependency-alignment gates
-`pass`; authenticated simulator gesture, VoiceOver, XXL Dynamic Type, and
-physical-device checks remain `blocked` or `not-tested` and are not accepted.
-See
-[`docs/evidence/task-17-rating-slider-gesture/RESULT.md`](evidence/task-17-rating-slider-gesture/RESULT.md).
+Local rating-slider gesture evidence (2026-08-09): automated gates `pass`.
+Physical slider gestures: **PASS** on SHA `1325198` (2026-08-10). VoiceOver:
+**DEFERRED BY HUMAN SCOPE DECISION** to Task 23. XXL Dynamic Type: physical
+**FAIL** on SHA `1325198`; adaptive layout correction on branch tip awaits
+targeted retest. See
+[`docs/evidence/task-17-rating-slider-gesture/RESULT.md`](evidence/task-17-rating-slider-gesture/RESULT.md)
+and
+[`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
 
+Physical-device matrix (2026-08-10, Release, iPhone 17 Pro Max, iOS 27 Beta 5,
+SHA **`1325198` only** for full A–G):
+
+| ID | Result |
+| --- | --- |
+| A / A1 / A2 | PASS |
+| B–D | PASS |
+| E | PASS WITH COPY NOTE |
+| F–G | PASS |
+| Slider gestures | PASS |
+| Product Detail (normal size) | PASS |
+| VoiceOver | DEFERRED → Task 23 |
+| XXL Dynamic Type | FAIL (blocker; fix retest pending on later tip) |
+
+Later commits `2c4c7f2` / `09075af` are incomplete-submit UI and bookkeeping —
+do not reattribute the full physical matrix to them.
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products
 with honest comparable scores and resilient connected save UX.
@@ -649,8 +670,15 @@ Acceptance:
   without changing the score; and at least 40 points of vertical drift after
   horizontal activation does not lose the active slider.
 - Slider drags never dismiss Rate/Edit; the iOS leading-edge Back gesture still
-  works outside slider interaction. VoiceOver adjusts in half steps, and XXL
-  Dynamic Type does not overlap the slider, value, controls, or footer.
+  works outside slider interaction.
+- XXL / maximum Dynamic Type: Browse product cards, Rate/Edit controls and
+  sticky footer, Account cards, and Product Detail remain readable and operable
+  via adaptive stacking (not by globally disabling font scaling). Score display
+  and compact chrome may use deliberate component-level
+  `maxFontSizeMultiplier` caps per `docs/DESIGN.md`.
+- VoiceOver half-step adjustment is owned by **Task 23** (human-deferred from
+  Task 17 on 2026-08-10) and is not a Task 17 merge blocker after that scope
+  decision.
 - Community derivation mirrors Eazy; methodology mismatch is not silently
   aggregated.
 - Product Detail keeps verified offer price, seller, size, currency, and
@@ -924,8 +952,10 @@ Deliverables:
 
 - One clear retry policy across Supabase and TanStack Query.
 - Offline/reconnect states and root error recovery.
-- VoiceOver labels, logical reading order, Dynamic Type, and touch-target
-  checks.
+- VoiceOver labels, logical reading order, Dynamic Type regression at
+  accessibility content sizes (including Rate/Edit half-step VoiceOver
+  adjustment deferred from Task 17 by human scope decision on 2026-08-10),
+  and touch-target checks.
 - Loading and disabled-submit behavior.
 - Small-screen keyboard/scrolling validation.
 - Real iPhone validation plus one Android compatibility smoke.

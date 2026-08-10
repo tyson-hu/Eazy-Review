@@ -242,6 +242,14 @@ Typography:
 - Avoid marketing copy in core app surfaces.
 - Avoid decorative fonts and overly playful typography.
 - Use `Eazy Score`, `Community Score`, and `My Rating` exactly.
+- Respect system Dynamic Type. Prefer adaptive layout (vertical stacking,
+  content-driven card height, scroll) over dense fixed rows at large content
+  sizes. Do **not** disable `allowFontScaling` globally.
+- Deliberate **component-level** `maxFontSizeMultiplier` is allowed only for
+  large score displays and compact UI chrome (stepper symbols, primary button
+  labels) so maximum accessibility sizes stay operable. Body, captions, and
+  product identity keep full system scaling unless a later accessibility task
+  revisits the caps.
 
 Card style:
 - White background.
@@ -250,6 +258,8 @@ Card style:
 - Rounded at 18px (utility card), not childish.
 - Internal padding ~24px; clear spacing between stacked content.
 - Consistent image area.
+- Product cards and Account cards grow with content; fixed card heights that
+  clip text at large Dynamic Type are not allowed.
 
 Interaction:
 - All button press feedback: `scale(0.95)` (also applied to tappable product cards). Action inputs do not use press scale.
@@ -267,6 +277,8 @@ Layout rules:
 - Use consistent score color meaning.
 - Display `No score yet` when score is null.
 - Eazy Score and Community Score should be easy to compare; My Rating should be visually distinct from aggregate scores.
+- Side-by-side score pairs may stack vertically when system font scale reaches
+  the large-content threshold (`ScoreBadgePair`) so chips are not clipped.
 - Product Detail labels the Eazy source `Editorial assessment`. Community count
   belongs inside the Community Score badge: fewer than five ratings use
   `Early score · N rating(s)`; five or more use `N ratings`.

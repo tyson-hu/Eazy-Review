@@ -19,13 +19,14 @@ Task detail, dependencies, acceptance, and current status live in
   authentication and Account state; corrected physical iPhone checklist PASS;
   automated and web verification PASS. Task 17 owns durable My Rating and
   Rated Products.
-- Task 17: **In progress — explicitly authorized.** Human acceptance and merge
-  are not claimed. Decision-first Product Detail restoration and Rate/Edit
-  native-slider gesture work are implemented with local evidence; authenticated
-  gesture, VoiceOver/XXL form, and physical-device checks remain pending.
-  Excluded identity features (social login, passkeys/MFA, editable/public
-  profile, global session revocation, secure native session storage revisit)
-  are deferred — not part of Tasks 16–19 unless separately promoted.
+- Task 17: **In progress — explicitly authorized.** Physical matrix A–G, slider
+  gestures, and normal Product Detail **PASS** on SHA `1325198` (2026-08-10).
+  VoiceOver is **human-deferred** to Task 23. Maximum Dynamic Type **FAIL** on
+  that SHA; adaptive layout fix on the branch tip requires targeted retest.
+  Human acceptance and merge are not claimed. Excluded identity features
+  (social login, passkeys/MFA, editable/public profile, global session
+  revocation, secure native session storage revisit) are deferred — not part of
+  Tasks 16–19 unless separately promoted.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
