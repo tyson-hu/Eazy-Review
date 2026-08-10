@@ -267,6 +267,9 @@ Layout rules:
 - Use consistent score color meaning.
 - Display `No score yet` when score is null.
 - Eazy Score and Community Score should be easy to compare; My Rating should be visually distinct from aggregate scores.
+- Product Detail labels the Eazy source `Editorial assessment`. Community count
+  belongs inside the Community Score badge: fewer than five ratings use
+  `Early score · N rating(s)`; five or more use `N ratings`.
 
 Score meaning:
 
@@ -311,10 +314,14 @@ Do not add description, long metadata, comments, likes, or social UI to MVP prod
 - Shared ordered dimensions: Appearance, Styling, Materials, Craftsmanship,
   Care, Comfort, Collectibility, Product Value, Resale Potential, Acquisition
   Ease.
-- Product Detail: Eazy Score and Community Score side by side, then one-to-one
-  Eazy vs Community dimension columns.
-- Layered data: composite scores first, strengths/weaknesses when useful,
-  category comparison third. Public written reviews remain post-MVP.
+- Product Detail: Eazy Score and Community Score side by side, then a
+  decision summary, verified offers, and the expanded one-to-one Eazy vs
+  Community dimension columns. The value columns use a visible gutter and
+  every row has one complete accessibility label naming the dimension and both
+  values.
+- Layered data: composite scores first; composite delta and community
+  strengths/weaknesses second; verified offers third; dimension comparison
+  fourth. Public written reviews remain post-MVP.
 - Avoid complex charts unless they remain clear on mobile.
 
 ### Connected-action and query state (Task 15/17)
@@ -379,7 +386,24 @@ Keep these components small. Add abstractions only when they remove real duplica
 
 - Job: help users decide whether this product is worth buying.
 - Focal point: sneaker image plus score summary.
-- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), community category breakdown and rating count, price/purchase section (price by size), My Rating section, description, Rate/Edit CTA.
+- Structure: product image area, product title area, product metadata, score
+  overview (Eazy Score and Community Score), Decision summary, verified offers
+  (price, seller, size, currency, and checked date), expanded ten-dimension
+  score comparison, compact My Rating, description, persistent Rate/Edit CTA.
+- Decision summary: state the overall Community-versus-Eazy delta only when
+  both sources use the same methodology; then show the highest and lowest
+  Community dimensions across the shared ten-dimension rubric. Use calm empty
+  copy for no ratings, and omit opposing strongest/weakest labels when the
+  highest and lowest values tie at one-decimal display precision.
+- Score comparison: label the first column `Dimension`; explain plainly that
+  both scores use the same ten 0–10 dimensions; keep all ten rows expanded.
+  Do not add a Difference column. When methodology versions differ, suppress
+  the rows and direct cross-source claims and explain that direct comparison is
+  unavailable.
+- My Rating: when rated, show only the derived `/100` composite, its score
+  label, and edit guidance. The Rate/Edit screen owns the ten editable
+  dimensions and owner-only private note. Preserve signed-out, loading,
+  offline, error, and unrated Product Detail states.
 - Image empty state: connected products with no public image show "No image
   available"; missing or unmapped mock `mock-product://` fixture assets may
   retain "Image coming soon" on isolated mock-only surfaces. HTTP(S) product
@@ -404,12 +428,20 @@ Phased CTA ownership:
 - Job: make it easy and satisfying to rate a product.
 - Focal point: shared ten-dimension form with a live derived **My Rating** (0–100).
 - Show: product preview; groups Style / Build and Wear / Market and Ownership;
-  dimension steppers (0–10, 0.5 step; Clear = unanswered; 0 is valid); live My
-  Rating preview when complete (explicit incomplete state when not); optional
-  private note; submit; progress feedback that is never an endless offline
-  spinner.
+  platform-native 0–10 half-step sliders for large changes between − / + fine
+  controls; Clear = unanswered; 0 is valid; live My Rating preview when
+  complete (explicit incomplete state when not); optional private note;
+  submit; progress feedback that is never an endless offline spinner.
+- Gesture ownership: horizontal and naturally curved horizontal drags adjust
+  the slider without scrolling; vertical-biased drags scroll without changing
+  the value. Rate/Edit disables iOS full-screen Back while preserving the
+  standard leading-edge Back gesture.
+- Accessibility: each slider exposes its dimension, current value, range, and
+  adjustable actions. Minus, plus, and Clear remain 44-point single-pointer
+  alternatives.
 - Avoid: editable Overall; long intimidating free-text score fields; confusing
-  category names; no save/progress feedback; offline write queues.
+  category names; no save/progress feedback; offline write queues; score
+  entry that requires only repeated ± taps for large moves.
 
 Form fields (methodology `sneaker-10-v1`):
 
@@ -430,10 +462,10 @@ Form fields (methodology `sneaker-10-v1`):
 
 Validation:
 - Numeric fields are required.
-- Values must be between 1 and 10.
+- Values must be between 0 and 10 in 0.5 increments.
 - Private note is optional; when present, max 500 characters (Task 17+).
 
-Mock-era note: Task 9 screens may still label this field **Comment** until Task 17 renames UI + property to Private note / `privateNote`.
+Connected Task 17 form: label **Private note** and property `privateNote`.
 
 ### Account
 

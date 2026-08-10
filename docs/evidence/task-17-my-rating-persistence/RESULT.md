@@ -54,6 +54,16 @@ Physical-device acceptance exposed two blockers after the first Task 17 commit
 6. Docs + ADRs: `sneaker-10-v1` rubric; connected request reliability
 7. Focused tests for formula, offline settle, timeout, queries, lifecycle
 
+## Later Task 17 UX packets (same branch / PR #36)
+
+These do not change rating write contracts. They are presentation and gesture
+corrections awaiting human verification:
+
+- Product Detail restoration:
+  [`docs/evidence/task-17-product-detail-restoration/RESULT.md`](../task-17-product-detail-restoration/RESULT.md)
+- Rate/Edit native slider gesture:
+  [`docs/evidence/task-17-rating-slider-gesture/RESULT.md`](../task-17-rating-slider-gesture/RESULT.md)
+
 ## Physical-device checklist (human)
 
 Record PASS/FAIL with date and build/Expo channel notes.

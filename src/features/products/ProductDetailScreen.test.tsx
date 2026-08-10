@@ -35,6 +35,70 @@ jest.mock('@/src/features/products/api', () => ({
 
 const mockGetProductById = jest.mocked(getProductById);
 
+const earlyCommunityDetail = {
+  ...completeProductDetail,
+  ratingSummary: {
+    ...completeProductDetail.ratingSummary,
+    ratingCount: 1,
+    lookAvg: 8,
+    outfitAvg: 8.5,
+    materialAvg: 7.5,
+    craftsmanshipAvg: 4.5,
+    maintenanceAvg: 8,
+    comfortAvg: 7,
+    collectionAvg: 7.5,
+    valueAvg: 7,
+    resalePotentialAvg: 8,
+    acquisitionEaseAvg: 6.5,
+    communityScore: 71,
+    methodologyVersion: 'sneaker-10-v1',
+  },
+};
+
+const tiedCommunityDetail = {
+  ...earlyCommunityDetail,
+  ratingSummary: {
+    ...earlyCommunityDetail.ratingSummary,
+    ratingCount: 5,
+    lookAvg: 8,
+    outfitAvg: 8,
+    materialAvg: 8,
+    craftsmanshipAvg: 8,
+    maintenanceAvg: 8,
+    comfortAvg: 8,
+    collectionAvg: 8,
+    valueAvg: 8,
+    resalePotentialAvg: 8,
+    acquisitionEaseAvg: 8,
+    communityScore: 80,
+  },
+};
+
+const matchingCommunityDetail = {
+  ...earlyCommunityDetail,
+  ratingSummary: {
+    ...earlyCommunityDetail.ratingSummary,
+    ratingCount: 4,
+    communityScore: 79,
+  },
+};
+
+const mismatchedCommunityDetail = {
+  ...earlyCommunityDetail,
+  ratingSummary: {
+    ...earlyCommunityDetail.ratingSummary,
+    methodologyVersion: 'sneaker-10-v2',
+  },
+};
+
+const partialCommunityDetail = {
+  ...earlyCommunityDetail,
+  ratingSummary: {
+    ...earlyCommunityDetail.ratingSummary,
+    materialAvg: null,
+  },
+};
+
 function testClient(options: { staleTime?: number } = {}) {
   return createAppQueryClient({
     defaultOptions: {
@@ -81,9 +145,11 @@ describe('connected Product Detail screen', () => {
     });
     expect(rendered.getByText('Eazy Score')).toBeTruthy();
     expect(rendered.getByText('79 / 100')).toBeTruthy();
-    expect(rendered.getByText('Eazy Assessment · Editorial evaluation')).toBeTruthy();
+    expect(rendered.getByText('Editorial assessment')).toBeTruthy();
     expect(rendered.getByText('Community Score')).toBeTruthy();
     expect(rendered.getAllByText('No ratings yet').length).toBeGreaterThan(0);
+    expect(rendered.getByText('Decision summary')).toBeTruthy();
+    expect(rendered.getByText('No community ratings yet.')).toBeTruthy();
     expect(rendered.getByText('Lowest verified offer')).toBeTruthy();
     expect(rendered.getByText('$114.99 USD')).toBeTruthy();
     expect(rendered.getByText("DICK'S Sporting Goods · US 10")).toBeTruthy();
@@ -100,6 +166,140 @@ describe('connected Product Detail screen', () => {
     await rendered.cleanup();
   });
 
+  it('restores decision-first context for an early community score', async () => {
+    mockGetProductById.mockResolvedValue(earlyCommunityDetail);
+    const rendered = await renderWithProviders(<ProductDetailScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByText('Nike Air Force 1 Low White')).toBeTruthy(),
+    );
+    expect(rendered.getByText('Editorial assessment')).toBeTruthy();
+    expect(rendered.getByText('Early score · 1 rating')).toBeTruthy();
+    expect(rendered.getByText('Decision summary')).toBeTruthy();
+    expect(
+      rendered.getByText('Community is 8 points below Eazy.'),
+    ).toBeTruthy();
+    expect(rendered.getByText('Top strength')).toBeTruthy();
+    expect(rendered.getByText('Styling · 8.5/10')).toBeTruthy();
+    expect(rendered.getByText('Weakest category')).toBeTruthy();
+    expect(rendered.getByText('Craftsmanship · 4.5/10')).toBeTruthy();
+    expect(
+      rendered.queryByText('Eazy Assessment · Editorial evaluation'),
+    ).toBeNull();
+    await rendered.cleanup();
+  });
+
+  it('uses normal count copy and avoids opposing highlights for tied dimensions', async () => {
+    mockGetProductById.mockResolvedValue(tiedCommunityDetail);
+    const rendered = await renderWithProviders(<ProductDetailScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByText('Nike Air Force 1 Low White')).toBeTruthy(),
+    );
+    expect(rendered.getByText('5 ratings')).toBeTruthy();
+    expect(rendered.queryByText(/Early score/)).toBeNull();
+    expect(
+      rendered.getByText('Community is 1 point above Eazy.'),
+    ).toBeTruthy();
+    expect(
+      rendered.getByText('No clear community strengths or weaknesses yet.'),
+    ).toBeTruthy();
+    expect(rendered.queryByText('Top strength')).toBeNull();
+    expect(rendered.queryByText('Weakest category')).toBeNull();
+    await rendered.cleanup();
+  });
+
+  it('keeps four ratings early and describes an overall match', async () => {
+    mockGetProductById.mockResolvedValue(matchingCommunityDetail);
+    const rendered = await renderWithProviders(<ProductDetailScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByText('Nike Air Force 1 Low White')).toBeTruthy(),
+    );
+    expect(rendered.getByText('Early score · 4 ratings')).toBeTruthy();
+    expect(rendered.getByText('Community matches Eazy overall.')).toBeTruthy();
+    await rendered.cleanup();
+  });
+
+  it('suppresses direct comparison across methodology versions', async () => {
+    mockGetProductById.mockResolvedValue(mismatchedCommunityDetail);
+    const rendered = await renderWithProviders(<ProductDetailScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByText('Nike Air Force 1 Low White')).toBeTruthy(),
+    );
+    expect(
+      rendered.getByText(
+        'Direct comparison is unavailable because these scores use different methods.',
+      ),
+    ).toBeTruthy();
+    expect(
+      rendered.queryByText('Community is 8 points below Eazy.'),
+    ).toBeNull();
+    expect(rendered.queryByTestId('score-compare-look')).toBeNull();
+    await rendered.cleanup();
+  });
+
+  it('announces partial dimension values without relying on visual columns', async () => {
+    mockGetProductById.mockResolvedValue(partialCommunityDetail);
+    const rendered = await renderWithProviders(<ProductDetailScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByText('Nike Air Force 1 Low White')).toBeTruthy(),
+    );
+    expect(
+      rendered.getByText(
+        'Both scores use the same 10 dimensions, scored from 0 to 10.',
+      ),
+    ).toBeTruthy();
+    expect(rendered.getByText('Dimension')).toBeTruthy();
+    expect(rendered.queryByText('Category')).toBeNull();
+    expect(rendered.getByTestId('score-compare-look').props).toMatchObject({
+      accessible: true,
+      accessibilityLabel:
+        'Appearance. Eazy 8 out of 10. Community 8 out of 10.',
+    });
+    expect(rendered.getByTestId('score-compare-material').props).toMatchObject({
+      accessible: true,
+      accessibilityLabel:
+        'Materials. Eazy 8 out of 10. Community not available.',
+    });
+    await rendered.cleanup();
+  });
+
+  it('keeps decision context and verified offers ahead of the long score breakdown', async () => {
+    mockGetProductById.mockResolvedValue(earlyCommunityDetail);
+    const rendered = await renderWithProviders(<ProductDetailScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByText('Nike Air Force 1 Low White')).toBeTruthy(),
+    );
+    expect(
+      rendered
+        .getAllByTestId(/^product-detail-section-/)
+        .map((section) => section.props.testID),
+    ).toEqual([
+      'product-detail-section-decision',
+      'product-detail-section-offers',
+      'product-detail-section-comparison',
+      'product-detail-section-my-rating',
+      'product-detail-section-description',
+    ]);
+    await rendered.cleanup();
+  });
+
   it('renders the sparse Samba without fabricated image, assessment, score, or price', async () => {
     mockRouteId = SPARSE_PRODUCT_ID;
     mockGetProductById.mockResolvedValue(sparseProductDetail);
@@ -113,9 +313,11 @@ describe('connected Product Detail screen', () => {
       ).toBeTruthy(),
     );
     expect(rendered.getByText('No image available')).toBeTruthy();
-    expect(rendered.getByText('Eazy Assessment · Editorial evaluation')).toBeTruthy();
+    expect(rendered.getByText('Editorial assessment')).toBeTruthy();
     expect(rendered.getByText('Not assessed yet')).toBeTruthy();
     expect(rendered.getAllByText('No ratings yet').length).toBeGreaterThan(0);
+    expect(rendered.getByText('Decision summary')).toBeTruthy();
+    expect(rendered.getByText('No community ratings yet.')).toBeTruthy();
     expect(rendered.getByText('Verified offers')).toBeTruthy();
     expect(rendered.getByText('No verified offer available')).toBeTruthy();
     expect(rendered.queryByText('$0')).toBeNull();

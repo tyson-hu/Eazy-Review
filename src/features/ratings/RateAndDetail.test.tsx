@@ -19,6 +19,7 @@ import { renderWithProviders } from '@/src/test/renderWithProviders';
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockDismissTo = jest.fn();
+const mockStackScreen = jest.fn((_props: Record<string, unknown>) => null);
 let mockRouteId: string | undefined = COMPLETE_PRODUCT_ID;
 let mockAuth = {
   status: 'signed-out' as 'initializing' | 'signed-out' | 'signed-in',
@@ -29,8 +30,19 @@ let mockAuth = {
   signOut: jest.fn(),
 };
 
+jest.mock('@react-native-community/slider', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- Jest mock factory
+  const { View } = require('react-native');
+  return { __esModule: true, default: View };
+});
+
 jest.mock('expo-router', () => ({
-  Stack: { Screen: () => null },
+  Stack: {
+    Screen: (props: Record<string, unknown>) => {
+      mockStackScreen(props);
+      return null;
+    },
+  },
   useLocalSearchParams: () => ({ id: mockRouteId }),
   useRouter: () => ({
     push: mockPush,
@@ -82,42 +94,19 @@ function signInAsA() {
   };
 }
 
-/** Fill every dimension to a given 0–10 value via the stepper + button. */
+/** Fill every dimension through the native slider value-change contract. */
 async function fillAllDimensions(
   rendered: Awaited<ReturnType<typeof renderWithProviders>>,
   value: number,
 ) {
   for (const dim of RATING_DIMENSIONS) {
-    const clearId = `rate-dim-${dim.key}-clear`;
-    // Start from unanswered if clear exists; otherwise ensure we can set.
-    if (rendered.queryByTestId(clearId)) {
-      await act(async () => {
-        fireEvent.press(rendered.getByTestId(clearId));
-      });
-    }
-    // First + sets 0.5 from unanswered, then keep incrementing.
-    // Faster path: from unanswered press + until target, or set by repeated + from 0.
-    // Unanswered: first + -> 0.5. For integer targets, clear and use loops.
-    // From unanswered: first dec goes to 0 (per Component), then + to target.
     await act(async () => {
-      fireEvent.press(rendered.getByTestId(`rate-dim-${dim.key}-dec`));
+      fireEvent(
+        rendered.getByTestId(`rate-dim-${dim.key}-slider`),
+        'valueChange',
+        value,
+      );
     });
-    // Now at 0 if was unanswered, or one step down.
-    // Clear to unanswered then set via + chain from 0.5 — simpler reset then:
-    if (rendered.queryByTestId(clearId)) {
-      await act(async () => {
-        fireEvent.press(rendered.getByTestId(clearId));
-      });
-    }
-    await act(async () => {
-      fireEvent.press(rendered.getByTestId(`rate-dim-${dim.key}-dec`)); // → 0
-    });
-    const steps = Math.round(value / 0.5);
-    for (let i = 0; i < steps; i += 1) {
-      await act(async () => {
-        fireEvent.press(rendered.getByTestId(`rate-dim-${dim.key}-inc`));
-      });
-    }
   }
 }
 
@@ -127,6 +116,7 @@ describe('Task 17 rate gate and My Rating composition', () => {
     mockPush.mockReset();
     mockReplace.mockReset();
     mockDismissTo.mockReset();
+    mockStackScreen.mockReset();
     mockAuth = {
       status: 'signed-out',
       user: null,
@@ -187,6 +177,13 @@ describe('Task 17 rate gate and My Rating composition', () => {
       expect(rendered.getByTestId('edit-my-rating')).toBeTruthy(),
     );
     expect(rendered.getByText('90 / 100')).toBeTruthy();
+    expect(rendered.getByText('Excellent')).toBeTruthy();
+    expect(
+      rendered.getByText(
+        'Edit your rating to review all 10 dimensions and your private note.',
+      ),
+    ).toBeTruthy();
+    expect(rendered.queryByText('9/10')).toBeNull();
     expect(rendered.queryByText('owner only')).toBeNull();
     await rendered.cleanup();
   });
@@ -202,6 +199,29 @@ describe('Task 17 rate gate and My Rating composition', () => {
         params: { returnTo: `/product/${COMPLETE_PRODUCT_ID}` },
       }),
     );
+    await rendered.cleanup();
+  });
+
+  it('keeps edge Back but disables full-screen dismissal on Rate/Edit', async () => {
+    signInAsA();
+    mockGetUserRating.mockResolvedValue(null);
+
+    const rendered = await renderWithProviders(<RateProductScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('rate-dim-look')).toBeTruthy(),
+    );
+
+    const hasRateGestureOptions = mockStackScreen.mock.calls.some(([props]) => {
+      const options = (props as { options?: Record<string, unknown> }).options;
+      return (
+        options?.gestureEnabled === true &&
+        options?.fullScreenGestureEnabled === false
+      );
+    });
+    expect(hasRateGestureOptions).toBe(true);
     await rendered.cleanup();
   });
 

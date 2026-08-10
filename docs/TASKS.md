@@ -555,6 +555,19 @@ Human gate: Implementation authorized. Human acceptance, physical-device
 checklist, and merge are **not claimed**. Staging rating writes or acceptance
 require separate explicit approval; production remains forbidden.
 
+Local Product Detail restoration evidence (2026-08-09): iOS Simulator
+`pass` at 393×852, canonical live-Metro web preview `blocked` by the host
+environment with a static-export visual adjunct completed, and physical device
+`not-tested`. See
+[`docs/evidence/task-17-product-detail-restoration/RESULT.md`](evidence/task-17-product-detail-restoration/RESULT.md).
+
+Local rating-slider gesture evidence (2026-08-09): automated component,
+route, type, lint, repository, Expo Doctor, and dependency-alignment gates
+`pass`; authenticated simulator gesture, VoiceOver, XXL Dynamic Type, and
+physical-device checks remain `blocked` or `not-tested` and are not accepted.
+See
+[`docs/evidence/task-17-rating-slider-gesture/RESULT.md`](evidence/task-17-rating-slider-gesture/RESULT.md).
+
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products
 with honest comparable scores and resilient connected save UX.
@@ -576,10 +589,22 @@ Deliverables:
 - Shared `RATING_DIMENSIONS` / methodology `sneaker-10-v1` (ten dimensions).
 - Form: 0–10 half-step dimensions only; no editable Overall; live 0–100 My
   Rating preview; optional Private note (500-char limit).
+- Rate/Edit uses the native community slider for large changes, preserves
+  44-point − / + half-step controls and Clear, lets vertical-biased drags
+  scroll, and disables iOS full-screen Back only on this route while retaining
+  the standard leading-edge Back gesture. This is presentation-only; rating
+  data and write contracts do not change.
 - Grouped UI: Style; Build and Wear; Market and Ownership.
-- Product Detail: Eazy Score and Community Score as 0–100 counterparts plus
-  one-to-one dimension comparison (0–10). Explicit `score100` / `score10` (or
-  equivalent) props — never a scale-ambiguous generic “score”.
+- Product Detail decision-first order: product identity → 0–100 Eazy Score and
+  Community Score overview → Decision summary → verified offers → expanded
+  one-to-one dimension comparison (0–10) → compact My Rating → description →
+  persistent Rate/Edit CTA. Explicit `score100` / `score10` (or equivalent)
+  props — never a scale-ambiguous generic “score”.
+- Decision summary: methodology-compatible overall delta plus highest/lowest
+  Community dimensions across the canonical ten, with one-decimal tie, empty,
+  partial, and methodology-mismatch handling. Community rating count stays in
+  its score card (`Early score` below five); comparison rows name both values
+  for accessibility.
 - Real Rate/Edit with duplicate-submit prevention and required cache
   invalidations (public product, list, user rating, Rated Products).
 - Fail-fast when known offline; bounded request timeout (~10s);
@@ -610,8 +635,23 @@ Acceptance:
 - Derived My Rating is 0–100; ten 9.0 dims → 90; 81.5 sum → 82; 0 is valid;
   null is unanswered (not zero); half steps accepted; invalid increments
   rejected; client cannot persist a disagreeing composite.
+- At 393-point width, a horizontal-biased curved drag (approximately 60 points
+  horizontal / 20 vertical) changes the slider without page scroll; a
+  vertical-biased drag (approximately 10 horizontal / 60 vertical) scrolls
+  without changing the score; and at least 40 points of vertical drift after
+  horizontal activation does not lose the active slider.
+- Slider drags never dismiss Rate/Edit; the iOS leading-edge Back gesture still
+  works outside slider interaction. VoiceOver adjusts in half steps, and XXL
+  Dynamic Type does not overlap the slider, value, controls, or footer.
 - Community derivation mirrors Eazy; methodology mismatch is not silently
   aggregated.
+- Product Detail keeps verified offer price, seller, size, currency, and
+  checked date ahead of the long ten-row comparison; it does not add a mobile
+  Difference column.
+- Rated Product Detail shows the My Rating `/100` composite and score label
+  compactly; all ten editable dimensions and the private note remain on the
+  Rate/Edit screen. Signed-out, loading, offline, error, and unrated states
+  remain explicit.
 - My Rating and server-owned rating count/averages refresh from the database.
 - Browse, Detail, user rating, and Rated Products caches invalidate correctly.
 - Known offline Save: fail-fast offline copy, no endless spinner, form kept.

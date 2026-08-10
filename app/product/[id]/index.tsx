@@ -8,7 +8,6 @@ import { EmptyState } from '@/src/components/ui/EmptyState';
 import { ErrorState } from '@/src/components/ui/ErrorState';
 import { HeaderBackButton } from '@/src/components/ui/HeaderBackButton';
 import { LoadingState } from '@/src/components/ui/LoadingState';
-import { RatingRow } from '@/src/components/ui/RatingRow';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import { Screen } from '@/src/components/ui/Screen';
 import { useAuth } from '@/src/features/auth/hooks';
@@ -19,6 +18,7 @@ import { useProductQuery } from '@/src/features/products/queries';
 import { RATING_DIMENSIONS } from '@/src/features/ratings/dimensions';
 import { useUserRatingQuery } from '@/src/features/ratings/queries';
 import { formatDimensionScore10 } from '@/src/features/ratings/score';
+import { getScoreLabel } from '@/src/lib/constants';
 import type {
   ProductRatingSummary,
   VerifiedProductOffer,
@@ -52,6 +52,77 @@ function avgForDimension(
     case 'acquisitionEase':
       return summary.acquisitionEaseAvg;
   }
+}
+
+type CommunityHighlight = { label: string; value: number };
+
+function getCommunityHighlights(
+  summary: ProductRatingSummary,
+): { strongest: CommunityHighlight; weakest: CommunityHighlight } | null {
+  if (summary.ratingCount <= 0) {
+    return null;
+  }
+
+  const ranked = RATING_DIMENSIONS.map((dimension) => ({
+    label: dimension.label,
+    value: avgForDimension(summary, dimension.key),
+  }))
+    .filter(
+      (dimension): dimension is CommunityHighlight => dimension.value != null,
+    )
+    .sort((a, b) => b.value - a.value);
+
+  if (ranked.length < 2) {
+    return null;
+  }
+
+  const strongest = ranked[0];
+  const weakest = ranked[ranked.length - 1];
+  return strongest.value.toFixed(1) === weakest.value.toFixed(1)
+    ? null
+    : { strongest, weakest };
+}
+
+function communityRatingContext(ratingCount: number): string | undefined {
+  if (ratingCount <= 0) {
+    return undefined;
+  }
+  const countLabel = `${ratingCount} ${ratingCount === 1 ? 'rating' : 'ratings'}`;
+  return ratingCount < 5 ? `Early score · ${countLabel}` : countLabel;
+}
+
+function scoreDeltaCopy(
+  eazyScore100: number | null | undefined,
+  communityScore100: number | null | undefined,
+): string | null {
+  if (eazyScore100 == null || communityScore100 == null) {
+    return null;
+  }
+
+  const difference = communityScore100 - eazyScore100;
+  if (difference === 0) {
+    return 'Community matches Eazy overall.';
+  }
+  const points = Math.abs(difference);
+  const pointLabel = points === 1 ? 'point' : 'points';
+  return `Community is ${points} ${pointLabel} ${difference > 0 ? 'above' : 'below'} Eazy.`;
+}
+
+function scoreAccessibilityCopy(
+  source: 'Eazy' | 'Community',
+  score10: number | null,
+): string {
+  return score10 == null
+    ? `${source} not available`
+    : `${source} ${formatDimensionScore10(score10)} out of 10`;
+}
+
+function comparisonRowAccessibilityLabel(
+  dimension: string,
+  eazyScore10: number | null,
+  communityScore10: number | null,
+): string {
+  return `${dimension}. ${scoreAccessibilityCopy('Eazy', eazyScore10)}. ${scoreAccessibilityCopy('Community', communityScore10)}.`;
 }
 
 function ProductHeader({ title = 'Product' }: { title?: string }) {
@@ -184,12 +255,27 @@ export default function ProductDetailScreen() {
     myRatingQuery.fetchStatus !== 'paused';
   const publicRefreshing =
     productQuery.isFetching || (isSignedIn && myRatingQuery.isFetching && !myRatingQuery.isOffline);
+  const hasEazyDimensions = eazyAssessment?.dimensions != null;
+  const hasCommunityDimensions =
+    ratingSummary.ratingCount > 0 &&
+    RATING_DIMENSIONS.some(
+      (dimension) => avgForDimension(ratingSummary, dimension.key) != null,
+    );
   const showDimensionComparison =
-    eazyAssessment?.dimensions != null ||
-    (ratingSummary.ratingCount > 0 &&
-      RATING_DIMENSIONS.some(
-        (d) => avgForDimension(ratingSummary, d.key) != null,
-      ));
+    hasEazyDimensions || hasCommunityDimensions;
+  const methodologiesMatch =
+    eazyAssessment?.methodologyVersion != null &&
+    ratingSummary.methodologyVersion != null &&
+    eazyAssessment.methodologyVersion === ratingSummary.methodologyVersion;
+  const comparisonMethodologyMismatch =
+    hasEazyDimensions && hasCommunityDimensions && !methodologiesMatch;
+  const communityHighlights = getCommunityHighlights(ratingSummary);
+  const decisionDelta = methodologiesMatch
+    ? scoreDeltaCopy(
+        eazyAssessment?.score100,
+        ratingSummary.communityScore,
+      )
+    : null;
 
   return (
     <Screen
@@ -273,7 +359,7 @@ export default function ProductDetailScreen() {
           label="Eazy Score"
           score100={eazyAssessment?.score100 ?? null}
           emptyLabel="Not assessed yet"
-          sourceLabel="Eazy Assessment · Editorial evaluation"
+          sourceLabel="Editorial assessment"
           className="flex-1"
         />
         <ScoreBadge
@@ -284,66 +370,49 @@ export default function ProductDetailScreen() {
               ? 'No ratings yet'
               : 'No score yet'
           }
+          sourceLabel={communityRatingContext(ratingSummary.ratingCount)}
           className="flex-1"
         />
       </View>
-      {ratingSummary.ratingCount > 0 ? (
-        <AppText variant="caption" className="mt-2">
-          {ratingSummary.ratingCount}{' '}
-          {ratingSummary.ratingCount === 1
-            ? 'community rating'
-            : 'community ratings'}
-        </AppText>
-      ) : null}
 
-      <Card className="mt-5">
-        <AppText variant="label">Score comparison</AppText>
-        <AppText variant="caption" className="mt-1">
-          Shared 0–10 categories; composites are 0–100.
-        </AppText>
-        {showDimensionComparison ? (
-          <View className="mt-4">
-            <View className="mb-2 flex-row items-center">
-              <AppText variant="caption" className="flex-1">
-                Category
-              </AppText>
-              <AppText variant="caption" className="w-16 text-right">
-                Eazy
-              </AppText>
-              <AppText variant="caption" className="w-20 text-right">
-                Community
-              </AppText>
-            </View>
-            {RATING_DIMENSIONS.map((dim) => {
-              const eazy =
-                eazyAssessment?.dimensions?.[dim.key] ?? null;
-              const community = avgForDimension(ratingSummary, dim.key);
-              return (
-                <View
-                  key={dim.key}
-                  testID={`score-compare-${dim.key}`}
-                  className="flex-row items-center border-t border-border py-2">
-                  <AppText variant="body" className="flex-1">
-                    {dim.label}
-                  </AppText>
-                  <AppText variant="caption" className="w-16 text-right">
-                    {formatDimensionScore10(eazy)}
-                  </AppText>
-                  <AppText variant="caption" className="w-20 text-right">
-                    {formatDimensionScore10(community)}
+      <Card testID="product-detail-section-decision" className="mt-5">
+        <AppText variant="label">Decision summary</AppText>
+        {ratingSummary.ratingCount === 0 ? (
+          <AppText variant="body" className="mt-2">
+            No community ratings yet.
+          </AppText>
+        ) : (
+          <View className="mt-4 gap-4">
+            {decisionDelta ? (
+              <AppText variant="subtitle">{decisionDelta}</AppText>
+            ) : null}
+            {communityHighlights ? (
+              <>
+                <View>
+                  <AppText variant="caption">Top strength</AppText>
+                  <AppText variant="subtitle" className="mt-1">
+                    {communityHighlights.strongest.label} ·{' '}
+                    {communityHighlights.strongest.value.toFixed(1)}/10
                   </AppText>
                 </View>
-              );
-            })}
+                <View>
+                  <AppText variant="caption">Weakest category</AppText>
+                  <AppText variant="subtitle" className="mt-1">
+                    {communityHighlights.weakest.label} ·{' '}
+                    {communityHighlights.weakest.value.toFixed(1)}/10
+                  </AppText>
+                </View>
+              </>
+            ) : (
+              <AppText variant="body">
+                No clear community strengths or weaknesses yet.
+              </AppText>
+            )}
           </View>
-        ) : (
-          <AppText variant="body" className="mt-2">
-            No category comparison yet.
-          </AppText>
         )}
       </Card>
 
-      <Card className="mt-5">
+      <Card testID="product-detail-section-offers" className="mt-5">
         <AppText variant="label">Verified offers</AppText>
         {lowestOffer ? (
           <View className="mt-3 gap-3">
@@ -381,7 +450,71 @@ export default function ProductDetailScreen() {
         )}
       </Card>
 
-      <Card className="mt-5 border-accent">
+      <Card testID="product-detail-section-comparison" className="mt-5">
+        <AppText variant="label">Score comparison</AppText>
+        <AppText variant="caption" className="mt-1">
+          Both scores use the same 10 dimensions, scored from 0 to 10.
+        </AppText>
+        {comparisonMethodologyMismatch ? (
+          <AppText variant="body" className="mt-2">
+            Direct comparison is unavailable because these scores use different
+            methods.
+          </AppText>
+        ) : showDimensionComparison ? (
+          <View className="mt-4">
+            <View className="mb-2 flex-row items-center">
+              <AppText variant="caption" className="flex-1">
+                Dimension
+              </AppText>
+              <View className="ml-4 flex-row gap-5">
+                <AppText variant="caption" className="w-12 text-right">
+                  Eazy
+                </AppText>
+                <AppText variant="caption" className="w-20 text-right">
+                  Community
+                </AppText>
+              </View>
+            </View>
+            {RATING_DIMENSIONS.map((dim) => {
+              const eazy =
+                eazyAssessment?.dimensions?.[dim.key] ?? null;
+              const community = avgForDimension(ratingSummary, dim.key);
+              return (
+                <View
+                  key={dim.key}
+                  testID={`score-compare-${dim.key}`}
+                  accessible
+                  accessibilityLabel={comparisonRowAccessibilityLabel(
+                    dim.label,
+                    eazy,
+                    community,
+                  )}
+                  className="flex-row items-center border-t border-border py-2">
+                  <AppText variant="body" className="flex-1">
+                    {dim.label}
+                  </AppText>
+                  <View className="ml-4 flex-row gap-5">
+                    <AppText variant="caption" className="w-12 text-right">
+                      {formatDimensionScore10(eazy)}
+                    </AppText>
+                    <AppText variant="caption" className="w-20 text-right">
+                      {formatDimensionScore10(community)}
+                    </AppText>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <AppText variant="body" className="mt-2">
+            No dimension comparison yet.
+          </AppText>
+        )}
+      </Card>
+
+      <Card
+        testID="product-detail-section-my-rating"
+        className="mt-5 border-accent">
         <AppText variant="label">My Rating</AppText>
         {!isSignedIn ? (
           <>
@@ -432,15 +565,10 @@ export default function ProductDetailScreen() {
             <AppText className="text-xl font-semibold text-primary">
               {myRating.score100} / 100
             </AppText>
-            {RATING_DIMENSIONS.map((dim) => (
-              <RatingRow
-                key={dim.key}
-                label={dim.label}
-                score10={myRating[dim.key]}
-              />
-            ))}
+            <AppText variant="body">{getScoreLabel(myRating.score100)}</AppText>
             <AppText variant="caption">
-              Private note stays on the Rate form — only you can see it.
+              Edit your rating to review all 10 dimensions and your private
+              note.
             </AppText>
           </View>
         ) : (
@@ -450,7 +578,7 @@ export default function ProductDetailScreen() {
         )}
       </Card>
 
-      <Card className="mt-5">
+      <Card testID="product-detail-section-description" className="mt-5">
         <AppText variant="label">Description</AppText>
         <AppText variant="body" className="mt-2">
           {product.description ?? 'No product description available yet.'}

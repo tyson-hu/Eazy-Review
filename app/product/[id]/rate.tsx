@@ -63,6 +63,22 @@ type RateFormProps = {
   isOffline: boolean;
 };
 
+/** Keep the standard edge Back gesture without iOS 26 full-screen dismissal. */
+function RateStackScreen({ title }: { title: string }) {
+  return (
+    <Stack.Screen
+      options={{
+        title,
+        gestureEnabled: true,
+        fullScreenGestureEnabled: false,
+        headerLeft: ({ canGoBack }) => (
+          <HeaderBackButton canGoBack={canGoBack} />
+        ),
+      }}
+    />
+  );
+}
+
 /**
  * Controlled form isolated so parent can remount with a new key when the
  * owner rating query settles (create empty / edit prefilled).
@@ -210,14 +226,7 @@ function RateForm({
           />
         </View>
       }>
-      <Stack.Screen
-        options={{
-          title,
-          headerLeft: ({ canGoBack }) => (
-            <HeaderBackButton canGoBack={canGoBack} />
-          ),
-        }}
-      />
+      <RateStackScreen title={title} />
 
       <View className="mt-2">
         {productName ? (
@@ -339,14 +348,7 @@ export default function RateProductScreen() {
   if (status === 'initializing' || (!isSignedIn && productId)) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <LoadingState message="Checking account..." />
       </Screen>
     );
@@ -355,14 +357,7 @@ export default function RateProductScreen() {
   if (!productId) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <EmptyState
           title="Product not found"
           message="This product is not publicly available."
@@ -374,14 +369,7 @@ export default function RateProductScreen() {
   if (productQuery.isPending && productQuery.fetchStatus === 'paused' && !productQuery.data) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <ErrorState
           title="You're offline."
           message="Connect to the internet and try again."
@@ -396,14 +384,7 @@ export default function RateProductScreen() {
   if (productQuery.isPending && !productQuery.data) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <LoadingState message="Loading product..." />
       </Screen>
     );
@@ -412,14 +393,7 @@ export default function RateProductScreen() {
   if (productQuery.error && !productQuery.data) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <ErrorState
           title="Could not load product"
           message="Connect to the internet and try again."
@@ -439,14 +413,7 @@ export default function RateProductScreen() {
   ) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <ErrorState
           title="You're offline."
           message="Connect to load your existing rating, or reconnect and try again."
@@ -461,14 +428,7 @@ export default function RateProductScreen() {
   if (ratingQuery.isPending && ratingQuery.data === undefined) {
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <LoadingState message="Loading your rating..." />
       </Screen>
     );
@@ -478,14 +438,7 @@ export default function RateProductScreen() {
     const code = (ratingQuery.error as RatingError | null)?.code;
     return (
       <Screen>
-        <Stack.Screen
-          options={{
-            title: 'Rate',
-            headerLeft: ({ canGoBack }) => (
-              <HeaderBackButton canGoBack={canGoBack} />
-            ),
-          }}
-        />
+        <RateStackScreen title="Rate" />
         <ErrorState
           title={
             code === 'offline' ? "You're offline." : 'Could not load your rating'
