@@ -15,8 +15,8 @@ acceptance and merge are **not claimed**.
 | Product Detail normal text size (physical) | **PASS** on SHA `1325198` |
 | VoiceOver | **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27 |
 | XXL / maximum Dynamic Type | Physical **FAIL** (initial + post-fix retest); **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27 |
-| Web verification (agent) | See web packet section / final tip evidence |
-| iOS Simulator (agent, normal text size) | See simulator packet section / final tip evidence |
+| Web verification (agent) | **PASS** on final tip (see Web verification packet) |
+| iOS Simulator (agent, normal text size) | **PASS with documented limits** (see iOS Simulator packet) |
 | Human acceptance / merge | **NOT CLAIMED / NOT AUTHORIZED** (PR #36) |
 
 ## Branch and SHAs
@@ -301,6 +301,86 @@ failed XXL-specific complexity is not retained on the accepted-path UI.
 
 Final cleanup validation is recorded on the final tip after revert,
 dependency alignment, and agent web/simulator verification.
+
+## Agent web verification packet (2026-08-10)
+
+| Field | Value |
+| --- | --- |
+| Date | 2026-08-10 |
+| Browser | Playwright Chromium (MCP `user-playwright`) |
+| Viewport | 393 × 852 |
+| Runtime | Live Expo Metro web (`npx expo start --web --port 8081`) |
+| Backend | Local Supabase only (staging/production untouched) |
+| Branch tip at capture | record final push SHA in TASKS when committed |
+| Disposable local user | local sign-up for the Rate path (not a production principal) |
+
+### Surface results
+
+| Surface | Result |
+| --- | --- |
+| A. Browse | **PASS** — default Browse, search, cards, scores/offers, tabs |
+| B. Product Detail | **PASS** — identity → Eazy/Community → Decision → offers → comparison → My Rating → description → Rate/Edit CTA; hierarchy intact after Dynamic Type revert |
+| C. Auth gate | **PASS** — Sign in to rate → sign-up UI; local create-account returned to Product Detail |
+| D. Rate/Edit | **PASS** — ten dimensions, 0 valid distinct path via half-step +, Clear present after set, sliders present, private note, live My Rating preview (85 after 8.5×10), incomplete Save footer (`10 categories still need…`) + per-row errors, complete save to local Supabase, Detail My Rating + Community 85 |
+| E. Account / Rated Products | **PASS** — profile email/member/count, Rated Products list row 85/100 My Rating + Community, row opens Product Detail |
+| F. Console | **PASS for Task 17** — no React/route exceptions on the success path; historical `ERR_CONNECTION_REFUSED` noise only while Metro was stopped; benign React DevTools info on hard reload |
+
+### Screenshots
+
+Directory: `docs/evidence/task-17-my-rating-persistence/screenshots/`
+
+- `web-01-browse.png`
+- `web-02-product-detail-top.png`
+- `web-03-product-detail-comparison.png`
+- `web-04-rate-edit.png`
+- `web-05-incomplete-save.png`
+- `web-06-account-rated-products.png`
+
+### Web limitations
+
+- One hard navigation briefly showed a false “You're offline.” product shell after
+  a full-page reload; reconnect/retry recovered authentication and My Rating
+  (NetInfo/web transient; local API remained healthy). Not treated as a Task 17
+  product regression when Browse/Rate paths were healthy.
+- Metro once OOMed mid-session (`exit 134`); restarted with
+  `NODE_OPTIONS=--max-old-space-size=8192`.
+
+## Agent iOS Simulator verification packet (2026-08-10)
+
+| Field | Value |
+| --- | --- |
+| Date | 2026-08-10 |
+| Simulator | `Eazy-Review-iPhone-15` (UDID `95761BEB-…`), 393×852 logical pts |
+| Runtime | iOS 26.5 Simulator runtime (device record) |
+| Build | Expo Go `host.exp.Exponent` + live Metro JS bundle (normal text size) |
+| Backend | Local Supabase via Metro env |
+| Dynamic Type / VoiceOver | **Not tested** (post-launch Task 27 ownership) |
+
+### Surface results
+
+| Surface | Result |
+| --- | --- |
+| A. Launch / navigation | **PASS** — Expo Go loads Browse; tab chrome present |
+| B. Browse | **PASS** — search, cards, scores readable after Dynamic Type revert |
+| C. Product Detail (first viewport) | **PASS** — identity, Eazy 79, Community 85 (local truth after web rating), Decision summary, Verified Offers header, Sign in to rate |
+| D. Authentication gate | **PASS** — Rate deep link enforces Sign in form |
+| E–G. Authenticated Rate/Edit / edit / Rated Products UI | **not-run / blocked for interactive entry** — host has no Simulator.app GUI and no keyboard/UI-automation tool for form typing in this session; deep links + screenshots only |
+| H. Slider/navigation gestures | **not-run** on simulator (physical gesture **PASS** on SHA `1325198` remains authoritative) |
+
+### Screenshots
+
+- `ios-01-browse.png`
+- `ios-02-product-detail-top.png` (includes Community 85 + Verified Offers header before fold)
+- `ios-03-product-detail-offers.png` (same first-viewport frame; no scroll automation available)
+- `ios-04-auth-gate-or-rate.png` (Sign in after `/rate` deep link)
+- `ios-05-account.png` (signed-out Account)
+
+### Simulator limits
+
+- No full authenticated Rate/Edit form fill on iOS Simulator in this environment
+  (Simulator GUI missing; `applesimutils` has no tap/type). Physical A–G and
+  agent web cover that path.
+- Does **not** replace physical evidence on SHA `1325198`.
 
 ## Explicit non-claims
 

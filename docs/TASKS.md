@@ -28,8 +28,9 @@
   (2026-08-10). VoiceOver and maximum Dynamic Type are **DEFERRED BY HUMAN
   SCOPE DECISION — POST-LAUNCH** to Task 27 (Dynamic Type failed on physical
   hardware twice, including after fix attempt `a635251`, which was then
-  reverted). Agent web + iOS simulator normal-text verification pending final
-  tip record. Human acceptance and merge are not claimed.
+  reverted). Agent web verification **PASS**; iOS Simulator normal-text
+  **PASS with documented interactive-auth limits** (see evidence RESULT).
+  Human acceptance and merge are not claimed.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -599,6 +600,14 @@ SHA **`1325198` only** for full A–G):
 
 Later commits (`2c4c7f2`, `09075af`, failed XXL attempt `a635251` + revert,
 docs/Expo/web/simulator cleanup) are **not** the physical A–G provenance SHA.
+
+Agent cross-platform verification (2026-08-10, final tip after cleanup): web
+matrix **PASS** (live Metro, 393×852, local Supabase); iOS Simulator (Expo
+Go, Eazy-Review-iPhone-15, normal text) **PASS** for Browse/Detail first
+viewport/auth gate/Account signed-out, with authenticated Rate UI not
+interactively automated (see evidence). Evidence:
+[`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
+
 Goal: complete the first real value loop:
 Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products
 with honest comparable scores and resilient connected save UX.
