@@ -33,11 +33,10 @@ surfaces sticky-footer feedback instead of a silent no-op.
 - Product Detail restoration + Rate/Edit native slider: `6863a91`
 - Prior tip before this auth patch: `6863a91a0333b64f3a1ae15468aa6bee41db98ff`
 - Auth zombie-session restore hardening: `1325198`
-- Incomplete-submit UI feedback (sticky footer + field errors): **this commit**
-  (record SHA after land)
+- Incomplete-submit UI feedback (sticky footer + field errors): `2c4c7f2`
 
-Record the pushed tip from `git rev-parse HEAD` after this commit lands; physical
-testing must use that exact tip SHA, not an intermediate commit.
+Physical testing must use tip `2c4c7f2` (or later on this branch), not an
+intermediate commit.
 
 ## Defects corrected
 
