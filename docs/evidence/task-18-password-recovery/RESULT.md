@@ -19,7 +19,7 @@ Task 19 is **not** started.
 
 - Branch: `agent/task-18-password-recovery`
 - Starting master SHA: `3af5e33f202d382c073d2377ee85966d75ac9002` (PR #36 merge / Task 17 accepted)
-- Implementation head: recorded at handoff / PR open (see git)
+- Implementation head: `e43cfead8e39cd72267d03d45eed5f1632c9b6d6`
 
 ## What was implemented
 
@@ -55,7 +55,7 @@ Run on implementation head (local; full Expo gate):
 | `npx expo install --check` | PASS — dependencies up to date |
 | `npm run check:expo` | PASS (full parent gate) |
 
-Exact HEAD SHA: recorded after commit closeout.
+Exact HEAD SHA: `e43cfead8e39cd72267d03d45eed5f1632c9b6d6`
 
 ## Physical iPhone checklist (human)
 
