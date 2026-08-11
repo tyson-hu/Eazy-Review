@@ -34,14 +34,15 @@
   DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
   reverted). Evidence:
   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
-- Task 18 is **implementation complete / acceptance pending.** Password
-  recovery request (`/auth/forgot-password`), recovery deep-link target
-  (`/auth/reset-password`), `PASSWORD_RECOVERY` handling, non-enumerating
-  confirmation, and focused automated recovery tests. Local/dev redirect
-  paths use the `eazyreview` scheme. Physical iPhone deep-link matrix remains
-  **PENDING HUMAN**. Human acceptance is **NOT CLAIMED**. Task 19 is not
-  started. Evidence:
+- Task 18 is **implementation complete / acceptance pending** (draft PR #37).
+  Password recovery request (`/auth/forgot-password`), recovery deep-link
+  target (`/auth/reset-password`), `PASSWORD_RECOVERY` handling,
+  non-enumerating confirmation, and focused automated recovery tests.
+  Local/dev redirect paths use the `eazyreview` scheme. Physical device
+  recovery matrix: **not-tested**. Web/simulator recovery walks: **not-run**.
+  Human acceptance is **not claimed**. Task 19 is not started. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
+  PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -783,7 +784,7 @@ Deliverables:
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
 - Physical-device deep-link verification in a development or preview build
-  (PENDING HUMAN).
+  (evidence slot: **not-tested** until a human records results).
 - Focused recovery-state tests for verified, ordinary-session, direct,
   expired, replayed, and malformed states.
 
@@ -799,7 +800,7 @@ Implementation notes (acceptance pending):
   tokens or full URLs. Only `verified` enables password update.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
-- Evidence:
+- Evidence (SOP surface vocabulary in `docs/evidence/README.md`):
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 
 Acceptance:
@@ -811,7 +812,7 @@ Acceptance:
 - The new password works and the old password fails.
 - Recovery is proven outside web-only development.
 
-Human acceptance: **NOT CLAIMED.**
+Human acceptance: **not claimed.**
 
 ## Task 19: Protected Account Deletion
 

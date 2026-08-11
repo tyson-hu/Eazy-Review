@@ -31,12 +31,14 @@ Task detail, dependencies, acceptance, and current status live in
   editable/public profile, global session revocation, secure native session
   storage revisit) stay deferred — not part of Tasks 16–19 unless separately
   promoted.
-- Task 18: **Implementation complete / acceptance pending.** Email password
-  recovery request + reset deep-link route, non-enumerating confirmation,
-  recovery-only Auth phase, local/dev `eazyreview` redirect allowlist.
-  Automated tests greened; physical iPhone A–F checklist **PENDING HUMAN**.
-  Task 19 not started. Production recovery host configuration remains Tasks
-  25–26.
+- Task 18: **Implementation complete / acceptance pending** (draft PR #37).
+  Email password recovery request + reset deep-link route, non-enumerating
+  confirmation, recovery-only Auth phase, local/dev `eazyreview` redirect
+  allowlist. Automated local gate greened; physical device recovery matrix
+  **not-tested**; web/simulator recovery walks **not-run**. Human acceptance
+  **not claimed**. Task 19 not started. Production recovery host configuration
+  remains Tasks 25–26. Evidence:
+  `docs/evidence/task-18-password-recovery/RESULT.md`.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,

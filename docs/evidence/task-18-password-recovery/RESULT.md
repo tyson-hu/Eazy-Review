@@ -6,20 +6,28 @@
 
 | Surface | Status |
 | --- | --- |
-| Automated (unit / typecheck / lint / check:readonly / full gate) | See closeout commit results in this file |
-| Web mobile preview | **NOT CLAIMED** for this packet (not required to open the draft PR) |
-| Physical iPhone Recovery A–F | **PENDING HUMAN** |
-| Human acceptance | **NOT CLAIMED** |
-| Staging configuration | **NOT PERFORMED** |
-| Production configuration | **NOT PERFORMED** |
+| Automated (local `npm run check:expo`) | **pass** — see Validation below |
+| GitHub CI `validate` on PR head | **pass** (see PR #37 checks; re-check after each push) |
+| GitHub CI `database` on PR head | **pending / not yet green on write** — re-check PR checks; no schema change claimed |
+| Web mobile preview | **not-run** |
+| iOS Simulator interactive recovery walk | **not-run** |
+| Physical device (recovery A–F) | **not-tested** |
+| Human acceptance | **not claimed** |
+| Staging Auth redirect configuration | **not performed** |
+| Production Auth redirect configuration | **not performed** |
 
 Task 19 is **not** started.
+
+Environment status labels follow `docs/evidence/README.md`
+(`pass` / `fail` / `blocked` / `not-run` for simulator/web; `tested-pass` /
+`tested-fail` / `not-tested` for physical device).
 
 ## Branch and SHAs
 
 - Branch: `agent/task-18-password-recovery`
 - Starting master SHA: `3af5e33f202d382c073d2377ee85966d75ac9002` (PR #36 merge / Task 17 accepted)
-- Implementation head: `47eabb89aef782a2a80944859abeda84965432c0`
+- Implementation commit (product code): `e43cfead8e39cd72267d03d45eed5f1632c9b6d6`
+- PR tip / this evidence revision: run `git rev-parse HEAD` on the branch or open PR #37 head OID (do not treat a stale prose SHA as authoritative after later docs-only commits)
 
 ## What was implemented
 
@@ -39,39 +47,45 @@ Task 19 is **not** started.
 
 ## Automated verification
 
-Run on implementation head (local; full Expo gate):
+Local parent gate (implementation tree; codes path equivalent to
+`e43cfead8e39cd72267d03d45eed5f1632c9b6d6` and later docs-only commits):
 
 | Command | Result |
 | --- | --- |
-| `npm run prepare:routes` | PASS |
-| `npm run check:skill-wrappers` | PASS (24 skill-wrapper tests) |
-| `npm run decisions:check` | PASS (1 test) |
-| `npm run check:secrets` / `test:secrets` | PASS (26 tests; scan clean) |
-| `npm run check:agent-infra` / `test:agent-infra` | PASS (56 tests; graph valid) |
-| `npm run typecheck` | PASS |
-| `npm run lint` | PASS |
-| `npm test` | PASS — 37 suites, **291** tests |
-| `npx expo-doctor` | PASS — 20/20 |
-| `npx expo install --check` | PASS — dependencies up to date |
-| `npm run check:expo` | PASS (full parent gate) |
+| `npm run prepare:routes` | pass |
+| `npm run check:skill-wrappers` | pass (24 skill-wrapper tests) |
+| `npm run decisions:check` | pass (1 test) |
+| `npm run check:secrets` / `test:secrets` | pass (26 tests; scan clean) |
+| `npm run check:agent-infra` / `test:agent-infra` | pass (56 tests; graph valid) |
+| `npm run typecheck` | pass |
+| `npm run lint` | pass |
+| `npm test` | pass — 37 suites, **291** tests |
+| `npx expo-doctor` | pass — 20/20 |
+| `npx expo install --check` | pass — dependencies up to date |
+| `npm run check:expo` | pass (full parent gate) |
 
-Exact HEAD SHA: `47eabb89aef782a2a80944859abeda84965432c0`
+Database: **no recovery SQL/RLS/migration**. Automated green results are not a
+claim that Task 11–13 database gates were re-run for new schema behavior.
 
 ## Physical iPhone checklist (human)
 
-Device: ________________  iOS: ________________  Build: Development
-Commit SHA: ________________
+Build type: Development (`npm run ios:device` / CNG path).  
+Backend: local Supabase (LAN) for implementation acceptance.
+
+Device: ________________  iOS: ________________  
+Tested commit SHA: ________________
 
 | Scenario | Result |
 | --- | --- |
-| A. Cold open (terminated → email link → reset → new password) | PENDING HUMAN |
-| B. Warm open (app running → fresh link → single recovery route) | PENDING HUMAN |
-| C. Invalid / expired link → actionable error + request new email | PENDING HUMAN |
-| D. Reused link after successful reset | PENDING HUMAN |
-| E. Offline request/update + manual retry after reconnect | PENDING HUMAN |
-| F. Relaunch after success → session + sign out + sign in with new password | PENDING HUMAN |
+| A. Cold open (terminated → email link → reset → new password) | not-tested |
+| B. Warm open (app running → fresh link → single recovery route) | not-tested |
+| C. Invalid / expired link → actionable error + request new email | not-tested |
+| D. Reused link after successful reset | not-tested |
+| E. Offline request/update + manual retry after reconnect | not-tested |
+| F. Relaunch after success → session + sign out + sign in with new password | not-tested |
 
-Do not mark PASS without a human report.
+Do not mark `tested-pass` without a human report. Physical deep-link proof is
+required for formal Task 18 acceptance (`docs/TASKS.md`).
 
 ## Security boundary confirmed
 
