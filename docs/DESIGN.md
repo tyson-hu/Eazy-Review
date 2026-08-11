@@ -242,6 +242,17 @@ Typography:
 - Avoid marketing copy in core app surfaces.
 - Avoid decorative fonts and overly playful typography.
 - Use `Eazy Score`, `Community Score`, and `My Rating` exactly.
+- Respect system Dynamic Type when practical. Prefer adaptive layout (vertical
+  stacking, content-driven card height, scroll) over dense fixed rows as the
+  UI is hardened. Do **not** disable `allowFontScaling` globally.
+- Deliberate **component-level** `maxFontSizeMultiplier` may be used only for
+  large score displays and compact UI chrome (stepper symbols, primary button
+  labels) when a measured layout defect requires it. Body, captions, and
+  product identity keep full system scaling unless a later accessibility
+  task revisits the caps.
+- Maximum / XXL Dynamic Type acceptance and full VoiceOver verification are
+  **post-launch** (Task 27) after the 2026-08-10 human scope decision.
+  Initial-release QA still targets normal text size and ordinary readability.
 
 Card style:
 - White background.
@@ -250,6 +261,11 @@ Card style:
 - Rounded at 18px (utility card), not childish.
 - Internal padding ~24px; clear spacing between stacked content.
 - Consistent image area.
+- Product cards and Account cards grow with content where the current design
+  already allows it. Fixed heights that clip identity text at normal sizes are
+  defects. Extreme accessibility content-size clipping is a known
+  initial-release limitation tracked under Task 27, not a Task 17 acceptance
+  reset.
 
 Interaction:
 - All button press feedback: `scale(0.95)` (also applied to tappable product cards). Action inputs do not use press scale.
@@ -267,6 +283,12 @@ Layout rules:
 - Use consistent score color meaning.
 - Display `No score yet` when score is null.
 - Eazy Score and Community Score should be easy to compare; My Rating should be visually distinct from aggregate scores.
+- Side-by-side score pairs remain the normal-size layout. Vertical restacking
+  at extreme accessibility content sizes is post-launch work (Task 27), not a
+  Task 17 requirement after the 2026-08-10 human scope decision.
+- Product Detail labels the Eazy source `Editorial assessment`. Community count
+  belongs inside the Community Score badge: fewer than five ratings use
+  `Early score · N rating(s)`; five or more use `N ratings`.
 
 Score meaning:
 
@@ -301,13 +323,40 @@ Do not add description, long metadata, comments, likes, or social UI to MVP prod
 
 ### Rating Breakdown
 
-- Category breakdowns use a label, numeric average, and a simple horizontal score bar.
-- Prefer compact category rows, expandable detail sections, and top strengths/weaknesses.
-- User rating categories are look, comfort, quality, outfit, value, and overall.
-- Prefer layered data: overall score first, top strengths/weaknesses second,
-  category breakdown third, and public written reviews only in post-MVP social
-  work.
+- Composite labels use **0–100**: `Eazy Score`, `Community Score`, `My Rating`.
+- Dimension rows use **0–10** (half-step display such as `9.0`).
+- Prefer explicitly named props such as `score100` and `score10` (or typed view
+  models). Never feed a dimension into a 0–100 badge or a composite into a
+  0–10 row.
+- Do **not** fix scale mixups with heuristics like
+  `score <= 10 ? score * 10 : score`.
+- Shared ordered dimensions: Appearance, Styling, Materials, Craftsmanship,
+  Care, Comfort, Collectibility, Product Value, Resale Potential, Acquisition
+  Ease.
+- Product Detail: Eazy Score and Community Score side by side, then a
+  decision summary, verified offers, and the expanded one-to-one Eazy vs
+  Community dimension columns. The value columns use a visible gutter and
+  every row has one complete accessibility label naming the dimension and both
+  values.
+- Layered data: composite scores first; composite delta and community
+  strengths/weaknesses second; verified offers third; dimension comparison
+  fourth. Public written reviews remain post-MVP.
 - Avoid complex charts unless they remain clear on mobile.
+
+### Connected-action and query state (Task 15/17)
+
+- Loading/fetching: show LoadingState only while a fetch is actively in flight.
+- Offline (known): compact non-spammy feedback before/after Save on connected
+  screens; fail-fast offline message for writes.
+- Timeout: bounded request deadline (~10s); clear retry copy.
+- Transport/backend unreachable: distinct from offline when the device is
+  networked.
+- Retry: keep entered form values; user initiates retry after reconnect.
+- Cached offline: keep showing cached data with stale/offline context when
+  useful.
+- No infinite spinner for `isPending` + paused mutations/queries, or for
+  `status: pending` + `fetchStatus: paused` with no cache.
+- Preserve user input after transport failures (no silent form wipe).
 
 ### Reusable UI Components
 
@@ -321,7 +370,7 @@ Initial reusable UI components:
 - `ScoreBadge`
 - `ProductCard`
 - `RatingRow`
-- `RatingInputRow`
+- `DimensionStepperRow`
 - `LoadingState`
 - `EmptyState`
 - `ErrorState`
@@ -356,7 +405,24 @@ Keep these components small. Add abstractions only when they remove real duplica
 
 - Job: help users decide whether this product is worth buying.
 - Focal point: sneaker image plus score summary.
-- Structure: product image area, product title area, product metadata, score overview (Eazy Score and Community Score), top strengths and weaknesses (Decision summary: omit opposing labels when community category averages are tied at one-decimal display precision), community category breakdown and rating count, price/purchase section (price by size), My Rating section, description, Rate/Edit CTA.
+- Structure: product image area, product title area, product metadata, score
+  overview (Eazy Score and Community Score), Decision summary, verified offers
+  (price, seller, size, currency, and checked date), expanded ten-dimension
+  score comparison, compact My Rating, description, persistent Rate/Edit CTA.
+- Decision summary: state the overall Community-versus-Eazy delta only when
+  both sources use the same methodology; then show the highest and lowest
+  Community dimensions across the shared ten-dimension rubric. Use calm empty
+  copy for no ratings, and omit opposing strongest/weakest labels when the
+  highest and lowest values tie at one-decimal display precision.
+- Score comparison: label the first column `Dimension`; explain plainly that
+  both scores use the same ten 0–10 dimensions; keep all ten rows expanded.
+  Do not add a Difference column. When methodology versions differ, suppress
+  the rows and direct cross-source claims and explain that direct comparison is
+  unavailable.
+- My Rating: when rated, show only the derived `/100` composite, its score
+  label, and edit guidance. The Rate/Edit screen owns the ten editable
+  dimensions and owner-only private note. Preserve signed-out, loading,
+  offline, error, and unrated Product Detail states.
 - Image empty state: connected products with no public image show "No image
   available"; missing or unmapped mock `mock-product://` fixture assets may
   retain "Image coming soon" on isolated mock-only surfaces. HTTP(S) product
@@ -379,26 +445,50 @@ Phased CTA ownership:
 ### Rating Submission
 
 - Job: make it easy and satisfying to rate a product.
-- Focal point: rating input.
-- Show: product preview, overall rating emphasized first, supporting category rating rows, optional private note, submit button, progress feedback.
-- Keep single-line score inputs pill-shaped; use the 18px utility-card radius for the multiline Private note field so its taller shape does not become an oversized capsule.
-- Avoid: long intimidating forms, too many required fields, confusing category names, no save/progress feedback.
+- Focal point: shared ten-dimension form with a live derived **My Rating** (0–100).
+- Show: product preview; groups Style / Build and Wear / Market and Ownership;
+  platform-native 0–10 half-step sliders for large changes between − / + fine
+  controls; Clear = unanswered; 0 is valid; live My Rating preview when
+  complete (explicit incomplete state when not); optional private note;
+  submit; progress feedback that is never an endless offline spinner.
+- Incomplete save must not be a silent no-op: tapping Save with missing
+  categories shows a sticky footer summary (how many categories still need a
+  score) plus per-field errors on unanswered rows. Offline and failed save
+  reuse the same footer error region.
+- Gesture ownership: horizontal and naturally curved horizontal drags adjust
+  the slider without scrolling; vertical-biased drags scroll without changing
+  the value. Rate/Edit disables iOS full-screen Back while preserving the
+  standard leading-edge Back gesture.
+- Accessibility: each slider exposes its dimension, current value, range, and
+  adjustable actions. Minus, plus, and Clear remain 44-point single-pointer
+  alternatives.
+- Avoid: editable Overall; long intimidating free-text score fields; confusing
+  category names; no save/progress feedback; offline write queues; score
+  entry that requires only repeated ± taps for large moves.
 
-Form fields (keep the first rating form short):
-- Look: 1-10.
-- Comfort: 1-10.
-- Quality: 1-10.
-- Outfit: 1-10.
-- Value: 1-10.
-- Overall: 1-10.
-- Private note: optional (owner-only; not a public comment). Max 500 characters on the connected form (Task 17).
+Form fields (methodology `sneaker-10-v1`):
+
+| Group | UI label | Field |
+| --- | --- | --- |
+| Style | Appearance | look |
+| Style | Styling | outfit |
+| Build and Wear | Materials | material |
+| Build and Wear | Craftsmanship | craftsmanship |
+| Build and Wear | Care | maintenance (10 = easy to maintain) |
+| Build and Wear | Comfort | comfort |
+| Market and Ownership | Collectibility | collection |
+| Market and Ownership | Product Value | value |
+| Market and Ownership | Resale Potential | resalePotential |
+| Market and Ownership | Acquisition Ease | acquisitionEase |
+
+- Private note: optional (owner-only; not a public comment). Max 500 characters.
 
 Validation:
 - Numeric fields are required.
-- Values must be between 1 and 10.
+- Values must be between 0 and 10 in 0.5 increments.
 - Private note is optional; when present, max 500 characters (Task 17+).
 
-Mock-era note: Task 9 screens may still label this field **Comment** until Task 17 renames UI + property to Private note / `privateNote`.
+Connected Task 17 form: label **Private note** and property `privateNote`.
 
 ### Account
 

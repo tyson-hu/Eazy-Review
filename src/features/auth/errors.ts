@@ -135,6 +135,79 @@ function isConfirmationRelated(value: unknown): boolean {
 }
 
 /**
+ * GoTrue / auth-js codes that mean the stored principal or session is no
+ * longer valid. Transient transport and 5xx failures are intentionally
+ * excluded so restore can preserve local session when the Auth server is
+ * only unreachable.
+ *
+ * Source: `@supabase/auth-js` `ErrorCode` list (bad_jwt, user_not_found,
+ * session_*, refresh_token_*, user_banned) plus AuthSessionMissingError /
+ * AuthInvalidJwtError names used by the SDK client.
+ */
+const DEFINITIVE_INVALID_SESSION_CODES = new Set([
+  'bad_jwt',
+  'invalid_jwt',
+  'user_not_found',
+  'session_not_found',
+  'session_expired',
+  'refresh_token_not_found',
+  'refresh_token_already_used',
+  'user_banned',
+]);
+
+/**
+ * True when Auth has rejected the restored session/principal for identity
+ * reasons — not when the device is offline or the request failed transiently.
+ * Prefer preserving local session when classification is ambiguous.
+ */
+export function isDefinitiveInvalidSessionError(error: unknown): boolean {
+  if (error == null) {
+    return false;
+  }
+
+  const name = asRecord(error)?.name;
+  if (
+    name === 'AuthSessionMissingError' ||
+    name === 'AuthInvalidJwtError' ||
+    name === 'AuthInvalidTokenResponseError'
+  ) {
+    return true;
+  }
+
+  const code = readCode(error)?.toLowerCase();
+  if (code != null && DEFINITIVE_INVALID_SESSION_CODES.has(code)) {
+    return true;
+  }
+
+  // Ambiguous 401/403 without a known code must not force logout.
+  // Known codes already covered above.
+  return false;
+}
+
+/**
+ * Transient validation failures during online restore — keep the local
+ * session rather than destructive sign-out.
+ */
+export function isTransientSessionValidationFailure(error: unknown): boolean {
+  if (error == null || isDefinitiveInvalidSessionError(error)) {
+    return false;
+  }
+  if (isTransportFailure(error)) {
+    return true;
+  }
+  const name = asRecord(error)?.name;
+  if (name === 'TimeoutError' || name === 'AbortError') {
+    return true;
+  }
+  const status = readStatus(error);
+  if (status != null && status >= 500) {
+    return true;
+  }
+  // Unknown / unclassifiable errors: treat as transient to avoid false logout.
+  return true;
+}
+
+/**
  * Maps SDK/network failures to AuthError with fixed user-facing copy.
  * Does not surface raw Supabase messages to callers who only read `.message`.
  */

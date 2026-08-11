@@ -2,6 +2,8 @@ import {
   AuthError,
   AUTH_USER_MESSAGES,
   getAuthErrorMessage,
+  isDefinitiveInvalidSessionError,
+  isTransientSessionValidationFailure,
   normalizeAuthError,
 } from '@/src/features/auth/errors';
 
@@ -48,5 +50,60 @@ describe('normalizeAuthError', () => {
     expect(getAuthErrorMessage({ message: 'raw-supabase-xyz' })).toBe(
       AUTH_USER_MESSAGES.signInFailed,
     );
+  });
+});
+
+describe('session validity classification', () => {
+  it('treats known Auth identity rejections as definitive', () => {
+    expect(
+      isDefinitiveInvalidSessionError({
+        name: 'AuthSessionMissingError',
+        message: 'Auth session missing!',
+      }),
+    ).toBe(true);
+    expect(
+      isDefinitiveInvalidSessionError({
+        code: 'user_not_found',
+        status: 403,
+      }),
+    ).toBe(true);
+    expect(
+      isDefinitiveInvalidSessionError({
+        code: 'session_not_found',
+        status: 403,
+      }),
+    ).toBe(true);
+    expect(
+      isDefinitiveInvalidSessionError({
+        code: 'bad_jwt',
+        status: 401,
+      }),
+    ).toBe(true);
+  });
+
+  it('does not treat transport or 5xx as definitive invalid session', () => {
+    expect(
+      isDefinitiveInvalidSessionError(new TypeError('Network request failed')),
+    ).toBe(false);
+    expect(
+      isDefinitiveInvalidSessionError({
+        status: 503,
+        code: 'unexpected_failure',
+        message: 'Internal server error',
+      }),
+    ).toBe(false);
+    // Ambiguous 401 without known code must not force logout.
+    expect(
+      isDefinitiveInvalidSessionError({
+        status: 401,
+        message: 'Unauthorized',
+      }),
+    ).toBe(false);
+    expect(
+      isTransientSessionValidationFailure({
+        status: 503,
+        code: 'unexpected_failure',
+      }),
+    ).toBe(true);
   });
 });

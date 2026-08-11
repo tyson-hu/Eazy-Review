@@ -3,6 +3,23 @@ export const COMPLETE_PRODUCT_ID =
 export const SPARSE_PRODUCT_ID =
   'a1000000-0000-4000-8000-000000000002';
 
+const emptyAggregate = (productId: string) => ({
+  product_id: productId,
+  rating_count: 0,
+  look_avg: null,
+  outfit_avg: null,
+  material_avg: null,
+  craftsmanship_avg: null,
+  maintenance_avg: null,
+  comfort_avg: null,
+  collection_avg: null,
+  value_avg: null,
+  resale_potential_avg: null,
+  acquisition_ease_avg: null,
+  score: null,
+  methodology_version: null,
+});
+
 export const completeCatalogRow = {
   id: COMPLETE_PRODUCT_ID,
   brand: 'Nike',
@@ -30,22 +47,22 @@ export const completeCatalogRow = {
     {
       id: 'assessment-current',
       score: 79,
-      methodology_version: 'task13-seed-v1',
+      methodology_version: 'sneaker-10-v1',
       created_at: '2026-08-03T16:17:14.000Z',
       is_current: true,
+      look: 8,
+      outfit: 8,
+      material: 8,
+      craftsmanship: 8,
+      maintenance: 7,
+      comfort: 8,
+      collection: 8,
+      value: 8,
+      resale_potential: 8,
+      acquisition_ease: 8,
     },
   ],
-  rating_aggregates: {
-    product_id: COMPLETE_PRODUCT_ID,
-    rating_count: 0,
-    look_avg: null,
-    comfort_avg: null,
-    quality_avg: null,
-    outfit_avg: null,
-    value_avg: null,
-    overall_avg: null,
-    score: null,
-  },
+  rating_aggregates: emptyAggregate(COMPLETE_PRODUCT_ID),
   product_offers: [
     {
       id: 'offer-finish-line',
@@ -88,16 +105,6 @@ export const sparseCatalogRow = {
   created_at: '2026-08-03T16:17:14.000Z',
   product_images: [],
   eazy_assessments: [],
-  rating_aggregates: {
-    product_id: SPARSE_PRODUCT_ID,
-    rating_count: 0,
-    look_avg: null,
-    comfort_avg: null,
-    quality_avg: null,
-    outfit_avg: null,
-    value_avg: null,
-    overall_avg: null,
-    score: null,
-  },
+  rating_aggregates: emptyAggregate(SPARSE_PRODUCT_ID),
   product_offers: [],
 } as const;

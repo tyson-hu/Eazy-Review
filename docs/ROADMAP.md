@@ -15,15 +15,22 @@ Task detail, dependencies, acceptance, and current status live in
   use the deterministic public catalog locally, including physical iPhone LAN
   loads and phone-only offline/reconnect proof. Staging and production remain
   untouched.
-- Task 16: **Done — human accepted.** Core authentication and Account state;
-  corrected physical iPhone checklist PASS; automated and web verification
-  PASS. PR #35 ready for merge (merge remains separate). Task 17 owns durable
-  My Rating and Rated Products.
-- Task 17: **Next — pending authorization.** Do not start until explicitly
-  authorized. Excluded identity features (social login, passkeys/MFA,
-  editable/public profile, global session revocation, secure native session
-  storage revisit) are deferred — not part of Tasks 16–19 unless separately
-  promoted.
+- Task 16: **Done — human accepted and merged in PR #35 on 2026-08-09.** Core
+  authentication and Account state; corrected physical iPhone checklist PASS;
+  automated and web verification PASS. Task 17 owns durable My Rating and
+  Rated Products.
+- Task 17: **Done — human accepted** (PR #36). Durable My Rating
+  (sneaker-10-v1), Community aggregates, Rated Products, Product Detail
+  restoration, slider, offline/timeout reliability, zombie-session restore,
+  incomplete-submit feedback. Full physical A–G **PASS** on SHA `1325198`;
+  human-reported final physical smoke **PASS** on the final accepted tip
+  (regression smoke). Web **PASS**; iOS Simulator **PASS with documented
+  limits**. VoiceOver and maximum Dynamic Type remain **DEFERRED BY HUMAN
+  SCOPE DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice;
+  `a635251` reverted). Task 18 remains Pending / not started. Excluded
+  identity features (social login, passkeys/MFA, editable/public profile,
+  global session revocation, secure native session storage revisit) stay
+  deferred — not part of Tasks 16–19 unless separately promoted.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,
@@ -62,7 +69,8 @@ dependencies and parallel-safety live only in `docs/TASKS.md`.
 must become useful or be removed. Connected work adds focused tests as it
 lands, while Task 22 closes cross-feature gaps, adds a deliberately triggered
 E2E smoke, and optimizes the already-present CI lanes. Task 23 owns release
-reliability, accessibility, and device QA.
+reliability, ordinary device QA, and non-extreme accessibility smoke. Full
+VoiceOver and maximum Dynamic Type hardening are post-launch (Task 27).
 
 Task 21 must replace or remove the primary Feed placeholder before beta. Task
 20 does not start merely because Filter/Sort existed in the mock design.

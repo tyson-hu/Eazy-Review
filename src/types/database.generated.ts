@@ -46,10 +46,11 @@ export type Database = {
     Tables: {
       eazy_assessments: {
         Row: {
+          acquisition_ease: number | null
           collection: number | null
           comfort: number | null
+          craftsmanship: number | null
           created_at: string
-          details: number | null
           id: string
           is_current: boolean
           look: number | null
@@ -57,18 +58,18 @@ export type Database = {
           material: number | null
           methodology_version: string | null
           outfit: number | null
-          overall: number | null
           product_id: string
-          quality: number | null
+          resale_potential: number | null
           score: number | null
           updated_at: string
           value: number | null
         }
         Insert: {
+          acquisition_ease?: number | null
           collection?: number | null
           comfort?: number | null
+          craftsmanship?: number | null
           created_at?: string
-          details?: number | null
           id?: string
           is_current?: boolean
           look?: number | null
@@ -76,18 +77,18 @@ export type Database = {
           material?: number | null
           methodology_version?: string | null
           outfit?: number | null
-          overall?: number | null
           product_id: string
-          quality?: number | null
+          resale_potential?: number | null
           score?: number | null
           updated_at?: string
           value?: number | null
         }
         Update: {
+          acquisition_ease?: number | null
           collection?: number | null
           comfort?: number | null
+          craftsmanship?: number | null
           created_at?: string
-          details?: number | null
           id?: string
           is_current?: boolean
           look?: number | null
@@ -95,9 +96,8 @@ export type Database = {
           material?: number | null
           methodology_version?: string | null
           outfit?: number | null
-          overall?: number | null
           product_id?: string
-          quality?: number | null
+          resale_potential?: number | null
           score?: number | null
           updated_at?: string
           value?: number | null
@@ -262,37 +262,52 @@ export type Database = {
       }
       rating_aggregates: {
         Row: {
+          acquisition_ease_avg: number | null
+          collection_avg: number | null
           comfort_avg: number | null
+          craftsmanship_avg: number | null
           look_avg: number | null
+          maintenance_avg: number | null
+          material_avg: number | null
+          methodology_version: string | null
           outfit_avg: number | null
-          overall_avg: number | null
           product_id: string
-          quality_avg: number | null
           rating_count: number
+          resale_potential_avg: number | null
           score: number | null
           updated_at: string
           value_avg: number | null
         }
         Insert: {
+          acquisition_ease_avg?: number | null
+          collection_avg?: number | null
           comfort_avg?: number | null
+          craftsmanship_avg?: number | null
           look_avg?: number | null
+          maintenance_avg?: number | null
+          material_avg?: number | null
+          methodology_version?: string | null
           outfit_avg?: number | null
-          overall_avg?: number | null
           product_id: string
-          quality_avg?: number | null
           rating_count?: number
+          resale_potential_avg?: number | null
           score?: number | null
           updated_at?: string
           value_avg?: number | null
         }
         Update: {
+          acquisition_ease_avg?: number | null
+          collection_avg?: number | null
           comfort_avg?: number | null
+          craftsmanship_avg?: number | null
           look_avg?: number | null
+          maintenance_avg?: number | null
+          material_avg?: number | null
+          methodology_version?: string | null
           outfit_avg?: number | null
-          overall_avg?: number | null
           product_id?: string
-          quality_avg?: number | null
           rating_count?: number
+          resale_potential_avg?: number | null
           score?: number | null
           updated_at?: string
           value_avg?: number | null
@@ -309,43 +324,61 @@ export type Database = {
       }
       user_ratings: {
         Row: {
+          acquisition_ease: number
+          collection: number
           comfort: number
+          craftsmanship: number
           created_at: string
           id: string
           look: number
+          maintenance: number
+          material: number
+          methodology_version: string
           outfit: number
-          overall: number
           private_note: string | null
           product_id: string
-          quality: number
+          resale_potential: number
+          score: number
           updated_at: string
           user_id: string
           value: number
         }
         Insert: {
+          acquisition_ease: number
+          collection: number
           comfort: number
+          craftsmanship: number
           created_at?: string
           id?: string
           look: number
+          maintenance: number
+          material: number
+          methodology_version?: string
           outfit: number
-          overall: number
           private_note?: string | null
           product_id: string
-          quality: number
+          resale_potential: number
+          score?: number
           updated_at?: string
           user_id: string
           value: number
         }
         Update: {
+          acquisition_ease?: number
+          collection?: number
           comfort?: number
+          craftsmanship?: number
           created_at?: string
           id?: string
           look?: number
+          maintenance?: number
+          material?: number
+          methodology_version?: string
           outfit?: number
-          overall?: number
           private_note?: string | null
           product_id?: string
-          quality?: number
+          resale_potential?: number
+          score?: number
           updated_at?: string
           user_id?: string
           value?: number
@@ -365,6 +398,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_sneaker10_score: {
+        Args: {
+          p_acquisition_ease: number
+          p_collection: number
+          p_comfort: number
+          p_craftsmanship: number
+          p_look: number
+          p_maintenance: number
+          p_material: number
+          p_outfit: number
+          p_resale_potential: number
+          p_value: number
+        }
+        Returns: number
+      }
+      is_half_step_score_0_10: { Args: { p_value: number }; Returns: boolean }
       refresh_rating_aggregates: {
         Args: { p_product_id: string }
         Returns: undefined

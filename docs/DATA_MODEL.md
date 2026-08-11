@@ -3,13 +3,12 @@
 Use relational Supabase/PostgreSQL tables. Do not store product identity,
 images, offers, ratings, and summaries inside one giant product JSON object.
 
-This document is the canonical current contract for the Tasks 11–12 schema,
-triggers, RLS, grants, and authorization behavior. Applied migrations remain
-forward-only and unchanged. The dated migration chronology, assertion counts,
-local concurrency results, and explicitly authorized staging evidence are
-preserved in
-[`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md),
-not duplicated into this evergreen contract.
+This document is the canonical current contract for product/rating tables,
+triggers, RLS, grants, and authorization behavior. Tasks 11–12 applied
+migrations remain historical and forward-only (never rewritten). Task 17’s
+forward migration brings ratings onto the shared **sneaker-10-v1** rubric.
+Dated Task 11–12 acceptance is preserved in
+[`docs/evidence/task-11-12-database-acceptance/RESULT.md`](evidence/task-11-12-database-acceptance/RESULT.md).
 
 Separate these concerns:
 
@@ -42,170 +41,104 @@ names. Do not introduce them in migrations.
 
 ## Rating Categories
 
-My Rating fields:
+Eazy, Community, and My Rating share one **sneaker-10-v1** rubric.
 
-- `look`
-- `comfort`
-- `quality`
-- `outfit`
-- `value`
-- `overall`
-- `private_note` (optional, owner-only, maximum 500 characters)
+Dimension fields (0–10, half-step increments, 0 is a valid score, null only when
+unanswered on draft forms — stored rows require all ten):
 
-`private_note` is not a public review. Keep the mock UI's existing `comment`
-field until Task 17 owns the connected rename.
+1. `look` — UI: Appearance
+2. `outfit` — UI: Styling
+3. `material` — UI: Materials
+4. `craftsmanship` — UI: Craftsmanship
+5. `maintenance` — UI: Care (10 = easy to maintain)
+6. `comfort` — UI: Comfort
+7. `collection` — UI: Collectibility
+8. `value` — UI: Product Value (10 = strong value relative to execution, price, concept)
+9. `resale_potential` — TypeScript: `resalePotential` — UI: Resale Potential
+   (10 = strong retention/upside)
+10. `acquisition_ease` — TypeScript: `acquisitionEase` — UI: Acquisition Ease
+    (10 = easy/reasonable to obtain)
 
-Eazy Score assessment fields:
+`private_note` remains optional, owner-only, maximum 500 characters.
 
-- `look`
-- `comfort`
-- `quality`
-- `outfit`
-- `value`
-- `maintenance`
-- `material`
-- `details`
-- `collection`
-- `overall`
-- `score` (0–100)
+Composite fields (0–100, never client-entered):
 
-Use `comfort`, not `comforts`; `maintenance`, not `maintain`; `value` or
-`resale_markup`, not `markups`; and `details` or `craftsmanship`, not
-`meticulous`.
+- `eazy_assessments.score` and `user_ratings.score` (My Rating)
+- `rating_aggregates.score` (Community Score)
+
+```
+composite = round(
+  look + outfit + material + craftsmanship + maintenance
+  + comfort + collection + value + resale_potential + acquisition_ease
+)
+```
+
+Equal weight for all dimensions. Methodology version `methodology_version` is
+`sneaker-10-v1`. Aggregates only include ratings with that version.
+
+For complete `eazy_assessments` rows the derive trigger **always** forces
+`methodology_version = 'sneaker-10-v1'` and recomputes `score` from dimensions
+(same force pattern as `user_ratings`). Incomplete editorial rows store
+`score = null` so a partially cleared dimension set cannot keep a stale
+composite.
+
+Retired (superseded after Task 17 physical-device defects):
+
+- Manually entered `overall`
+- User-only `quality` and eazy-only `details` under the old unequal models
 
 ## Task 11 Schema Contract
 
+The Tasks 11–12 applied migrations remain historical. For the current rating
+shape (Task 17 forward migration), the effective columns are:
+
+**`eazy_assessments`:** ten dimensions (nullable at rest for incomplete
+editorial rows), derived `score` 0–100, `methodology_version`, `is_current`,
+timestamps, partial unique one-current-per-product.
+
+**`user_ratings`:** ten required dimensions, derived `score`,
+`methodology_version` not-null default/constraint `sneaker-10-v1`, optional
+`private_note`, unique `(product_id, user_id)`, immutable identity.
+
+**`rating_aggregates`:** `rating_count`, ten `*_avg` columns numeric(4,2),
+derived `score` 0–100, `methodology_version`, `updated_at`.
+
+Client Data API grants for ratings write only the dimensions + `private_note`
+(not `score`, not `methodology_version`, never aggregates).
+
+## Task 11 Trigger And Function Acceptance
+
+The client never calculates or persists Community Score. Acceptance criteria
+under sneaker-10-v1:
+
+- `rating_count` is the number of methodology-compatible ratings for the product.
+- Each dimension average is `round(avg(dim), 2)`.
+- Community Score is
+  `round(avg(look)+…+avg(acquisition_ease))` from unrounded means (mirrors Eazy
+  composite derivation).
+- Zero-count aggregates keep averages, score, and methodology_version null.
+- Product insert still creates one zero-count aggregate row.
+- Rating insert/update/delete refresh aggregates; concurrent same-product writes
+  remain serialized via 64-bit advisory locks.
+- Identity columns on `user_ratings` remain immutable after insert.
+
+### Aggregate fixtures (sneaker-10-v1)
+
+- A single rating with all ten dimensions = 8 yields averages 8.00 and score 80.
+- Four ratings with three full-1.0 and one full-2.0 sets yield each avg 1.25 and
+  Community Score 13.
+- Two complementary ratings with per-dimension pairs averaging 6.00 yield score
+  60.
+
+Expected names remain `refresh_rating_aggregates`,
+`handle_user_rating_change`, and the statement triggers. Composite derivation
+uses `derive_user_rating_composite` / `derive_eazy_assessment_composite`
+(SECURITY DEFINER, non-executable by clients).
+
 ```sql
-create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  display_name text,
-  username text unique,
-  avatar_url text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table public.products (
-  id uuid primary key default gen_random_uuid(),
-  brand text not null,
-  name text not null,
-  sku text unique,
-  size_type text,
-  release_date date,
-  description text,
-  is_published boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index products_brand_idx on public.products (brand);
-create index products_name_idx
-  on public.products using gin (to_tsvector('english', name));
-create index products_created_at_idx
-  on public.products (created_at desc);
-create index products_published_idx
-  on public.products (is_published) where is_published;
-
-create table public.product_images (
-  id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.products(id) on delete cascade,
-  image_url text not null,
-  sort_order int not null default 0,
-  created_at timestamptz not null default now(),
-  unique (product_id, sort_order)
-);
-
-create table public.eazy_assessments (
-  id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.products(id) on delete cascade,
-  look int check (look between 1 and 10),
-  comfort int check (comfort between 1 and 10),
-  quality int check (quality between 1 and 10),
-  outfit int check (outfit between 1 and 10),
-  value int check (value between 1 and 10),
-  maintenance int check (maintenance between 1 and 10),
-  material int check (material between 1 and 10),
-  details int check (details between 1 and 10),
-  collection int check (collection between 1 and 10),
-  overall int check (overall between 1 and 10),
-  score int check (score between 0 and 100),
-  methodology_version text,
-  is_current boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create unique index eazy_assessments_one_current_per_product
-  on public.eazy_assessments (product_id)
-  where is_current;
-
-create table public.user_ratings (
-  id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.products(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  look int not null check (look between 1 and 10),
-  comfort int not null check (comfort between 1 and 10),
-  quality int not null check (quality between 1 and 10),
-  outfit int not null check (outfit between 1 and 10),
-  value int not null check (value between 1 and 10),
-  overall int not null check (overall between 1 and 10),
-  private_note text
-    check (private_note is null or char_length(private_note) <= 500),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (product_id, user_id)
-);
-
-create index user_ratings_product_id_idx
-  on public.user_ratings (product_id);
-create index user_ratings_user_id_idx
-  on public.user_ratings (user_id);
-create index user_ratings_created_at_idx
-  on public.user_ratings (created_at desc);
-
-create table public.rating_aggregates (
-  product_id uuid primary key references public.products(id) on delete cascade,
-  rating_count int not null default 0,
-  look_avg numeric(4,2),
-  comfort_avg numeric(4,2),
-  quality_avg numeric(4,2),
-  outfit_avg numeric(4,2),
-  value_avg numeric(4,2),
-  overall_avg numeric(4,2),
-  score int check (score between 0 and 100),
-  updated_at timestamptz not null default now()
-);
-
-create table public.product_offers (
-  id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.products(id) on delete cascade,
-  website_name text not null,
-  website_link text not null,
-  size numeric(4,1)
-    check (
-      size is null
-      or (size >= 0 and size <> 'NaN'::numeric)
-    ),
-  size_region text not null default 'US'
-    check (size_region in ('US')),
-  currency text not null default 'USD'
-    check (currency in ('USD')),
-  price numeric(10,2)
-    check (
-      price is null
-      or (price >= 0 and price <> 'NaN'::numeric)
-    ),
-  last_checked_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index product_offers_product_id_idx
-  on public.product_offers (product_id);
-create index product_offers_price_idx
-  on public.product_offers (price);
-create index product_offers_size_idx
-  on public.product_offers (size);
+-- Historical Task 11 SQL lives in applied migrations and is not re-duplicated
+-- here. Current column lists are described in prose above and enforced by the
+-- Task 17 forward migration.
 ```
 
 Task 15 will select the primary image by `sort_order ASC`, then
@@ -215,58 +148,6 @@ MVP offer rows accept `US` and `USD` only. Seed/import code must trim and
 uppercase those values before insert. Expand either whitelist deliberately when
 another sizing system or ISO 4217 currency is supported; never calculate a raw
 minimum across mixed currencies.
-
-## Task 11 Trigger And Function Acceptance
-
-The client never calculates or persists Community Score. Task 11 owns a
-trigger-based, server-side aggregate mechanism with these acceptance criteria:
-
-- `rating_count` is the number of ratings for the product.
-- Each category average and `overall_avg` is the arithmetic mean of the
-  matching 1–10 rating column, rounded to two decimal places.
-- `score` is `round(avg(overall) * 10)` as an integer from 0–100. Calculate it
-  from the unrounded arithmetic mean, not from the stored two-decimal
-  `overall_avg`.
-- A zero-count aggregate keeps every category average, `overall_avg`, and
-  `score` null.
-- A product insert creates one zero-count `rating_aggregates` row.
-- Rating insert, score update, and delete refresh the matching product's count,
-  category averages, overall average, score, and timestamp.
-- Refreshes for the same product are serialized before reading
-  `user_ratings`, so concurrent commits cannot leave a stale aggregate.
-- Rating insert, update, and delete refresh once per statement from transition
-  tables. Each distinct affected product maps to a 64-bit advisory-lock key;
-  statements process the actual keys in stable order (with product ID as a
-  deterministic tie-breaker) so one multi-product statement cannot invert
-  transaction advisory locks against another.
-- Deleting the last rating leaves the existing product with a zero-count row
-  and null averages/score.
-- `product_id` and `user_id` on `user_ratings` cannot change after insert.
-- Deleting a product and its cascaded ratings/aggregate completes without
-  attempting to recreate an aggregate for the deleting/deleted product and
-  without an FK error.
-- The mechanism is tested locally for insert/update/delete, last-rating
-  removal, same-product concurrency, multi-product delete concurrency, and
-  product deletion before Task 11 is called complete.
-  `supabase/tests/database/aggregates.test.sql` covers the aggregate cases and
-  retains a structural 64-bit advisory-lock guard;
-  `scripts/test-db-concurrency.cjs` proves a same-product writer waits and sees
-  both commits, then overlaps two fixture-only multi-product rating deletes
-  across two products and verifies both complete with zeroed aggregates. The
-  agent-run harness never deletes `auth.users`.
-- A fixed-value fixture with category/overall tuples
-  `(10, 8, 6, 4, 2, 1)` and `(2, 4, 6, 8, 10, 10)` must produce `6.00` for
-  every category average, `overall_avg = 5.50`, and `score = 55`.
-- A rounding-boundary fixture with four overall values `1, 1, 1, 2` must
-  produce `overall_avg = 1.25` and `score = 13`, and removing all four ratings
-  must restore the zero-count/null state.
-
-Expected names are `refresh_rating_aggregates`,
-`handle_user_rating_change`, and the three event-specific statement triggers:
-`user_ratings_refresh_aggregates_insert_trigger`,
-`user_ratings_refresh_aggregates_update_trigger`, and
-`user_ratings_refresh_aggregates_delete_trigger`. Exact function SQL lives in
-the Task 11 migrations and is deliberately not duplicated here.
 
 `handle_new_user` runs after `auth.users` insert and inserts only
 `public.profiles (id)`. It must produce exactly one profile row and clients
@@ -353,14 +234,16 @@ Task 12 is a new forward-only migration after Task 11 is accepted:
 | `profiles` | none | `SELECT`; `UPDATE (display_name, username, avatar_url)` | `SELECT, INSERT, UPDATE, DELETE` |
 | `user_ratings` | none | `SELECT, DELETE`; column-level `INSERT` / `UPDATE` below | `SELECT, INSERT, UPDATE, DELETE` |
 
-Authenticated `user_ratings` column privileges:
+Authenticated `user_ratings` column privileges (after Task 17
+`sneaker-10-v1` migration):
 
-- `INSERT`: `product_id`, `user_id`, `look`, `comfort`, `quality`, `outfit`,
-  `value`, `overall`, `private_note`.
-- `UPDATE`: `look`, `comfort`, `quality`, `outfit`, `value`, `overall`,
+- `INSERT`: `product_id`, `user_id`, the ten dimension columns
+  (`look`, `outfit`, `material`, `craftsmanship`, `maintenance`, `comfort`,
+  `collection`, `value`, `resale_potential`, `acquisition_ease`), and
   `private_note`.
-- Never grant client writes to `id`, `product_id` on update, `user_id` on
-  update, `created_at`, or `updated_at`.
+- `UPDATE`: the same ten dimensions and `private_note`.
+- Never grant client writes to `score`, `methodology_version`, `id`,
+  `product_id` on update, `user_id` on update, `created_at`, or `updated_at`.
 
 No client role receives profile `INSERT`, aggregate writes, or `EXECUTE` on
 trigger-only helpers.

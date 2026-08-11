@@ -37,7 +37,11 @@ Eazy Review combines an app-curated product score with community ratings and the
 - Account: logged-out auth entry points and logged-in profile, rated-products,
   deletion, and required legal/support actions.
 - Product Detail: product identity, scores, offers, breakdowns, My Rating, description, and rating CTA.
-- Rating Form: short 1-10 rating form for look, comfort, quality, outfit, value, overall, and optional private note (not a public review).
+- Rating Form: short 0–10 form across the ten shared **sneaker-10-v1**
+  dimensions (Appearance, Styling, Materials, Craftsmanship, Care, Comfort,
+  Collectibility, Product Value, Resale Potential, Acquisition Ease), optional
+  private note, and a live 0–100 **My Rating** preview derived from dimensions
+  (not typed overall).
 
 ## Core Product Flow
 
@@ -79,9 +83,15 @@ Do not include first:
 ## Naming Rules
 
 Use these UI names:
-- Eazy Score: the app's curated rating created by the app owner.
-- Community Score: average rating from normal users.
-- My Rating: the logged-in user's own rating for the product.
+- Eazy Score: the app's curated rating created by the app owner (0–100 composite
+  from the shared ten-dimension rubric).
+- Community Score: average rating from normal users as a 0–100 composite from
+  the same rubric (server-owned aggregates).
+- My Rating: the logged-in user's own 0–100 composite for the product from the
+  same dimensions (owner-only private note never enters community surfaces).
+
+Eazy Review uses **one common rubric** so Eazy assessment and community
+assessment can be compared dimension-by-dimension and composite-to-composite.
 
 Do not call the app-builder rating "official rating" in UI. Internal database
 names follow `docs/DATA_MODEL.md` (`eazy_assessments` for editorial scoring).

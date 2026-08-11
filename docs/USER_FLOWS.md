@@ -116,18 +116,26 @@ User opens connected Product Detail
 -> No mock save is claimed for the Supabase product
 ```
 
-Task 16 rate gate:
+Task 16 rate gate (signed-out remains authoritative):
 
 ```txt
 User opens Product Detail
 -> If signed out: Sign in to rate (return path to this product)
 -> After successful sign-in: return to Product Detail
--> Rating remains honestly unavailable until Task 17
--> Signed-in Rate route shows unavailable; no rating write
 -> Sign-out / account switch clears user-scoped Query cache only
 ```
 
-Task 17 owns the durable Rate/Edit form, save, and My Rating refresh.
+Task 17 durable Rate/Edit path:
+
+```txt
+User opens Product Detail while signed in
+-> If no My Rating: CTA Rate this product; form empty
+-> If My Rating exists: CTA Edit my rating; form prefilled
+-> Incomplete Save: sticky footer explains remaining categories + field errors; no network write
+-> Complete Save uses read then insert/update (23505 recovers to update)
+-> Product Detail refetches My Rating + server-owned Community Score
+-> Account shows rated-product count and Rated Products list
+```
 
 ## Flow 3: Edit Own Rating
 
@@ -254,26 +262,51 @@ Sections:
 - Product image area.
 - Product title area.
 - Product metadata.
-- Score overview.
-- Decision summary (Top strength / Weakest category from community averages; calm empty copy when ratings are missing or fully tied at display precision).
-- Price/purchase section.
-- Rating breakdown.
-- My Rating section.
+- Score overview: Eazy Score and Community Score as 0–100 counterparts;
+  `Editorial assessment` under Eazy and the rating count inside Community
+  (`Early score · N rating(s)` below five).
+- Decision summary: overall Community-versus-Eazy delta plus the highest and
+  lowest Community dimensions across the canonical ten dimensions. Use calm
+  empty/tied copy and suppress direct cross-source claims when methodology
+  versions differ.
+- Verified offers: price, seller, size, currency, and checked date.
+- Expanded score comparison: all ten shared 0–10 dimensions with distinct
+  Eazy and Community columns and complete row accessibility labels.
+- Compact My Rating: `/100` composite and score label when rated; keep the
+  existing signed-out, loading, offline, error, and unrated states.
 - Description.
-- Rate/Edit CTA.
+- Persistent Rate/Edit CTA.
 
 ## Rating Form Requirements
 
 Route: `app/product/[id]/rate.tsx`
 
 Fields:
-- Look: 1-10.
-- Comfort: 1-10.
-- Quality: 1-10.
-- Outfit: 1-10.
-- Value: 1-10.
-- Overall: 1-10.
-- Private note: optional (owner-only; not a public review). Max 500 characters once Task 17 connects the form.
+- Appearance, Styling, Materials, Craftsmanship, Care, Comfort,
+  Collectibility, Product Value, Resale Potential, and Acquisition Ease: 0–10
+  in half steps.
+- My Rating preview: derived 0–100 composite; Overall is not editable.
+- Private note: optional, owner-only, not a public review; maximum 500
+  characters.
+
+Interaction:
+- Drag the platform-native slider for large changes; use − / + for exact
+  half-step changes; Clear returns the field to unanswered.
+- Horizontal-biased curved drags belong to the slider. Vertical-biased drags
+  belong to page scrolling.
+- Slider interaction never dismisses Rate/Edit. Standard leading-edge Back
+  remains available on iOS.
+- VoiceOver announces the dimension and value and can increment or decrement
+  in half steps (post-launch accessibility ownership under Task 27; deferred
+  from Task 17 by human scope decision on 2026-08-10 — not a Task 17 merge
+  blocker and not an initial-release Task 23/26 blocker).
+- Save with unanswered categories: no network write; sticky footer reports how
+  many categories still need a score; each unanswered row shows an inline error
+  that clears when that category is set.
+- At maximum Dynamic Type, Rate/Edit should keep dimension labels, values,
+  slider, ±/Clear, private note, My Rating preview, and Save footer readable
+  and operable (Task 27 post-launch accessibility hardening; Task 17 recorded
+  physical FAIL and deferred this work — not a Task 17 merge blocker).
 
 ### Task 9 mock behavior
 
@@ -284,7 +317,8 @@ During the fake-local-state phase:
 - Product Detail reflects the updated My Rating after submission.
 - Community Score and community category averages do not change.
 - App reload resets the mock rating fixtures.
-- The Rate/Edit optional text field may still be labeled **Comment** in mock UI until Task 17 renames the connected field to **Private note** (`privateNote`).
+- The Rate/Edit optional text field is **Private note** (`privateNote`) on the
+  connected Task 17 form.
 - The real query invalidation behavior below applies after Supabase integration.
 
 After successful real submission:

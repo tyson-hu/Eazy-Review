@@ -16,16 +16,25 @@
   Detail read the two deterministic published products through one Supabase
   request per surface, with complete, sparse, loading, cached-refresh, offline,
   error/retry, empty, and not-found behavior. Feed remains mock/placeholder.
-- Task 16 is **Done — human accepted.** Core authentication and Account state
-  (email/password sign-in/up/out, session restore, auth-gated Rate, minimal
-  Account, cache isolation, `dismissTo` return navigation, auth-generation
-  race guards). Physical iPhone checklist re-verified on the corrected build
-  (human-reported PASS). Automated and web verification pass. Evidence:
+- Task 16 is **Done — human accepted and merged in PR #35 on 2026-08-09.**
+  Core authentication and Account state (email/password sign-in/up/out,
+  session restore, auth-gated Rate, minimal Account, cache isolation,
+  `dismissTo` return navigation, auth-generation race guards). Physical
+  iPhone checklist re-verified on the corrected build (human-reported PASS).
+  Automated and web verification pass. Evidence:
   [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
-  PR #35 is ready for merge (implementation authorized; merge remains a
-  separate action).
-- Task 17 (My Rating persistence and Rated Products) is **Next — pending
-  authorization.** Do not start until explicitly authorized in a new session.
+- Task 17 is **Done — human accepted.** My Rating persistence (sneaker-10-v1),
+  Community aggregate/server truth, Rated Products, Product Detail restoration,
+  slider, offline/timeout reliability, zombie-session restore hardening, and
+  incomplete-submit feedback. Full physical A–G matrix **PASS** on SHA
+  `1325198` (2026-08-10). Human-reported final physical smoke: **PASS** on the
+  final accepted branch tip (regression smoke, not a full A–G re-run). Agent
+  web **PASS**; iOS Simulator normal-text **PASS with documented limits**.
+  VoiceOver and maximum Dynamic Type remain **DEFERRED BY HUMAN SCOPE
+  DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
+  reverted). Evidence:
+  [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
+  Task 18 remains Pending / not started.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -78,8 +87,9 @@ This is a planning/architecture gate, not a feature task or migration.
   rating per user/product, owner-only `private_note`, anonymous
   published-product reads, and least-privilege grants/RLS.
 - Keep `Eazy Score`, `Community Score`, and `My Rating` exactly.
-- Keep Browse → Product Detail → Rate as the core journey and the six 1–10
-  rating fields: look, comfort, quality, outfit, value, and overall.
+- Keep Browse → Product Detail → Rate as the core journey and the shared
+  sneaker-10-v1 ten-dimension 0–10 form with derived 0–100 composites (no
+  manual overall).
 - Keep social content outside the MVP.
 - No service-role credential may enter Expo.
 - Applied migrations remain unchanged; any proven schema correction must be a
@@ -172,8 +182,8 @@ Work in order unless a task explicitly states that it is conditional.
 | 13 | Product Seed Data | Done |
 | 14 | Connected Client And Query Foundation | Done |
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
-| 16 | Core Authentication And Account State | Done — human accepted (PR #35 ready for merge) |
-| 17 | My Rating Persistence And Rated Products | Next — pending authorization |
+| 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
+| 17 | My Rating Persistence And Rated Products | Done — human accepted |
 | 18 | Password Recovery And Deep Links | Pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
@@ -454,7 +464,7 @@ local Supabase only; no staging/production):
 
 ## Task 16: Core Authentication And Account State
 
-Status: **Done — human accepted (PR #35 ready for merge).**
+Status: **Done — human accepted and merged in PR #35 on 2026-08-09.**
 
 Depends on: Task 15.
 
@@ -466,9 +476,8 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: None.
 
 Human gate: **Accepted.** Corrected physical-device checklist **PASS**
-(human-reported). Merge of PR #35 remains a separate explicit action. Staging
-auth configuration for later tasks remains a separate explicit action.
-Implementation evidence:
+(human-reported). PR #35 merged. Staging auth configuration for later tasks
+remains a separate explicit action. Implementation evidence:
 [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
 
 Goal: add only the identity/session behavior needed to protect the rating flow.
@@ -530,7 +539,24 @@ Non-goals (remain later work — do not implement in Task 16):
 
 ## Task 17: My Rating Persistence And Rated Products
 
-Status: **Next — pending authorization.**
+Status: **Done — human accepted.**
+
+**Scope correction (physical-device):** While validating the first Task 17
+implementation, two reproducible defects blocked acceptance: (A) Overall on a
+1–10 form was rendered as a 0–100 score (for example Overall 9 → “Risky”), and
+Eazy vs Community were not structurally comparable; (B) offline/unreachable
+saves could leave Save in an indefinite spinner with no recovery path. Task 17
+now includes the shared **sneaker-10-v1** ten-dimension rubric, derived 0–100
+My Rating, direct Eazy/Community comparison UI, and a reusable fail-fast
+offline + bounded-request timeout contract. Do not treat superseded six-field /
+manual-overall docs as authoritative when they conflict with this correction.
+
+**Auth restore hardening (physical-device):** Local AsyncStorage can retain a
+session after a local Supabase `db reset` wipes the matching Auth principal.
+`restoreSession()` no longer treats local `getSession()` alone as proof of
+identity when online; it validates with Auth `getUser()` and clears only the
+current-device session on definitive invalid principal/session responses while
+preserving offline/transient restored sessions.
 
 Depends on: Task 16.
 
@@ -542,36 +568,116 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: Task 18 after all prerequisites are accepted and edit
 scopes are file-disjoint.
 
-Human gate: Not started — requires explicit start authorization after PR #35
-merge (or as separately directed). Staging rating writes or acceptance require
-separate explicit approval; production remains forbidden.
+Human gate: **Accepted.** Staging rating writes or acceptance remain a separate
+explicit approval; production remains forbidden. Task 18 is **not** authorized
+by this acceptance. Implementation evidence:
+[`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
+
+Local Product Detail restoration evidence (2026-08-09): iOS Simulator
+`pass` at 393×852, canonical live-Metro web preview `blocked` by the host
+environment with a static-export visual adjunct completed. Physical Product
+Detail at normal text size: **PASS** on SHA `1325198` (2026-08-10). See
+[`docs/evidence/task-17-product-detail-restoration/RESULT.md`](evidence/task-17-product-detail-restoration/RESULT.md).
+
+Local rating-slider gesture evidence (2026-08-09): automated gates `pass`.
+Physical slider gestures: **PASS** on SHA `1325198` (2026-08-10). VoiceOver:
+**DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27. XXL Dynamic Type:
+physical **FAIL** on SHA `1325198`; second targeted FAIL after `a635251`;
+attempt reverted; **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** →
+Task 27. See
+[`docs/evidence/task-17-rating-slider-gesture/RESULT.md`](evidence/task-17-rating-slider-gesture/RESULT.md)
+and
+[`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
+
+Physical-device matrix (2026-08-10, Release, iPhone 17 Pro Max, iOS 27 Beta 5,
+SHA **`1325198` only** for full A–G):
+
+| ID | Result |
+| --- | --- |
+| A / A1 / A2 | PASS |
+| B–D | PASS |
+| E | PASS WITH COPY NOTE |
+| F–G | PASS |
+| Slider gestures | PASS |
+| Product Detail (normal size) | PASS |
+| VoiceOver | DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH → Task 27 |
+| XXL Dynamic Type | FAIL (twice; deferred post-launch → Task 27; not a Task 17 blocker) |
+
+Later commits (`2c4c7f2` incomplete-submit feedback, `09075af`, failed XXL
+attempt `a635251` + revert, docs/Expo/web/simulator cleanup) are **not** the
+physical A–G provenance SHA.
+
+**Human-reported final physical smoke: PASS** on the final accepted Task 17
+branch tip (regression smoke of launch / Browse / Product Detail /
+authenticated Rate/Edit / slider / scroll / −/+/Clear / incomplete Save /
+complete Save / Detail refresh / Account / Rated Products). Not a full re-run
+of B/C/D/F/G.
+
+Agent cross-platform verification (2026-08-10, final tip after cleanup): web
+matrix **PASS** (live Metro, 393×852, local Supabase); iOS Simulator (Expo
+Go, Eazy-Review-iPhone-15, normal text) **PASS** for Browse/Detail first
+viewport/auth gate/Account signed-out, with authenticated Rate UI not
+interactively automated (see evidence). Evidence:
+[`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
 
 Goal: complete the first real value loop:
-Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products.
+Browse → Detail → Sign in → Rate/Edit → Detail updates → Rated Products
+with honest comparable scores and resilient connected save UX.
 
 Write contract:
 
 1. Read the owner’s current rating.
-2. Update score fields and `private_note` only when it exists.
-3. Insert when it does not exist.
-4. On unique violation `23505`, retry as a score/private-note-only update.
+2. Update the ten dimension columns and `private_note` only when a row exists.
+3. Insert when it does not exist (dimensions + note only; server derives score).
+4. On unique violation `23505`, retry as a dimensions/private-note-only update.
+5. Clients never write `score`, `methodology_version`, or `rating_aggregates`.
+6. Do not use PostgREST upsert for Task 17.
 
 Do not add a `SECURITY DEFINER` save RPC unless the accepted direct,
 RLS-protected path proves insufficient.
 
 Deliverables:
 
-- Rename `comment` to `privateNote`; visible label becomes **Private note**.
-- Enforce the 500-character limit in the form.
-- Real Rate/Edit behavior with duplicate-submit prevention.
-- Complete query invalidation for public product, product list, user rating,
-  and Rated Products.
-- `app/account/rated-products.tsx` and Account → Rated Products → Detail
-  navigation.
+- Shared `RATING_DIMENSIONS` / methodology `sneaker-10-v1` (ten dimensions).
+- Form: 0–10 half-step dimensions only; no editable Overall; live 0–100 My
+  Rating preview; optional Private note (500-char limit).
+- Rate/Edit uses the native community slider for large changes, preserves
+  44-point − / + half-step controls and Clear, lets vertical-biased drags
+  scroll, and disables iOS full-screen Back only on this route while retaining
+  the standard leading-edge Back gesture. This is presentation-only; rating
+  data and write contracts do not change.
+- Grouped UI: Style; Build and Wear; Market and Ownership.
+- Product Detail decision-first order: product identity → 0–100 Eazy Score and
+  Community Score overview → Decision summary → verified offers → expanded
+  one-to-one dimension comparison (0–10) → compact My Rating → description →
+  persistent Rate/Edit CTA. Explicit `score100` / `score10` (or equivalent)
+  props — never a scale-ambiguous generic “score”.
+- Decision summary: methodology-compatible overall delta plus highest/lowest
+  Community dimensions across the canonical ten, with one-decimal tie, empty,
+  partial, and methodology-mismatch handling. Community rating count stays in
+  its score card (`Early score` below five); comparison rows name both values
+  for accessibility.
+- Real Rate/Edit with duplicate-submit prevention, incomplete-submit feedback
+  (sticky footer count + per-field errors; no silent no-op), and required cache
+  invalidations (public product, list, user rating, Rated Products).
+- Fail-fast when known offline; bounded request timeout (~10s);
+  `networkMode: 'always'` on the explicit rating save mutation so offline is
+  not an indefinite paused pending state.
+- Paused-query presentation for My Rating / Rate init / Rated Products /
+  Detail owner refresh: no endless Loading spinner; cache when available;
+  explicit offline when not.
+- Preserve dimension + private-note form input after offline/timeout/transport
+  failures; user retries after reconnect — **no** offline write queue.
+- `app/account/rated-products.tsx` and Account → Rated Products → Detail.
 - Empty Rated Products state.
-- App-level verification that server-owned aggregates reflect real saves and
-  edits; do not reopen the aggregate mechanism.
-- Focused rating mutation, invalidation, and Rated Products behavior tests.
+- Forward-only schema migration + regenerated DB types + deterministic seed
+  under sneaker-10-v1 (deliberate fixtures; no fake remapping of old quality
+  into resale/acquisition).
+- Focused tests for composite formula, mutation offline/timeout settlement,
+  paused queries, invalidation, `23505` recovery, NetInfo lifecycle.
+- Physical-device evidence for online save, known-offline save, mid-request
+  disconnect, reachable-network/unreachable local Supabase, offline open
+  without cache, offline with cache.
 
 Acceptance:
 
@@ -579,16 +685,52 @@ Acceptance:
   user/product pair; no pair can contain more than one row.
 - Concurrent first saves do not expose an unhandled unique error.
 - Cross-user reads never return `private_note`.
+- Derived My Rating is 0–100; ten 9.0 dims → 90; 81.5 sum → 82; 0 is valid;
+  null is unanswered (not zero); half steps accepted; invalid increments
+  rejected; client cannot persist a disagreeing composite.
+- At 393-point width, a horizontal-biased curved drag (approximately 60 points
+  horizontal / 20 vertical) changes the slider without page scroll; a
+  vertical-biased drag (approximately 10 horizontal / 60 vertical) scrolls
+  without changing the score; and at least 40 points of vertical drift after
+  horizontal activation does not lose the active slider.
+- Slider drags never dismiss Rate/Edit; the iOS leading-edge Back gesture still
+  works outside slider interaction.
+- Normal system text size remains the Task 17 layout acceptance bar for
+  Browse, Product Detail, Rate/Edit, Account, and Rated Products. Maximum /
+  XXL Dynamic Type and VoiceOver end-to-end acceptance were physically
+  failed or not completed during Task 17 and are **DEFERRED BY HUMAN SCOPE
+  DECISION — POST-LAUNCH** to **Task 27** (not Task 17 merge blockers after
+  that decision). Design may still prefer adaptive layout when practical;
+  extreme accessibility hardening is not required to close Task 17.
+- Community derivation mirrors Eazy; methodology mismatch is not silently
+  aggregated.
+- Product Detail keeps verified offer price, seller, size, currency, and
+  checked date ahead of the long ten-row comparison; it does not add a mobile
+  Difference column.
+- Rated Product Detail shows the My Rating `/100` composite and score label
+  compactly; all ten editable dimensions and the private note remain on the
+  Rate/Edit screen. Signed-out, loading, offline, error, and unrated states
+  remain explicit.
 - My Rating and server-owned rating count/averages refresh from the database.
 - Browse, Detail, user rating, and Rated Products caches invalidate correctly.
+- Incomplete Save: sticky footer explains remaining categories; unanswered
+  rows show inline errors; no API write until all ten dimensions are set.
+- Known offline Save: fail-fast offline copy, no endless spinner, form kept.
+- Timeout/transport: settled error, form kept, not mislabeled as offline when
+  the device is online.
+- Paused/offline queries never show infinite “Loading your rating…”.
 - The client never writes `rating_aggregates`.
 - No optimistic rating behavior or temporary connected-session map remains.
 - Existing database concurrency and forgery suites still pass.
+- Physical-device matrix A–F recorded under `docs/evidence/` before human
+  acceptance.
 
 Non-goals:
 
 - No public written review, likes/helpful votes, rating-delete UI, optimistic
-  update, or new aggregate implementation.
+  update, durable offline mutation queue, new aggregate ownership model, or
+  silent scale conversion heuristics (`score <= 10 ? score * 10`).
+- No Task 17.5 — corrections remain under Task 17 until accepted.
 
 ## Task 18: Password Recovery And Deep Links
 
@@ -823,8 +965,8 @@ device QA.
 
 Parallel-safe with: None.
 
-Human gate: Physical-device, accessibility, and platform acceptance require
-recorded human evidence.
+Human gate: Physical-device, ordinary release accessibility checks that remain
+in this task's scope, and platform acceptance require recorded human evidence.
 
 Goal: prepare a stable release candidate without adding a telemetry or
 animation program.
@@ -833,8 +975,9 @@ Deliverables:
 
 - One clear retry policy across Supabase and TanStack Query.
 - Offline/reconnect states and root error recovery.
-- VoiceOver labels, logical reading order, Dynamic Type, and touch-target
-  checks.
+- Ordinary release accessibility/device QA on **normal and common text sizes**
+  (readable labels where already implemented, basic touch-target comfort, light
+  smoke for large-but-not-maximum content sizes when practical).
 - Loading and disabled-submit behavior.
 - Small-screen keyboard/scrolling validation.
 - Real iPhone validation plus one Android compatibility smoke.
@@ -845,6 +988,12 @@ Non-goals:
 
 - No persistent offline cache, elaborate telemetry platform, or animation
   system.
+- Full VoiceOver end-to-end verification, Rate/Edit half-step VoiceOver
+  interaction, logical reading-order audit at extreme accessibility sizes,
+  maximum / XXL Dynamic Type acceptance, and an accessibility-size regression
+  matrix are **not** Task 23 release blockers. Those were deferred by human
+  scope decision to **Task 27** post-launch hardening after Task 17 physical
+  evidence (2026-08-10).
 
 ## Task 24: Privacy, Legal, And Store Disclosures
 
@@ -970,7 +1119,12 @@ Acceptance:
   external deletion-request URL and complete the Google Play Data Safety
   deletion declarations at the Android submission boundary.
 - Production variables, schema, and grants match the approved release plan.
-- Known limitations and rollback decision are written.
+- Known limitations and rollback decision are written. Known
+  **initial-release limitations** (must not be claimed complete in App Store
+  evidence):
+  - Full VoiceOver verification deferred to Task 27 post-launch.
+  - Maximum / XXL Dynamic Type not supported/accepted at accessibility extremes
+    (physical FAIL recorded in Task 17; deferred to Task 27).
 - A human chooses staged/manual release and completes App Review submission.
 
 Boundaries:
@@ -1011,6 +1165,19 @@ Deliverables:
   rollback decision, root cause, and durable correction.
 - Add Sentry only when built-in logs and beta/production evidence justify the
   SDK and disclosure cost.
+- **Post-launch accessibility hardening** (bounded; not a large redesign until
+  the shipped UI stabilizes), owned here after human scope decision on
+  2026-08-10:
+  - VoiceOver end-to-end verification
+  - Logical reading-order audit where still needed
+  - Maximum Dynamic Type / accessibility content-size layouts
+  - Rate/Edit half-step VoiceOver interaction
+  - Accessibility-size regression matrix
+  - Touch-target / accessibility QA at extremes
+  - Fixes based on the stabilized post-launch UI
+
+Do not expand this into an unbounded accessibility redesign project without a
+separate scoped plan.
 
 ## Task 28: Catalog Import And Admin Pipeline
 

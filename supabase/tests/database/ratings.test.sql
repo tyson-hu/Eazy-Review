@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(9);
+select plan(11);
 
 create or replace function pg_temp.make_auth_user(p_id uuid, p_email text)
 returns uuid
@@ -66,38 +66,50 @@ values (
 -- Valid insert.
 select lives_ok(
   $$insert into public.user_ratings (
-      product_id, user_id, look, comfort, quality, outfit, value, overall,
+      product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease,
       private_note
     ) values (
       '33333333-3333-3333-3333-333333333331'::uuid,
       '22222222-2222-2222-2222-222222222221'::uuid,
-      8, 7, 6, 5, 4, 9, 'ok note'
+      8, 5, 6, 6, 7, 7, 8, 4, 9, 9, 'ok note'
     )$$,
   'valid rating insert succeeds'
 );
 
--- Out-of-range score fails.
+-- 8+5+6+6+7+7+8+4+9+9 = 69; server trigger owns score.
+select is(
+  (
+    select score
+    from public.user_ratings
+    where product_id = '33333333-3333-3333-3333-333333333331'::uuid
+      and user_id = '22222222-2222-2222-2222-222222222221'::uuid
+  ),
+  69,
+  'derive_user_rating_composite computes sneaker-10-v1 score on insert'
+);
+
+-- Out-of-range / non-half-step score fails.
 select throws_ok(
   $$insert into public.user_ratings (
-      product_id, user_id, look, comfort, quality, outfit, value, overall
+      product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
     ) values (
       '33333333-3333-3333-3333-333333333331'::uuid,
       '22222222-2222-2222-2222-222222222222'::uuid,
-      0, 7, 6, 5, 4, 9
+      10.5, 5, 6, 6, 7, 7, 5, 4, 9, 9
     )$$,
   '23514',
   null,
-  'look out of range is rejected'
+  'look above 10 is rejected'
 );
 
 -- Duplicate user/product fails.
 select throws_ok(
   $$insert into public.user_ratings (
-      product_id, user_id, look, comfort, quality, outfit, value, overall
+      product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
     ) values (
       '33333333-3333-3333-3333-333333333331'::uuid,
       '22222222-2222-2222-2222-222222222221'::uuid,
-      1, 1, 1, 1, 1, 1
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     )$$,
   '23505',
   null,
@@ -108,12 +120,12 @@ select throws_ok(
 select throws_ok(
   format(
     $$insert into public.user_ratings (
-        product_id, user_id, look, comfort, quality, outfit, value, overall,
+        product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease,
         private_note
       ) values (
         '33333333-3333-3333-3333-333333333331'::uuid,
         '22222222-2222-2222-2222-222222222222'::uuid,
-        5, 5, 5, 5, 5, 5, %L
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, %L
       )$$,
     repeat('x', 501)
   ),
@@ -178,8 +190,26 @@ select is(
     where product_id = '33333333-3333-3333-3333-333333333331'::uuid
       and user_id = '22222222-2222-2222-2222-222222222221'::uuid
   ),
-  3,
+  3.0::numeric,
   'score update still applies when updated_at is server-maintained'
+);
+
+-- Direct score/methodology writes are overwritten by the derive trigger.
+-- Current dims after look=3: 3+5+6+6+7+7+8+4+9+9 = 64.
+update public.user_ratings
+set
+  score = 1,
+  methodology_version = 'other-methodology'
+where product_id = '33333333-3333-3333-3333-333333333331'::uuid
+  and user_id = '22222222-2222-2222-2222-222222222221'::uuid;
+
+select results_eq(
+  $$select score, methodology_version
+    from public.user_ratings
+   where product_id = '33333333-3333-3333-3333-333333333331'::uuid
+     and user_id = '22222222-2222-2222-2222-222222222221'::uuid$$,
+  $$values (64, 'sneaker-10-v1'::text)$$,
+  'derive trigger overwrites client score and methodology_version'
 );
 
 select * from finish();

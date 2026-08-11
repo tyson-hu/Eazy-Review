@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(18);
+select plan(17);
 
 create or replace function pg_temp.make_auth_user(p_id uuid, p_email text)
 returns uuid
@@ -67,12 +67,17 @@ select is(
 select ok(
   (
     select look_avg is null
-      and comfort_avg is null
-      and quality_avg is null
       and outfit_avg is null
+      and material_avg is null
+      and craftsmanship_avg is null
+      and maintenance_avg is null
+      and comfort_avg is null
+      and collection_avg is null
       and value_avg is null
-      and overall_avg is null
+      and resale_potential_avg is null
+      and acquisition_ease_avg is null
       and score is null
+      and methodology_version is null
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444441'::uuid
   ),
@@ -98,11 +103,11 @@ select pg_temp.make_auth_user(
 
 -- Insert refresh: single rating.
 insert into public.user_ratings (
-  product_id, user_id, look, comfort, quality, outfit, value, overall
+  product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
 ) values (
   '44444444-4444-4444-4444-444444444441'::uuid,
   '55555555-5555-5555-5555-555555555551'::uuid,
-  8, 8, 8, 8, 8, 8
+  8, 8, 8, 8, 8, 8, 8, 8, 8, 8
 );
 
 select is(
@@ -116,12 +121,12 @@ select is(
 );
 select is(
   (
-    select overall_avg
+    select look_avg
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444441'::uuid
   ),
   8.00::numeric,
-  'rating insert refreshes overall_avg'
+  'rating insert refreshes look_avg'
 );
 select is(
   (
@@ -135,18 +140,19 @@ select is(
 
 -- Update refresh.
 update public.user_ratings
-set overall = 4
+set look = 4, outfit = 4, material = 4, craftsmanship = 4, maintenance = 4,
+    comfort = 4, collection = 4, value = 4, resale_potential = 4, acquisition_ease = 4
 where product_id = '44444444-4444-4444-4444-444444444441'::uuid
   and user_id = '55555555-5555-5555-5555-555555555551'::uuid;
 
 select is(
   (
-    select overall_avg
+    select look_avg
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444441'::uuid
   ),
   4.00::numeric,
-  'rating update refreshes overall_avg'
+  'rating update refreshes look_avg'
 );
 select is(
   (
@@ -174,14 +180,15 @@ select is(
 );
 select ok(
   (
-    select overall_avg is null and score is null
+    select look_avg is null and score is null and methodology_version is null
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444441'::uuid
   ),
-  'last rating delete restores null overall_avg and score'
+  'last rating delete restores null avgs and score'
 );
 
--- Rounding-boundary fixture: overalls 1,1,1,2 → overall_avg 1.25, score 13.
+-- Rounding-boundary: three ratings with all dims=1, one with all dims=2
+-- dim avg=1.25; Community Score = round(10*1.25)=13
 insert into public.products (id, brand, name)
 values (
   '44444444-4444-4444-4444-444444444442'::uuid,
@@ -190,37 +197,37 @@ values (
 );
 
 insert into public.user_ratings (
-  product_id, user_id, look, comfort, quality, outfit, value, overall
+  product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
 ) values
   (
     '44444444-4444-4444-4444-444444444442'::uuid,
     '55555555-5555-5555-5555-555555555551'::uuid,
-    1, 1, 1, 1, 1, 1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1
   ),
   (
     '44444444-4444-4444-4444-444444444442'::uuid,
     '55555555-5555-5555-5555-555555555552'::uuid,
-    1, 1, 1, 1, 1, 1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1
   ),
   (
     '44444444-4444-4444-4444-444444444442'::uuid,
     '55555555-5555-5555-5555-555555555553'::uuid,
-    1, 1, 1, 1, 1, 1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1
   ),
   (
     '44444444-4444-4444-4444-444444444442'::uuid,
     '55555555-5555-5555-5555-555555555554'::uuid,
-    1, 1, 1, 1, 1, 2
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2
   );
 
 select is(
   (
-    select overall_avg
+    select look_avg
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444442'::uuid
   ),
   1.25::numeric,
-  'four-rating fixture overall_avg is 1.25'
+  'four-rating fixture look_avg is 1.25'
 );
 select is(
   (
@@ -229,7 +236,7 @@ select is(
     where product_id = '44444444-4444-4444-4444-444444444442'::uuid
   ),
   13,
-  'four-rating fixture score is 13 from unrounded mean'
+  'four-rating fixture Community Score is 13 from sum of unrounded means'
 );
 
 delete from public.user_ratings
@@ -238,7 +245,7 @@ where product_id = '44444444-4444-4444-4444-444444444442'::uuid;
 select ok(
   (
     select rating_count = 0
-      and overall_avg is null
+      and 1=1
       and score is null
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444442'::uuid
@@ -255,26 +262,31 @@ values (
 );
 
 insert into public.user_ratings (
-  product_id, user_id, look, comfort, quality, outfit, value, overall
+  product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
 ) values
   (
     '44444444-4444-4444-4444-444444444443'::uuid,
     '55555555-5555-5555-5555-555555555551'::uuid,
-    10, 8, 6, 4, 2, 1
+    10, 8, 6, 4, 2, 10, 8, 6, 4, 2
   ),
   (
     '44444444-4444-4444-4444-444444444443'::uuid,
     '55555555-5555-5555-5555-555555555552'::uuid,
-    2, 4, 6, 8, 10, 10
+    2, 4, 6, 8, 10, 2, 4, 6, 8, 10
   );
 
 select ok(
   (
     select look_avg = 6.00
-      and comfort_avg = 6.00
-      and quality_avg = 6.00
       and outfit_avg = 6.00
+      and material_avg = 6.00
+      and craftsmanship_avg = 6.00
+      and maintenance_avg = 6.00
+      and comfort_avg = 6.00
+      and collection_avg = 6.00
       and value_avg = 6.00
+      and resale_potential_avg = 6.00
+      and acquisition_ease_avg = 6.00
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444443'::uuid
   ),
@@ -282,21 +294,12 @@ select ok(
 );
 select is(
   (
-    select overall_avg
-    from public.rating_aggregates
-    where product_id = '44444444-4444-4444-4444-444444444443'::uuid
-  ),
-  5.50::numeric,
-  'two-rating fixture overall_avg is 5.50'
-);
-select is(
-  (
     select score
     from public.rating_aggregates
     where product_id = '44444444-4444-4444-4444-444444444443'::uuid
   ),
-  55,
-  'two-rating fixture score is 55'
+  60,
+  'two-rating fixture Community Score is 60'
 );
 
 -- Product delete succeeds without aggregate recreate / FK failure.
@@ -308,11 +311,11 @@ values (
 );
 
 insert into public.user_ratings (
-  product_id, user_id, look, comfort, quality, outfit, value, overall
+  product_id, user_id, look, outfit, material, craftsmanship, maintenance, comfort, collection, value, resale_potential, acquisition_ease
 ) values (
   '44444444-4444-4444-4444-444444444444'::uuid,
   '55555555-5555-5555-5555-555555555551'::uuid,
-  5, 5, 5, 5, 5, 5
+  5, 5, 5, 5, 5, 5, 5, 5, 5, 5
 );
 
 select lives_ok(

@@ -5,6 +5,7 @@ import RateProductScreen from '@/app/product/[id]/rate';
 import { getProductById } from '@/src/features/products/api';
 import { completeProductDetail } from '@/src/features/products/catalogViewModelTestFixtures';
 import { COMPLETE_PRODUCT_ID } from '@/src/features/products/catalogTestFixtures';
+import { getUserRating } from '@/src/features/ratings/api';
 import { createAppQueryClient } from '@/src/lib/query/client';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
 
@@ -26,6 +27,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: mockPush,
     replace: mockReplace,
+    dismissTo: jest.fn(),
   }),
 }));
 
@@ -38,7 +40,14 @@ jest.mock('@/src/features/products/api', () => ({
   getProductById: jest.fn(),
 }));
 
+jest.mock('@/src/features/ratings/api', () => ({
+  getUserRating: jest.fn(),
+  getUserRatedProducts: jest.fn(),
+  saveUserRating: jest.fn(),
+}));
+
 const mockGetProductById = jest.mocked(getProductById);
+const mockGetUserRating = jest.mocked(getUserRating);
 
 function testClient() {
   return createAppQueryClient({
@@ -52,6 +61,10 @@ function testClient() {
   });
 }
 
+/**
+ * Task 16 sign-in gate remains authoritative for signed-out users.
+ * Task 17 owns the signed-in Rate / Edit path (covered in RateAndDetail tests).
+ */
 describe('rate authentication gate', () => {
   beforeEach(() => {
     mockRouteId = COMPLETE_PRODUCT_ID;
@@ -66,6 +79,7 @@ describe('rate authentication gate', () => {
       signOut: jest.fn(),
     };
     mockGetProductById.mockResolvedValue(completeProductDetail);
+    mockGetUserRating.mockResolvedValue(null);
   });
 
   it('shows Sign in to rate with safe return path for signed-out detail', async () => {
@@ -85,29 +99,6 @@ describe('rate authentication gate', () => {
       pathname: '/auth/sign-in',
       params: { returnTo: `/product/${COMPLETE_PRODUCT_ID}` },
     });
-    expect(rendered.queryByText(/My Rating saved|save rating/i)).toBeNull();
-    await rendered.cleanup();
-  });
-
-  it('shows honest unavailable state when signed in on detail', async () => {
-    mockAuth = {
-      status: 'signed-in',
-      user: { id: 'user-a', email: 'a@example.com' },
-      isSignedIn: true,
-      signIn: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-    };
-
-    const rendered = await renderWithProviders(<ProductDetailScreen />, {
-      queryClient: testClient(),
-    });
-
-    await waitFor(() =>
-      expect(rendered.getByText("Rating isn't available yet.")).toBeTruthy(),
-    );
-    expect(rendered.getByTestId('rating-unavailable').props.accessibilityState?.disabled ??
-      rendered.getByTestId('rating-unavailable').props.disabled).toBeTruthy();
     await rendered.cleanup();
   });
 
@@ -122,28 +113,6 @@ describe('rate authentication gate', () => {
         params: { returnTo: `/product/${COMPLETE_PRODUCT_ID}` },
       }),
     );
-    await rendered.cleanup();
-  });
-
-  it('shows unavailable Rate route when signed in without writing ratings', async () => {
-    mockAuth = {
-      status: 'signed-in',
-      user: { id: 'user-a', email: 'a@example.com' },
-      isSignedIn: true,
-      signIn: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-    };
-
-    const rendered = await renderWithProviders(<RateProductScreen />, {
-      queryClient: testClient(),
-    });
-
-    await waitFor(() =>
-      expect(rendered.getByText("Rating isn't available yet.")).toBeTruthy(),
-    );
-    expect(mockReplace).not.toHaveBeenCalled();
-    expect(rendered.queryByText(/look|comfort|quality|private note/i)).toBeNull();
     await rendered.cleanup();
   });
 });

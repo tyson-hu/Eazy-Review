@@ -4,9 +4,9 @@ create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
 -- 17 policy assertions + 196 table-privilege assertions +
--- 36 authenticated column-write assertions + 18 helper assertions +
+-- 48 authenticated column-write assertions + 30 helper assertions +
 -- 1 service-role attribute assertion.
-select plan(268);
+select plan(292);
 
 create temporary table expected_policies (
   table_name text not null,
@@ -289,11 +289,17 @@ insert into checked_rating_columns (column_name) values
   ('product_id'),
   ('user_id'),
   ('look'),
-  ('comfort'),
-  ('quality'),
   ('outfit'),
+  ('material'),
+  ('craftsmanship'),
+  ('maintenance'),
+  ('comfort'),
+  ('collection'),
   ('value'),
-  ('overall'),
+  ('resale_potential'),
+  ('acquisition_ease'),
+  ('score'),
+  ('methodology_version'),
   ('private_note'),
   ('created_at'),
   ('updated_at');
@@ -311,21 +317,29 @@ select is(
         'product_id',
         'user_id',
         'look',
-        'comfort',
-        'quality',
         'outfit',
+        'material',
+        'craftsmanship',
+        'maintenance',
+        'comfort',
+        'collection',
         'value',
-        'overall',
+        'resale_potential',
+        'acquisition_ease',
         'private_note'
       )
     when p.privilege_name = 'UPDATE' then
       c.column_name in (
         'look',
-        'comfort',
-        'quality',
         'outfit',
+        'material',
+        'craftsmanship',
+        'maintenance',
+        'comfort',
+        'collection',
         'value',
-        'overall',
+        'resale_potential',
+        'acquisition_ease',
         'private_note'
       )
     else false
@@ -364,7 +378,11 @@ cross join (
     ('public.handle_new_user()'),
     ('public.create_zero_rating_aggregate()'),
     ('public.handle_user_rating_change()'),
-    ('public.refresh_rating_aggregates(uuid)')
+    ('public.refresh_rating_aggregates(uuid)'),
+    ('public.derive_user_rating_composite()'),
+    ('public.derive_eazy_assessment_composite()'),
+    ('public.is_half_step_score_0_10(numeric)'),
+    ('public.compute_sneaker10_score(numeric,numeric,numeric,numeric,numeric,numeric,numeric,numeric,numeric,numeric)')
 ) as f(function_signature)
 order by r.role_name, f.function_signature;
 

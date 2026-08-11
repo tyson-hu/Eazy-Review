@@ -40,19 +40,40 @@ export type ProductCardData = {
   } | null;
 };
 
-export type RatingBreakdown = {
+/**
+ * Dimension scores are 0–10 half-steps. Composite scores are 0–100 and never
+ * user-entered. Live shapes live in `src/types/product.ts` and
+ * `src/features/ratings/*` (methodology `sneaker-10-v1`).
+ */
+export type RatingDimensionScores = {
   look: number;
-  comfort: number;
-  quality: number;
   outfit: number;
+  material: number;
+  craftsmanship: number;
+  maintenance: number;
+  comfort: number;
+  collection: number;
   value: number;
-  overall: number;
-  /**
-   * Mock-era field name. Supabase / Task 17+ use `privateNote` mapped from
-   * `user_ratings.private_note` (owner-only; max 500 chars). Do not treat as a public review.
-   */
-  comment?: string | null;
-  /** Preferred name once My Rating persistence lands (Task 17). */
+  resalePotential: number;
+  acquisitionEase: number;
+};
+
+/** Owner My Rating: ten dimensions + derived `score100` + optional private note. */
+export type MyRating = RatingDimensionScores & {
+  score100: number;
+  privateNote: string | null;
+  methodologyVersion: 'sneaker-10-v1';
+};
+
+/**
+ * Client write body for create/edit rating. Clients send dimensions and
+ * optional `privateNote` only. Do not submit an arbitrary composite that can
+ * disagree with dimensions; if a client previews `score100`, it must match the
+ * shared formula `round(sum of dimensions)`.
+ */
+export type SaveUserRatingInput = RatingDimensionScores & {
+  productId: string;
+  userId: string;
   privateNote?: string | null;
 };
 
@@ -60,12 +81,16 @@ export type ProductRatingSummary = {
   productId: string;
   ratingCount: number;
   lookAvg: number | null;
-  comfortAvg: number | null;
-  qualityAvg: number | null;
   outfitAvg: number | null;
+  materialAvg: number | null;
+  craftsmanshipAvg: number | null;
+  maintenanceAvg: number | null;
+  comfortAvg: number | null;
+  collectionAvg: number | null;
   valueAvg: number | null;
-  overallAvg: number | null;
-  /** Community aggregate; maps from DB rating_aggregates.score. */
+  resalePotentialAvg: number | null;
+  acquisitionEaseAvg: number | null;
+  /** Community Score 0–100; maps from DB `rating_aggregates.score`. */
   communityScore: number | null;
 };
 
@@ -107,7 +132,7 @@ export type ProductDetailData = {
   product: Product;
   offers: ProductOffer[];
   ratingSummary: ProductRatingSummary;
-  myRating: RatingBreakdown | null;
+  myRating: MyRating | null;
 };
 
 export type AccountProfile = {
@@ -136,7 +161,7 @@ acceptance results are preserved in
 | `products.is_published` | Anonymous Browse/Detail adapters must eventually select published products only; Tasks 11–12 add no runtime adapter |
 | Current `eazy_assessments` row | Future source for `Product.eazyScore`; select `is_current = true` |
 | `rating_aggregates` | Future source for `ProductRatingSummary` and Community Score; clients never calculate or write it |
-| `user_ratings.private_note` | Future Task 17 `privateNote`; maximum 500 characters and owner-only |
+| `user_ratings.private_note` | Task 17 `privateNote`; maximum 500 characters and owner-only |
 | `profiles.created_at` | Non-null `AccountProfile.joinedAt`; optional mutable profile fields may remain null |
 | Immutable `user_ratings.product_id` / `user_id` | Identity is set on insert and cannot appear in a client update |
 | `product_offers.size_region` / `currency` | Required strings; MVP database allowlists are `US` and `USD` |
@@ -149,10 +174,25 @@ Data API allowlist in `docs/DATA_MODEL.md`. Effective privilege tests must
 include access inherited through `PUBLIC`. A successful policy test does not
 prove the required grant exists, and a grant does not replace a row policy.
 
-`rating_aggregates` stores the arithmetic mean of each 1–10 rating category
-rounded to two decimal places. `score` maps to Community Score and is
-`round(avg(overall) * 10)` from the unrounded overall mean. A zero-count row has
-null category averages, `overall_avg`, and `score`.
+Under methodology **`sneaker-10-v1`**, `rating_aggregates` stores the arithmetic
+mean of each 0–10 dimension (rounded to two decimals for storage) and a
+server-derived Community Score: `round(sum of unrounded dimension means)`,
+matching Eazy/My Rating composite derivation. Zero-count rows keep averages,
+`score`, and `methodology_version` null. Clients never write aggregates or
+submit arbitrary composites.
+
+Rating write transport errors (Task 17):
+
+| Code / class | Meaning | Safe UI copy |
+| --- | --- | --- |
+| offline | NetInfo / onlineManager says offline before/during fail-fast | You're offline. Connect to the internet and try again. |
+| timeout | Bounded request deadline (~10s) aborted the request | The request took too long. Please try again. |
+| transport / unreachable | Network present but backend failed | Cannot reach the server. Please try again. |
+| unauthorized | Session missing / not allowed | Session-safe sign-in guidance |
+| validation | Client or DB constraint failure | Field-level and sticky footer form error (incomplete dimensions report remaining count; no silent fail) |
+| server | Other PostgREST / unexpected | Generic retry-safe message |
+
+Do not label every transport failure as offline. Do not surface raw SDK errors.
 
 The privileged trigger boundary is explicit: `handle_new_user` inserts the
 profile for a new auth user, and `handle_user_rating_change` owns aggregate
@@ -174,10 +214,11 @@ no profile grant or policy; authenticated clients select only the row whose
 `profiles.id` matches `auth.uid()`. Profile updates remain limited to
 `display_name`, `username`, and `avatar_url`.
 
-Task 12 intentionally grants rating `UPDATE` only for score columns and
-`private_note`. The later persistence implementation must use a write pattern
-compatible with immutable identity rather than assuming table-wide identity
-updates are available.
+Task 12 grants rating `INSERT`/`UPDATE` only for allowed columns and
+`private_note`. Task 17 updates that allowlist to the ten sneaker-10-v1
+dimensions (not `score` / `methodology_version`). Persistence uses
+read → update/insert → `23505` recovery rather than PostgREST upsert, and
+never assumes table-wide identity updates.
 
 ### Canonical Product Detail field sources
 
@@ -331,7 +372,12 @@ Task 16 functions (email/password only):
   `confirmation-required` when the provider creates a user without a session
 - `signOut()` — current-device local sign-out via
   `client.auth.signOut({ scope: 'local' })` (explicit; not global revocation)
-- `restoreSession()` — best-effort session restoration on launch
+- `restoreSession()` — best-effort session restoration on launch. Reads the
+  local persisted session with `getSession()`, then when the device is online
+  validates the principal with Auth `getUser()` (server-backed). Definitive
+  invalid identity/session errors clear the local session only (scope
+  `local`); offline and transient transport/5xx validation failures preserve
+  the local principal. Profile rows are not the identity validity check.
 
 Task 16 routes:
 - `app/auth/sign-in.tsx`
@@ -684,21 +730,31 @@ const detail: ProductDetailData = {
     productId: '1',
     ratingCount: 24,
     lookAvg: 7.8,
-    comfortAvg: 7.5,
-    qualityAvg: 8.0,
     outfitAvg: 7.6,
+    materialAvg: 8.0,
+    craftsmanshipAvg: 7.9,
+    maintenanceAvg: 7.5,
+    comfortAvg: 7.5,
+    collectionAvg: 7.2,
     valueAvg: 7.4,
-    overallAvg: 7.8,
+    resalePotentialAvg: 7.1,
+    acquisitionEaseAvg: 7.3,
     communityScore: 78,
   },
   myRating: {
     look: 8,
-    comfort: 7,
-    quality: 8,
     outfit: 7,
+    material: 8,
+    craftsmanship: 8,
+    maintenance: 7,
+    comfort: 7,
+    collection: 7,
     value: 7,
-    overall: 8,
-    comment: 'Great kids colorway; Gore-Tex is a plus.',
+    resalePotential: 7,
+    acquisitionEase: 8,
+    score100: 74,
+    privateNote: 'Great kids colorway; Gore-Tex is a plus.',
+    methodologyVersion: 'sneaker-10-v1',
   },
 };
 ```

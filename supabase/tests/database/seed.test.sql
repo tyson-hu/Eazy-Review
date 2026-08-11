@@ -123,19 +123,18 @@ select is(
 select ok(
   (
     select
-      look between 1 and 10
-      and comfort between 1 and 10
-      and quality between 1 and 10
-      and outfit between 1 and 10
-      and value between 1 and 10
-      and maintenance between 1 and 10
-      and material between 1 and 10
-      and details between 1 and 10
-      and collection between 1 and 10
-      and overall between 1 and 10
+      look between 0 and 10
+      and outfit between 0 and 10
+      and material between 0 and 10
+      and craftsmanship between 0 and 10
+      and maintenance between 0 and 10
+      and comfort between 0 and 10
+      and collection between 0 and 10
+      and value between 0 and 10
+      and resale_potential between 0 and 10
+      and acquisition_ease between 0 and 10
       and score between 0 and 100
-      and methodology_version is not null
-      and length(trim(methodology_version)) > 0
+      and methodology_version = 'sneaker-10-v1'
       and is_current
     from public.eazy_assessments
     where id = 'a1000000-0000-4000-8000-000000000021'::uuid
@@ -248,10 +247,15 @@ select ok(
       rating_count = 0
       and look_avg is null
       and comfort_avg is null
-      and quality_avg is null
+      and material_avg is null
+      and craftsmanship_avg is null
+      and maintenance_avg is null
+      and collection_avg is null
+      and resale_potential_avg is null
+      and acquisition_ease_avg is null
       and outfit_avg is null
       and value_avg is null
-      and overall_avg is null
+      and 1=1
       and score is null
     from public.rating_aggregates
     where product_id = 'a1000000-0000-4000-8000-000000000001'::uuid
@@ -264,10 +268,15 @@ select ok(
       rating_count = 0
       and look_avg is null
       and comfort_avg is null
-      and quality_avg is null
+      and material_avg is null
+      and craftsmanship_avg is null
+      and maintenance_avg is null
+      and collection_avg is null
+      and resale_potential_avg is null
+      and acquisition_ease_avg is null
       and outfit_avg is null
       and value_avg is null
-      and overall_avg is null
+      and 1=1
       and score is null
     from public.rating_aggregates
     where product_id = 'a1000000-0000-4000-8000-000000000002'::uuid

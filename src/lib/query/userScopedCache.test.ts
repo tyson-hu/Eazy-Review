@@ -113,7 +113,7 @@ describe('removeUserScopedQueries', () => {
   it('sign-out during in-flight A profile cancels and keeps catalog', async () => {
     const client = makeClient();
     client.setQueryData(catalogKeys.product('p1'), { id: 'p1' });
-    client.setQueryData(ratingKeys.mine('user-a', 'p1'), { overall: 9 });
+    client.setQueryData(ratingKeys.mine('user-a', 'p1'), { score100: 90 });
 
     let resolveA: ((value: { id: string }) => void) | undefined;
     const pending = client.prefetchQuery({

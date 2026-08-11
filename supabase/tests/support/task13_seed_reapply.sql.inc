@@ -97,21 +97,24 @@ begin
       image_id;
   end if;
 
-  -- Task 13 seed editorial fixture (methodology_version task13-seed-v1).
-  -- Coherent with mock catalog eazyScore 79; not community or laboratory evidence.
+  -- sneaker-10-v1 editorial fixture (deliberate values; not remapped from
+  -- retired quality/details/overall fields). Dimensions sum to 79 -> score 79.
+  -- Care (maintenance)=7 is intentionally below the rest. Resale and
+  -- Acquisition Ease are deliberate fixture values for the rubric, not
+  -- invented from old quality/overall.
   insert into public.eazy_assessments (
     id,
     product_id,
     look,
-    comfort,
-    quality,
     outfit,
-    value,
-    maintenance,
     material,
-    details,
+    craftsmanship,
+    maintenance,
+    comfort,
     collection,
-    overall,
+    value,
+    resale_potential,
+    acquisition_ease,
     score,
     methodology_version,
     is_current
@@ -119,18 +122,18 @@ begin
   select
     assessment_id,
     complete_product_id,
-    8,  -- look
-    8,  -- comfort
-    8,  -- quality
-    8,  -- outfit
-    8,  -- value
-    7,  -- maintenance
-    8,  -- material
-    8,  -- details
-    8,  -- collection
-    8,  -- overall
-    79, -- score
-    'task13-seed-v1',
+    8.0,  -- look / Appearance
+    8.0,  -- outfit / Styling
+    8.0,  -- material / Materials
+    8.0,  -- craftsmanship
+    7.0,  -- maintenance / Care
+    8.0,  -- comfort
+    8.0,  -- collection / Collectibility
+    8.0,  -- value / Product Value
+    8.0,  -- resale_potential (deliberate fixture)
+    8.0,  -- acquisition_ease (deliberate fixture)
+    79,   -- derived; trigger recomputes if dimensions change
+    'sneaker-10-v1',
     true
   where not exists (
     select 1 from public.eazy_assessments ea where ea.id = assessment_id
@@ -141,18 +144,18 @@ begin
   where id = assessment_id;
 
   if r_assessment.product_id is distinct from complete_product_id
-    or r_assessment.look is distinct from 8
-    or r_assessment.comfort is distinct from 8
-    or r_assessment.quality is distinct from 8
-    or r_assessment.outfit is distinct from 8
-    or r_assessment.value is distinct from 8
-    or r_assessment.maintenance is distinct from 7
-    or r_assessment.material is distinct from 8
-    or r_assessment.details is distinct from 8
-    or r_assessment.collection is distinct from 8
-    or r_assessment.overall is distinct from 8
+    or r_assessment.look is distinct from 8.0
+    or r_assessment.outfit is distinct from 8.0
+    or r_assessment.material is distinct from 8.0
+    or r_assessment.craftsmanship is distinct from 8.0
+    or r_assessment.maintenance is distinct from 7.0
+    or r_assessment.comfort is distinct from 8.0
+    or r_assessment.collection is distinct from 8.0
+    or r_assessment.value is distinct from 8.0
+    or r_assessment.resale_potential is distinct from 8.0
+    or r_assessment.acquisition_ease is distinct from 8.0
     or r_assessment.score is distinct from 79
-    or r_assessment.methodology_version is distinct from 'task13-seed-v1'
+    or r_assessment.methodology_version is distinct from 'sneaker-10-v1'
     or r_assessment.is_current is distinct from true
   then
     raise exception
@@ -316,12 +319,17 @@ begin
   where product_id = complete_product_id;
   if r_agg.rating_count <> 0
     or r_agg.look_avg is not null
-    or r_agg.comfort_avg is not null
-    or r_agg.quality_avg is not null
     or r_agg.outfit_avg is not null
+    or r_agg.material_avg is not null
+    or r_agg.craftsmanship_avg is not null
+    or r_agg.maintenance_avg is not null
+    or r_agg.comfort_avg is not null
+    or r_agg.collection_avg is not null
     or r_agg.value_avg is not null
-    or r_agg.overall_avg is not null
+    or r_agg.resale_potential_avg is not null
+    or r_agg.acquisition_ease_avg is not null
     or r_agg.score is not null
+    or r_agg.methodology_version is not null
   then
     raise exception
       'Task 13 seed: complete product aggregate is not empty zero-count';
@@ -332,12 +340,17 @@ begin
   where product_id = sparse_product_id;
   if r_agg.rating_count <> 0
     or r_agg.look_avg is not null
-    or r_agg.comfort_avg is not null
-    or r_agg.quality_avg is not null
     or r_agg.outfit_avg is not null
+    or r_agg.material_avg is not null
+    or r_agg.craftsmanship_avg is not null
+    or r_agg.maintenance_avg is not null
+    or r_agg.comfort_avg is not null
+    or r_agg.collection_avg is not null
     or r_agg.value_avg is not null
-    or r_agg.overall_avg is not null
+    or r_agg.resale_potential_avg is not null
+    or r_agg.acquisition_ease_avg is not null
     or r_agg.score is not null
+    or r_agg.methodology_version is not null
   then
     raise exception
       'Task 13 seed: sparse product aggregate is not empty zero-count';

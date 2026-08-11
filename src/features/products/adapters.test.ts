@@ -91,12 +91,17 @@ describe('public catalog adapters', () => {
       productId: SPARSE_PRODUCT_ID,
       ratingCount: 0,
       lookAvg: null,
-      comfortAvg: null,
-      qualityAvg: null,
       outfitAvg: null,
+      materialAvg: null,
+      craftsmanshipAvg: null,
+      maintenanceAvg: null,
+      comfortAvg: null,
+      collectionAvg: null,
       valueAvg: null,
-      overallAvg: null,
+      resalePotentialAvg: null,
+      acquisitionEaseAvg: null,
       communityScore: null,
+      methodologyVersion: null,
     });
   });
 
@@ -108,9 +113,21 @@ describe('public catalog adapters', () => {
       'https://example.test/air-force-later.png',
     ]);
     expect(detail.eazyAssessment).toEqual({
-      score: 79,
-      methodologyVersion: 'task13-seed-v1',
+      score100: 79,
+      methodologyVersion: 'sneaker-10-v1',
       assessedAt: '2026-08-03T16:17:14.000Z',
+      dimensions: {
+        look: 8,
+        outfit: 8,
+        material: 8,
+        craftsmanship: 8,
+        maintenance: 7,
+        comfort: 8,
+        collection: 8,
+        value: 8,
+        resalePotential: 8,
+        acquisitionEase: 8,
+      },
     });
     expect(detail.offers.map((offer) => offer.retailer)).toEqual([
       "DICK'S Sporting Goods",

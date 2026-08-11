@@ -119,6 +119,64 @@ function parseImages(value: unknown): NormalizedImage[] {
     );
 }
 
+function parseAssessmentDimensions(
+  row: UnknownRecord,
+): EazyAssessmentViewModel['dimensions'] {
+  const look = nullableNumber(row.look, 'eazy_assessments.look');
+  const outfit = nullableNumber(row.outfit, 'eazy_assessments.outfit');
+  const material = nullableNumber(row.material, 'eazy_assessments.material');
+  const craftsmanship = nullableNumber(
+    row.craftsmanship,
+    'eazy_assessments.craftsmanship',
+  );
+  const maintenance = nullableNumber(
+    row.maintenance,
+    'eazy_assessments.maintenance',
+  );
+  const comfort = nullableNumber(row.comfort, 'eazy_assessments.comfort');
+  const collection = nullableNumber(
+    row.collection,
+    'eazy_assessments.collection',
+  );
+  const value = nullableNumber(row.value, 'eazy_assessments.value');
+  const resalePotential = nullableNumber(
+    row.resale_potential,
+    'eazy_assessments.resale_potential',
+  );
+  const acquisitionEase = nullableNumber(
+    row.acquisition_ease,
+    'eazy_assessments.acquisition_ease',
+  );
+
+  if (
+    look == null ||
+    outfit == null ||
+    material == null ||
+    craftsmanship == null ||
+    maintenance == null ||
+    comfort == null ||
+    collection == null ||
+    value == null ||
+    resalePotential == null ||
+    acquisitionEase == null
+  ) {
+    return null;
+  }
+
+  return {
+    look,
+    outfit,
+    material,
+    craftsmanship,
+    maintenance,
+    comfort,
+    collection,
+    value,
+    resalePotential,
+    acquisitionEase,
+  };
+}
+
 function parseAssessment(value: unknown): EazyAssessmentViewModel | null {
   const current = array(value, 'eazy_assessments').filter((entry) => {
     const row = record(entry, 'eazy_assessments row');
@@ -136,8 +194,8 @@ function parseAssessment(value: unknown): EazyAssessmentViewModel | null {
   }
 
   const row = record(current[0], 'eazy_assessments row');
-  const score = nullableNumber(row.score, 'eazy_assessments.score');
-  if (score === null) {
+  const score100 = nullableNumber(row.score, 'eazy_assessments.score');
+  if (score100 === null) {
     return null;
   }
   const methodologyVersion = nullableString(
@@ -145,12 +203,13 @@ function parseAssessment(value: unknown): EazyAssessmentViewModel | null {
     'eazy_assessments.methodology_version',
   );
   return {
-    score,
+    score100,
     methodologyVersion,
     assessedAt:
       row.created_at === null
         ? null
         : timestamp(row.created_at, 'eazy_assessments.created_at'),
+    dimensions: parseAssessmentDimensions(row),
   };
 }
 
@@ -234,12 +293,17 @@ function emptyRatingSummary(productId: string): ProductRatingSummary {
     productId,
     ratingCount: 0,
     lookAvg: null,
-    comfortAvg: null,
-    qualityAvg: null,
     outfitAvg: null,
+    materialAvg: null,
+    craftsmanshipAvg: null,
+    maintenanceAvg: null,
+    comfortAvg: null,
+    collectionAvg: null,
     valueAvg: null,
-    overallAvg: null,
+    resalePotentialAvg: null,
+    acquisitionEaseAvg: null,
     communityScore: null,
+    methodologyVersion: null,
   };
 }
 
@@ -272,26 +336,46 @@ function parseRatingSummary(
     productId,
     ratingCount,
     lookAvg: nullableNumber(row.look_avg, 'rating_aggregates.look_avg'),
-    comfortAvg: nullableNumber(
-      row.comfort_avg,
-      'rating_aggregates.comfort_avg',
-    ),
-    qualityAvg: nullableNumber(
-      row.quality_avg,
-      'rating_aggregates.quality_avg',
-    ),
     outfitAvg: nullableNumber(
       row.outfit_avg,
       'rating_aggregates.outfit_avg',
     ),
+    materialAvg: nullableNumber(
+      row.material_avg,
+      'rating_aggregates.material_avg',
+    ),
+    craftsmanshipAvg: nullableNumber(
+      row.craftsmanship_avg,
+      'rating_aggregates.craftsmanship_avg',
+    ),
+    maintenanceAvg: nullableNumber(
+      row.maintenance_avg,
+      'rating_aggregates.maintenance_avg',
+    ),
+    comfortAvg: nullableNumber(
+      row.comfort_avg,
+      'rating_aggregates.comfort_avg',
+    ),
+    collectionAvg: nullableNumber(
+      row.collection_avg,
+      'rating_aggregates.collection_avg',
+    ),
     valueAvg: nullableNumber(row.value_avg, 'rating_aggregates.value_avg'),
-    overallAvg: nullableNumber(
-      row.overall_avg,
-      'rating_aggregates.overall_avg',
+    resalePotentialAvg: nullableNumber(
+      row.resale_potential_avg,
+      'rating_aggregates.resale_potential_avg',
+    ),
+    acquisitionEaseAvg: nullableNumber(
+      row.acquisition_ease_avg,
+      'rating_aggregates.acquisition_ease_avg',
     ),
     communityScore: nullableNumber(
       row.score,
       'rating_aggregates.score',
+    ),
+    methodologyVersion: nullableString(
+      row.methodology_version ?? null,
+      'rating_aggregates.methodology_version',
     ),
   };
 }
@@ -395,7 +479,7 @@ export function adaptProductDetail(value: unknown): ProductDetailPublicData {
     releaseDate: parsed.releaseDate,
     description: parsed.description,
     imageUrl: parsed.images[0]?.imageUrl ?? null,
-    eazyScore: parsed.assessment?.score ?? null,
+    eazyScore: parsed.assessment?.score100 ?? null,
     communityScore: parsed.ratingSummary.communityScore,
     ratingCount: parsed.ratingSummary.ratingCount,
     lowestPrice: parsed.offers[0]?.amount ?? null,

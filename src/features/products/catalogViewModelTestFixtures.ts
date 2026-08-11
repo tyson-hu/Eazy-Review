@@ -5,7 +5,27 @@ import {
 import type {
   ProductCardData,
   ProductDetailPublicData,
+  ProductRatingSummary,
 } from '@/src/types/product';
+
+function emptySummary(productId: string): ProductRatingSummary {
+  return {
+    productId,
+    ratingCount: 0,
+    lookAvg: null,
+    outfitAvg: null,
+    materialAvg: null,
+    craftsmanshipAvg: null,
+    maintenanceAvg: null,
+    comfortAvg: null,
+    collectionAvg: null,
+    valueAvg: null,
+    resalePotentialAvg: null,
+    acquisitionEaseAvg: null,
+    communityScore: null,
+    methodologyVersion: null,
+  };
+}
 
 export const completeProductCard: ProductCardData = {
   id: COMPLETE_PRODUCT_ID,
@@ -60,9 +80,21 @@ export const completeProductDetail: ProductDetailPublicData = {
     'https://raw.githubusercontent.com/tyson-hu/Eazy-Review/test/air-force-secondary.png',
   ],
   eazyAssessment: {
-    score: 79,
-    methodologyVersion: 'task13-seed-v1',
+    score100: 79,
+    methodologyVersion: 'sneaker-10-v1',
     assessedAt: '2026-08-03T16:17:14.000Z',
+    dimensions: {
+      look: 8,
+      outfit: 8,
+      material: 8,
+      craftsmanship: 8,
+      maintenance: 7,
+      comfort: 8,
+      collection: 8,
+      value: 8,
+      resalePotential: 8,
+      acquisitionEase: 8,
+    },
   },
   offers: [
     {
@@ -84,17 +116,7 @@ export const completeProductDetail: ProductDetailPublicData = {
       checkedAt: '2026-08-03T16:17:14.000Z',
     },
   ],
-  ratingSummary: {
-    productId: COMPLETE_PRODUCT_ID,
-    ratingCount: 0,
-    lookAvg: null,
-    comfortAvg: null,
-    qualityAvg: null,
-    outfitAvg: null,
-    valueAvg: null,
-    overallAvg: null,
-    communityScore: null,
-  },
+  ratingSummary: emptySummary(COMPLETE_PRODUCT_ID),
 };
 
 export const sparseProductDetail: ProductDetailPublicData = {
@@ -115,15 +137,5 @@ export const sparseProductDetail: ProductDetailPublicData = {
   imageUrls: [],
   eazyAssessment: null,
   offers: [],
-  ratingSummary: {
-    productId: SPARSE_PRODUCT_ID,
-    ratingCount: 0,
-    lookAvg: null,
-    comfortAvg: null,
-    qualityAvg: null,
-    outfitAvg: null,
-    valueAvg: null,
-    overallAvg: null,
-    communityScore: null,
-  },
+  ratingSummary: emptySummary(SPARSE_PRODUCT_ID),
 };

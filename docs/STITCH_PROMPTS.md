@@ -108,23 +108,22 @@ Do not add filters, sorting, or pagination unless Task 20 catalog evidence requi
 Design a short premium mobile rating submission screen for Eazy Review. The screen should make rating feel fast, clear, and low-friction.
 
 Fields:
-- Look 1-10
-- Comfort 1-10
-- Quality 1-10
-- Outfit 1-10
-- Value 1-10
-- Overall 1-10
+- Appearance, Styling, Materials, Craftsmanship, Care, Comfort,
+  Collectibility, Product Value, Resale Potential, Acquisition Ease:
+  0–10 half-step native sliders with − / + and Clear
+- Live derived My Rating preview (0–100); Overall is not editable
 - Optional private note (owner-only; not a public comment)
 
 Required structure:
 - Product preview
-- Overall rating emphasized
-- Category rating rows
+- Grouped dimension rows (Style; Build and Wear; Market and Ownership)
+- Live My Rating preview when complete
 - Optional private note input
 - Submit button
 - Save/progress feedback
 
-Avoid long intimidating forms, extra required fields, confusing category names, and social posting clutter.
+Avoid long intimidating forms, editable Overall, extra required fields,
+confusing category names, and social posting clutter.
 ```
 
 ## Account Page Prompt
