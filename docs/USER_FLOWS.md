@@ -177,15 +177,17 @@ Routes:
 - Completion: `app/auth/reset-password.tsx` (`/auth/reset-password`)
 
 ```txt
-Logged-out user opens Account
+Logged-out user opens Account or Sign In
 -> User taps Forgot Password
 -> Forgot Password screen (request recovery email)
--> User submits email; honest success/error state
+-> User submits email; non-enumerating confirmation
 -> User opens recovery deep link / email link
 -> App exchanges/verifies the link and observes a PASSWORD_RECOVERY session
 -> App opens Reset Password (completion)
 -> User sets a new password; honest success/error state
--> User signs in with the new password only (old password fails)
+-> User remains on the authenticated recovery session and continues to Account
+  (sign-in is not required again when the session is already established)
+-> Later sign-in uses the new password only (old password fails)
 ```
 
 `forgot-password.tsx` owns the recovery-request UI only. `reset-password.tsx`
@@ -197,6 +199,14 @@ Reset Password enables its completion form only for a verified recovery
 session. Direct navigation, an ordinary signed-in session, or an
 expired/replayed/invalid recovery link shows a safe error with a path to request
 a new email; it must not call the password-update API.
+
+Recovery redirect matrix (scheme `eazyreview` from `app.json`):
+
+| Environment | Redirect | Configured by |
+| --- | --- | --- |
+| Local Supabase + Development build | `Linking.createURL('/auth/reset-password')` (typically `eazyreview://…/auth/reset-password`) | Task 18 (`supabase/config.toml` allowlist variants) |
+| Preview / staging Auth host | Same app scheme after host allowlist; optional after human approval | Task 18/25 as separately approved |
+| Production | Human-applied allowlist only | Tasks 25–26 |
 
 ## Flow 6: Delete Account
 

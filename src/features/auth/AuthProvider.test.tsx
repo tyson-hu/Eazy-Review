@@ -146,7 +146,7 @@ function AuthProbe() {
   const auth = useAuth();
   return (
     <Text testID="auth-probe">
-      {`${auth.status}|${auth.user?.id ?? 'none'}|${auth.user?.email ?? ''}`}
+      {`${auth.status}|${auth.user?.id ?? 'none'}|${auth.user?.email ?? ''}|${auth.recoveryPhase}`}
     </Text>
   );
 }
@@ -162,7 +162,7 @@ function AuthControllerProbe({
   }, [auth, authRef]);
   return (
     <Text testID="auth-probe">
-      {`${auth.status}|${auth.user?.id ?? 'none'}|${auth.user?.email ?? ''}`}
+      {`${auth.status}|${auth.user?.id ?? 'none'}|${auth.user?.email ?? ''}|${auth.recoveryPhase}`}
     </Text>
   );
 }
@@ -189,7 +189,7 @@ describe('AuthProvider', () => {
     });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -197,7 +197,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-a|a@example.com',
+        'signed-in|user-a|a@example.com|idle',
       ),
     );
     expect(mock.client.auth.onAuthStateChange).toHaveBeenCalledTimes(1);
@@ -210,14 +210,14 @@ describe('AuthProvider', () => {
   it('initializes signed-out when no session exists', async () => {
     const mock = createMockAuthClient({ initialUser: null });
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
     );
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
     await rendered.cleanup();
@@ -251,7 +251,7 @@ describe('AuthProvider', () => {
     });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -259,7 +259,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
     expect(mock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
@@ -317,7 +317,7 @@ describe('AuthProvider', () => {
       current: null,
     };
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthControllerProbe authRef={authRef} />
       </AuthProvider>,
       { queryClient },
@@ -333,7 +333,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|id-fresh@example.com|fresh@example.com',
+        'signed-in|id-fresh@example.com|fresh@example.com|idle',
       ),
     );
 
@@ -345,7 +345,7 @@ describe('AuthProvider', () => {
     // Newer principal must remain signed in; only a same-principal cleanup
     // is allowed to wipe storage, and re-check must skip when ids diverge.
     expect(rendered.getByTestId('auth-probe').props.children).toBe(
-      'signed-in|id-fresh@example.com|fresh@example.com',
+      'signed-in|id-fresh@example.com|fresh@example.com|idle',
     );
 
     await rendered.cleanup();
@@ -366,7 +366,7 @@ describe('AuthProvider', () => {
     queryClient.setQueryData(ratingKeys.mine('user-a', 'p1'), { score100: 90 });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -385,7 +385,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
 
@@ -413,7 +413,7 @@ describe('AuthProvider', () => {
     queryClient.setQueryData(catalogKeys.product('p1'), { id: 'p1' });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -432,7 +432,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-b|b@example.com',
+        'signed-in|user-b|b@example.com|idle',
       ),
     );
 
@@ -459,7 +459,7 @@ describe('AuthProvider', () => {
     });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -491,7 +491,7 @@ describe('AuthProvider', () => {
     });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
     );
@@ -509,7 +509,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-new|new@example.com',
+        'signed-in|user-new|new@example.com|idle',
       ),
     );
 
@@ -523,7 +523,7 @@ describe('AuthProvider', () => {
     // Newest authentication event must still win.
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-new|new@example.com',
+        'signed-in|user-new|new@example.com|idle',
       ),
     );
 
@@ -537,7 +537,7 @@ describe('AuthProvider', () => {
     });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
     );
@@ -549,7 +549,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
 
@@ -561,7 +561,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
 
@@ -588,7 +588,7 @@ describe('AuthProvider', () => {
       });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -624,7 +624,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
 
@@ -635,7 +635,7 @@ describe('AuthProvider', () => {
     });
 
     expect(rendered.getByTestId('auth-probe').props.children).toBe(
-      'signed-out|none|',
+      'signed-out|none||idle',
     );
 
     removeSpy.mockRestore();
@@ -662,7 +662,7 @@ describe('AuthProvider', () => {
       });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -696,7 +696,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-c|c@example.com',
+        'signed-in|user-c|c@example.com|idle',
       ),
     );
 
@@ -706,7 +706,7 @@ describe('AuthProvider', () => {
     });
 
     expect(rendered.getByTestId('auth-probe').props.children).toBe(
-      'signed-in|user-c|c@example.com',
+      'signed-in|user-c|c@example.com|idle',
     );
 
     removeSpy.mockRestore();
@@ -739,7 +739,7 @@ describe('AuthProvider', () => {
 
     const authRef = { current: null as AuthContextValue | null };
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthControllerProbe authRef={authRef} />
       </AuthProvider>,
       { queryClient },
@@ -774,7 +774,7 @@ describe('AuthProvider', () => {
     expect(signInResult).toEqual({ kind: 'superseded' });
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
 
@@ -807,7 +807,7 @@ describe('AuthProvider', () => {
 
     const authRef = { current: null as AuthContextValue | null };
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthControllerProbe authRef={authRef} />
       </AuthProvider>,
       { queryClient },
@@ -842,7 +842,7 @@ describe('AuthProvider', () => {
     expect(signInResult).toEqual({ kind: 'superseded' });
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-c|c@example.com',
+        'signed-in|user-c|c@example.com|idle',
       ),
     );
 
@@ -875,7 +875,7 @@ describe('AuthProvider', () => {
 
     const authRef = { current: null as AuthContextValue | null };
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthControllerProbe authRef={authRef} />
       </AuthProvider>,
       { queryClient },
@@ -922,7 +922,7 @@ describe('AuthProvider', () => {
     });
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-b|b@example.com',
+        'signed-in|user-b|b@example.com|idle',
       ),
     );
 
@@ -951,7 +951,7 @@ describe('AuthProvider', () => {
       });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -993,7 +993,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-b|b@example.com',
+        'signed-in|user-b|b@example.com|idle',
       ),
     );
 
@@ -1025,7 +1025,7 @@ describe('AuthProvider', () => {
       });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -1066,7 +1066,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-b|b@example.com',
+        'signed-in|user-b|b@example.com|idle',
       ),
     );
 
@@ -1085,7 +1085,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-b|b-refreshed@example.com',
+        'signed-in|user-b|b-refreshed@example.com|idle',
       ),
     );
     expect(removeSpy).toHaveBeenCalledTimes(1);
@@ -1115,7 +1115,7 @@ describe('AuthProvider', () => {
       });
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -1153,7 +1153,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-b|b@example.com',
+        'signed-in|user-b|b@example.com|idle',
       ),
     );
 
@@ -1199,7 +1199,7 @@ describe('AuthProvider', () => {
       );
 
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthProbe />
       </AuthProvider>,
       { queryClient },
@@ -1257,7 +1257,7 @@ describe('AuthProvider', () => {
 
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-c|c@example.com',
+        'signed-in|user-c|c@example.com|idle',
       ),
     );
 
@@ -1307,7 +1307,7 @@ describe('AuthProvider', () => {
 
     const authRef = { current: null as AuthContextValue | null };
     const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession>
+      <AuthProvider client={mock.client} enableSession linking={null}>
         <AuthControllerProbe authRef={authRef} />
       </AuthProvider>,
       { queryClient },
@@ -1342,11 +1342,233 @@ describe('AuthProvider', () => {
     expect(signUpResult).toEqual({ kind: 'superseded' });
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-out|none|',
+        'signed-out|none||idle',
       ),
     );
 
     removeSpy.mockRestore();
+    await rendered.cleanup();
+  });
+});
+
+describe('AuthProvider password recovery', () => {
+  it('marks recovery verified on PASSWORD_RECOVERY without treating ordinary SIGNED_IN as recovery', async () => {
+    const mock = createMockAuthClient({
+      initialUser: null,
+    });
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={null}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none||idle',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-a', email: 'a@example.com' });
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-a|a@example.com|idle',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-a',
+        email: 'a@example.com',
+      });
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-a|a@example.com|verified',
+      ),
+    );
+
+    await rendered.cleanup();
+  });
+
+  it('processes a cold-start recovery deep link into verified phase', async () => {
+    const setSession = jest.fn(async () => ({
+      data: {
+        session: {
+          user: { id: 'user-r', email: 'r@example.com' },
+        },
+      },
+      error: null,
+    }));
+    const mock = createMockAuthClient({ initialUser: null });
+    (mock.client.auth as unknown as { setSession?: jest.Mock }).setSession =
+      setSession;
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () =>
+        'eazyreview://auth/reset-password#access_token=tok&refresh_token=ref&type=recovery',
+      ),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return {
+            remove: () => {
+              const index = listeners.indexOf(listener);
+              if (index >= 0) {
+                listeners.splice(index, 1);
+              }
+            },
+          };
+        },
+      ),
+    };
+
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider
+        client={mock.client}
+        enableSession
+        linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|verified',
+      ),
+    );
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: 'tok',
+      refresh_token: 'ref',
+    });
+    expect(linking.getInitialURL).toHaveBeenCalled();
+
+    await rendered.cleanup();
+  });
+
+  it('marks recovery unavailable when a warm recovery link is expired', async () => {
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => ({
+      data: { session: null },
+      error: {
+        message: 'Email link is invalid or has expired',
+        code: 'otp_expired',
+        status: 403,
+      },
+    }));
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return {
+            remove: () => {
+              const index = listeners.indexOf(listener);
+              if (index >= 0) {
+                listeners.splice(index, 1);
+              }
+            },
+          };
+        },
+      ),
+    };
+
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider
+        client={mock.client}
+        enableSession
+        linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=expired-code',
+        });
+      }
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|unavailable',
+      ),
+    );
+
+    await rendered.cleanup();
+  });
+
+  it('clears recovery phase on sign-out', async () => {
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    const authRef: { current: AuthContextValue | null } = { current: null };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={null}>
+        <AuthControllerProbe authRef={authRef} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|user-a',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-a',
+        email: 'a@example.com',
+      });
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|verified',
+      ),
+    );
+
+    await act(async () => {
+      await authRef.current?.signOut();
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none||idle',
+      ),
+    );
+
     await rendered.cleanup();
   });
 });

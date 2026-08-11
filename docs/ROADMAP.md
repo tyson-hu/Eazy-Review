@@ -27,10 +27,16 @@ Task detail, dependencies, acceptance, and current status live in
   (regression smoke). Web **PASS**; iOS Simulator **PASS with documented
   limits**. VoiceOver and maximum Dynamic Type remain **DEFERRED BY HUMAN
   SCOPE DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice;
-  `a635251` reverted). Task 18 remains Pending / not started. Excluded
-  identity features (social login, passkeys/MFA, editable/public profile,
-  global session revocation, secure native session storage revisit) stay
-  deferred — not part of Tasks 16–19 unless separately promoted.
+  `a635251` reverted). Excluded identity features (social login, passkeys/MFA,
+  editable/public profile, global session revocation, secure native session
+  storage revisit) stay deferred — not part of Tasks 16–19 unless separately
+  promoted.
+- Task 18: **Implementation complete / acceptance pending.** Email password
+  recovery request + reset deep-link route, non-enumerating confirmation,
+  recovery-only Auth phase, local/dev `eazyreview` redirect allowlist.
+  Automated tests greened; physical iPhone A–F checklist **PENDING HUMAN**.
+  Task 19 not started. Production recovery host configuration remains Tasks
+  25–26.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,

@@ -389,29 +389,59 @@ external URLs and schemes are rejected. Post-auth navigation uses
 duplicated via forward `replace`.
 
 Task 16 does **not** implement:
-- password recovery or recovery deep links (Task 18)
 - account deletion (Task 19)
 - social login / MFA / passkeys (deferred unless roadmap promotes)
-- rating writes (Task 17)
 
-Later (Task 18 / 19) functions remain planned:
-- `requestPasswordReset(email)`
-- `updatePasswordFromRecovery(newPassword)`
+Task 17 rating writes are separate from auth.
+
+### Task 18 password recovery
+
+Functions (file: `src/features/auth/api.ts`):
+
+- `requestPasswordReset(email)` — calls
+  `client.auth.resetPasswordForEmail` with
+  `redirectTo = Linking.createURL('/auth/reset-password')` (scheme
+  `eazyreview`). Trims/lowercases the email. Rejects obviously malformed
+  addresses client-side. Never retries. Success copy is always
+  non-enumerating: it does not claim whether an account exists.
+- `updatePasswordFromRecovery(newPassword)` — calls
+  `client.auth.updateUser({ password })` once. Enabled only after a verified
+  recovery phase. Never retries or queues offline password updates.
+- `processAuthCallbackUrl(url)` — exchanges a PKCE `code` or applies
+  access/refresh tokens from a recovery deep link without logging the URL or
+  tokens.
+
+AuthProvider recovery phase (not ordinary session status):
+
+- `idle` — no recovery callback
+- `processing` — deep-link exchange in flight
+- `verified` — `PASSWORD_RECOVERY` (or verified recovery callback); form OK
+- `unavailable` — expired, reused, malformed, or failed link
+
+Routes:
+
+- `app/auth/forgot-password.tsx` — request only
+- `app/auth/reset-password.tsx` — completion + deep-link target
+
+`app/auth/reset-password.tsx` may call `updatePasswordFromRecovery` only when
+`recoveryPhase === 'verified'`. Direct navigation, an ordinary signed-in
+session, an expired link, or a replayed/invalid link must not expose a working
+password-update action; show a safe error and route to a new recovery request.
+
+Successful recovery keeps the authenticated session and dismisses to Account;
+it does not reuse Rate `returnTo` routing. Physical proof that the new password
+works and the old password fails remains on the human iPhone checklist.
+
+Still deferred (Task 19):
+
 - `deleteCurrentUser()` — calls a protected server endpoint; no user id
   parameter
 
-### Password-recovery completion (required for Task 18)
-
-`app/auth/reset-password.tsx` is a recovery-only completion route. It may call
-`updatePasswordFromRecovery` only after the app has exchanged/verified the
-provider deep link and observed a valid `PASSWORD_RECOVERY` auth event/session.
-Direct navigation, an ordinary signed-in session, an expired link, or a
-replayed/invalid link must not expose a working password-update action; show a
-safe error and route back to a new recovery request instead.
+### Password-recovery completion (Task 18)
 
 Tests cover a valid recovery session, direct navigation, an ordinary session,
-and expired/invalid recovery state. Successful completion proves the new
-password works and the old password does not.
+and expired/invalid recovery state. Human physical deep-link matrix is separate
+evidence.
 
 ### Delete-current-user server contract (required for Task 19)
 

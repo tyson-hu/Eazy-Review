@@ -156,6 +156,22 @@ Canonical security rules for all agent and human work in this repo, regardless o
     without fragile chunking or custom encryption.
   - Never store service-role keys, passwords, or database credentials in
     client storage. Never log sessions, tokens, or full auth-user objects.
+- Task 18 password recovery:
+  - Recovery uses Supabase Auth only
+    (`resetPasswordForEmail` / `updateUser({ password })`). No custom recovery
+    SQL, RLS changes, SECURITY DEFINER helpers, or service-role credentials.
+  - Redirect allowlist for local/dev includes the `eazyreview` app scheme paths
+    in `supabase/config.toml`. Staging and production redirect hosts are not
+    Task 18 deliverables (Tasks 25–26 + human).
+  - Never log recovery tokens, access tokens, refresh tokens, passwords, or
+    complete incoming recovery URLs. Diagnostics use coarse labels only.
+  - Recovery request success copy is non-enumerating and must not reveal
+    whether an email maps to an account.
+  - Password update forms enable only after a verified recovery phase; ordinary
+    sessions and direct navigation cannot update via the recovery screen.
+  - Password-update mutations never auto-retry and never queue offline.
+  - Local session storage remains the Task 16 AsyncStorage strategy; Task 18
+    does not redesign session persistence.
 - Do not print Supabase project refs, keys, tokens, connection strings, or
   dashboard/MCP responses containing them. Report presence and validation
   status without echoing values.

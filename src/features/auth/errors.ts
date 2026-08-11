@@ -4,7 +4,13 @@ export type AuthErrorCode =
   | 'account-creation-failed'
   | 'timeout'
   | 'temporary-failure'
-  | 'confirmation-required';
+  | 'confirmation-required'
+  | 'invalid-email'
+  | 'password-mismatch'
+  | 'password-too-weak'
+  | 'password-update-failed'
+  | 'recovery-link-invalid'
+  | 'recovery-request-failed';
 
 export type AuthErrorSource =
   | 'transport'
@@ -48,11 +54,16 @@ function defaultSource(code: AuthErrorCode): AuthErrorSource {
     case 'timeout':
       return 'transport';
     case 'invalid-credentials':
-      return 'credentials';
     case 'confirmation-required':
+    case 'invalid-email':
+    case 'password-mismatch':
+    case 'password-too-weak':
+    case 'recovery-link-invalid':
       return 'credentials';
     case 'account-creation-failed':
     case 'temporary-failure':
+    case 'password-update-failed':
+    case 'recovery-request-failed':
       return 'server';
   }
 }
@@ -68,6 +79,21 @@ export const AUTH_USER_MESSAGES = {
   timeout: 'The request took too long. Please try again.',
   temporaryFailure: 'Could not sign in. Please try again.',
   authStateChanged: 'Your account state changed. Please try again.',
+  invalidEmail: 'Enter a valid email address.',
+  /**
+   * Non-enumerating recovery request confirmation. Never reveal whether an
+   * account exists for the submitted address.
+   */
+  recoveryRequestSent:
+    'If an Eazy Review account exists for this email, password-reset instructions will be sent.',
+  recoveryRequestFailed:
+    'Could not send a password-reset email. Please try again.',
+  recoveryLinkInvalid:
+    'This reset link is no longer valid. Request a new password-reset email.',
+  passwordMismatch: 'Passwords do not match.',
+  passwordTooWeak: 'Password must be at least 6 characters.',
+  passwordUpdateFailed: 'Could not update your password. Please try again.',
+  passwordUpdateSuccess: 'Your password was updated.',
 } as const;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -211,10 +237,19 @@ export function isTransientSessionValidationFailure(error: unknown): boolean {
  * Maps SDK/network failures to AuthError with fixed user-facing copy.
  * Does not surface raw Supabase messages to callers who only read `.message`.
  */
+export type AuthNormalizeOperation =
+  | 'sign-in'
+  | 'sign-up'
+  | 'sign-out'
+  | 'session'
+  | 'password-reset-request'
+  | 'password-update'
+  | 'recovery-callback';
+
 export function normalizeAuthError(
   error: unknown,
   options: {
-    operation: 'sign-in' | 'sign-up' | 'sign-out' | 'session';
+    operation: AuthNormalizeOperation;
     isOffline?: boolean;
   },
 ): AuthError {
@@ -279,6 +314,25 @@ export function normalizeAuthError(
     );
   }
 
+  if (options.operation === 'password-update' && isWeakPassword(error)) {
+    return new AuthError(
+      'password-too-weak',
+      AUTH_USER_MESSAGES.passwordTooWeak,
+      { source: 'credentials', status, cause: error },
+    );
+  }
+
+  if (
+    options.operation === 'recovery-callback' ||
+    (options.operation === 'password-update' && isRecoverySessionError(error))
+  ) {
+    return new AuthError(
+      'recovery-link-invalid',
+      AUTH_USER_MESSAGES.recoveryLinkInvalid,
+      { source: 'credentials', status, cause: error },
+    );
+  }
+
   if (status != null && status >= 500) {
     return new AuthError(
       'temporary-failure',
@@ -294,14 +348,43 @@ export function normalizeAuthError(
   );
 }
 
-function userMessageForOperation(
-  operation: 'sign-in' | 'sign-up' | 'sign-out' | 'session',
-): string {
+function isWeakPassword(value: unknown): boolean {
+  const code = readCode(value)?.toLowerCase() ?? '';
+  const message = readMessage(value).toLowerCase();
+  return (
+    code === 'weak_password' ||
+    message.includes('password should be at least') ||
+    message.includes('password is known to be weak') ||
+    message.includes('password is too short')
+  );
+}
+
+function isRecoverySessionError(value: unknown): boolean {
+  const code = readCode(value)?.toLowerCase() ?? '';
+  const message = readMessage(value).toLowerCase();
+  return (
+    code === 'otp_expired' ||
+    code === 'flow_state_expired' ||
+    code === 'flow_state_not_found' ||
+    message.includes('otp_expired') ||
+    message.includes('email link is invalid or has expired') ||
+    message.includes('token has expired') ||
+    message.includes('invalid or expired')
+  );
+}
+
+function userMessageForOperation(operation: AuthNormalizeOperation): string {
   switch (operation) {
     case 'sign-up':
       return AUTH_USER_MESSAGES.accountCreationFailed;
     case 'sign-out':
       return AUTH_USER_MESSAGES.signOutFailed;
+    case 'password-reset-request':
+      return AUTH_USER_MESSAGES.recoveryRequestFailed;
+    case 'password-update':
+      return AUTH_USER_MESSAGES.passwordUpdateFailed;
+    case 'recovery-callback':
+      return AUTH_USER_MESSAGES.recoveryLinkInvalid;
     case 'sign-in':
     case 'session':
     default:

@@ -34,7 +34,14 @@
   DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
   reverted). Evidence:
   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
-  Task 18 remains Pending / not started.
+- Task 18 is **implementation complete / acceptance pending.** Password
+  recovery request (`/auth/forgot-password`), recovery deep-link target
+  (`/auth/reset-password`), `PASSWORD_RECOVERY` handling, non-enumerating
+  confirmation, and focused automated recovery tests. Local/dev redirect
+  paths use the `eazyreview` scheme. Physical iPhone deep-link matrix remains
+  **PENDING HUMAN**. Human acceptance is **NOT CLAIMED**. Task 19 is not
+  started. Evidence:
+  [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -184,7 +191,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted |
-| 18 | Password Recovery And Deep Links | Pending |
+| 18 | Password Recovery And Deep Links | Implementation complete / acceptance pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
@@ -734,7 +741,7 @@ Non-goals:
 
 ## Task 18: Password Recovery And Deep Links
 
-Status: Pending.
+Status: **Implementation complete / acceptance pending.**
 
 Depends on: Task 16.
 
@@ -747,7 +754,8 @@ Parallel-safe with: Task 17 after all prerequisites are accepted and edit
 scopes are file-disjoint.
 
 Human gate: Preview/staging redirect configuration requires separate approval;
-production configuration remains owned by Tasks 25–26 and a human.
+production configuration remains owned by Tasks 25–26 and a human. Physical
+iPhone deep-link matrix is human-run before formal acceptance.
 
 Goal: let email users recover access without mixing recovery risk into core
 authentication.
@@ -774,9 +782,25 @@ Deliverables:
   Tasks 25–26.
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
-- Physical-device deep-link verification in a development or preview build.
+- Physical-device deep-link verification in a development or preview build
+  (PENDING HUMAN).
 - Focused recovery-state tests for verified, ordinary-session, direct,
   expired, replayed, and malformed states.
+
+Implementation notes (acceptance pending):
+
+- Sign In and logged-out Account expose **Forgot password?**.
+- Request uses `supabase.auth.resetPasswordForEmail` with
+  `Linking.createURL('/auth/reset-password')` as `redirectTo`.
+- Local Supabase `additional_redirect_urls` includes the documented dev
+  scheme/path variants. Staging/production redirects are not configured.
+- AuthProvider tracks `recoveryPhase` (`idle` | `processing` | `verified` |
+  `unavailable`) and processes cold/warm auth deep links without logging
+  tokens or full URLs. Only `verified` enables password update.
+- Successful update uses `supabase.auth.updateUser({ password })` once (no
+  automatic retry/queue) and routes to Account while remaining signed in.
+- Evidence:
+  [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 
 Acceptance:
 
@@ -786,6 +810,8 @@ Acceptance:
 - Expired/replayed links offer a safe restart.
 - The new password works and the old password fails.
 - Recovery is proven outside web-only development.
+
+Human acceptance: **NOT CLAIMED.**
 
 ## Task 19: Protected Account Deletion
 

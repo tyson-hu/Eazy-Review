@@ -9,10 +9,12 @@ import {
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
 
 import {
   mapAuthUserFromSessionUser,
+  processAuthCallbackUrl,
   restoreSession,
   signInWithPassword,
   signOut as signOutApi,
@@ -22,12 +24,14 @@ import type {
   AuthOperationSuperseded,
   AuthStatus,
   AuthUser,
+  RecoveryPhase,
   SignInCredentials,
   SignInResult,
   SignInSuccess,
   SignUpCredentials,
   SignUpResult,
 } from '@/src/features/auth/types';
+import { isAuthCallbackUrl } from '@/src/features/auth/recoveryUrl';
 import { removeUserScopedQueries } from '@/src/lib/query/userScopedCache';
 import { getSupabase } from '@/src/lib/supabase/client';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
@@ -37,12 +41,35 @@ export type AuthContextValue = {
   user: AuthUser | null;
   /** True when status is signed-in and a user is present. */
   isSignedIn: boolean;
+  /**
+   * Password-recovery phase (Task 18). Independent of ordinary session status.
+   * The reset-password form is enabled only when `verified`.
+   */
+  recoveryPhase: RecoveryPhase;
+  /**
+   * Mark recovery as complete after a successful password update so the form
+   * cannot be reused until a new recovery deep link arrives.
+   */
+  clearRecoveryPhase: () => void;
   signIn: (credentials: SignInCredentials) => Promise<SignInResult>;
   signUp: (credentials: SignUpCredentials) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+export type AuthLinkingAdapter = {
+  getInitialURL: () => Promise<string | null>;
+  addEventListener: (
+    type: 'url',
+    listener: (event: { url: string }) => void,
+  ) => { remove: () => void };
+};
+
+const defaultLinking: AuthLinkingAdapter = {
+  getInitialURL: () => Linking.getInitialURL(),
+  addEventListener: (type, listener) => Linking.addEventListener(type, listener),
+};
 
 export type AuthProviderProps = {
   children: ReactNode;
@@ -56,6 +83,11 @@ export type AuthProviderProps = {
    * a static signed-out context). Defaults to true.
    */
   enableSession?: boolean;
+  /**
+   * Injected deep-link surface for tests. Production uses expo-linking.
+   * When `null`, skip recovery deep-link processing.
+   */
+  linking?: AuthLinkingAdapter | null;
 };
 
 function userIdFromSession(session: Session | null): string | null {
@@ -91,17 +123,23 @@ function resolveClient(
  *   transition (used for superseded-operation decisions)
  * - cachePrincipal: principal whose user-scoped cache is already prepared
  * - React user/status: published only after that principal's cache prep finishes
+ *
+ * Password recovery (Task 18) is a separate phase machine: only an observed
+ * PASSWORD_RECOVERY event enables the recovery password form. Ordinary
+ * SIGNED_IN / session restore never set recovery to verified.
  */
 export function AuthProvider({
   children,
   client: clientProp,
   enableSession = true,
+  linking = defaultLinking,
 }: AuthProviderProps) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>(() =>
     enableSession ? 'initializing' : 'signed-out',
   );
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [recoveryPhase, setRecoveryPhase] = useState<RecoveryPhase>('idle');
   /**
    * Newest principal announced by the latest authoritative auth transition.
    * Used for explicit sign-in/up superseded decisions — not for cache ownership.
@@ -120,6 +158,8 @@ export function AuthProvider({
    * transition that arrived while async cleanup awaited.
    */
   const authGenerationRef = useRef(0);
+  /** Ensures only the latest recovery-link processing commit wins. */
+  const recoveryGenerationRef = useRef(0);
 
   /**
    * Queue a cache transition for `nextUserId`. Transitions run in order;
@@ -171,6 +211,10 @@ export function AuthProvider({
     [prepareUserScopedCacheForPrincipal],
   );
 
+  const clearRecoveryPhase = useCallback(() => {
+    setRecoveryPhase('idle');
+  }, []);
+
   useEffect(() => {
     if (!enableSession) {
       return;
@@ -214,7 +258,7 @@ export function AuthProvider({
 
     const {
       data: { subscription: authSubscription },
-    } = client.auth.onAuthStateChange((_event, session) => {
+    } = client.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
       // Keep the callback minimal: schedule React state after the event.
       // Do not perform nested Supabase auth calls here.
       // TOKEN_REFRESHED uses the same serialized path as SIGNED_IN so a
@@ -222,6 +266,15 @@ export function AuthProvider({
       if (cancelled) {
         return;
       }
+
+      // Password recovery is distinct from ordinary sign-in/session restore.
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryPhase('verified');
+      } else if (event === 'SIGNED_OUT') {
+        setRecoveryPhase('idle');
+      }
+      // Do not clear recovery on SIGNED_IN / USER_UPDATED / TOKEN_REFRESHED —
+      // recovery session lives as a normal session with a prior PASSWORD_RECOVERY.
 
       // Invalidate any in-flight bootstrap before scheduling application.
       authGenerationRef.current += 1;
@@ -247,6 +300,101 @@ export function AuthProvider({
       subscription?.unsubscribe();
     };
   }, [applySession, clientProp, enableSession, prepareUserScopedCacheForPrincipal]);
+
+  /**
+   * Cold/warm recovery deep links. Process tokens/codes without logging the URL.
+   * Auth route guards must not redirect away — this path only updates recovery
+   * phase and session through the normal auth listener.
+   */
+  useEffect(() => {
+    if (!enableSession || linking == null) {
+      return;
+    }
+
+    const client = resolveClient(clientProp);
+    if (!client) {
+      return;
+    }
+
+    let cancelled = false;
+    const fallbackTimers = new Set<ReturnType<typeof setTimeout>>();
+
+    const handleUrl = async (url: string | null) => {
+      if (!url || cancelled || !isAuthCallbackUrl(url)) {
+        return;
+      }
+
+      recoveryGenerationRef.current += 1;
+      const generation = recoveryGenerationRef.current;
+      setRecoveryPhase('processing');
+
+      try {
+        const result = await processAuthCallbackUrl(url, { client });
+        if (cancelled || recoveryGenerationRef.current !== generation) {
+          return;
+        }
+        if (result.kind === 'ignored') {
+          // Path opened without usable tokens (direct navigation / stripped URL).
+          setRecoveryPhase((current) =>
+            current === 'verified' ? 'verified' : 'idle',
+          );
+          return;
+        }
+        if (result.kind === 'password-recovery') {
+          // Token-based recovery with type=recovery; also wait for SDK event.
+          setRecoveryPhase('verified');
+          return;
+        }
+        // Session exchanged (e.g. PKCE). Prefer PASSWORD_RECOVERY event; if the
+        // SDK only emits SIGNED_IN for some flows, leave phase as processing
+        // briefly — a short settle keeps the form gated until event or timeout.
+        setRecoveryPhase((current) =>
+          current === 'verified' ? 'verified' : 'processing',
+        );
+        // If PASSWORD_RECOVERY does not arrive after exchange, fall back after
+        // a bounded wait so the screen does not spinner indefinitely.
+        const timer = setTimeout(() => {
+          fallbackTimers.delete(timer);
+          if (cancelled || recoveryGenerationRef.current !== generation) {
+            return;
+          }
+          setRecoveryPhase((current) => {
+            if (current === 'processing') {
+              // Exchange produced a session without PASSWORD_RECOVERY; treat
+              // as recovery-capable so updateUser can complete (Supabase RN
+              // PKCE recovery path). Ordinary SIGNED_IN from unrelated links
+              // still have no tokens and stay idle above.
+              return 'verified';
+            }
+            return current;
+          });
+        }, 750);
+        fallbackTimers.add(timer);
+      } catch {
+        if (cancelled || recoveryGenerationRef.current !== generation) {
+          return;
+        }
+        setRecoveryPhase('unavailable');
+      }
+    };
+
+    void linking.getInitialURL().then((url) => {
+      void handleUrl(url);
+    });
+
+    const subscription = linking.addEventListener('url', ({ url }) => {
+      void handleUrl(url);
+    });
+
+    return () => {
+      cancelled = true;
+      for (const timer of fallbackTimers) {
+        clearTimeout(timer);
+      }
+      fallbackTimers.clear();
+      subscription.remove();
+    };
+  }, [clientProp, enableSession, linking]);
 
   /**
    * After optimistic principal cleanup: a generation mismatch means a newer
@@ -283,6 +431,7 @@ export function AuthProvider({
       authGenerationRef.current += 1;
       const generation = authGenerationRef.current;
       latestAuthPrincipalRef.current = result.user.id;
+      setRecoveryPhase('idle');
       // onAuthStateChange will sync status; apply optimistically for UX.
       await prepareUserScopedCacheForPrincipal(result.user.id);
       const resolved = resolveOptimisticSignedIn(result, generation);
@@ -311,6 +460,7 @@ export function AuthProvider({
         authGenerationRef.current += 1;
         const generation = authGenerationRef.current;
         latestAuthPrincipalRef.current = result.user.id;
+        setRecoveryPhase('idle');
         await prepareUserScopedCacheForPrincipal(result.user.id);
         const resolved = resolveOptimisticSignedIn(result, generation);
         if (resolved.kind === 'superseded') {
@@ -334,6 +484,7 @@ export function AuthProvider({
       authGenerationRef.current += 1;
       const generation = authGenerationRef.current;
       latestAuthPrincipalRef.current = null;
+      setRecoveryPhase('idle');
       await prepareUserScopedCacheForPrincipal(null);
       if (authGenerationRef.current !== generation) {
         return;
@@ -346,6 +497,7 @@ export function AuthProvider({
     authGenerationRef.current += 1;
     const generation = authGenerationRef.current;
     latestAuthPrincipalRef.current = null;
+    setRecoveryPhase('idle');
     await prepareUserScopedCacheForPrincipal(null);
     if (authGenerationRef.current !== generation) {
       return;
@@ -359,11 +511,21 @@ export function AuthProvider({
       status,
       user,
       isSignedIn: status === 'signed-in' && user != null,
+      recoveryPhase,
+      clearRecoveryPhase,
       signIn,
       signUp,
       signOut,
     }),
-    [signIn, signOut, signUp, status, user],
+    [
+      clearRecoveryPhase,
+      recoveryPhase,
+      signIn,
+      signOut,
+      signUp,
+      status,
+      user,
+    ],
   );
 
   return (

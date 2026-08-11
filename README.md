@@ -151,6 +151,28 @@ remain part of the same plugin for the tested environment; they were not
 independently re-failed in that A/B run. Decision record:
 `docs/decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md`.
 
+### Password recovery (Task 18 local)
+
+Email/password recovery uses the app scheme `eazyreview` and the route
+`/auth/reset-password`.
+
+- Request screen: **Forgot password?** on Sign In or signed-out Account →
+  `/auth/forgot-password`.
+- Completion deep-link target: `/auth/reset-password`.
+- `redirectTo` is built with `expo-linking` `createURL('/auth/reset-password')`
+  (not a production host).
+- Local Supabase Auth must allow the documented scheme/path variants in
+  `supabase/config.toml` `additional_redirect_urls`. Restart local Supabase
+  after changing that list.
+- Staging/production Auth redirect allowlists are **not** configured by this
+  task (Tasks 25–26 + human).
+- Prefer a Development build (`npm run ios:device`) for physical recovery-link
+  acceptance. Do not log recovery tokens or paste complete recovery URLs into
+  chats.
+
+Evidence and the physical device checklist:
+`docs/evidence/task-18-password-recovery/RESULT.md`.
+
 ### Daily development
 
 ```bash

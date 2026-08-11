@@ -1,13 +1,26 @@
 import { onlineManager } from '@tanstack/react-query';
 
 import {
+  isValidEmailFormat,
+  normalizeEmail,
+} from '@/src/features/auth/email';
+import {
   AuthError,
   AUTH_USER_MESSAGES,
   isDefinitiveInvalidSessionError,
   normalizeAuthError,
 } from '@/src/features/auth/errors';
+import { getPasswordRecoveryRedirectTo } from '@/src/features/auth/recoveryRedirect';
+import {
+  classifyAuthCallback,
+  isAuthCallbackUrl,
+  parseAuthCallbackParams,
+} from '@/src/features/auth/recoveryUrl';
 import type {
+  AuthCallbackProcessResult,
   AuthUser,
+  PasswordResetRequestResult,
+  PasswordUpdateSuccess,
   SignInCredentials,
   SignInSuccess,
   SignUpCredentials,
@@ -272,4 +285,204 @@ export function mapAuthUserFromSessionUser(user: {
   email?: string | null;
 }): AuthUser {
   return toAuthUser(user);
+}
+
+/**
+ * Request a password-reset email. Always resolves with a non-enumerating
+ * success result when the provider accepts the request. Client-side malformed
+ * email fails before the network call.
+ *
+ * Does not retry. Does not reveal account existence.
+ */
+export async function requestPasswordReset(
+  email: string,
+  options?: AuthApiOptions & { redirectTo?: string },
+): Promise<PasswordResetRequestResult> {
+  if (!isValidEmailFormat(email)) {
+    throw new AuthError('invalid-email', AUTH_USER_MESSAGES.invalidEmail, {
+      source: 'credentials',
+    });
+  }
+
+  if (!isOnline(options)) {
+    throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
+      source: 'transport',
+    });
+  }
+
+  const normalized = normalizeEmail(email);
+  const redirectTo =
+    options?.redirectTo ?? getPasswordRecoveryRedirectTo();
+
+  try {
+    const client = resolveClient(options);
+    const { error } = await client.auth.resetPasswordForEmail(normalized, {
+      redirectTo,
+    });
+
+    if (error) {
+      // Provider errors must not become account-existence signals.
+      throw normalizeAuthError(error, {
+        operation: 'password-reset-request',
+        isOffline: !isOnline(options),
+      });
+    }
+
+    return { kind: 'submitted' };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    throw normalizeAuthError(error, {
+      operation: 'password-reset-request',
+      isOffline: !isOnline(options),
+    });
+  }
+}
+
+/**
+ * Update password after a verified PASSWORD_RECOVERY session.
+ * Callers must gate the form on recovery phase `verified`.
+ * Does not retry and does not queue offline mutations.
+ */
+export async function updatePasswordFromRecovery(
+  newPassword: string,
+  options?: AuthApiOptions,
+): Promise<PasswordUpdateSuccess> {
+  if (!isOnline(options)) {
+    throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
+      source: 'transport',
+    });
+  }
+
+  try {
+    const client = resolveClient(options);
+    const { data, error } = await client.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      throw normalizeAuthError(error, {
+        operation: 'password-update',
+        isOffline: !isOnline(options),
+      });
+    }
+
+    if (!data.user) {
+      throw new AuthError(
+        'password-update-failed',
+        AUTH_USER_MESSAGES.passwordUpdateFailed,
+      );
+    }
+
+    return {
+      kind: 'updated',
+      user: toAuthUser(data.user),
+    };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    throw normalizeAuthError(error, {
+      operation: 'password-update',
+      isOffline: !isOnline(options),
+    });
+  }
+}
+
+/**
+ * Exchange or apply auth tokens/code from a recovery (or other) callback URL.
+ * Never logs the URL or raw tokens. Returns a coarse kind for callers.
+ *
+ * When the URL has no processable auth payload, returns `{ kind: 'ignored' }`.
+ */
+export async function processAuthCallbackUrl(
+  url: string,
+  options?: AuthApiOptions,
+): Promise<AuthCallbackProcessResult> {
+  if (!isAuthCallbackUrl(url)) {
+    return { kind: 'ignored' };
+  }
+
+  const params = parseAuthCallbackParams(url);
+  const classified = classifyAuthCallback(params);
+
+  if (classified.kind === 'empty') {
+    return { kind: 'ignored' };
+  }
+
+  if (classified.kind === 'error') {
+    throw new AuthError(
+      'recovery-link-invalid',
+      AUTH_USER_MESSAGES.recoveryLinkInvalid,
+      { source: 'credentials' },
+    );
+  }
+
+  if (!isOnline(options)) {
+    throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
+      source: 'transport',
+    });
+  }
+
+  try {
+    const client = resolveClient(options);
+
+    if (classified.kind === 'pkce') {
+      const { data, error } = await client.auth.exchangeCodeForSession(
+        classified.code,
+      );
+      if (error) {
+        throw normalizeAuthError(error, {
+          operation: 'recovery-callback',
+          isOffline: !isOnline(options),
+        });
+      }
+      if (!data.session?.user) {
+        throw new AuthError(
+          'recovery-link-invalid',
+          AUTH_USER_MESSAGES.recoveryLinkInvalid,
+        );
+      }
+      // PKCE recovery emails typically establish a recovery session; callers
+      // still wait for PASSWORD_RECOVERY when the SDK emits it.
+      return {
+        kind: 'session',
+        user: toAuthUser(data.session.user),
+      };
+    }
+
+    const { data, error } = await client.auth.setSession({
+      access_token: classified.accessToken,
+      refresh_token: classified.refreshToken,
+    });
+
+    if (error) {
+      throw normalizeAuthError(error, {
+        operation: 'recovery-callback',
+        isOffline: !isOnline(options),
+      });
+    }
+
+    if (!data.session?.user) {
+      throw new AuthError(
+        'recovery-link-invalid',
+        AUTH_USER_MESSAGES.recoveryLinkInvalid,
+      );
+    }
+
+    return {
+      kind:
+        classified.type === 'recovery' ? 'password-recovery' : 'session',
+      user: toAuthUser(data.session.user),
+    };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    throw normalizeAuthError(error, {
+      operation: 'recovery-callback',
+      isOffline: !isOnline(options),
+    });
+  }
 }

@@ -129,6 +129,15 @@ export default function SignInScreen() {
           disabled={pending || !email.trim() || !password}
         />
 
+        <Link href="/auth/forgot-password" asChild>
+          <Button
+            testID="sign-in-forgot-password"
+            label="Forgot password?"
+            variant="ghost"
+            disabled={pending}
+          />
+        </Link>
+
         <Link
           href={{
             pathname: '/auth/sign-up',
