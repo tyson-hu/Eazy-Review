@@ -106,10 +106,12 @@ fix on the same Product Detail surface:
   commits or uncommitted worktrees.
 
 Physical-device Product Detail hierarchy, offer placement, and comparison
-readability remain **not-tested** / **PENDING HUMAN**. Task 17 is not accepted.
+readability: **PASS** on SHA `1325198` (2026-08-10, normal text size).
+Human-reported final physical smoke: **PASS** on the final accepted tip
+(includes Product Detail as regression smoke). Task 17 is
+**Done — human accepted**.
 
 ## Required next decision
 
-Human review should accept the restored hierarchy or request a targeted visual
-refinement. Physical-device completion remains pending a separate run on the
-exact final SHA returned by the pre-physical-acceptance handoff.
+None for Task 17 — human accepted. Accessibility hardening (VoiceOver /
+maximum Dynamic Type) remains post-launch Task 27.

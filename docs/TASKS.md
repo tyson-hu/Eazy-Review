@@ -23,14 +23,18 @@
   iPhone checklist re-verified on the corrected build (human-reported PASS).
   Automated and web verification pass. Evidence:
   [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
-- Task 17 (My Rating persistence and Rated Products) is **In progress —
-  explicitly authorized.** Physical A–G matrix PASS on SHA `1325198`
-  (2026-08-10). VoiceOver and maximum Dynamic Type are **DEFERRED BY HUMAN
-  SCOPE DECISION — POST-LAUNCH** to Task 27 (Dynamic Type failed on physical
-  hardware twice, including after fix attempt `a635251`, which was then
-  reverted). Agent web verification **PASS**; iOS Simulator normal-text
-  **PASS with documented interactive-auth limits** (see evidence RESULT).
-  Human acceptance and merge are not claimed.
+- Task 17 is **Done — human accepted.** My Rating persistence (sneaker-10-v1),
+  Community aggregate/server truth, Rated Products, Product Detail restoration,
+  slider, offline/timeout reliability, zombie-session restore hardening, and
+  incomplete-submit feedback. Full physical A–G matrix **PASS** on SHA
+  `1325198` (2026-08-10). Human-reported final physical smoke: **PASS** on the
+  final accepted branch tip (regression smoke, not a full A–G re-run). Agent
+  web **PASS**; iOS Simulator normal-text **PASS with documented limits**.
+  VoiceOver and maximum Dynamic Type remain **DEFERRED BY HUMAN SCOPE
+  DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
+  reverted). Evidence:
+  [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
+  Task 18 remains Pending / not started.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -179,7 +183,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 14 | Connected Client And Query Foundation | Done |
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
-| 17 | My Rating Persistence And Rated Products | In progress — explicitly authorized |
+| 17 | My Rating Persistence And Rated Products | Done — human accepted |
 | 18 | Password Recovery And Deep Links | Pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
@@ -535,7 +539,7 @@ Non-goals (remain later work — do not implement in Task 16):
 
 ## Task 17: My Rating Persistence And Rated Products
 
-Status: **In progress — explicitly authorized.**
+Status: **Done — human accepted.**
 
 **Scope correction (physical-device):** While validating the first Task 17
 implementation, two reproducible defects blocked acceptance: (A) Overall on a
@@ -564,9 +568,10 @@ only bounded non-sensitive leaf packets.
 Parallel-safe with: Task 18 after all prerequisites are accepted and edit
 scopes are file-disjoint.
 
-Human gate: Implementation authorized. Human acceptance, physical-device
-checklist, and merge are **not claimed**. Staging rating writes or acceptance
-require separate explicit approval; production remains forbidden.
+Human gate: **Accepted.** Staging rating writes or acceptance remain a separate
+explicit approval; production remains forbidden. Task 18 is **not** authorized
+by this acceptance. Implementation evidence:
+[`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
 
 Local Product Detail restoration evidence (2026-08-09): iOS Simulator
 `pass` at 393×852, canonical live-Metro web preview `blocked` by the host
@@ -598,8 +603,15 @@ SHA **`1325198` only** for full A–G):
 | VoiceOver | DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH → Task 27 |
 | XXL Dynamic Type | FAIL (twice; deferred post-launch → Task 27; not a Task 17 blocker) |
 
-Later commits (`2c4c7f2`, `09075af`, failed XXL attempt `a635251` + revert,
-docs/Expo/web/simulator cleanup) are **not** the physical A–G provenance SHA.
+Later commits (`2c4c7f2` incomplete-submit feedback, `09075af`, failed XXL
+attempt `a635251` + revert, docs/Expo/web/simulator cleanup) are **not** the
+physical A–G provenance SHA.
+
+**Human-reported final physical smoke: PASS** on the final accepted Task 17
+branch tip (regression smoke of launch / Browse / Product Detail /
+authenticated Rate/Edit / slider / scroll / −/+/Clear / incomplete Save /
+complete Save / Detail refresh / Account / Rated Products). Not a full re-run
+of B/C/D/F/G.
 
 Agent cross-platform verification (2026-08-10, final tip after cleanup): web
 matrix **PASS** (live Metro, 393×852, local Supabase); iOS Simulator (Expo

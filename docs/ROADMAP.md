@@ -19,15 +19,18 @@ Task detail, dependencies, acceptance, and current status live in
   authentication and Account state; corrected physical iPhone checklist PASS;
   automated and web verification PASS. Task 17 owns durable My Rating and
   Rated Products.
-- Task 17: **In progress — explicitly authorized.** Physical matrix A–G, slider
-  gestures, and normal Product Detail **PASS** on SHA `1325198` (2026-08-10).
-  VoiceOver and maximum Dynamic Type are **DEFERRED BY HUMAN SCOPE DECISION —
-  POST-LAUNCH** to Task 27 (Dynamic Type failed twice on physical hardware;
-  failed fix attempt `a635251` was reverted). Human acceptance and merge are
-  not claimed. Excluded identity features (social login, passkeys/MFA,
-  editable/public profile, global session revocation, secure native session
-  storage revisit) are deferred — not part of Tasks 16–19 unless separately
-  promoted.
+- Task 17: **Done — human accepted** (PR #36). Durable My Rating
+  (sneaker-10-v1), Community aggregates, Rated Products, Product Detail
+  restoration, slider, offline/timeout reliability, zombie-session restore,
+  incomplete-submit feedback. Full physical A–G **PASS** on SHA `1325198`;
+  human-reported final physical smoke **PASS** on the final accepted tip
+  (regression smoke). Web **PASS**; iOS Simulator **PASS with documented
+  limits**. VoiceOver and maximum Dynamic Type remain **DEFERRED BY HUMAN
+  SCOPE DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice;
+  `a635251` reverted). Task 18 remains Pending / not started. Excluded
+  identity features (social login, passkeys/MFA, editable/public profile,
+  global session revocation, secure native session storage revisit) stay
+  deferred — not part of Tasks 16–19 unless separately promoted.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,

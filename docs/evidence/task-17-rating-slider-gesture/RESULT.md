@@ -12,11 +12,11 @@ competing with slider adjustment on the Rate/Edit route.
 
 ## Build And Device
 
-- Branch / checkout: `agent/task-17-my-rating-persistence` (PR #36 draft),
-  committed and pushed. Gesture implementation lands in `6863a91`; human
-  physical testing must use the **final pushed tip SHA** after the
-  pre-physical-acceptance review correction commit (not intermediate local
-  worktrees, not uncommitted files).
+- Branch / checkout: `agent/task-17-my-rating-persistence` (PR #36),
+  committed and pushed. Gesture implementation lands in `6863a91`; full
+  physical slider verification used SHA `1325198`. Task 17 is
+  **Done — human accepted** after human-reported final physical smoke PASS
+  (regression; incomplete-submit and controls covered on final tip).
 - Simulator: `Eazy-Review-iPhone-15`, iOS 26.5.
 - Logical viewport: 393 x 852 points.
 - Runtime: Expo Go with the local Expo SDK 57 Metro bundle.
@@ -100,7 +100,11 @@ Status: **PASS** for slider gestures on 2026-08-10 (Release build, SHA
 adjustment, vertical scroll arbitration, curved-thumb use, Rate/Edit not
 dismissed by slider drags, and normal Back outside the slider.
 
-VoiceOver is **not** claimed by this PASS.
+Human-reported final physical smoke: **PASS** on the final accepted Task 17
+tip (includes slider interaction, vertical scrolling, −/+/Clear as regression
+smoke — not a re-measurement of the original gesture matrix).
+
+VoiceOver is **not** claimed by this PASS (Task 27 post-launch).
 
 Canonical matrix and Dynamic Type FAIL notes:
 [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](../task-17-my-rating-persistence/RESULT.md).

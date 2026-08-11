@@ -2,14 +2,18 @@
 
 ## Status
 
-**Task 17 — In progress.** Physical-device matrix A–G (and related checklist
-items below) were recorded from human testing on **2026-08-10**. Human
-acceptance and merge are **not claimed**.
+**Task 17 — Done — human accepted.**
+
+Physical-device matrix A–G (and related checklist items below) were recorded
+from human testing on **2026-08-10** at SHA `1325198`. After incomplete-submit
+feedback, accessibility deferral, Expo SDK patch alignment, and agent
+web/simulator packets, the human completed a **final physical regression
+smoke** on the final accepted Task 17 branch tip and **accepted** Task 17.
 
 | Surface | Status |
 | --- | --- |
 | Automated (unit / typecheck / lint / check:readonly) | See Final automated validation |
-| Local database (`npm run test:db` / `test:db:reset`) | No DB schema change in cleanup / reverify packets |
+| Local database (`npm run test:db` / `test:db:reset`) | No DB schema change in cleanup / reverify / acceptance packets |
 | Physical iPhone matrix A–G | **PASS** on SHA `1325198` (see provenance) |
 | Slider gestures (physical) | **PASS** on SHA `1325198` |
 | Product Detail normal text size (physical) | **PASS** on SHA `1325198` |
@@ -17,7 +21,8 @@ acceptance and merge are **not claimed**.
 | XXL / maximum Dynamic Type | Physical **FAIL** (initial + post-fix retest); **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** → Task 27 |
 | Web verification (agent) | **PASS** on final tip (see Web verification packet) |
 | iOS Simulator (agent, normal text size) | **PASS with documented limits** (see iOS Simulator packet) |
-| Human acceptance / merge | **NOT CLAIMED / NOT AUTHORIZED** (PR #36) |
+| Human-reported final physical smoke | **PASS** on final accepted tip (regression smoke; not full A–G re-run) |
+| Human acceptance | **Done — human accepted** (PR #36) |
 
 ## Branch and SHAs
 
@@ -49,8 +54,8 @@ hierarchy** were performed on:
 Do **not** attribute that full A–G matrix to `2c4c7f2`, `09075af`, `a635251`,
 the revert of `a635251`, or any later tip SHA. Later commits are incomplete-
 submit UI, evidence bookkeeping, a failed Dynamic Type layout attempt,
-revert, accessibility ownership cleanup, Expo dependency alignment, and
-agent web/simulator verification only.
+revert, accessibility ownership cleanup, Expo dependency alignment, agent
+web/simulator verification, and human final acceptance documentation only.
 
 | Commit | Role |
 | --- | --- |
@@ -60,7 +65,37 @@ agent web/simulator verification only.
 | `a635251` | Attempted maximum Dynamic Type adaptive-layout correction |
 | Post-`a635251` human retest | Targeted XXL retest only — **STILL FAIL** |
 | Revert of `a635251` | Removes failed XXL patch after human post-launch deferral |
-| Later tip | Docs ownership (Task 27), Expo SDK patch alignment, web + iOS simulator agent verification |
+| Pre-acceptance tip (`f33be2b`) | Docs ownership (Task 27), Expo SDK patch alignment, web + iOS simulator agent verification |
+| Human final smoke | Regression smoke **PASS** on final accepted branch state (not full B/C/D/F/G re-run) |
+| Acceptance commit | Records Done — human accepted (this packet) |
+
+## Human-reported final physical smoke (acceptance)
+
+| Field | Value |
+| --- | --- |
+| Result | **Human-reported final physical smoke: PASS** |
+| Device | iPhone 17 Pro Max |
+| OS | iOS 27 Beta 5 |
+| Build | Release |
+| Backend | local Supabase on Mac via LAN |
+| Provenance | final accepted Task 17 branch tip (after incomplete-submit, Accessibility deferral, Expo alignment, agent web/simulator packets) |
+| Scope | Regression smoke — **not** a full re-run of the B/C/D/F/G network/auth matrix |
+
+Covered routes/actions (human-reported):
+
+- launch / Browse / Product Detail
+- authenticated Rate/Edit
+- slider interaction
+- vertical scrolling
+- − / + / Clear controls
+- incomplete Save feedback
+- complete rating Save
+- Product Detail refresh
+- Account
+- Rated Products
+
+Do not invent per-action timestamps or additional screenshots for this smoke.
+Full A–G network/auth matrix provenance remains exclusively SHA `1325198`.
 
 ## Human physical test environment (2026-08-10)
 
@@ -384,11 +419,12 @@ Directory: `docs/evidence/task-17-my-rating-persistence/screenshots/`
 
 ## Explicit non-claims
 
-- Human acceptance / merge: **NOT CLAIMED / NOT AUTHORIZED**
+- Human acceptance: **Done — human accepted** (this record)
+- Merge: claimed only after PR #36 merge succeeds on master
 - Staging / production: **untouched**
 - VoiceOver: **not completed**; **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** (Task 27)
 - Maximum Dynamic Type: **physical FAIL (twice)**; fix attempt reverted; **DEFERRED BY HUMAN SCOPE DECISION — POST-LAUNCH** (Task 27)
 - Full physical A–G matrix: belongs **only** to SHA `1325198` — not re-run on
-  the final tip
+  the final tip; final smoke is regression-only
 - Offline write queue / optimistic rating: **not implemented**
-- Task 18: **not started**
+- Task 18: **not started** / **not authorized by Task 17 acceptance**
