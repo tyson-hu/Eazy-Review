@@ -404,6 +404,10 @@ Functions (file: `src/features/auth/api.ts`):
   `eazyreview`). Trims/lowercases the email. Rejects obviously malformed
   addresses client-side. Never retries. Success copy is always
   non-enumerating: it does not claim whether an account exists.
+- Local physical-device recovery also requires the Auth email-link origin from
+  `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`, including the
+  `/auth/v1` suffix. It must use a Mac LAN host the device can reach; this is
+  separate from the app callback supplied as `redirectTo`.
 - `updatePasswordFromRecovery(newPassword)` — calls
   `client.auth.updateUser({ password })` once. Enabled only after a verified
   recovery phase. Never retries or queues offline password updates.

@@ -208,6 +208,11 @@ Recovery redirect matrix (scheme `eazyreview` from `app.json`):
 | Preview / staging Auth host | Same app scheme after host allowlist; optional after human approval | Task 18/25 as separately approved |
 | Production | Human-applied allowlist only | Tasks 25–26 |
 
+For the physical local row, the email first opens the Auth verification origin
+from `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`. That origin
+must be the Mac's device-reachable LAN URL with `/auth/v1`; after verification,
+Auth redirects to the separate app-scheme URL shown in the matrix.
+
 ## Flow 6: Delete Account
 
 ```txt

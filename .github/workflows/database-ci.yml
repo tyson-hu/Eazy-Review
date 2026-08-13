@@ -39,6 +39,9 @@ jobs:
     timeout-minutes: 30
     env:
       DO_NOT_TRACK: "1"
+      # supabase/config.toml reads this non-secret Auth origin. CI stays local;
+      # physical devices override it from the gitignored root .env.
+      SUPABASE_AUTH_EXTERNAL_URL: http://127.0.0.1:54321/auth/v1
 
     steps:
       - name: Checkout

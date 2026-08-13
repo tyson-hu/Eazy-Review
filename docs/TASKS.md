@@ -795,6 +795,10 @@ Implementation notes (acceptance pending):
   `Linking.createURL('/auth/reset-password')` as `redirectTo`.
 - Local Supabase `additional_redirect_urls` includes the documented dev
   scheme/path variants. Staging/production redirects are not configured.
+- Local Auth `external_url` is environment-backed from the gitignored root
+  `.env` (`SUPABASE_AUTH_EXTERNAL_URL`) so physical-device recovery emails use
+  a device-reachable Mac LAN `/auth/v1` verification host. Restart the local
+  stack after changing it and request a fresh link.
 - AuthProvider tracks `recoveryPhase` (`idle` | `processing` | `verified` |
   `unavailable`) and processes cold/warm auth deep links without logging
   tokens or full URLs. Only `verified` enables password update.

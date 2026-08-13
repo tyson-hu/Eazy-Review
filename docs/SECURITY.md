@@ -163,6 +163,10 @@ Canonical security rules for all agent and human work in this repo, regardless o
   - Redirect allowlist for local/dev includes the `eazyreview` app scheme paths
     in `supabase/config.toml`. Staging and production redirect hosts are not
     Task 18 deliverables (Tasks 25–26 + human).
+  - Physical-device local recovery reads the non-secret Auth email-link origin
+    from `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`. It must be
+    the device-reachable Mac LAN URL with `/auth/v1`; never put a key, token, or
+    production host in that value.
   - Never log recovery tokens, access tokens, refresh tokens, passwords, or
     complete incoming recovery URLs. Diagnostics use coarse labels only.
   - Recovery request success copy is non-enumerating and must not reveal

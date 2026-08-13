@@ -1571,4 +1571,85 @@ describe('AuthProvider password recovery', () => {
 
     await rendered.cleanup();
   });
+
+  it('does not time-authorize an ordinary PKCE SIGNED_IN session as recovery', async () => {
+    jest.useFakeTimers();
+    try {
+      const exchangeCodeForSession = jest.fn(async () => ({
+        data: {
+          session: {
+            user: { id: 'user-p', email: 'p@example.com' },
+          },
+        },
+        error: null,
+      }));
+      const mock = createMockAuthClient({ initialUser: null });
+      (
+        mock.client.auth as unknown as {
+          exchangeCodeForSession?: jest.Mock;
+        }
+      ).exchangeCodeForSession = exchangeCodeForSession;
+
+      const listeners: ((event: { url: string }) => void)[] = [];
+      const linking = {
+        getInitialURL: jest.fn(async () => null),
+        addEventListener: jest.fn(
+          (_type: 'url', listener: (event: { url: string }) => void) => {
+            listeners.push(listener);
+            return {
+              remove: () => {
+                const index = listeners.indexOf(listener);
+                if (index >= 0) {
+                  listeners.splice(index, 1);
+                }
+              },
+            };
+          },
+        ),
+      };
+      const queryClient = createAppQueryClient({
+        defaultOptions: { queries: { gcTime: Infinity } },
+      });
+
+      const rendered = await renderWithProviders(
+        <AuthProvider client={mock.client} enableSession linking={linking}>
+          <AuthProbe />
+        </AuthProvider>,
+        { queryClient },
+      );
+
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toContain(
+          '|idle',
+        ),
+      );
+      await act(async () => {
+        for (const listener of listeners) {
+          listener({
+            url: 'eazyreview://auth/reset-password?code=AUTH_CODE_VALUE',
+          });
+        }
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toContain(
+          '|processing',
+        ),
+      );
+      expect(exchangeCodeForSession).toHaveBeenCalledWith('AUTH_CODE_VALUE');
+
+      await act(async () => {
+        mock.emit('SIGNED_IN', { id: 'user-p', email: 'p@example.com' });
+        jest.advanceTimersByTime(1000);
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|user-p|p@example.com|processing',
+        ),
+      );
+
+      await rendered.cleanup();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

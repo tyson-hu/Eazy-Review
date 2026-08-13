@@ -317,8 +317,6 @@ export function AuthProvider({
     }
 
     let cancelled = false;
-    const fallbackTimers = new Set<ReturnType<typeof setTimeout>>();
-
     const handleUrl = async (url: string | null) => {
       if (!url || cancelled || !isAuthCallbackUrl(url)) {
         return;
@@ -345,31 +343,11 @@ export function AuthProvider({
           setRecoveryPhase('verified');
           return;
         }
-        // Session exchanged (e.g. PKCE). Prefer PASSWORD_RECOVERY event; if the
-        // SDK only emits SIGNED_IN for some flows, leave phase as processing
-        // briefly — a short settle keeps the form gated until event or timeout.
+        // Session exchanged (e.g. PKCE). Only PASSWORD_RECOVERY may promote
+        // this phase; ordinary SIGNED_IN must never authorize password update.
         setRecoveryPhase((current) =>
           current === 'verified' ? 'verified' : 'processing',
         );
-        // If PASSWORD_RECOVERY does not arrive after exchange, fall back after
-        // a bounded wait so the screen does not spinner indefinitely.
-        const timer = setTimeout(() => {
-          fallbackTimers.delete(timer);
-          if (cancelled || recoveryGenerationRef.current !== generation) {
-            return;
-          }
-          setRecoveryPhase((current) => {
-            if (current === 'processing') {
-              // Exchange produced a session without PASSWORD_RECOVERY; treat
-              // as recovery-capable so updateUser can complete (Supabase RN
-              // PKCE recovery path). Ordinary SIGNED_IN from unrelated links
-              // still have no tokens and stay idle above.
-              return 'verified';
-            }
-            return current;
-          });
-        }, 750);
-        fallbackTimers.add(timer);
       } catch {
         if (cancelled || recoveryGenerationRef.current !== generation) {
           return;
@@ -388,10 +366,6 @@ export function AuthProvider({
 
     return () => {
       cancelled = true;
-      for (const timer of fallbackTimers) {
-        clearTimeout(timer);
-      }
-      fallbackTimers.clear();
       subscription.remove();
     };
   }, [clientProp, enableSession, linking]);
