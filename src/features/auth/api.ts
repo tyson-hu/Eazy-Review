@@ -444,10 +444,17 @@ export async function processAuthCallbackUrl(
           AUTH_USER_MESSAGES.recoveryLinkInvalid,
         );
       }
+      // auth-js 2.112 returns `redirectType` here at runtime, but its public
+      // AuthTokenResponse type omits the field. Read it through a narrow
+      // structural guard until the dependency type matches the runtime shape.
+      const redirectType = (
+        data as typeof data & { redirectType?: unknown }
+      ).redirectType;
       // PKCE recovery emails typically establish a recovery session; callers
-      // still wait for PASSWORD_RECOVERY when the SDK emits it.
+      // may also observe PASSWORD_RECOVERY from the SDK auth listener.
       return {
-        kind: 'session',
+        kind:
+          redirectType === 'recovery' ? 'password-recovery' : 'session',
         user: toAuthUser(data.session.user),
       };
     }

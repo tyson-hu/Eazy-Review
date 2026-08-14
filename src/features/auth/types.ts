@@ -16,12 +16,14 @@ export type AuthStatus = 'initializing' | 'signed-out' | 'signed-in';
  * - idle: no recovery callback in progress (direct navigation / ordinary session)
  * - processing: deep-link tokens/code exchange in flight
  * - verified: PASSWORD_RECOVERY observed; password-update form may run
- * - unavailable: expired, reused, malformed, or failed recovery link
+ * - temporary-failure: transport/server failure; reopening the same link may retry
+ * - unavailable: expired, reused, or malformed recovery link
  */
 export type RecoveryPhase =
   | 'idle'
   | 'processing'
   | 'verified'
+  | 'temporary-failure'
   | 'unavailable';
 
 export type SignInCredentials = {

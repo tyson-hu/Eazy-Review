@@ -90,6 +90,8 @@ export const AUTH_USER_MESSAGES = {
     'Could not send a password-reset email. Please try again.',
   recoveryLinkInvalid:
     'This reset link is no longer valid. Request a new password-reset email.',
+  recoveryTemporaryFailure:
+    'Could not verify this reset link right now. Check your connection, then open the same link again.',
   passwordMismatch: 'Passwords do not match.',
   passwordTooWeak: 'Password must be at least 6 characters.',
   passwordUpdateFailed: 'Could not update your password. Please try again.',
@@ -323,7 +325,9 @@ export function normalizeAuthError(
   }
 
   if (
-    options.operation === 'recovery-callback' ||
+    (options.operation === 'recovery-callback' &&
+      (isRecoverySessionError(error) ||
+        isDefinitiveInvalidSessionError(error))) ||
     (options.operation === 'password-update' && isRecoverySessionError(error))
   ) {
     return new AuthError(
@@ -384,7 +388,7 @@ function userMessageForOperation(operation: AuthNormalizeOperation): string {
     case 'password-update':
       return AUTH_USER_MESSAGES.passwordUpdateFailed;
     case 'recovery-callback':
-      return AUTH_USER_MESSAGES.recoveryLinkInvalid;
+      return AUTH_USER_MESSAGES.recoveryTemporaryFailure;
     case 'sign-in':
     case 'session':
     default:

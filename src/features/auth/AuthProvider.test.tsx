@@ -1526,6 +1526,92 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('keeps a transient recovery callback retryable when the same warm link is reopened', async () => {
+    const exchangeCodeForSession = jest
+      .fn()
+      .mockResolvedValueOnce({
+        data: { session: null, user: null, redirectType: null },
+        error: {
+          message: 'Internal server error',
+          code: 'unexpected_failure',
+          status: 503,
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          session: {
+            user: { id: 'user-r', email: 'r@example.com' },
+          },
+          user: { id: 'user-r', email: 'r@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = exchangeCodeForSession;
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return {
+            remove: () => {
+              const index = listeners.indexOf(listener);
+              if (index >= 0) {
+                listeners.splice(index, 1);
+              }
+            },
+          };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+    const recoveryUrl =
+      'eazyreview://auth/reset-password?code=RETRYABLE_CODE_VALUE';
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({ url: recoveryUrl });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|temporary-failure',
+      ),
+    );
+
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({ url: recoveryUrl });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|verified',
+      ),
+    );
+    expect(exchangeCodeForSession).toHaveBeenCalledTimes(2);
+
+    await rendered.cleanup();
+  });
+
   it('clears recovery phase on sign-out', async () => {
     const mock = createMockAuthClient({
       initialUser: { id: 'user-a', email: 'a@example.com' },

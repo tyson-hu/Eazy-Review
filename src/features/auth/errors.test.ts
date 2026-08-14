@@ -46,6 +46,30 @@ describe('normalizeAuthError', () => {
     expect(error.message).toBe(AUTH_USER_MESSAGES.timeout);
   });
 
+  it('keeps a recovery callback 5xx failure temporary', () => {
+    const error = normalizeAuthError(
+      { message: 'Internal server error', status: 503 },
+      { operation: 'recovery-callback' },
+    );
+
+    expect(error.code).toBe('temporary-failure');
+    expect(error.source).toBe('server');
+  });
+
+  it('keeps a replayed recovery session definitive', () => {
+    const error = normalizeAuthError(
+      {
+        message: 'Refresh token already used',
+        status: 400,
+        code: 'refresh_token_already_used',
+      },
+      { operation: 'recovery-callback' },
+    );
+
+    expect(error.code).toBe('recovery-link-invalid');
+    expect(error.message).toBe(AUTH_USER_MESSAGES.recoveryLinkInvalid);
+  });
+
   it('getAuthErrorMessage never returns raw provider text for unknown errors', () => {
     expect(getAuthErrorMessage({ message: 'raw-supabase-xyz' })).toBe(
       AUTH_USER_MESSAGES.signInFailed,

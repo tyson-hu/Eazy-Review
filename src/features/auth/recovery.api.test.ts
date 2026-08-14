@@ -168,6 +168,8 @@ describe('password recovery api', () => {
     const exchangeCodeForSession = jest.fn(async () => ({
       data: {
         session: { user: { id: 'u1', email: 'a@example.com' } },
+        user: { id: 'u1', email: 'a@example.com' },
+        redirectType: 'recovery',
       },
       error: null,
     }));
@@ -179,7 +181,7 @@ describe('password recovery api', () => {
     );
 
     expect(result).toEqual({
-      kind: 'session',
+      kind: 'password-recovery',
       user: { id: 'u1', email: 'a@example.com' },
     });
     expect(exchangeCodeForSession).toHaveBeenCalledWith('AUTH_CODE_VALUE');

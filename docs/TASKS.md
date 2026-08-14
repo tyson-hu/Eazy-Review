@@ -800,8 +800,11 @@ Implementation notes (acceptance pending):
   a device-reachable Mac LAN `/auth/v1` verification host. Restart the local
   stack after changing it and request a fresh link.
 - AuthProvider tracks `recoveryPhase` (`idle` | `processing` | `verified` |
-  `unavailable`) and processes cold/warm auth deep links without logging
-  tokens or full URLs. Only `verified` enables password update.
+  `temporary-failure` | `unavailable`) and processes cold/warm auth deep links
+  without logging tokens or full URLs. Verified PKCE recovery exchanges use
+  the SDK `redirectType`; ordinary PKCE sign-ins remain gated. Only `verified`
+  enables password update. Transient callback failures can be retried by
+  reopening the same link and are not mislabeled expired/replayed.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
 - Evidence (SOP surface vocabulary in `docs/evidence/README.md`):

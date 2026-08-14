@@ -40,16 +40,19 @@ Environment status labels follow `docs/evidence/README.md`
    path variants; `Linking.createURL('/auth/reset-password')` as `redirectTo`.
 3. **Recovery auth handling** — AuthProvider `recoveryPhase` +
    `PASSWORD_RECOVERY` event; cold/warm URL processing via expo-linking
-   without logging secrets.
+   without logging secrets; verified PKCE exchanges use the SDK recovery
+   redirect type, while transient verification failures remain retryable by
+   reopening the same link.
 4. **Password update** — new + confirm, `updatePasswordFromRecovery` once,
    success → Account (`dismissTo`), no rate `returnTo` reuse.
 5. **Error/offline** — invalid email, offline, backend failure, invalid/expired
-   link, reused link states; no mutation replay.
+   link, reused link states; temporary callback failures remain distinct from
+   invalid links; no mutation replay.
 
 ## Automated verification
 
-Local parent gate (implementation tree; codes path equivalent to
-`e43cfead8e39cd72267d03d45eed5f1632c9b6d6` and later docs-only commits):
+Initial local parent gate (implementation tree at
+`e43cfead8e39cd72267d03d45eed5f1632c9b6d6` and the later pre-review PR head):
 
 | Command | Result |
 | --- | --- |
@@ -64,6 +67,19 @@ Local parent gate (implementation tree; codes path equivalent to
 | `npx expo-doctor` | pass — 20/20 |
 | `npx expo install --check` | pass — dependencies up to date |
 | `npm run check:expo` | pass (full parent gate) |
+
+Review-remediation worktree verification (2026-08-13):
+
+| Command | Result |
+| --- | --- |
+| Focused recovery suites | pass — 4 suites, **59** tests |
+| `npm run check:readonly` | pass |
+| `npm test` | pass — 37 suites, **296** tests |
+| `git diff --check` | pass |
+
+The Jest run still prints the branch's existing React `act()` / worker teardown
+warnings while exiting successfully; this review fix does not claim those
+warnings are resolved.
 
 Database: **no recovery SQL/RLS/migration**. Automated green results are not a
 claim that Task 11–13 database gates were re-run for new schema behavior.

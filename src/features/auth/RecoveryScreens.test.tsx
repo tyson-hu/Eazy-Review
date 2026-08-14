@@ -241,6 +241,19 @@ describe('password recovery screens', () => {
     rendered.unmount();
   });
 
+  it('keeps a temporary callback failure distinct from an invalid link', async () => {
+    mockRecoveryPhase = 'temporary-failure' as RecoveryPhase;
+    const rendered = await render(<ResetPasswordScreen />);
+
+    expect(rendered.getByTestId('reset-password-temporary')).toBeTruthy();
+    expect(rendered.getByTestId('reset-password-temporary-copy').props.children).toBe(
+      AUTH_USER_MESSAGES.recoveryTemporaryFailure,
+    );
+    expect(rendered.queryByTestId('reset-password-unavailable')).toBeNull();
+    expect(rendered.queryByTestId('reset-password-form')).toBeNull();
+    rendered.unmount();
+  });
+
   it('rejects mismatched passwords without updating', async () => {
     mockRecoveryPhase = 'verified';
     mockAuthStatus = 'signed-in';

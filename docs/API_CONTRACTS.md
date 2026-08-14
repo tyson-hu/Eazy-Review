@@ -420,7 +420,9 @@ AuthProvider recovery phase (not ordinary session status):
 - `idle` — no recovery callback
 - `processing` — deep-link exchange in flight
 - `verified` — `PASSWORD_RECOVERY` (or verified recovery callback); form OK
-- `unavailable` — expired, reused, malformed, or failed link
+- `temporary-failure` — transport/server verification failed; reopening the
+  same link may retry without treating it as expired
+- `unavailable` — expired, reused, or malformed link
 
 Routes:
 

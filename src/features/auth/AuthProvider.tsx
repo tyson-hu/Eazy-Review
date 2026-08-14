@@ -20,6 +20,7 @@ import {
   signOut as signOutApi,
   signUpWithPassword,
 } from '@/src/features/auth/api';
+import { AuthError } from '@/src/features/auth/errors';
 import type {
   AuthOperationSuperseded,
   AuthStatus,
@@ -348,11 +349,15 @@ export function AuthProvider({
         setRecoveryPhase((current) =>
           current === 'verified' ? 'verified' : 'processing',
         );
-      } catch {
+      } catch (error) {
         if (cancelled || recoveryGenerationRef.current !== generation) {
           return;
         }
-        setRecoveryPhase('unavailable');
+        setRecoveryPhase(
+          error instanceof AuthError && error.code === 'recovery-link-invalid'
+            ? 'unavailable'
+            : 'temporary-failure',
+        );
       }
     };
 

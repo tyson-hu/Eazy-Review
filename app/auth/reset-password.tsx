@@ -78,7 +78,11 @@ export default function ResetPasswordScreen() {
 
   const showForm = !showLoading && recoveryPhase === 'verified' && !success;
 
-  const showUnavailable = !showLoading && !success && !showForm;
+  const showTemporary =
+    !showLoading && recoveryPhase === 'temporary-failure' && !success;
+
+  const showUnavailable =
+    !showLoading && !success && !showForm && !showTemporary;
 
   return (
     <Screen scroll>
@@ -147,6 +151,24 @@ export default function ResetPasswordScreen() {
             <Button
               testID="reset-password-sign-in"
               label="Back to sign in"
+              variant="ghost"
+            />
+          </Link>
+        </Card>
+      ) : null}
+
+      {showTemporary ? (
+        <Card className="mt-6 gap-3" testID="reset-password-temporary">
+          <AppText variant="subtitle">Could not verify link</AppText>
+          <AppText
+            testID="reset-password-temporary-copy"
+            variant="body">
+            {AUTH_USER_MESSAGES.recoveryTemporaryFailure}
+          </AppText>
+          <Link href="/auth/forgot-password" asChild>
+            <Button
+              testID="reset-password-temporary-request-new"
+              label="Request a new password-reset email"
               variant="ghost"
             />
           </Link>

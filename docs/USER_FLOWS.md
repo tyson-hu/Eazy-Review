@@ -200,6 +200,11 @@ session. Direct navigation, an ordinary signed-in session, or an
 expired/replayed/invalid recovery link shows a safe error with a path to request
 a new email; it must not call the password-update API.
 
+A temporary transport/server failure stays distinct from an expired or replayed
+link and tells the user to check connectivity and reopen the same link. Reopening
+the link retries verification; password update remains gated until verification
+succeeds.
+
 Recovery redirect matrix (scheme `eazyreview` from `app.json`):
 
 | Environment | Redirect | Configured by |
