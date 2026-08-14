@@ -809,7 +809,9 @@ Implementation notes (acceptance pending):
   reopening the same link and are not mislabeled expired/replayed. A late
   recovery result cannot re-enable the form after sign-out or a
   different-principal auth transition supersedes it; this guard covers both
-  the SDK recovery event and the callback result.
+  the SDK recovery event and the callback result. A stale SDK-installed
+  recovery session is reconciled to the superseding session while authenticated
+  UI is gated, with sign-out as the safe failure fallback.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
   A definitive missing/expired recovery session clears the verified form and

@@ -146,6 +146,8 @@ export function AuthProvider({
    * Used for explicit sign-in/up superseded decisions — not for cache ownership.
    */
   const latestAuthPrincipalRef = useRef<string | null>(null);
+  /** Full session for restoring a newer principal after a stale SDK recovery. */
+  const latestAuthSessionRef = useRef<Session | null>(null);
   /**
    * Principal for which user-scoped cache has been safely transitioned.
    * Advanced only after any prior-principal purge has fully completed.
@@ -283,9 +285,30 @@ export function AuthProvider({
           authGenerationRef.current !== attempt.authGenerationAtStart &&
           latestAuthPrincipalRef.current !== eventPrincipal;
         if (attemptWasSuperseded) {
+          const supersedingSession = latestAuthSessionRef.current;
           recoveryGenerationRef.current += 1;
           recoveryAttemptRef.current = null;
           setRecoveryPhase('idle');
+          setUser(null);
+          setStatus('initializing');
+          queueMicrotask(() => {
+            void (async () => {
+              try {
+                if (supersedingSession) {
+                  const { error } = await client.auth.setSession({
+                    access_token: supersedingSession.access_token,
+                    refresh_token: supersedingSession.refresh_token,
+                  });
+                  if (!error) {
+                    return;
+                  }
+                }
+                await client.auth.signOut();
+              } catch {
+                // Keep authenticated UI gated when SDK reconciliation fails.
+              }
+            })();
+          });
           return;
         }
         setRecoveryPhase('verified');
@@ -299,6 +322,7 @@ export function AuthProvider({
       authGenerationRef.current += 1;
       const appliedGeneration = authGenerationRef.current;
       latestAuthPrincipalRef.current = userIdFromSession(session);
+      latestAuthSessionRef.current = session;
 
       // Defer state application so we avoid nested client work inside the callback.
       queueMicrotask(() => {

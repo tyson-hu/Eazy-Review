@@ -14,12 +14,13 @@ import * as userScopedCache from '@/src/lib/query/userScopedCache';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
 
-type Listener = (
-  event: string,
-  session: {
-    user: { id: string; email?: string | null };
-  } | null,
-) => void;
+type MockSession = {
+  access_token: string;
+  refresh_token: string;
+  user: { id: string; email: string };
+};
+
+type Listener = (event: string, session: MockSession | null) => void;
 
 function createMockAuthClient(options: {
   initialUser?: { id: string; email: string } | null;
@@ -34,6 +35,16 @@ function createMockAuthClient(options: {
 }) {
   let listeners: Listener[] = [];
   let sessionUser = options.initialUser ?? null;
+  const sessionsByAccessToken = new Map<string, MockSession>();
+  const sessionForUser = (user: { id: string; email: string }): MockSession => {
+    const session = {
+      access_token: `access-${user.id}`,
+      refresh_token: `refresh-${user.id}`,
+      user,
+    };
+    sessionsByAccessToken.set(session.access_token, session);
+    return session;
+  };
   let resolveRestore:
     | ((user: { id: string; email: string } | null) => void)
     | null = null;
@@ -50,7 +61,7 @@ function createMockAuthClient(options: {
               sessionUser = user;
               resolve({
                 data: {
-                  session: user ? { user } : null,
+                  session: user ? sessionForUser(user) : null,
                 },
                 error: null,
               });
@@ -59,7 +70,7 @@ function createMockAuthClient(options: {
       )
     : jest.fn(async () => ({
         data: {
-          session: sessionUser ? { user: sessionUser } : null,
+          session: sessionUser ? sessionForUser(sessionUser) : null,
         },
         error: null,
       }));
@@ -98,7 +109,7 @@ function createMockAuthClient(options: {
       }),
       signInWithPassword: jest.fn(async ({ email }: { email: string }) => {
         sessionUser = { id: `id-${email}`, email };
-        const session = { user: sessionUser };
+        const session = sessionForUser(sessionUser);
         for (const listener of listeners) {
           listener('SIGNED_IN', session);
         }
@@ -106,7 +117,7 @@ function createMockAuthClient(options: {
       }),
       signUp: jest.fn(async ({ email }: { email: string }) => {
         sessionUser = { id: `id-${email}`, email };
-        const session = { user: sessionUser };
+        const session = sessionForUser(sessionUser);
         for (const listener of listeners) {
           listener('SIGNED_IN', session);
         }
@@ -119,6 +130,22 @@ function createMockAuthClient(options: {
         }
         return { error: null };
       }),
+      setSession: jest.fn(
+        async ({ access_token }: { access_token: string }) => {
+          const session = sessionsByAccessToken.get(access_token) ?? null;
+          if (!session) {
+            return {
+              data: { session: null, user: null },
+              error: { message: 'Unknown mock session' },
+            };
+          }
+          sessionUser = session.user;
+          for (const listener of listeners) {
+            listener('SIGNED_IN', session);
+          }
+          return { data: { session, user: session.user }, error: null };
+        },
+      ),
     },
   } as unknown as AppSupabaseClient;
 
@@ -126,7 +153,7 @@ function createMockAuthClient(options: {
     client,
     emit(event: string, user: { id: string; email: string } | null) {
       sessionUser = user;
-      const session = user ? { user } : null;
+      const session = user ? sessionForUser(user) : null;
       for (const listener of listeners) {
         listener(event, session);
       }
@@ -1708,6 +1735,11 @@ describe('AuthProvider password recovery', () => {
     expect(rendered.getByTestId('auth-probe').props.children).toBe(
       'signed-in|user-b|b@example.com|idle',
     );
+    const { data: sessionData } = await mock.client.auth.getSession();
+    expect(sessionData.session?.user).toEqual({
+      id: 'user-b',
+      email: 'b@example.com',
+    });
 
     await rendered.cleanup();
   });
