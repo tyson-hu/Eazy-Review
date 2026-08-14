@@ -792,7 +792,9 @@ Implementation notes (acceptance pending):
 
 - Sign In and logged-out Account expose **Forgot password?**.
 - Request uses `supabase.auth.resetPasswordForEmail` with
-  `Linking.createURL('/auth/reset-password')` as `redirectTo`.
+  `Linking.createURL('/auth/reset-password')` as `redirectTo`. Known
+  account-existence rejections return the same non-enumerating submitted state;
+  transport/service failures remain visible.
 - Local Supabase `additional_redirect_urls` includes the documented dev
   scheme/path variants. Staging/production redirects are not configured.
 - Local Auth `external_url` is environment-backed from the gitignored root
@@ -807,6 +809,8 @@ Implementation notes (acceptance pending):
   reopening the same link and are not mislabeled expired/replayed.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
+  A definitive missing/expired recovery session clears the verified form and
+  offers the safe request-new-link restart.
 - Evidence (SOP surface vocabulary in `docs/evidence/README.md`):
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 

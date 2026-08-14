@@ -357,4 +357,41 @@ describe('password recovery screens', () => {
     );
     rendered.unmount();
   });
+
+  it('hides the form when the recovery session expires during update', async () => {
+    mockRecoveryPhase = 'verified';
+    mockAuthStatus = 'signed-in';
+    mockIsSignedIn = true;
+    mockClearRecoveryPhase.mockImplementation(() => {
+      mockRecoveryPhase = 'idle';
+    });
+    mockUpdatePasswordFromRecovery.mockRejectedValue(
+      new AuthError(
+        'recovery-link-invalid',
+        AUTH_USER_MESSAGES.recoveryLinkInvalid,
+      ),
+    );
+    const rendered = await render(<ResetPasswordScreen />);
+
+    await act(async () => {
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-new'),
+        'newpass1',
+      );
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-confirm'),
+        'newpass1',
+      );
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('reset-password-submit'));
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('reset-password-unavailable')).toBeTruthy(),
+    );
+    expect(mockClearRecoveryPhase).toHaveBeenCalled();
+    expect(rendered.queryByTestId('reset-password-form')).toBeNull();
+    rendered.unmount();
+  });
 });

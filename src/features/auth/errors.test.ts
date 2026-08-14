@@ -70,6 +70,20 @@ describe('normalizeAuthError', () => {
     expect(error.message).toBe(AUTH_USER_MESSAGES.recoveryLinkInvalid);
   });
 
+  it('marks a missing session during password update as an invalid recovery link', () => {
+    const error = normalizeAuthError(
+      {
+        name: 'AuthSessionMissingError',
+        message: 'Auth session missing!',
+        status: 400,
+      },
+      { operation: 'password-update' },
+    );
+
+    expect(error.code).toBe('recovery-link-invalid');
+    expect(error.message).toBe(AUTH_USER_MESSAGES.recoveryLinkInvalid);
+  });
+
   it('getAuthErrorMessage never returns raw provider text for unknown errors', () => {
     expect(getAuthErrorMessage({ message: 'raw-supabase-xyz' })).toBe(
       AUTH_USER_MESSAGES.signInFailed,

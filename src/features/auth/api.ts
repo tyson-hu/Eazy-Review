@@ -7,6 +7,7 @@ import {
 import {
   AuthError,
   AUTH_USER_MESSAGES,
+  isAccountExistenceError,
   isDefinitiveInvalidSessionError,
   normalizeAuthError,
 } from '@/src/features/auth/errors';
@@ -321,6 +322,9 @@ export async function requestPasswordReset(
     });
 
     if (error) {
+      if (isAccountExistenceError(error)) {
+        return { kind: 'submitted' };
+      }
       // Provider errors must not become account-existence signals.
       throw normalizeAuthError(error, {
         operation: 'password-reset-request',

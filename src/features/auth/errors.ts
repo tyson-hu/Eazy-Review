@@ -154,6 +154,18 @@ function isInvalidCredentials(value: unknown): boolean {
   );
 }
 
+/** Known provider rejections that would reveal whether an account exists. */
+export function isAccountExistenceError(value: unknown): boolean {
+  const code = readCode(value)?.toLowerCase() ?? '';
+  const message = readMessage(value).toLowerCase();
+  return (
+    code === 'user_not_found' ||
+    code === 'email_not_found' ||
+    message.includes('user not found') ||
+    message.includes('email not found')
+  );
+}
+
 function isConfirmationRelated(value: unknown): boolean {
   const code = readCode(value)?.toLowerCase() ?? '';
   const message = readMessage(value).toLowerCase();
@@ -328,7 +340,9 @@ export function normalizeAuthError(
     (options.operation === 'recovery-callback' &&
       (isRecoverySessionError(error) ||
         isDefinitiveInvalidSessionError(error))) ||
-    (options.operation === 'password-update' && isRecoverySessionError(error))
+    (options.operation === 'password-update' &&
+      (isRecoverySessionError(error) ||
+        isDefinitiveInvalidSessionError(error)))
   ) {
     return new AuthError(
       'recovery-link-invalid',

@@ -403,7 +403,10 @@ Functions (file: `src/features/auth/api.ts`):
   `redirectTo = Linking.createURL('/auth/reset-password')` (scheme
   `eazyreview`). Trims/lowercases the email. Rejects obviously malformed
   addresses client-side. Never retries. Success copy is always
-  non-enumerating: it does not claim whether an account exists.
+  non-enumerating: it does not claim whether an account exists. Known
+  account-existence provider rejections (for example `user_not_found`) return
+  the same submitted result as an accepted request; transport and service
+  failures remain visible and retryable.
 - Local physical-device recovery also requires the Auth email-link origin from
   `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`, including the
   `/auth/v1` suffix. It must use a Mac LAN host the device can reach; this is
@@ -433,6 +436,10 @@ Routes:
 `recoveryPhase === 'verified'`. Direct navigation, an ordinary signed-in
 session, an expired link, or a replayed/invalid link must not expose a working
 password-update action; show a safe error and route to a new recovery request.
+If the verified recovery session becomes definitively missing or expired while
+updating, clear the verified phase and replace the form with that safe restart
+state. Temporary and password-validation failures keep the form for manual
+retry.
 
 Successful recovery keeps the authenticated session and dismisses to Account;
 it does not reuse Rate `returnTo` routing. Physical proof that the new password

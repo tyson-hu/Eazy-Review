@@ -90,7 +90,7 @@ describe('password recovery api', () => {
     expect(resetPasswordForEmail).not.toHaveBeenCalled();
   });
 
-  it('maps backend failure without enumerating accounts', async () => {
+  it('treats account-not-found as submitted without enumerating accounts', async () => {
     const client = mockClient({
       resetPasswordForEmail: jest.fn(async () => ({
         data: {},
@@ -107,12 +107,30 @@ describe('password recovery api', () => {
         client,
         isOnline: () => true,
       }),
-    ).rejects.toMatchObject({
-      message: AUTH_USER_MESSAGES.recoveryRequestFailed,
+    ).resolves.toEqual({ kind: 'submitted' });
+  });
+
+  it('keeps recovery-request service failures visible', async () => {
+    const client = mockClient({
+      resetPasswordForEmail: jest.fn(async () => ({
+        data: {},
+        error: {
+          message: 'Internal server error',
+          status: 503,
+          code: 'unexpected_failure',
+        },
+      })),
     });
 
-    const message = AUTH_USER_MESSAGES.recoveryRequestFailed.toLowerCase();
-    expect(message).not.toMatch(/not found|no account|exists|does not exist/);
+    await expect(
+      requestPasswordReset('user@example.com', {
+        client,
+        isOnline: () => true,
+      }),
+    ).rejects.toMatchObject({
+      code: 'temporary-failure',
+      message: AUTH_USER_MESSAGES.recoveryRequestFailed,
+    });
   });
 
   it('updates password once without automatic retry', async () => {

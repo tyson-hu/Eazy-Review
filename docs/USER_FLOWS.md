@@ -200,10 +200,20 @@ session. Direct navigation, an ordinary signed-in session, or an
 expired/replayed/invalid recovery link shows a safe error with a path to request
 a new email; it must not call the password-update API.
 
+The request outcome also remains non-enumerating when Auth explicitly rejects
+an absent account: the screen shows the same submitted confirmation as an
+accepted request. Transport and service failures still show honest retryable
+errors.
+
 A temporary transport/server failure stays distinct from an expired or replayed
 link and tells the user to check connectivity and reopen the same link. Reopening
 the link retries verification; password update remains gated until verification
 succeeds.
+
+If the recovery session becomes definitively missing or expires after the form
+was verified, a failed update clears the form and returns to the invalid-link
+restart state. Weak-password and temporary failures keep the form for manual
+retry.
 
 Recovery redirect matrix (scheme `eazyreview` from `app.json`):
 

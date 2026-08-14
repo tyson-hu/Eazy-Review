@@ -34,7 +34,8 @@ Environment status labels follow `docs/evidence/README.md`
 
 1. **Recovery request** — Sign In + signed-out Account **Forgot password?** →
    `/auth/forgot-password` → `requestPasswordReset` →
-   non-enumerating success copy.
+   non-enumerating submitted state, including known account-existence provider
+   rejections; transport/service failures remain visible.
 2. **Deep-link routing** — `/auth/reset-password` registered; app scheme
    `eazyreview`; local Supabase `additional_redirect_urls` include recovery
    path variants; `Linking.createURL('/auth/reset-password')` as `redirectTo`.
@@ -47,7 +48,8 @@ Environment status labels follow `docs/evidence/README.md`
    success → Account (`dismissTo`), no rate `returnTo` reuse.
 5. **Error/offline** — invalid email, offline, backend failure, invalid/expired
    link, reused link states; temporary callback failures remain distinct from
-   invalid links; no mutation replay.
+   invalid links; a definitive missing/expired recovery session clears the
+   verified password form; no mutation replay.
 
 ## Automated verification
 
@@ -77,8 +79,17 @@ Review-remediation worktree verification (2026-08-13):
 | `npm test` | pass — 37 suites, **296** tests |
 | `git diff --check` | pass |
 
+Second review-remediation worktree verification (2026-08-13):
+
+| Command | Result |
+| --- | --- |
+| Focused recovery suites | pass — 3 suites, **37** tests |
+| `npm run check:readonly` | pass |
+| `npm test` | pass — 37 suites, **299** tests |
+| `git diff --check` | pass |
+
 The Jest run still prints the branch's existing React `act()` / worker teardown
-warnings while exiting successfully; this review fix does not claim those
+warnings while exiting successfully; these review fixes do not claim those
 warnings are resolved.
 
 Database: **no recovery SQL/RLS/migration**. Automated green results are not a

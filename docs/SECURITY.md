@@ -170,10 +170,14 @@ Canonical security rules for all agent and human work in this repo, regardless o
   - Never log recovery tokens, access tokens, refresh tokens, passwords, or
     complete incoming recovery URLs. Diagnostics use coarse labels only.
   - Recovery request success copy is non-enumerating and must not reveal
-    whether an email maps to an account.
+    whether an email maps to an account. Known account-existence provider
+    rejections return the same submitted outcome; transport/service failures
+    remain visible without exposing provider text.
   - Password update forms enable only after a verified recovery phase; ordinary
     sessions and direct navigation cannot update via the recovery screen.
   - Password-update mutations never auto-retry and never queue offline.
+  - A definitive missing/expired recovery session clears the verified form and
+    exposes only the safe request-new-link state.
   - Local session storage remains the Task 16 AsyncStorage strategy; Task 18
     does not redesign session persistence.
 - Do not print Supabase project refs, keys, tokens, connection strings, or

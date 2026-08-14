@@ -11,6 +11,7 @@ import { LoadingState } from '@/src/components/ui/LoadingState';
 import { Screen } from '@/src/components/ui/Screen';
 import { updatePasswordFromRecovery } from '@/src/features/auth/api';
 import {
+  AuthError,
   AUTH_USER_MESSAGES,
   getAuthErrorMessage,
 } from '@/src/features/auth/errors';
@@ -66,6 +67,15 @@ export default function ResetPasswordScreen() {
       setSuccess(true);
       clearRecoveryPhase();
     } catch (error) {
+      if (
+        error instanceof AuthError &&
+        error.code === 'recovery-link-invalid'
+      ) {
+        setPassword('');
+        setConfirmPassword('');
+        clearRecoveryPhase();
+        return;
+      }
       // Preserve field values on recoverable failure so the user can retry.
       setErrorMessage(getAuthErrorMessage(error));
     } finally {
