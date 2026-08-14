@@ -212,8 +212,9 @@ succeeds.
 
 If recovery-link verification overlaps a newer auth transition, a late callback
 must not reopen the password form for a different current account or after
-sign-out. A callback may promote recovery only when its verified principal still
-matches the latest authenticated principal.
+sign-out. Both the SDK recovery event and the callback result are bound to the
+initiating attempt; they may promote recovery only when its verified principal
+still matches the latest authenticated principal.
 
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link

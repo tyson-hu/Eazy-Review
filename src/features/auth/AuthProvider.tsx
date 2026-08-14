@@ -161,6 +161,11 @@ export function AuthProvider({
   const authGenerationRef = useRef(0);
   /** Ensures only the latest recovery-link processing commit wins. */
   const recoveryGenerationRef = useRef(0);
+  /** Binds SDK recovery events to the auth state that started the URL attempt. */
+  const recoveryAttemptRef = useRef<{
+    generation: number;
+    authGenerationAtStart: number;
+  } | null>(null);
 
   /**
    * Queue a cache transition for `nextUserId`. Transitions run in order;
@@ -270,6 +275,19 @@ export function AuthProvider({
 
       // Password recovery is distinct from ordinary sign-in/session restore.
       if (event === 'PASSWORD_RECOVERY') {
+        const attempt = recoveryAttemptRef.current;
+        const eventPrincipal = userIdFromSession(session);
+        const attemptWasSuperseded =
+          attempt != null &&
+          recoveryGenerationRef.current === attempt.generation &&
+          authGenerationRef.current !== attempt.authGenerationAtStart &&
+          latestAuthPrincipalRef.current !== eventPrincipal;
+        if (attemptWasSuperseded) {
+          recoveryGenerationRef.current += 1;
+          recoveryAttemptRef.current = null;
+          setRecoveryPhase('idle');
+          return;
+        }
         setRecoveryPhase('verified');
       } else if (event === 'SIGNED_OUT') {
         setRecoveryPhase('idle');
@@ -326,6 +344,7 @@ export function AuthProvider({
       recoveryGenerationRef.current += 1;
       const generation = recoveryGenerationRef.current;
       const authGenerationAtStart = authGenerationRef.current;
+      recoveryAttemptRef.current = { generation, authGenerationAtStart };
       setRecoveryPhase('processing');
 
       try {

@@ -1688,6 +1688,10 @@ describe('AuthProvider password recovery', () => {
     );
 
     await act(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-a',
+        email: 'a@example.com',
+      });
       resolveExchange?.({
         data: {
           session: {

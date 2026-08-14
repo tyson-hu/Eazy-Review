@@ -44,7 +44,8 @@ Environment status labels follow `docs/evidence/README.md`
    without logging secrets; verified PKCE exchanges use the SDK recovery
    redirect type, while transient verification failures remain retryable by
    reopening the same link. Recovery results superseded by sign-out or a
-   different current principal cannot reopen the password form.
+   different current principal cannot reopen the password form, including
+   when the superseded exchange later emits an SDK recovery event.
 4. **Password update** — new + confirm, `updatePasswordFromRecovery` once,
    success → Account (`dismissTo`), no rate `returnTo` reuse.
 5. **Error/offline** — invalid email, offline, backend failure, invalid/expired
@@ -90,6 +91,15 @@ Second review-remediation worktree verification (2026-08-13):
 | `git diff --check` | pass |
 
 Third review-remediation worktree verification (2026-08-13):
+
+| Command | Result |
+| --- | --- |
+| Focused `AuthProvider` suite | pass — **26** tests |
+| `npm run check:readonly` | pass |
+| `npm test` | pass — 37 suites, **300** tests |
+| `git diff --check` | pass |
+
+Fourth review-remediation worktree verification (2026-08-13):
 
 | Command | Result |
 | --- | --- |

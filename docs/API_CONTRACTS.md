@@ -429,8 +429,9 @@ AuthProvider recovery phase (not ordinary session status):
 
 Recovery-link processing is also bound to the authoritative auth generation and
 principal. If sign-out or a different-account auth transition supersedes an
-in-flight callback, its late result cannot promote the phase to `verified`.
-Same-principal SDK transitions emitted by the recovery exchange remain valid.
+in-flight callback, neither its late SDK `PASSWORD_RECOVERY` event nor its result
+can promote the phase to `verified`. Same-principal SDK transitions emitted by
+the recovery exchange remain valid.
 
 Routes:
 

@@ -808,7 +808,8 @@ Implementation notes (acceptance pending):
   enables password update. Transient callback failures can be retried by
   reopening the same link and are not mislabeled expired/replayed. A late
   recovery result cannot re-enable the form after sign-out or a
-  different-principal auth transition supersedes it.
+  different-principal auth transition supersedes it; this guard covers both
+  the SDK recovery event and the callback result.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
   A definitive missing/expired recovery session clears the verified form and
