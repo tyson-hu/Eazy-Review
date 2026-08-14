@@ -806,7 +806,9 @@ Implementation notes (acceptance pending):
   without logging tokens or full URLs. Verified PKCE recovery exchanges use
   the SDK `redirectType`; ordinary PKCE sign-ins remain gated. Only `verified`
   enables password update. Transient callback failures can be retried by
-  reopening the same link and are not mislabeled expired/replayed.
+  reopening the same link and are not mislabeled expired/replayed. A late
+  recovery result cannot re-enable the form after sign-out or a
+  different-principal auth transition supersedes it.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
   A definitive missing/expired recovery session clears the verified form and

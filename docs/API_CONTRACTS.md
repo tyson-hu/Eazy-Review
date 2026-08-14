@@ -427,6 +427,11 @@ AuthProvider recovery phase (not ordinary session status):
   same link may retry without treating it as expired
 - `unavailable` — expired, reused, or malformed link
 
+Recovery-link processing is also bound to the authoritative auth generation and
+principal. If sign-out or a different-account auth transition supersedes an
+in-flight callback, its late result cannot promote the phase to `verified`.
+Same-principal SDK transitions emitted by the recovery exchange remain valid.
+
 Routes:
 
 - `app/auth/forgot-password.tsx` — request only

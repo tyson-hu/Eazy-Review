@@ -325,6 +325,7 @@ export function AuthProvider({
 
       recoveryGenerationRef.current += 1;
       const generation = recoveryGenerationRef.current;
+      const authGenerationAtStart = authGenerationRef.current;
       setRecoveryPhase('processing');
 
       try {
@@ -334,6 +335,18 @@ export function AuthProvider({
         }
         if (result.kind === 'ignored') {
           // Path opened without usable tokens (direct navigation / stripped URL).
+          setRecoveryPhase((current) =>
+            current === 'verified' ? 'verified' : 'idle',
+          );
+          return;
+        }
+        const authChangedDuringExchange =
+          authGenerationRef.current !== authGenerationAtStart;
+        const currentPrincipal = latestAuthPrincipalRef.current;
+        if (
+          (authChangedDuringExchange || currentPrincipal != null) &&
+          currentPrincipal !== result.user.id
+        ) {
           setRecoveryPhase((current) =>
             current === 'verified' ? 'verified' : 'idle',
           );

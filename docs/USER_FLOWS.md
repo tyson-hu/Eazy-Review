@@ -210,6 +210,11 @@ link and tells the user to check connectivity and reopen the same link. Reopenin
 the link retries verification; password update remains gated until verification
 succeeds.
 
+If recovery-link verification overlaps a newer auth transition, a late callback
+must not reopen the password form for a different current account or after
+sign-out. A callback may promote recovery only when its verified principal still
+matches the latest authenticated principal.
+
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link
 restart state. Weak-password and temporary failures keep the form for manual
