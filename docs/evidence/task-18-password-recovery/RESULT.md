@@ -51,14 +51,16 @@ Environment status labels follow `docs/evidence/README.md`
    uses current-device sign-out if reconciliation fails. A failed or throwing
    fallback still settles provider state signed-out. Recovery callback
    exchanges are serialized across duplicate and different links so only one
-   single-use code can be consumed at a time. Explicit sign-in, sign-up, and
-   sign-out wait for recovery reconciliation so the newer user action wins.
+   single-use code can be consumed at a time. Explicit auth and recovery
+   reconciliation respect start order; reconciliation stops when an explicit
+   operation already in flight establishes a newer auth state.
 4. **Password update** — new + confirm, `updatePasswordFromRecovery` once,
    success → Account (`dismissTo`), no rate `returnTo` reuse.
 5. **Error/offline** — invalid email, offline, backend failure, invalid/expired
    link, reused link states; temporary callback failures remain distinct from
-   invalid links; a definitive missing/expired recovery session clears the
-   verified password form; no mutation replay.
+   invalid links; missing or mismatched PKCE verifier state is definitive and
+   offers a new recovery request; a definitive missing/expired recovery session
+   clears the verified password form; no mutation replay.
 
 ## Automated verification
 
@@ -148,6 +150,15 @@ Eighth review-remediation worktree verification (2026-08-14):
 | --- | --- |
 | Focused `AuthProvider` suite | pass — **31** tests |
 | `npm run check:expo` | pass — 37 suites, **305** tests; Expo Doctor **21/21**; dependencies up to date |
+| `git diff --check` | pass |
+
+Ninth review-remediation worktree verification (2026-08-14):
+
+| Command | Result |
+| --- | --- |
+| Focused auth suites | pass — **56** tests |
+| `npm run check:readonly` | pass |
+| `npm test -- --runInBand --forceExit` | pass — 37 suites, **308** tests |
 | `git diff --check` | pass |
 
 The Jest run still prints the branch's existing React `act()` / worker teardown

@@ -205,10 +205,12 @@ an absent account: the screen shows the same submitted confirmation as an
 accepted request. Transport and service failures still show honest retryable
 errors.
 
-A temporary transport/server failure stays distinct from an expired or replayed
-link and tells the user to check connectivity and reopen the same link. Reopening
-the link retries verification; password update remains gated until verification
-succeeds.
+A temporary transport/server failure stays distinct from an expired, replayed,
+or unusable-PKCE-verifier link and tells the user to check connectivity and
+reopen the same link. Reopening the link retries verification; a missing or
+mismatched PKCE verifier instead offers a new recovery request because the same
+link cannot succeed on that installation. Password update remains gated until
+verification succeeds.
 
 If recovery-link verification overlaps a newer auth transition, a late callback
 must not reopen the password form for a different current account or after
@@ -222,8 +224,10 @@ explicitly settles signed-out instead of leaving auth loading. Duplicate
 delivery of any recovery callback while another single-use exchange is still
 in flight is ignored, including a different link; reopening a link after a
 temporary failure completes remains retryable. Explicit sign-in, sign-up, and
-sign-out wait for stale recovery-session reconciliation to settle, then apply
-as the newer transition so reconciliation cannot overwrite the user's action.
+sign-out wait for recovery reconciliation that started first; reconciliation
+waits for an explicit auth operation that started first and stops when that
+operation establishes a newer auth state. Neither ordering can overwrite the
+newer user action.
 
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link

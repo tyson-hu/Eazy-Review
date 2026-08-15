@@ -167,6 +167,12 @@ export function AuthProvider({
   const recoveryExchangeInFlightRef = useRef(false);
   /** Explicit auth operations wait until stale-session reconciliation settles. */
   const recoveryReconciliationRef = useRef<Promise<void>>(Promise.resolve());
+  /** Reconciliation waits for explicit auth operations that already started. */
+  const explicitAuthOperationsInFlightRef = useRef(0);
+  const explicitAuthOperationsSettledRef = useRef<Promise<void>>(
+    Promise.resolve(),
+  );
+  const settleExplicitAuthOperationsRef = useRef<(() => void) | null>(null);
   /** Binds SDK recovery events to the auth state that started the URL attempt. */
   const recoveryAttemptRef = useRef<{
     generation: number;
@@ -225,12 +231,36 @@ export function AuthProvider({
     [prepareUserScopedCacheForPrincipal],
   );
 
+  const beginExplicitAuthOperation = useCallback(() => {
+    if (explicitAuthOperationsInFlightRef.current === 0) {
+      explicitAuthOperationsSettledRef.current = new Promise<void>((resolve) => {
+        settleExplicitAuthOperationsRef.current = resolve;
+      });
+    }
+    explicitAuthOperationsInFlightRef.current += 1;
+    let finished = false;
+
+    return () => {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      explicitAuthOperationsInFlightRef.current -= 1;
+      if (explicitAuthOperationsInFlightRef.current === 0) {
+        settleExplicitAuthOperationsRef.current?.();
+        settleExplicitAuthOperationsRef.current = null;
+      }
+    };
+  }, []);
+
   const reconcileSupersededRecovery = useCallback(
     (client: AppSupabaseClient, supersedingSession: Session | null) => {
       recoveryGenerationRef.current += 1;
       recoveryAttemptRef.current = null;
       // Invalidate the stale SDK event's already-queued state application.
       authGenerationRef.current += 1;
+      const reconciliationGeneration = authGenerationRef.current;
+      const explicitOperations = explicitAuthOperationsSettledRef.current;
       latestAuthPrincipalRef.current = null;
       latestAuthSessionRef.current = null;
       setRecoveryPhase('idle');
@@ -244,6 +274,10 @@ export function AuthProvider({
       queueMicrotask(() => {
         void (async () => {
           try {
+            await explicitOperations;
+            if (authGenerationRef.current !== reconciliationGeneration) {
+              return;
+            }
             if (supersedingSession) {
               try {
                 const { error } = await client.auth.setSession({
@@ -564,67 +598,102 @@ export function AuthProvider({
 
   const signIn = useCallback(
     async (credentials: SignInCredentials): Promise<SignInResult> => {
-      await recoveryReconciliationRef.current;
-      const client = resolveClient(clientProp);
-      if (!client) {
-        throw new Error('Auth client is unavailable.');
-      }
-      const result = await signInWithPassword(credentials, { client });
-      authGenerationRef.current += 1;
-      const generation = authGenerationRef.current;
-      latestAuthPrincipalRef.current = result.user.id;
-      setRecoveryPhase('idle');
-      // onAuthStateChange will sync status; apply optimistically for UX.
-      await prepareUserScopedCacheForPrincipal(result.user.id);
-      const resolved = resolveOptimisticSignedIn(result, generation);
-      if (resolved.kind === 'superseded') {
-        return resolved;
-      }
-      if (authGenerationRef.current !== generation) {
-        // Same principal confirmed by a newer transition — do not re-apply.
-        return resolved;
-      }
-      setUser(result.user);
-      setStatus('signed-in');
-      return resolved;
-    },
-    [clientProp, prepareUserScopedCacheForPrincipal, resolveOptimisticSignedIn],
-  );
-
-  const signUp = useCallback(
-    async (credentials: SignUpCredentials): Promise<SignUpResult> => {
-      await recoveryReconciliationRef.current;
-      const client = resolveClient(clientProp);
-      if (!client) {
-        throw new Error('Auth client is unavailable.');
-      }
-      const result = await signUpWithPassword(credentials, { client });
-      if (result.kind === 'signed-in') {
+      const finishExplicitAuthOperation = beginExplicitAuthOperation();
+      try {
+        await recoveryReconciliationRef.current;
+        const client = resolveClient(clientProp);
+        if (!client) {
+          throw new Error('Auth client is unavailable.');
+        }
+        const result = await signInWithPassword(credentials, { client });
         authGenerationRef.current += 1;
         const generation = authGenerationRef.current;
         latestAuthPrincipalRef.current = result.user.id;
         setRecoveryPhase('idle');
+        // onAuthStateChange will sync status; apply optimistically for UX.
         await prepareUserScopedCacheForPrincipal(result.user.id);
         const resolved = resolveOptimisticSignedIn(result, generation);
         if (resolved.kind === 'superseded') {
           return resolved;
         }
         if (authGenerationRef.current !== generation) {
+          // Same principal confirmed by a newer transition — do not re-apply.
           return resolved;
         }
         setUser(result.user);
         setStatus('signed-in');
         return resolved;
+      } finally {
+        finishExplicitAuthOperation();
       }
-      return result;
     },
-    [clientProp, prepareUserScopedCacheForPrincipal, resolveOptimisticSignedIn],
+    [
+      beginExplicitAuthOperation,
+      clientProp,
+      prepareUserScopedCacheForPrincipal,
+      resolveOptimisticSignedIn,
+    ],
+  );
+
+  const signUp = useCallback(
+    async (credentials: SignUpCredentials): Promise<SignUpResult> => {
+      const finishExplicitAuthOperation = beginExplicitAuthOperation();
+      try {
+        await recoveryReconciliationRef.current;
+        const client = resolveClient(clientProp);
+        if (!client) {
+          throw new Error('Auth client is unavailable.');
+        }
+        const result = await signUpWithPassword(credentials, { client });
+        if (result.kind === 'signed-in') {
+          authGenerationRef.current += 1;
+          const generation = authGenerationRef.current;
+          latestAuthPrincipalRef.current = result.user.id;
+          setRecoveryPhase('idle');
+          await prepareUserScopedCacheForPrincipal(result.user.id);
+          const resolved = resolveOptimisticSignedIn(result, generation);
+          if (resolved.kind === 'superseded') {
+            return resolved;
+          }
+          if (authGenerationRef.current !== generation) {
+            return resolved;
+          }
+          setUser(result.user);
+          setStatus('signed-in');
+          return resolved;
+        }
+        return result;
+      } finally {
+        finishExplicitAuthOperation();
+      }
+    },
+    [
+      beginExplicitAuthOperation,
+      clientProp,
+      prepareUserScopedCacheForPrincipal,
+      resolveOptimisticSignedIn,
+    ],
   );
 
   const signOut = useCallback(async () => {
-    await recoveryReconciliationRef.current;
-    const client = resolveClient(clientProp);
-    if (!client) {
+    const finishExplicitAuthOperation = beginExplicitAuthOperation();
+    try {
+      await recoveryReconciliationRef.current;
+      const client = resolveClient(clientProp);
+      if (!client) {
+        authGenerationRef.current += 1;
+        const generation = authGenerationRef.current;
+        latestAuthPrincipalRef.current = null;
+        setRecoveryPhase('idle');
+        await prepareUserScopedCacheForPrincipal(null);
+        if (authGenerationRef.current !== generation) {
+          return;
+        }
+        setUser(null);
+        setStatus('signed-out');
+        return;
+      }
+      await signOutApi({ client });
       authGenerationRef.current += 1;
       const generation = authGenerationRef.current;
       latestAuthPrincipalRef.current = null;
@@ -635,20 +704,10 @@ export function AuthProvider({
       }
       setUser(null);
       setStatus('signed-out');
-      return;
+    } finally {
+      finishExplicitAuthOperation();
     }
-    await signOutApi({ client });
-    authGenerationRef.current += 1;
-    const generation = authGenerationRef.current;
-    latestAuthPrincipalRef.current = null;
-    setRecoveryPhase('idle');
-    await prepareUserScopedCacheForPrincipal(null);
-    if (authGenerationRef.current !== generation) {
-      return;
-    }
-    setUser(null);
-    setStatus('signed-out');
-  }, [clientProp, prepareUserScopedCacheForPrincipal]);
+  }, [beginExplicitAuthOperation, clientProp, prepareUserScopedCacheForPrincipal]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

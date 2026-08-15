@@ -806,7 +806,9 @@ Implementation notes (acceptance pending):
   without logging tokens or full URLs. Verified PKCE recovery exchanges use
   the SDK `redirectType`; ordinary PKCE sign-ins remain gated. Only `verified`
   enables password update. Transient callback failures can be retried by
-  reopening the same link and are not mislabeled expired/replayed. A late
+  reopening the same link and are not mislabeled expired/replayed. Missing or
+  mismatched PKCE verifier failures are definitive and offer a new recovery
+  request because the same link cannot succeed on that installation. A late
   recovery result cannot re-enable the form after sign-out or a
   different-principal auth transition supersedes it; this guard covers both
   the SDK recovery event and the callback result. A stale SDK-installed
@@ -817,8 +819,10 @@ Implementation notes (acceptance pending):
   indefinitely. Recovery callback exchanges are serialized across both
   duplicate and different links so only one single-use code can be consumed at
   a time; retry after a completed temporary failure remains supported. Explicit
-  sign-in, sign-up, and sign-out wait for recovery reconciliation to settle so
-  it cannot overwrite the newer user action.
+  sign-in, sign-up, and sign-out wait for reconciliation that started first;
+  reconciliation waits for an explicit auth operation already in flight and
+  stops if it establishes a newer auth state, so neither start order can
+  overwrite the newer user action.
 - Expo SDK 57 direct dependencies are aligned to the Expo Doctor-compatible
   patch versions recorded in `package.json` and `package-lock.json`.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no

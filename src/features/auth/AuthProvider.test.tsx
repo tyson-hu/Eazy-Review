@@ -2234,6 +2234,125 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('does not let later recovery reconciliation overtake an in-flight sign-in', async () => {
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    let resolveSignIn: (() => void) | null = null;
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+    (mock.client.auth.signInWithPassword as jest.Mock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSignIn = () => {
+            mock.emit('SIGNED_IN', {
+              id: 'user-c',
+              email: 'c@example.com',
+            });
+            resolve(mockSignedInResponse('user-c', 'c@example.com'));
+          };
+        }),
+    );
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const authRef: { current: AuthContextValue | null } = { current: null };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthControllerProbe authRef={authRef} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=LATE_RECONCILIATION_CODE',
+        });
+      }
+    });
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+    });
+
+    let signInPromise: Promise<SignInResult> | undefined;
+    await act(async () => {
+      signInPromise = authRef.current?.signIn({
+        email: 'c@example.com',
+        password: 'correct horse battery staple',
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(mock.client.auth.signInWithPassword).toHaveBeenCalledTimes(1),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-a', email: 'a@example.com' });
+      resolveExchange?.({
+        data: {
+          session: {
+            user: { id: 'user-a', email: 'a@example.com' },
+          },
+          user: { id: 'user-a', email: 'a@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mock.client.auth.setSession).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveSignIn?.();
+      await signInPromise;
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-c|c@example.com|idle',
+      ),
+    );
+    expect(mock.client.auth.setSession).not.toHaveBeenCalled();
+    const { data: sessionData } = await mock.client.auth.getSession();
+    expect(sessionData.session?.user).toEqual({
+      id: 'user-c',
+      email: 'c@example.com',
+    });
+
+    await rendered.cleanup();
+  });
+
   it('clears recovery phase on sign-out', async () => {
     const mock = createMockAuthClient({
       initialUser: { id: 'user-a', email: 'a@example.com' },

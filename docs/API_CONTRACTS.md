@@ -425,7 +425,8 @@ AuthProvider recovery phase (not ordinary session status):
 - `verified` — `PASSWORD_RECOVERY` (or verified recovery callback); form OK
 - `temporary-failure` — transport/server verification failed; reopening the
   same link may retry without treating it as expired
-- `unavailable` — expired, reused, or malformed link
+- `unavailable` — expired, reused, malformed, or unusable-on-this-installation
+  link, including missing or mismatched PKCE verifier state
 
 Recovery-link processing is also bound to the authoritative auth generation and
 principal. If sign-out or a different-account auth transition supersedes an
@@ -443,8 +444,10 @@ recovery callback exchanges are serialized: a callback delivered while any
 single-use recovery exchange is processing is ignored, including a different
 link, so concurrent exchanges cannot race to install different sessions. A
 later reopen after processing finishes can still retry a temporary failure.
-Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation to
-settle before starting, ensuring that the newer explicit transition wins.
+Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
+started first. Reconciliation waits for any explicit auth operation already in
+flight and stops if that operation establishes a newer auth state, ensuring the
+newer explicit transition wins in either start order.
 
 Routes:
 

@@ -70,6 +70,27 @@ describe('normalizeAuthError', () => {
     expect(error.message).toBe(AUTH_USER_MESSAGES.recoveryLinkInvalid);
   });
 
+  it.each([
+    {
+      message: 'PKCE code verifier does not match the code challenge',
+      status: 400,
+      code: 'bad_code_verifier',
+    },
+    {
+      name: 'AuthPKCECodeVerifierMissingError',
+      message: 'PKCE code verifier not found in storage.',
+      status: 400,
+      code: 'pkce_code_verifier_not_found',
+    },
+  ])('marks an unusable PKCE verifier as an invalid recovery link', (cause) => {
+    const error = normalizeAuthError(cause, {
+      operation: 'recovery-callback',
+    });
+
+    expect(error.code).toBe('recovery-link-invalid');
+    expect(error.message).toBe(AUTH_USER_MESSAGES.recoveryLinkInvalid);
+  });
+
   it('marks a missing session during password update as an invalid recovery link', () => {
     const error = normalizeAuthError(
       {

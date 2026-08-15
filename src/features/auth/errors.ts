@@ -384,10 +384,14 @@ function isRecoverySessionError(value: unknown): boolean {
     code === 'otp_expired' ||
     code === 'flow_state_expired' ||
     code === 'flow_state_not_found' ||
+    code === 'bad_code_verifier' ||
+    code === 'pkce_code_verifier_not_found' ||
     message.includes('otp_expired') ||
     message.includes('email link is invalid or has expired') ||
     message.includes('token has expired') ||
-    message.includes('invalid or expired')
+    message.includes('invalid or expired') ||
+    message.includes('pkce code verifier not found') ||
+    message.includes('code verifier does not match')
   );
 }
 
