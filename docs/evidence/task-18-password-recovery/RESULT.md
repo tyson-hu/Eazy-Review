@@ -42,9 +42,10 @@ Environment status labels follow `docs/evidence/README.md`
 3. **Recovery auth handling** — AuthProvider `recoveryPhase` +
    `PASSWORD_RECOVERY` event; cold/warm URL processing via expo-linking
    without logging secrets; verified PKCE exchanges use the SDK recovery
-   redirect type, while transient verification failures remain retryable by
-   reopening the same link. Recovery results superseded by sign-out or a
-   different current principal cannot reopen the password form, including
+   redirect type; completed ordinary PKCE/token sessions settle unavailable
+   without exposing the form, while transient verification failures remain
+   retryable by reopening the same link. Recovery results superseded by sign-out
+   or a different current principal cannot reopen the password form, including
    when the superseded exchange later emits an SDK recovery event. The provider
    gates authenticated UI while restoring the superseding SDK session whether
    the stale exchange emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`, and
@@ -157,6 +158,15 @@ Ninth review-remediation worktree verification (2026-08-14):
 | Command | Result |
 | --- | --- |
 | Focused auth suites | pass — **56** tests |
+| `npm run check:readonly` | pass |
+| `npm test -- --runInBand --forceExit` | pass — 37 suites, **308** tests |
+| `git diff --check` | pass |
+
+Tenth review-remediation worktree verification (2026-08-14):
+
+| Command | Result |
+| --- | --- |
+| Focused auth/UI suites | pass — **47** tests |
 | `npm run check:readonly` | pass |
 | `npm test -- --runInBand --forceExit` | pass — 37 suites, **308** tests |
 | `git diff --check` | pass |

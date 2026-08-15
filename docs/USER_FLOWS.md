@@ -198,7 +198,9 @@ the forgot-password route.
 Reset Password enables its completion form only for a verified recovery
 session. Direct navigation, an ordinary signed-in session, or an
 expired/replayed/invalid recovery link shows a safe error with a path to request
-a new email; it must not call the password-update API.
+a new email; it must not call the password-update API. A completed ordinary
+PKCE or token callback settles into that safe unavailable state rather than
+remaining on the verification loader.
 
 The request outcome also remains non-enumerating when Auth explicitly rejects
 an absent account: the screen shows the same submitted confirmation as an

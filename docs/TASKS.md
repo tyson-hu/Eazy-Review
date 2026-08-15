@@ -804,12 +804,13 @@ Implementation notes (acceptance pending):
 - AuthProvider tracks `recoveryPhase` (`idle` | `processing` | `verified` |
   `temporary-failure` | `unavailable`) and processes cold/warm auth deep links
   without logging tokens or full URLs. Verified PKCE recovery exchanges use
-  the SDK `redirectType`; ordinary PKCE sign-ins remain gated. Only `verified`
-  enables password update. Transient callback failures can be retried by
-  reopening the same link and are not mislabeled expired/replayed. Missing or
-  mismatched PKCE verifier failures are definitive and offer a new recovery
-  request because the same link cannot succeed on that installation. A late
-  recovery result cannot re-enable the form after sign-out or a
+  the SDK `redirectType`; ordinary PKCE/token sessions remain gated and settle
+  to the safe unavailable state instead of leaving verification loading. Only
+  `verified` enables password update. Transient callback failures can be
+  retried by reopening the same link and are not mislabeled expired/replayed.
+  Missing or mismatched PKCE verifier failures are definitive and offer a new
+  recovery request because the same link cannot succeed on that installation.
+  A late recovery result cannot re-enable the form after sign-out or a
   different-principal auth transition supersedes it; this guard covers both
   the SDK recovery event and the callback result. A stale SDK-installed
   recovery session is reconciled to the superseding session while authenticated

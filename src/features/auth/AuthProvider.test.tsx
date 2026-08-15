@@ -2399,7 +2399,7 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
-  it('does not time-authorize an ordinary PKCE SIGNED_IN session as recovery', async () => {
+  it('settles an ordinary PKCE callback unavailable without authorizing recovery', async () => {
     jest.useFakeTimers();
     try {
       const exchangeCodeForSession = jest.fn(async () => ({
@@ -2459,7 +2459,7 @@ describe('AuthProvider password recovery', () => {
       });
       await waitFor(() =>
         expect(rendered.getByTestId('auth-probe').props.children).toContain(
-          '|processing',
+          '|unavailable',
         ),
       );
       expect(exchangeCodeForSession).toHaveBeenCalledWith('AUTH_CODE_VALUE');
@@ -2470,7 +2470,7 @@ describe('AuthProvider password recovery', () => {
       });
       await waitFor(() =>
         expect(rendered.getByTestId('auth-probe').props.children).toBe(
-          'signed-in|user-p|p@example.com|processing',
+          'signed-in|user-p|p@example.com|unavailable',
         ),
       );
 

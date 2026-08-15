@@ -458,6 +458,10 @@ Routes:
 `recoveryPhase === 'verified'`. Direct navigation, an ordinary signed-in
 session, an expired link, or a replayed/invalid link must not expose a working
 password-update action; show a safe error and route to a new recovery request.
+After a successful ordinary PKCE or token callback returns `kind: 'session'`,
+the provider settles recovery to `unavailable` unless an SDK
+`PASSWORD_RECOVERY` event already verified the attempt; it must not remain in
+`processing` indefinitely.
 If the verified recovery session becomes definitively missing or expired while
 updating, clear the verified phase and replace the form with that safe restart
 state. Temporary and password-validation failures keep the form for manual

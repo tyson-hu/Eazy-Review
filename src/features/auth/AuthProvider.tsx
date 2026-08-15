@@ -541,7 +541,7 @@ export function AuthProvider({
         // Session exchanged (e.g. PKCE). Only PASSWORD_RECOVERY may promote
         // this phase; ordinary SIGNED_IN must never authorize password update.
         setRecoveryPhase((current) =>
-          current === 'verified' ? 'verified' : 'processing',
+          current === 'verified' ? 'verified' : 'unavailable',
         );
       } catch (error) {
         if (cancelled || recoveryGenerationRef.current !== generation) {
