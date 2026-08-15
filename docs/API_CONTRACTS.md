@@ -438,9 +438,10 @@ can promote the phase to `verified`. Same-principal SDK transitions emitted by
 the recovery exchange remain valid. Background `INITIAL_SESSION` or
 `TOKEN_REFRESHED` events for the principal present before the callback started
 are maintenance, not superseding user transitions. Initial-link processing
-snapshots the persisted local session before creating the recovery attempt, so
-a delayed bootstrap `INITIAL_SESSION` for that principal remains maintenance
-even when the auth listener had not published it yet. The automatic local
+captures the recovery attempt's start generation before reading the persisted
+local session. A delayed bootstrap `INITIAL_SESSION` remains maintenance only
+when it matches that snapshot; any other auth transition during the read stays
+superseding. The automatic local
 `SIGNED_OUT` emitted when bootstrap clears a definitively invalid persisted
 session is also non-superseding while recovery exchange is in flight; explicit
 sign-out still wins. Because Supabase installs a

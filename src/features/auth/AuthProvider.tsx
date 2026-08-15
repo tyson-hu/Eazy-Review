@@ -182,6 +182,8 @@ export function AuthProvider({
     authPrincipalAtStart: string | null;
     ignoredAuthGenerationAdvances: number;
     authTransitions: (Session | null)[];
+    localSessionSnapshotPending: boolean;
+    pendingInitialSession: Session | null | undefined;
   } | null>(null);
 
   /**
@@ -387,11 +389,20 @@ export function AuthProvider({
 
       const currentAttempt = recoveryAttemptRef.current;
       const eventPrincipal = userIdFromSession(session);
+      const isPendingInitialSession =
+        currentAttempt != null &&
+        recoveryGenerationRef.current === currentAttempt.generation &&
+        currentAttempt.localSessionSnapshotPending &&
+        event === 'INITIAL_SESSION';
+      if (isPendingInitialSession) {
+        currentAttempt.pendingInitialSession = session;
+      }
       const isNonSupersedingAttemptMaintenance =
         currentAttempt != null &&
         recoveryGenerationRef.current === currentAttempt.generation &&
-        (((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') &&
-          eventPrincipal === currentAttempt.authPrincipalAtStart) ||
+        (isPendingInitialSession ||
+          ((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') &&
+            eventPrincipal === currentAttempt.authPrincipalAtStart) ||
           (event === 'SIGNED_OUT' &&
             invalidBootstrapCleanupInFlightRef.current &&
             explicitAuthOperationsInFlightRef.current === 0));
@@ -500,11 +511,25 @@ export function AuthProvider({
       }
       recoveryExchangeInFlightRef.current = true;
 
+      recoveryGenerationRef.current += 1;
+      const generation = recoveryGenerationRef.current;
+      const authGenerationAtStart = authGenerationRef.current;
+      const authPrincipalAtCallbackStart = latestAuthPrincipalRef.current;
+      recoveryAttemptRef.current = {
+        generation,
+        authGenerationAtStart,
+        authPrincipalAtStart: authPrincipalAtCallbackStart,
+        ignoredAuthGenerationAdvances: 0,
+        authTransitions: [],
+        localSessionSnapshotPending: authPrincipalAtCallbackStart == null,
+        pendingInitialSession: undefined,
+      };
+      setRecoveryPhase('processing');
+
       // A cold initial URL can resolve before Auth publishes its persisted
       // INITIAL_SESSION. Snapshot local storage so that delayed notification is
       // classified as pre-link maintenance rather than a newer sign-in.
-      const authGenerationBeforeLocalSnapshot = authGenerationRef.current;
-      let localPrincipalAtStart = latestAuthPrincipalRef.current;
+      let localPrincipalAtStart = authPrincipalAtCallbackStart;
       if (localPrincipalAtStart == null) {
         try {
           const { data } = await client.auth.getSession();
@@ -517,22 +542,26 @@ export function AuthProvider({
         recoveryExchangeInFlightRef.current = false;
         return;
       }
-      const authPrincipalAtStart =
-        authGenerationRef.current !== authGenerationBeforeLocalSnapshot
-          ? latestAuthPrincipalRef.current
-          : latestAuthPrincipalRef.current ?? localPrincipalAtStart;
-
-      recoveryGenerationRef.current += 1;
-      const generation = recoveryGenerationRef.current;
-      const authGenerationAtStart = authGenerationRef.current;
-      recoveryAttemptRef.current = {
-        generation,
-        authGenerationAtStart,
-        authPrincipalAtStart,
-        ignoredAuthGenerationAdvances: 0,
-        authTransitions: [],
-      };
-      setRecoveryPhase('processing');
+      const attempt = recoveryAttemptRef.current;
+      if (attempt?.generation !== generation) {
+        recoveryExchangeInFlightRef.current = false;
+        return;
+      }
+      attempt.localSessionSnapshotPending = false;
+      attempt.authPrincipalAtStart ??= localPrincipalAtStart;
+      if (attempt.pendingInitialSession !== undefined) {
+        if (
+          userIdFromSession(attempt.pendingInitialSession) !==
+          localPrincipalAtStart
+        ) {
+          attempt.ignoredAuthGenerationAdvances -= 1;
+          attempt.authTransitions.unshift(attempt.pendingInitialSession);
+          if (attempt.authTransitions.length > 2) {
+            attempt.authTransitions.shift();
+          }
+        }
+        attempt.pendingInitialSession = undefined;
+      }
 
       try {
         const result = await processAuthCallbackUrl(url, { client });

@@ -222,9 +222,10 @@ initiating attempt; they may promote recovery only when its verified principal
 still matches the latest authenticated principal. `INITIAL_SESSION` and
 `TOKEN_REFRESHED` maintenance events for the principal that predated the link
 do not count as newer user transitions and cannot reject deliberate recovery.
-On a cold recovery launch, the app snapshots the persisted local principal
-before starting callback exchange, so that principal's delayed
-`INITIAL_SESSION` is still recognized as pre-link maintenance.
+On a cold recovery launch, the app marks the callback attempt as started before
+reading the persisted local principal. Only that principal's matching delayed
+`INITIAL_SESSION` is reclassified as pre-link maintenance; sign-in or sign-out
+that occurs while the local read is pending remains a newer transition.
 The automatic local `SIGNED_OUT` emitted while bootstrap clears a definitively
 invalid persisted session is maintenance too; it cannot consume a recovery
 link that was opened while bootstrap validation was still finishing. An
