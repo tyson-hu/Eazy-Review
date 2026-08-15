@@ -432,10 +432,12 @@ Recovery-link processing is also bound to the authoritative auth generation and
 principal. If sign-out or a different-account auth transition supersedes an
 in-flight callback, neither its late SDK `PASSWORD_RECOVERY` event nor its result
 can promote the phase to `verified`. Same-principal SDK transitions emitted by
-the recovery exchange remain valid. Because Supabase installs a recovery
-session before emitting its SDK event, rejecting a stale event also gates
-authenticated UI and restores the superseding full session outside the auth
-callback, including when the exchange reports the stale session through
+the recovery exchange remain valid. Background `INITIAL_SESSION` or
+`TOKEN_REFRESHED` events for the principal present before the callback started
+are maintenance, not superseding user transitions. Because Supabase installs a
+recovery session before emitting its SDK event, rejecting a stale event also
+gates authenticated UI and restores the superseding full session outside the
+auth callback, including when the exchange reports the stale session through
 ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
 out the current device only rather than expose an identity/bearer mismatch or
 revoke other-device sessions. A failed or throwing local sign-out still

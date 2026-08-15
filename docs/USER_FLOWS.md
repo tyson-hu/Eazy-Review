@@ -218,8 +218,11 @@ If recovery-link verification overlaps a newer auth transition, a late callback
 must not reopen the password form for a different current account or after
 sign-out. Both the SDK recovery event and the callback result are bound to the
 initiating attempt; they may promote recovery only when its verified principal
-still matches the latest authenticated principal. If the stale SDK event has
-already installed its session, whether emitted as `PASSWORD_RECOVERY` or
+still matches the latest authenticated principal. `INITIAL_SESSION` and
+`TOKEN_REFRESHED` maintenance events for the principal that predated the link
+do not count as newer user transitions and cannot reject deliberate recovery.
+If the stale SDK event has already installed its session, whether emitted as
+`PASSWORD_RECOVERY` or
 ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the
 superseding session; reconciliation failure uses current-device sign-out and
 explicitly settles signed-out instead of leaving auth loading. Duplicate

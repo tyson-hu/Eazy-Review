@@ -1561,6 +1561,111 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it.each(['INITIAL_SESSION', 'TOKEN_REFRESHED'] as const)(
+    'ignores a pre-existing session %s event during recovery',
+    async (maintenanceEvent) => {
+      type ExchangeResult = {
+        data: {
+          session: { user: { id: string; email: string } };
+          user: { id: string; email: string };
+          redirectType: 'recovery';
+        };
+        error: null;
+      };
+      let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+      const mock = createMockAuthClient({ initialUser: null });
+      (
+        mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+      ).exchangeCodeForSession = jest.fn(
+        () =>
+          new Promise<ExchangeResult>((resolve) => {
+            resolveExchange = resolve;
+          }),
+      );
+
+      const listeners: ((event: { url: string }) => void)[] = [];
+      const linking = {
+        getInitialURL: jest.fn(async () => null),
+        addEventListener: jest.fn(
+          (_type: 'url', listener: (event: { url: string }) => void) => {
+            listeners.push(listener);
+            return { remove: jest.fn() };
+          },
+        ),
+      };
+      const queryClient = createAppQueryClient({
+        defaultOptions: { queries: { gcTime: Infinity } },
+      });
+      const rendered = await renderWithProviders(
+        <AuthProvider client={mock.client} enableSession linking={linking}>
+          <AuthProbe />
+        </AuthProvider>,
+        { queryClient },
+      );
+
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-out|none||idle',
+        ),
+      );
+      await act(async () => {
+        mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|user-b|b@example.com|idle',
+        ),
+      );
+      await act(async () => {
+        for (const listener of listeners) {
+          listener({
+            url: 'eazyreview://auth/reset-password?code=REFRESH_RACE_CODE',
+          });
+        }
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toContain(
+          '|processing',
+        ),
+      );
+
+      await act(async () => {
+        mock.emit(maintenanceEvent, {
+          id: 'user-b',
+          email: 'b@example.com',
+        });
+        mock.emit('PASSWORD_RECOVERY', {
+          id: 'user-a',
+          email: 'a@example.com',
+        });
+        resolveExchange?.({
+          data: {
+            session: {
+              user: { id: 'user-a', email: 'a@example.com' },
+            },
+            user: { id: 'user-a', email: 'a@example.com' },
+            redirectType: 'recovery',
+          },
+          error: null,
+        });
+        await Promise.resolve();
+      });
+
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|user-a|a@example.com|verified',
+        ),
+      );
+      const { data: sessionData } = await mock.client.auth.getSession();
+      expect(sessionData.session?.user).toEqual({
+        id: 'user-a',
+        email: 'a@example.com',
+      });
+
+      await rendered.cleanup();
+    },
+  );
+
   it('marks recovery unavailable when a warm recovery link is expired', async () => {
     const mock = createMockAuthClient({ initialUser: null });
     (

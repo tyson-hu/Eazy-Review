@@ -812,7 +812,9 @@ Implementation notes (acceptance pending):
   recovery request because the same link cannot succeed on that installation.
   A late recovery result cannot re-enable the form after sign-out or a
   different-principal auth transition supersedes it; this guard covers both
-  the SDK recovery event and the callback result. A stale SDK-installed
+  the SDK recovery event and the callback result. Pre-existing-principal
+  `INITIAL_SESSION` and `TOKEN_REFRESHED` maintenance events do not supersede a
+  deliberately opened recovery link. A stale SDK-installed
   recovery session is reconciled to the superseding session while authenticated
   UI is gated whether Auth emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`,
   with current-device sign-out as the safe failure fallback. If that fallback

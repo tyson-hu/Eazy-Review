@@ -177,6 +177,8 @@ export function AuthProvider({
   const recoveryAttemptRef = useRef<{
     generation: number;
     authGenerationAtStart: number;
+    authPrincipalAtStart: string | null;
+    ignoredAuthGenerationAdvances: number;
     authTransitions: (Session | null)[];
   } | null>(null);
 
@@ -377,9 +379,16 @@ export function AuthProvider({
       }
 
       const currentAttempt = recoveryAttemptRef.current;
+      const eventPrincipal = userIdFromSession(session);
+      const isPreexistingSessionMaintenance =
+        currentAttempt != null &&
+        recoveryGenerationRef.current === currentAttempt.generation &&
+        (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') &&
+        eventPrincipal === currentAttempt.authPrincipalAtStart;
       if (
         currentAttempt != null &&
-        recoveryGenerationRef.current === currentAttempt.generation
+        recoveryGenerationRef.current === currentAttempt.generation &&
+        !isPreexistingSessionMaintenance
       ) {
         const transitions = currentAttempt.authTransitions;
         const lastIndex = transitions.length - 1;
@@ -399,11 +408,12 @@ export function AuthProvider({
       // Password recovery is distinct from ordinary sign-in/session restore.
       if (event === 'PASSWORD_RECOVERY') {
         const attempt = recoveryAttemptRef.current;
-        const eventPrincipal = userIdFromSession(session);
         const attemptWasSuperseded =
           attempt != null &&
           recoveryGenerationRef.current === attempt.generation &&
-          authGenerationRef.current !== attempt.authGenerationAtStart &&
+          authGenerationRef.current !==
+            attempt.authGenerationAtStart +
+              attempt.ignoredAuthGenerationAdvances &&
           latestAuthPrincipalRef.current !== eventPrincipal;
         if (attemptWasSuperseded) {
           const supersedingSession = latestAuthSessionRef.current;
@@ -419,6 +429,9 @@ export function AuthProvider({
 
       // Invalidate any in-flight bootstrap before scheduling application.
       authGenerationRef.current += 1;
+      if (isPreexistingSessionMaintenance) {
+        currentAttempt.ignoredAuthGenerationAdvances += 1;
+      }
       const appliedGeneration = authGenerationRef.current;
       latestAuthPrincipalRef.current = userIdFromSession(session);
       latestAuthSessionRef.current = session;
@@ -480,6 +493,8 @@ export function AuthProvider({
       recoveryAttemptRef.current = {
         generation,
         authGenerationAtStart,
+        authPrincipalAtStart: latestAuthPrincipalRef.current,
+        ignoredAuthGenerationAdvances: 0,
         authTransitions: [],
       };
       setRecoveryPhase('processing');
