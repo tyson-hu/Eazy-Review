@@ -434,8 +434,12 @@ can promote the phase to `verified`. Same-principal SDK transitions emitted by
 the recovery exchange remain valid. Because Supabase installs a recovery
 session before emitting its SDK event, rejecting a stale event also gates
 authenticated UI and restores the superseding full session outside the auth
-callback. If that session cannot be restored, the provider signs out rather
-than expose an identity/bearer mismatch.
+callback, including when the exchange reports the stale session through
+ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
+out rather than expose an identity/bearer mismatch. Concurrent duplicate
+delivery of the same callback is deduplicated while processing so a replay of
+its single-use code cannot overwrite the first successful exchange; a later
+reopen after processing finishes can still retry a temporary failure.
 
 Routes:
 

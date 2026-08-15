@@ -811,7 +811,10 @@ Implementation notes (acceptance pending):
   different-principal auth transition supersedes it; this guard covers both
   the SDK recovery event and the callback result. A stale SDK-installed
   recovery session is reconciled to the superseding session while authenticated
-  UI is gated, with sign-out as the safe failure fallback.
+  UI is gated whether Auth emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`,
+  with sign-out as the safe failure fallback. Concurrent duplicate delivery of
+  one in-flight callback is deduplicated so its single-use code is consumed
+  once; retry after a completed temporary failure remains supported.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
   A definitive missing/expired recovery session clears the verified form and

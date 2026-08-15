@@ -215,8 +215,11 @@ must not reopen the password form for a different current account or after
 sign-out. Both the SDK recovery event and the callback result are bound to the
 initiating attempt; they may promote recovery only when its verified principal
 still matches the latest authenticated principal. If the stale SDK event has
-already installed its session, authenticated UI stays gated while the app
-restores the superseding session; reconciliation failure safely signs out.
+already installed its session, whether emitted as `PASSWORD_RECOVERY` or
+ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the
+superseding session; reconciliation failure safely signs out. Duplicate
+delivery of the same callback while its single-use code is still in flight is
+ignored; reopening it after a temporary failure completes remains retryable.
 
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link

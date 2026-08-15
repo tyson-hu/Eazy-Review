@@ -163,11 +163,44 @@ export function AuthProvider({
   const authGenerationRef = useRef(0);
   /** Ensures only the latest recovery-link processing commit wins. */
   const recoveryGenerationRef = useRef(0);
+  /** Prevents the same single-use callback from being consumed concurrently. */
+  const inFlightRecoveryUrlsRef = useRef(new Set<string>());
   /** Binds SDK recovery events to the auth state that started the URL attempt. */
   const recoveryAttemptRef = useRef<{
     generation: number;
     authGenerationAtStart: number;
+    authSessionAtStart: Session | null;
+    authTransitions: (Session | null)[];
   } | null>(null);
+
+  const reconcileSupersededRecovery = useCallback(
+    (client: AppSupabaseClient, supersedingSession: Session | null) => {
+      recoveryGenerationRef.current += 1;
+      recoveryAttemptRef.current = null;
+      setRecoveryPhase('idle');
+      setUser(null);
+      setStatus('initializing');
+      queueMicrotask(() => {
+        void (async () => {
+          try {
+            if (supersedingSession) {
+              const { error } = await client.auth.setSession({
+                access_token: supersedingSession.access_token,
+                refresh_token: supersedingSession.refresh_token,
+              });
+              if (!error) {
+                return;
+              }
+            }
+            await client.auth.signOut();
+          } catch {
+            // Keep authenticated UI gated when SDK reconciliation fails.
+          }
+        })();
+      });
+    },
+    [],
+  );
 
   /**
    * Queue a cache transition for `nextUserId`. Transitions run in order;
@@ -275,6 +308,26 @@ export function AuthProvider({
         return;
       }
 
+      const currentAttempt = recoveryAttemptRef.current;
+      if (
+        currentAttempt != null &&
+        recoveryGenerationRef.current === currentAttempt.generation
+      ) {
+        const transitions = currentAttempt.authTransitions;
+        const lastIndex = transitions.length - 1;
+        if (
+          lastIndex >= 0 &&
+          userIdFromSession(transitions[lastIndex]) === userIdFromSession(session)
+        ) {
+          transitions[lastIndex] = session;
+        } else {
+          transitions.push(session);
+          if (transitions.length > 2) {
+            transitions.shift();
+          }
+        }
+      }
+
       // Password recovery is distinct from ordinary sign-in/session restore.
       if (event === 'PASSWORD_RECOVERY') {
         const attempt = recoveryAttemptRef.current;
@@ -286,29 +339,7 @@ export function AuthProvider({
           latestAuthPrincipalRef.current !== eventPrincipal;
         if (attemptWasSuperseded) {
           const supersedingSession = latestAuthSessionRef.current;
-          recoveryGenerationRef.current += 1;
-          recoveryAttemptRef.current = null;
-          setRecoveryPhase('idle');
-          setUser(null);
-          setStatus('initializing');
-          queueMicrotask(() => {
-            void (async () => {
-              try {
-                if (supersedingSession) {
-                  const { error } = await client.auth.setSession({
-                    access_token: supersedingSession.access_token,
-                    refresh_token: supersedingSession.refresh_token,
-                  });
-                  if (!error) {
-                    return;
-                  }
-                }
-                await client.auth.signOut();
-              } catch {
-                // Keep authenticated UI gated when SDK reconciliation fails.
-              }
-            })();
-          });
+          reconcileSupersededRecovery(client, supersedingSession);
           return;
         }
         setRecoveryPhase('verified');
@@ -342,7 +373,13 @@ export function AuthProvider({
       cancelled = true;
       subscription?.unsubscribe();
     };
-  }, [applySession, clientProp, enableSession, prepareUserScopedCacheForPrincipal]);
+  }, [
+    applySession,
+    clientProp,
+    enableSession,
+    prepareUserScopedCacheForPrincipal,
+    reconcileSupersededRecovery,
+  ]);
 
   /**
    * Cold/warm recovery deep links. Process tokens/codes without logging the URL.
@@ -364,11 +401,20 @@ export function AuthProvider({
       if (!url || cancelled || !isAuthCallbackUrl(url)) {
         return;
       }
+      if (inFlightRecoveryUrlsRef.current.has(url)) {
+        return;
+      }
+      inFlightRecoveryUrlsRef.current.add(url);
 
       recoveryGenerationRef.current += 1;
       const generation = recoveryGenerationRef.current;
       const authGenerationAtStart = authGenerationRef.current;
-      recoveryAttemptRef.current = { generation, authGenerationAtStart };
+      recoveryAttemptRef.current = {
+        generation,
+        authGenerationAtStart,
+        authSessionAtStart: latestAuthSessionRef.current,
+        authTransitions: [],
+      };
       setRecoveryPhase('processing');
 
       try {
@@ -381,6 +427,29 @@ export function AuthProvider({
           setRecoveryPhase((current) =>
             current === 'verified' ? 'verified' : 'idle',
           );
+          return;
+        }
+        const attempt = recoveryAttemptRef.current;
+        let foundSupersedingSession = false;
+        let supersedingSession: Session | null = null;
+        if (
+          attempt?.generation === generation &&
+          attempt.authSessionAtStart != null &&
+          userIdFromSession(attempt.authSessionAtStart) !== result.user.id
+        ) {
+          foundSupersedingSession = true;
+          supersedingSession = attempt.authSessionAtStart;
+        }
+        if (attempt?.generation === generation) {
+          for (const transitionSession of attempt.authTransitions) {
+            if (userIdFromSession(transitionSession) !== result.user.id) {
+              foundSupersedingSession = true;
+              supersedingSession = transitionSession;
+            }
+          }
+        }
+        if (foundSupersedingSession) {
+          reconcileSupersededRecovery(client, supersedingSession);
           return;
         }
         const authChangedDuringExchange =
@@ -414,6 +483,8 @@ export function AuthProvider({
             ? 'unavailable'
             : 'temporary-failure',
         );
+      } finally {
+        inFlightRecoveryUrlsRef.current.delete(url);
       }
     };
 
@@ -429,7 +500,7 @@ export function AuthProvider({
       cancelled = true;
       subscription.remove();
     };
-  }, [clientProp, enableSession, linking]);
+  }, [clientProp, enableSession, linking, reconcileSupersededRecovery]);
 
   /**
    * After optimistic principal cleanup: a generation mismatch means a newer
