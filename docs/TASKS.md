@@ -834,7 +834,9 @@ Implementation notes (acceptance pending):
   sign-in, sign-up, and sign-out wait for reconciliation that started first;
   reconciliation waits for an explicit auth operation already in flight and
   stops if it establishes a newer auth state, so neither start order can
-  overwrite the newer user action.
+  overwrite the newer user action. When post-start transitions return to the
+  recovery account, the latest explicit sign-in/sign-out remains authoritative
+  while recovery itself stays unverified.
 - Expo SDK 57 direct dependencies are aligned to the Expo Doctor-compatible
   patch versions recorded in `package.json` and `package-lock.json`.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no

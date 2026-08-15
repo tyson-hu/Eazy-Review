@@ -459,7 +459,10 @@ later reopen after processing finishes can still retry a temporary failure.
 Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
 started first. Reconciliation waits for any explicit auth operation already in
 flight and stops if that operation establishes a newer auth state, ensuring the
-newer explicit transition wins in either start order.
+newer explicit transition wins in either start order. Reconciliation retains
+explicit-operation provenance and selects the latest superseding transition,
+including an explicit same-principal sign-in after an earlier sign-out; a
+same-principal SDK event from recovery itself is not treated as superseding.
 
 Routes:
 

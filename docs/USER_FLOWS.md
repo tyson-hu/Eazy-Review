@@ -241,7 +241,9 @@ temporary failure completes remains retryable. Explicit sign-in, sign-up, and
 sign-out wait for recovery reconciliation that started first; reconciliation
 waits for an explicit auth operation that started first and stops when that
 operation establishes a newer auth state. Neither ordering can overwrite the
-newer user action.
+newer user action. When several transitions occur after callback start, the
+latest explicit sign-in/sign-out remains authoritative even if it returns to
+the same account as the recovery link; recovery stays unverified.
 
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link

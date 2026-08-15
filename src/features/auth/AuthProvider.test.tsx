@@ -2259,6 +2259,111 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('keeps the latest explicit same-account sign-in after an earlier sign-out', async () => {
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const authRef: { current: AuthContextValue | null } = { current: null };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthControllerProbe authRef={authRef} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=SIGN_OUT_IN_A_CODE',
+        });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|processing',
+      ),
+    );
+
+    await act(async () => {
+      await authRef.current?.signOut();
+      await authRef.current?.signIn({
+        email: 'a@example.com',
+        password: 'correct horse battery staple',
+      });
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|id-a@example.com|a@example.com|idle',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'id-a@example.com',
+        email: 'a@example.com',
+      });
+      resolveExchange?.({
+        data: {
+          session: {
+            user: { id: 'id-a@example.com', email: 'a@example.com' },
+          },
+          user: { id: 'id-a@example.com', email: 'a@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|id-a@example.com|a@example.com|idle',
+      ),
+    );
+    expect(mock.client.auth.signOut).toHaveBeenCalledTimes(1);
+    const { data: sessionData } = await mock.client.auth.getSession();
+    expect(sessionData.session?.user).toEqual({
+      id: 'id-a@example.com',
+      email: 'a@example.com',
+    });
+
+    await rendered.cleanup();
+  });
+
   it('restores a newer sign-in when a stale PKCE recovery emits SIGNED_IN', async () => {
     type ExchangeResult = {
       data: {

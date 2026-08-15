@@ -181,7 +181,10 @@ export function AuthProvider({
     authGenerationAtStart: number;
     authPrincipalAtStart: string | null;
     ignoredAuthGenerationAdvances: number;
-    authTransitions: (Session | null)[];
+    authTransitions: {
+      session: Session | null;
+      isExplicitAuthOperation: boolean;
+    }[];
     localSessionSnapshotPending: boolean;
     pendingInitialSession: Session | null | undefined;
   } | null>(null);
@@ -415,11 +418,24 @@ export function AuthProvider({
         const lastIndex = transitions.length - 1;
         if (
           lastIndex >= 0 &&
-          userIdFromSession(transitions[lastIndex]) === userIdFromSession(session)
+          userIdFromSession(transitions[lastIndex].session) ===
+            userIdFromSession(session)
         ) {
-          transitions[lastIndex] = session;
+          const lastTransition = transitions[lastIndex];
+          const isExplicitAuthOperation =
+            explicitAuthOperationsInFlightRef.current > 0;
+          if (isExplicitAuthOperation || !lastTransition.isExplicitAuthOperation) {
+            transitions[lastIndex] = {
+              session,
+              isExplicitAuthOperation,
+            };
+          }
         } else {
-          transitions.push(session);
+          transitions.push({
+            session,
+            isExplicitAuthOperation:
+              explicitAuthOperationsInFlightRef.current > 0,
+          });
           if (transitions.length > 2) {
             transitions.shift();
           }
@@ -555,7 +571,10 @@ export function AuthProvider({
           localPrincipalAtStart
         ) {
           attempt.ignoredAuthGenerationAdvances -= 1;
-          attempt.authTransitions.unshift(attempt.pendingInitialSession);
+          attempt.authTransitions.unshift({
+            session: attempt.pendingInitialSession,
+            isExplicitAuthOperation: false,
+          });
           if (attempt.authTransitions.length > 2) {
             attempt.authTransitions.shift();
           }
@@ -579,10 +598,13 @@ export function AuthProvider({
         let foundSupersedingSession = false;
         let supersedingSession: Session | null = null;
         if (attempt?.generation === generation) {
-          for (const transitionSession of attempt.authTransitions) {
-            if (userIdFromSession(transitionSession) !== result.user.id) {
+          for (const transition of attempt.authTransitions) {
+            if (
+              transition.isExplicitAuthOperation ||
+              userIdFromSession(transition.session) !== result.user.id
+            ) {
               foundSupersedingSession = true;
-              supersedingSession = transitionSession;
+              supersedingSession = transition.session;
             }
           }
         }
