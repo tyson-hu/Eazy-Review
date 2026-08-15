@@ -177,7 +177,6 @@ export function AuthProvider({
   const recoveryAttemptRef = useRef<{
     generation: number;
     authGenerationAtStart: number;
-    authSessionAtStart: Session | null;
     authTransitions: (Session | null)[];
   } | null>(null);
 
@@ -481,7 +480,6 @@ export function AuthProvider({
       recoveryAttemptRef.current = {
         generation,
         authGenerationAtStart,
-        authSessionAtStart: latestAuthSessionRef.current,
         authTransitions: [],
       };
       setRecoveryPhase('processing');
@@ -501,14 +499,6 @@ export function AuthProvider({
         const attempt = recoveryAttemptRef.current;
         let foundSupersedingSession = false;
         let supersedingSession: Session | null = null;
-        if (
-          attempt?.generation === generation &&
-          attempt.authSessionAtStart != null &&
-          userIdFromSession(attempt.authSessionAtStart) !== result.user.id
-        ) {
-          foundSupersedingSession = true;
-          supersedingSession = attempt.authSessionAtStart;
-        }
         if (attempt?.generation === generation) {
           for (const transitionSession of attempt.authTransitions) {
             if (userIdFromSession(transitionSession) !== result.user.id) {
