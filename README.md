@@ -184,6 +184,11 @@ Email/password recovery uses the app scheme `eazyreview` and the route
 Evidence and the physical device checklist:
 `docs/evidence/task-18-password-recovery/RESULT.md`.
 
+Expo SDK packages must remain on the compatible patch versions reported by
+Expo Doctor. Use `npx expo install <package>` for Expo-managed dependencies and
+verify alignment with `npx expo install --check`; the exact versions are in
+`package.json`.
+
 ### Daily development
 
 ```bash

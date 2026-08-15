@@ -49,9 +49,10 @@ Environment status labels follow `docs/evidence/README.md`
    gates authenticated UI while restoring the superseding SDK session whether
    the stale exchange emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`, and
    uses current-device sign-out if reconciliation fails. A failed or throwing
-   fallback still settles provider state signed-out. Concurrent duplicate
-   delivery of one in-flight callback is ignored so its single-use code is
-   consumed once.
+   fallback still settles provider state signed-out. Recovery callback
+   exchanges are serialized across duplicate and different links so only one
+   single-use code can be consumed at a time. Explicit sign-in, sign-up, and
+   sign-out wait for recovery reconciliation so the newer user action wins.
 4. **Password update** — new + confirm, `updatePasswordFromRecovery` once,
    success → Account (`dismissTo`), no rate `returnTo` reuse.
 5. **Error/offline** — invalid email, offline, backend failure, invalid/expired
@@ -139,6 +140,14 @@ Seventh review-remediation worktree verification (2026-08-14):
 | Focused `AuthProvider` suite | pass — **29** tests |
 | `npm run check:readonly` | pass |
 | `npm test` | pass — 37 suites, **303** tests |
+| `git diff --check` | pass |
+
+Eighth review-remediation worktree verification (2026-08-14):
+
+| Command | Result |
+| --- | --- |
+| Focused `AuthProvider` suite | pass — **31** tests |
+| `npm run check:expo` | pass — 37 suites, **305** tests; Expo Doctor **21/21**; dependencies up to date |
 | `git diff --check` | pass |
 
 The Jest run still prints the branch's existing React `act()` / worker teardown

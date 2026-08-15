@@ -219,8 +219,11 @@ already installed its session, whether emitted as `PASSWORD_RECOVERY` or
 ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the
 superseding session; reconciliation failure uses current-device sign-out and
 explicitly settles signed-out instead of leaving auth loading. Duplicate
-delivery of the same callback while its single-use code is still in flight is
-ignored; reopening it after a temporary failure completes remains retryable.
+delivery of any recovery callback while another single-use exchange is still
+in flight is ignored, including a different link; reopening a link after a
+temporary failure completes remains retryable. Explicit sign-in, sign-up, and
+sign-out wait for stale recovery-session reconciliation to settle, then apply
+as the newer transition so reconciliation cannot overwrite the user's action.
 
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link

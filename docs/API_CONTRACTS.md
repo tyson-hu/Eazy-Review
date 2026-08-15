@@ -438,11 +438,13 @@ callback, including when the exchange reports the stale session through
 ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
 out the current device only rather than expose an identity/bearer mismatch or
 revoke other-device sessions. A failed or throwing local sign-out still
-settles provider state to signed-out instead of leaving auth initializing.
-Concurrent duplicate delivery of the same callback is deduplicated while
-processing so a replay of its single-use code cannot overwrite the first
-successful exchange; a later reopen after processing finishes can still retry
-a temporary failure.
+settles provider state to signed-out instead of leaving auth initializing. All
+recovery callback exchanges are serialized: a callback delivered while any
+single-use recovery exchange is processing is ignored, including a different
+link, so concurrent exchanges cannot race to install different sessions. A
+later reopen after processing finishes can still retry a temporary failure.
+Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation to
+settle before starting, ensuring that the newer explicit transition wins.
 
 Routes:
 

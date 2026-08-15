@@ -814,9 +814,13 @@ Implementation notes (acceptance pending):
   UI is gated whether Auth emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`,
   with current-device sign-out as the safe failure fallback. If that fallback
   errors or throws, provider state still settles signed-out instead of loading
-  indefinitely. Concurrent duplicate delivery of one in-flight callback is
-  deduplicated so its single-use code is consumed once; retry after a completed
-  temporary failure remains supported.
+  indefinitely. Recovery callback exchanges are serialized across both
+  duplicate and different links so only one single-use code can be consumed at
+  a time; retry after a completed temporary failure remains supported. Explicit
+  sign-in, sign-up, and sign-out wait for recovery reconciliation to settle so
+  it cannot overwrite the newer user action.
+- Expo SDK 57 direct dependencies are aligned to the Expo Doctor-compatible
+  patch versions recorded in `package.json` and `package-lock.json`.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
   A definitive missing/expired recovery session clears the verified form and

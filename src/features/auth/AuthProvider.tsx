@@ -163,8 +163,10 @@ export function AuthProvider({
   const authGenerationRef = useRef(0);
   /** Ensures only the latest recovery-link processing commit wins. */
   const recoveryGenerationRef = useRef(0);
-  /** Prevents the same single-use callback from being consumed concurrently. */
-  const inFlightRecoveryUrlsRef = useRef(new Set<string>());
+  /** Serializes all single-use recovery callback exchanges. */
+  const recoveryExchangeInFlightRef = useRef(false);
+  /** Explicit auth operations wait until stale-session reconciliation settles. */
+  const recoveryReconciliationRef = useRef<Promise<void>>(Promise.resolve());
   /** Binds SDK recovery events to the auth state that started the URL attempt. */
   const recoveryAttemptRef = useRef<{
     generation: number;
@@ -234,42 +236,51 @@ export function AuthProvider({
       setRecoveryPhase('idle');
       setUser(null);
       setStatus('initializing');
+      let settleReconciliation: () => void = () => undefined;
+      const reconciliation = new Promise<void>((resolve) => {
+        settleReconciliation = resolve;
+      });
+      recoveryReconciliationRef.current = reconciliation;
       queueMicrotask(() => {
         void (async () => {
-          if (supersedingSession) {
-            try {
-              const { error } = await client.auth.setSession({
-                access_token: supersedingSession.access_token,
-                refresh_token: supersedingSession.refresh_token,
-              });
-              if (!error) {
-                return;
+          try {
+            if (supersedingSession) {
+              try {
+                const { error } = await client.auth.setSession({
+                  access_token: supersedingSession.access_token,
+                  refresh_token: supersedingSession.refresh_token,
+                });
+                if (!error) {
+                  return;
+                }
+              } catch {
+                // Fall through to best-effort current-device sign-out.
               }
-            } catch {
-              // Fall through to best-effort current-device sign-out.
             }
-          }
 
-          try {
-            await signOutApi({ client });
-          } catch {
-            // Explicit state settlement below prevents an indefinite loader.
-          }
+            try {
+              await signOutApi({ client });
+            } catch {
+              // Explicit state settlement below prevents an indefinite loader.
+            }
 
-          authGenerationRef.current += 1;
-          const signedOutGeneration = authGenerationRef.current;
-          latestAuthPrincipalRef.current = null;
-          latestAuthSessionRef.current = null;
-          try {
-            await prepareUserScopedCacheForPrincipal(null);
-          } catch {
-            // Keep the UI signed out; a later principal transition retries purge.
+            authGenerationRef.current += 1;
+            const signedOutGeneration = authGenerationRef.current;
+            latestAuthPrincipalRef.current = null;
+            latestAuthSessionRef.current = null;
+            try {
+              await prepareUserScopedCacheForPrincipal(null);
+            } catch {
+              // Keep signed out; a later principal transition retries purge.
+            }
+            if (authGenerationRef.current !== signedOutGeneration) {
+              return;
+            }
+            setUser(null);
+            setStatus('signed-out');
+          } finally {
+            settleReconciliation();
           }
-          if (authGenerationRef.current !== signedOutGeneration) {
-            return;
-          }
-          setUser(null);
-          setStatus('signed-out');
         })();
       });
     },
@@ -425,10 +436,10 @@ export function AuthProvider({
       if (!url || cancelled || !isAuthCallbackUrl(url)) {
         return;
       }
-      if (inFlightRecoveryUrlsRef.current.has(url)) {
+      if (recoveryExchangeInFlightRef.current) {
         return;
       }
-      inFlightRecoveryUrlsRef.current.add(url);
+      recoveryExchangeInFlightRef.current = true;
 
       recoveryGenerationRef.current += 1;
       const generation = recoveryGenerationRef.current;
@@ -508,7 +519,7 @@ export function AuthProvider({
             : 'temporary-failure',
         );
       } finally {
-        inFlightRecoveryUrlsRef.current.delete(url);
+        recoveryExchangeInFlightRef.current = false;
       }
     };
 
@@ -553,6 +564,7 @@ export function AuthProvider({
 
   const signIn = useCallback(
     async (credentials: SignInCredentials): Promise<SignInResult> => {
+      await recoveryReconciliationRef.current;
       const client = resolveClient(clientProp);
       if (!client) {
         throw new Error('Auth client is unavailable.');
@@ -581,6 +593,7 @@ export function AuthProvider({
 
   const signUp = useCallback(
     async (credentials: SignUpCredentials): Promise<SignUpResult> => {
+      await recoveryReconciliationRef.current;
       const client = resolveClient(clientProp);
       if (!client) {
         throw new Error('Auth client is unavailable.');
@@ -609,6 +622,7 @@ export function AuthProvider({
   );
 
   const signOut = useCallback(async () => {
+    await recoveryReconciliationRef.current;
     const client = resolveClient(clientProp);
     if (!client) {
       authGenerationRef.current += 1;
