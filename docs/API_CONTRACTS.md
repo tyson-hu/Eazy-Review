@@ -436,10 +436,13 @@ session before emitting its SDK event, rejecting a stale event also gates
 authenticated UI and restores the superseding full session outside the auth
 callback, including when the exchange reports the stale session through
 ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
-out rather than expose an identity/bearer mismatch. Concurrent duplicate
-delivery of the same callback is deduplicated while processing so a replay of
-its single-use code cannot overwrite the first successful exchange; a later
-reopen after processing finishes can still retry a temporary failure.
+out the current device only rather than expose an identity/bearer mismatch or
+revoke other-device sessions. A failed or throwing local sign-out still
+settles provider state to signed-out instead of leaving auth initializing.
+Concurrent duplicate delivery of the same callback is deduplicated while
+processing so a replay of its single-use code cannot overwrite the first
+successful exchange; a later reopen after processing finishes can still retry
+a temporary failure.
 
 Routes:
 

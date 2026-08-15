@@ -1841,6 +1841,108 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('fails closed with local sign-out when recovery reconciliation cannot restore the winner', async () => {
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+    (
+      mock.client.auth as unknown as { setSession: jest.Mock }
+    ).setSession = jest.fn(async () => ({
+      data: { session: null, user: null },
+      error: { message: 'Session restore unavailable', status: 503 },
+    }));
+    (
+      mock.client.auth as unknown as { signOut: jest.Mock }
+    ).signOut = jest.fn(async () => ({
+      error: { message: 'Sign-out unavailable', status: 503 },
+    }));
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=FAILED_RECONCILIATION_CODE',
+        });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|processing',
+      ),
+    );
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b@example.com|processing',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-a', email: 'a@example.com' });
+      resolveExchange?.({
+        data: {
+          session: {
+            user: { id: 'user-a', email: 'a@example.com' },
+          },
+          user: { id: 'user-a', email: 'a@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none||idle',
+      ),
+    );
+    expect(mock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+
+    await rendered.cleanup();
+  });
+
   it('processes only one delivery of the same in-flight PKCE recovery link', async () => {
     type ExchangeResult = {
       data: {

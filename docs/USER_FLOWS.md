@@ -217,7 +217,8 @@ initiating attempt; they may promote recovery only when its verified principal
 still matches the latest authenticated principal. If the stale SDK event has
 already installed its session, whether emitted as `PASSWORD_RECOVERY` or
 ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the
-superseding session; reconciliation failure safely signs out. Duplicate
+superseding session; reconciliation failure uses current-device sign-out and
+explicitly settles signed-out instead of leaving auth loading. Duplicate
 delivery of the same callback while its single-use code is still in flight is
 ignored; reopening it after a temporary failure completes remains retryable.
 

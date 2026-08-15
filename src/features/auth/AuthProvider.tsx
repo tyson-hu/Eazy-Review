@@ -173,35 +173,6 @@ export function AuthProvider({
     authTransitions: (Session | null)[];
   } | null>(null);
 
-  const reconcileSupersededRecovery = useCallback(
-    (client: AppSupabaseClient, supersedingSession: Session | null) => {
-      recoveryGenerationRef.current += 1;
-      recoveryAttemptRef.current = null;
-      setRecoveryPhase('idle');
-      setUser(null);
-      setStatus('initializing');
-      queueMicrotask(() => {
-        void (async () => {
-          try {
-            if (supersedingSession) {
-              const { error } = await client.auth.setSession({
-                access_token: supersedingSession.access_token,
-                refresh_token: supersedingSession.refresh_token,
-              });
-              if (!error) {
-                return;
-              }
-            }
-            await client.auth.signOut();
-          } catch {
-            // Keep authenticated UI gated when SDK reconciliation fails.
-          }
-        })();
-      });
-    },
-    [],
-  );
-
   /**
    * Queue a cache transition for `nextUserId`. Transitions run in order;
    * a failed purge rejects to the current caller but does not poison later
@@ -248,6 +219,59 @@ export function AuthProvider({
       }
       setUser(nextUser);
       setStatus(nextUser ? 'signed-in' : 'signed-out');
+    },
+    [prepareUserScopedCacheForPrincipal],
+  );
+
+  const reconcileSupersededRecovery = useCallback(
+    (client: AppSupabaseClient, supersedingSession: Session | null) => {
+      recoveryGenerationRef.current += 1;
+      recoveryAttemptRef.current = null;
+      // Invalidate the stale SDK event's already-queued state application.
+      authGenerationRef.current += 1;
+      latestAuthPrincipalRef.current = null;
+      latestAuthSessionRef.current = null;
+      setRecoveryPhase('idle');
+      setUser(null);
+      setStatus('initializing');
+      queueMicrotask(() => {
+        void (async () => {
+          if (supersedingSession) {
+            try {
+              const { error } = await client.auth.setSession({
+                access_token: supersedingSession.access_token,
+                refresh_token: supersedingSession.refresh_token,
+              });
+              if (!error) {
+                return;
+              }
+            } catch {
+              // Fall through to best-effort current-device sign-out.
+            }
+          }
+
+          try {
+            await signOutApi({ client });
+          } catch {
+            // Explicit state settlement below prevents an indefinite loader.
+          }
+
+          authGenerationRef.current += 1;
+          const signedOutGeneration = authGenerationRef.current;
+          latestAuthPrincipalRef.current = null;
+          latestAuthSessionRef.current = null;
+          try {
+            await prepareUserScopedCacheForPrincipal(null);
+          } catch {
+            // Keep the UI signed out; a later principal transition retries purge.
+          }
+          if (authGenerationRef.current !== signedOutGeneration) {
+            return;
+          }
+          setUser(null);
+          setStatus('signed-out');
+        })();
+      });
     },
     [prepareUserScopedCacheForPrincipal],
   );
