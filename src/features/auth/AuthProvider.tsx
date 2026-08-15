@@ -173,6 +173,8 @@ export function AuthProvider({
     Promise.resolve(),
   );
   const settleExplicitAuthOperationsRef = useRef<(() => void) | null>(null);
+  /** Labels restoreSession's automatic cleanup of its pre-existing session. */
+  const invalidBootstrapCleanupInFlightRef = useRef(false);
   /** Binds SDK recovery events to the auth state that started the URL attempt. */
   const recoveryAttemptRef = useRef<{
     generation: number;
@@ -347,7 +349,12 @@ export function AuthProvider({
     const generationAtBootstrapStart = authGenerationRef.current;
 
     const bootstrap = async () => {
-      const restored = await restoreSession({ client });
+      const restored = await restoreSession({
+        client,
+        onInvalidLocalSessionCleanupChange: (isCleaning) => {
+          invalidBootstrapCleanupInFlightRef.current = isCleaning;
+        },
+      });
       if (cancelled) {
         return;
       }
@@ -380,15 +387,18 @@ export function AuthProvider({
 
       const currentAttempt = recoveryAttemptRef.current;
       const eventPrincipal = userIdFromSession(session);
-      const isPreexistingSessionMaintenance =
+      const isNonSupersedingAttemptMaintenance =
         currentAttempt != null &&
         recoveryGenerationRef.current === currentAttempt.generation &&
-        (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') &&
-        eventPrincipal === currentAttempt.authPrincipalAtStart;
+        (((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') &&
+          eventPrincipal === currentAttempt.authPrincipalAtStart) ||
+          (event === 'SIGNED_OUT' &&
+            invalidBootstrapCleanupInFlightRef.current &&
+            explicitAuthOperationsInFlightRef.current === 0));
       if (
         currentAttempt != null &&
         recoveryGenerationRef.current === currentAttempt.generation &&
-        !isPreexistingSessionMaintenance
+        !isNonSupersedingAttemptMaintenance
       ) {
         const transitions = currentAttempt.authTransitions;
         const lastIndex = transitions.length - 1;
@@ -421,7 +431,10 @@ export function AuthProvider({
           return;
         }
         setRecoveryPhase('verified');
-      } else if (event === 'SIGNED_OUT') {
+      } else if (
+        event === 'SIGNED_OUT' &&
+        !isNonSupersedingAttemptMaintenance
+      ) {
         setRecoveryPhase('idle');
       }
       // Do not clear recovery on SIGNED_IN / USER_UPDATED / TOKEN_REFRESHED —
@@ -429,7 +442,7 @@ export function AuthProvider({
 
       // Invalidate any in-flight bootstrap before scheduling application.
       authGenerationRef.current += 1;
-      if (isPreexistingSessionMaintenance) {
+      if (isNonSupersedingAttemptMaintenance) {
         currentAttempt.ignoredAuthGenerationAdvances += 1;
       }
       const appliedGeneration = authGenerationRef.current;

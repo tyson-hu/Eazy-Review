@@ -416,7 +416,10 @@ Functions (file: `src/features/auth/api.ts`):
   recovery phase. Never retries or queues offline password updates.
 - `processAuthCallbackUrl(url)` — exchanges a PKCE `code` or applies
   access/refresh tokens from a recovery deep link without logging the URL or
-  tokens.
+  tokens. Provider errors encoded directly in the callback URL use the same
+  normalization as SDK exchange errors: transport/server failures are
+  temporary, while definitive expired, replayed, or unusable-verifier failures
+  make the link unavailable.
 
 AuthProvider recovery phase (not ordinary session status):
 
@@ -434,7 +437,10 @@ in-flight callback, neither its late SDK `PASSWORD_RECOVERY` event nor its resul
 can promote the phase to `verified`. Same-principal SDK transitions emitted by
 the recovery exchange remain valid. Background `INITIAL_SESSION` or
 `TOKEN_REFRESHED` events for the principal present before the callback started
-are maintenance, not superseding user transitions. Because Supabase installs a
+are maintenance, not superseding user transitions. The automatic local
+`SIGNED_OUT` emitted when bootstrap clears a definitively invalid persisted
+session is also non-superseding while recovery exchange is in flight; explicit
+sign-out still wins. Because Supabase installs a
 recovery session before emitting its SDK event, rejecting a stale event also
 gates authenticated UI and restores the superseding full session outside the
 auth callback, including when the exchange reports the stale session through

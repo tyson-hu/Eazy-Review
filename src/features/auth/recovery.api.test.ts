@@ -226,6 +226,20 @@ describe('password recovery api', () => {
     });
   });
 
+  it('keeps a URL-encoded callback server failure temporary', async () => {
+    const client = mockClient({});
+
+    await expect(
+      processAuthCallbackUrl(
+        'eazyreview://auth/reset-password?error=server_error&error_code=unexpected_failure',
+        { client, isOnline: () => true },
+      ),
+    ).rejects.toMatchObject({
+      code: 'temporary-failure',
+      source: 'server',
+    });
+  });
+
   it('maps expired callback exchange to recovery-link-invalid', async () => {
     const client = mockClient({
       exchangeCodeForSession: jest.fn(async () => ({

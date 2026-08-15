@@ -209,10 +209,11 @@ errors.
 
 A temporary transport/server failure stays distinct from an expired, replayed,
 or unusable-PKCE-verifier link and tells the user to check connectivity and
-reopen the same link. Reopening the link retries verification; a missing or
-mismatched PKCE verifier instead offers a new recovery request because the same
-link cannot succeed on that installation. Password update remains gated until
-verification succeeds.
+reopen the same link. This applies whether the provider failure arrives in the
+callback URL or during SDK exchange. Reopening the link retries verification;
+a definitive expired/replayed code or missing/mismatched PKCE verifier instead
+offers a new recovery request because the same link cannot succeed. Password
+update remains gated until verification succeeds.
 
 If recovery-link verification overlaps a newer auth transition, a late callback
 must not reopen the password form for a different current account or after
@@ -221,6 +222,10 @@ initiating attempt; they may promote recovery only when its verified principal
 still matches the latest authenticated principal. `INITIAL_SESSION` and
 `TOKEN_REFRESHED` maintenance events for the principal that predated the link
 do not count as newer user transitions and cannot reject deliberate recovery.
+The automatic local `SIGNED_OUT` emitted while bootstrap clears a definitively
+invalid persisted session is maintenance too; it cannot consume a recovery
+link that was opened while bootstrap validation was still finishing. An
+explicit user sign-out remains superseding.
 If the stale SDK event has already installed its session, whether emitted as
 `PASSWORD_RECOVERY` or
 ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the

@@ -35,6 +35,10 @@ export type AuthApiOptions = {
   isOnline?: () => boolean;
 };
 
+type RestoreSessionOptions = AuthApiOptions & {
+  onInvalidLocalSessionCleanupChange?: (isCleaning: boolean) => void;
+};
+
 function resolveClient(options?: AuthApiOptions): AppSupabaseClient {
   return options?.client ?? getSupabase();
 }
@@ -221,7 +225,7 @@ async function clearInvalidLocalSession(
  * Identity validity is Auth-server only via `getUser()`.
  */
 export async function restoreSession(
-  options?: AuthApiOptions,
+  options?: RestoreSessionOptions,
 ): Promise<AuthUser | null> {
   try {
     const client = resolveClient(options);
@@ -270,7 +274,12 @@ export async function restoreSession(
         // Fall through to cleanup of the known-invalid principal.
       }
 
-      await clearInvalidLocalSession(client);
+      options?.onInvalidLocalSessionCleanupChange?.(true);
+      try {
+        await clearInvalidLocalSession(client);
+      } finally {
+        options?.onInvalidLocalSessionCleanupChange?.(false);
+      }
       return null;
     }
 
@@ -416,10 +425,15 @@ export async function processAuthCallbackUrl(
   }
 
   if (classified.kind === 'error') {
-    throw new AuthError(
-      'recovery-link-invalid',
-      AUTH_USER_MESSAGES.recoveryLinkInvalid,
-      { source: 'credentials' },
+    throw normalizeAuthError(
+      {
+        message: classified.error,
+        code: classified.errorCode,
+      },
+      {
+        operation: 'recovery-callback',
+        isOffline: !isOnline(options),
+      },
     );
   }
 
