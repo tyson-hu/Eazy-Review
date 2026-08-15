@@ -1485,6 +1485,104 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('treats a delayed persisted INITIAL_SESSION as pre-link maintenance', async () => {
+    type ValidationResult = {
+      data: { user: { id: string; email: string } };
+      error: null;
+    };
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveValidation: ((result: ValidationResult) => void) | null = null;
+    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    const getUser = jest.fn(
+      () =>
+        new Promise<ValidationResult>((resolve) => {
+          resolveValidation = resolve;
+        }),
+    );
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-b', email: 'b@example.com' },
+      getUser,
+    });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+
+    const linking = {
+      getInitialURL: jest.fn(async () =>
+        'eazyreview://auth/reset-password?code=DELAYED_INITIAL_SESSION_CODE',
+      ),
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(
+        (
+          mock.client.auth as unknown as {
+            exchangeCodeForSession: jest.Mock;
+          }
+        ).exchangeCodeForSession,
+      ).toHaveBeenCalledTimes(1),
+    );
+
+    await act(async () => {
+      mock.emit('INITIAL_SESSION', {
+        id: 'user-b',
+        email: 'b@example.com',
+      });
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-a',
+        email: 'a@example.com',
+      });
+      resolveExchange?.({
+        data: {
+          session: {
+            user: { id: 'user-a', email: 'a@example.com' },
+          },
+          user: { id: 'user-a', email: 'a@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-a|a@example.com|verified',
+      ),
+    );
+
+    await act(async () => {
+      resolveValidation?.({
+        data: { user: { id: 'user-b', email: 'b@example.com' } },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+    await rendered.cleanup();
+  });
+
   it('allows verified recovery to replace a different session that predates the link', async () => {
     const mock = createMockAuthClient({ initialUser: null });
     (

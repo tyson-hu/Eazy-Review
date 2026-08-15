@@ -500,13 +500,35 @@ export function AuthProvider({
       }
       recoveryExchangeInFlightRef.current = true;
 
+      // A cold initial URL can resolve before Auth publishes its persisted
+      // INITIAL_SESSION. Snapshot local storage so that delayed notification is
+      // classified as pre-link maintenance rather than a newer sign-in.
+      const authGenerationBeforeLocalSnapshot = authGenerationRef.current;
+      let localPrincipalAtStart = latestAuthPrincipalRef.current;
+      if (localPrincipalAtStart == null) {
+        try {
+          const { data } = await client.auth.getSession();
+          localPrincipalAtStart = userIdFromSession(data.session);
+        } catch {
+          // The authoritative listener snapshot remains the safe fallback.
+        }
+      }
+      if (cancelled) {
+        recoveryExchangeInFlightRef.current = false;
+        return;
+      }
+      const authPrincipalAtStart =
+        authGenerationRef.current !== authGenerationBeforeLocalSnapshot
+          ? latestAuthPrincipalRef.current
+          : latestAuthPrincipalRef.current ?? localPrincipalAtStart;
+
       recoveryGenerationRef.current += 1;
       const generation = recoveryGenerationRef.current;
       const authGenerationAtStart = authGenerationRef.current;
       recoveryAttemptRef.current = {
         generation,
         authGenerationAtStart,
-        authPrincipalAtStart: latestAuthPrincipalRef.current,
+        authPrincipalAtStart,
         ignoredAuthGenerationAdvances: 0,
         authTransitions: [],
       };
