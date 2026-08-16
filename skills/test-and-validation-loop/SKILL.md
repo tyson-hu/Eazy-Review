@@ -9,6 +9,9 @@ Goal: run the narrowest project checks for a finished change, fix only failures 
 
 ## When not to use
 
+- Checks run inside PR remediation: this skill owns command selection, failure
+  classification, and caused-by-change repair; `skills/pr-review-remediation`
+  owns finding disposition and whether another review epoch is allowed.
 - A failure is pre-existing (present without the current change): record it in `docs/TASKS.md` and leave it for `skills/bugfix-debug-loop` as its own task.
 - No change is in flight and the goal is fixing a known bug: use `skills/bugfix-debug-loop`.
 

@@ -25,6 +25,10 @@
       "description": "Use when an implementation-complete pull request needs human acceptance — explain the change without line-by-line review, split product and behavior decisions from automated verification, and recommend whether it is ready."
     },
     {
+      "name": "pr-review-remediation",
+      "description": "Use when an existing pull request already has reviewer findings that need current-head triage, root-cause deduplication, and one explicitly authorized remediation pass; not for first-pass review, standalone bugs, human acceptance, or checks-only work."
+    },
+    {
       "name": "product-data-modeling",
       "description": "Use for frontend-only product/rating shape changes — types, mock data, and API contracts, with no SQL."
     },

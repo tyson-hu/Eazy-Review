@@ -162,6 +162,17 @@ Lossy paraphrases such as “the check had an issue” are not evidence.
 
 Review economy: per-packet independent review is required for meaningful code or contract changes; the parent may skip it for trivial follow-up packets; one final integrated review always runs across the whole task. A materially behavior-changing verifier fix may require another reviewer pass, but only when the parent explicitly authorizes it — typo and lint fixes do not.
 
+#### Existing PR finding remediation
+
+Existing external PR findings route through `skills/pr-review-remediation`.
+The parent owns the baseline SHA, accepted finding set, review budget, and any
+new-epoch authorization. A remediation commit does not authorize another
+complete review. When an explicitly authorized correction materially changes
+behavior or a high-risk boundary, the parent may authorize one targeted
+follow-up review of that correction. A materially distinct blocker found
+afterward returns to the parent or human instead of restarting review
+automatically.
+
 ### Execution Graph
 
 The graph records dependencies, role authority, parallelism, review gates, and

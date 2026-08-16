@@ -11,6 +11,9 @@ Goal: fix one reported bug with the smallest change that makes the reproduction 
 
 ## When not to use
 
+- One defect is an accepted root cause inside an active PR-remediation epoch:
+  `skills/pr-review-remediation` owns the PR baseline, accepted set, scope, and
+  review budget; use this routine only for the assigned root cause.
 - The failure was caused by the change you are currently validating: fix it inside `skills/test-and-validation-loop` (max 2 tries) instead.
 - The "fix" is really a restructure of working code: use `skills/refactor-safety-loop`.
 

@@ -13,6 +13,10 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 
 ## When not to use
 
+- An implementation PR already has external findings requiring current-head
+  triage and a bounded correction set: `skills/pr-review-remediation` becomes
+  the outer loop; this skill's task-mode contracts still govern the inner
+  correction.
 - The work is purely one screen's visuals or layout: use `skills/ui-screen-builder`.
 - Task 14 client/query/test infrastructure with no connected screen: follow
   the task contract and canonical workflow directly.

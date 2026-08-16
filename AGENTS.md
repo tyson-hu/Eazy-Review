@@ -50,7 +50,7 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 ## Skill Index
 
 Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`; authoritative discovery metadata in `skills/manifest.json`):
-`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `pr-human-review`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
+`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `pr-human-review`, `pr-review-remediation`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
 Generate both discovery-wrapper trees from the manifest with `npm run skills:generate`; do not edit generated wrappers by hand.
 
