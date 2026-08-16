@@ -1,106 +1,74 @@
 # pr-review-remediation
 
-Goal: close one explicitly accepted set of existing pull-request review
-findings against one frozen review epoch, or stop with a precise human, scope,
-evidence, or validation decision.
+Goal: close one explicitly accepted set of existing pull-request findings in
+one frozen review epoch, or stop with the precise authority, scope, evidence,
+validation, or human decision still required.
 
-This skill is the outer orchestration loop. It owns live PR state, the epoch
-baseline, review-input provenance, current head, finding ledger, root-cause
-grouping, accepted remediation set and scope, review budget, and stop decision.
-It does not replace feature implementation, domain correction, standalone
-debugging, check selection, interactive verification, human acceptance,
-session handoff, or blocker persistence.
+This skill is the outer control plane. It owns live PR state, epoch state,
+finding provenance and dispositions, root-cause grouping, accepted scope,
+remediation and review budgets, and the terminal verdict. Existing skills own
+assigned implementation or validation routines; they never take over the PR
+epoch. Shared retry, validation, memory, and handoff rules remain canonical in
+`docs/LOOP_ENGINEERING.md`, `docs/AGENT_WORKFLOW.md`, and `docs/SECURITY.md`.
 
 ## When to use
 
-Use only when all are true:
+Use when an existing Eazy Review PR already has automated, human, Codex,
+security, or inline findings and needs current-head triage, stale/already-fixed
+classification, root-cause grouping, remediation planning, or an explicitly
+authorized remediation pass.
 
-1. An existing pull request already has automated, human, Codex, security, or
-   inline review findings.
-2. The user asks to triage, address, fix, verify, or close those findings.
-3. Current-head review state and finding history matter.
-4. The work needs PR-wide triage or a bounded remediation cycle, not a
-   first-pass review.
-
-Examples:
-
-- "Codex left findings on PR #40; triage and fix the valid ones."
-- "Address the unresolved review threads on this PR."
-- "Determine which comments are stale, duplicated, already fixed, or blocking."
-
-For an Eazy Review PR with existing findings, this repository-local skill is
-the outer route even for read-only triage. Triage is mandatory and may be
-terminal; remediation needs separate explicit edit and scope authority. A
-GitHub comment/thread handler may be an inner capability only after scope is
-set; it cannot authorize edits, epochs, replies, resolutions, or other writes.
+This repository-local skill stays outer even for read-only triage. Triage may
+end without edits; remediation requires separate edit and scope authority. A
+GitHub comment/thread handler is only an inner capability after scope is set
+and cannot authorize edits, epochs, replies, resolutions, or other writes.
 
 ## When not to use
 
-- First-pass code or acceptance review.
-- Human product acceptance.
-- A standalone bug without PR-finding context, or generic debugging.
-- Checks-only requests.
-- Broad architecture or repository-wide security audits.
-- Generic GitHub review-comment work outside an Eazy Review remediation context.
-- Initial feature implementation.
-- Simulator or physical-device verification by itself.
-- Refactoring working code.
-- Merge, approval, comment, resolve-thread, label, reviewer, or PR-metadata
-  actions unless the user separately authorizes the exact write.
+- First-pass code review or human product acceptance.
+- A standalone bug, checks-only task, initial feature, refactor, device walk,
+  or broad architecture/security audit without existing PR findings.
+- Generic review-comment work outside an Eazy Review remediation context.
+- Any merge, approval, comment, thread, label, reviewer, or PR-metadata write
+  unless the user separately authorizes that exact action.
 
-| Situation | Owner |
-| --- | --- |
-| First-pass human acceptance review | `skills/pr-human-review` |
-| One standalone existing defect | `skills/bugfix-debug-loop` |
-| Checks or failure classification | `skills/test-and-validation-loop` |
-| Initial feature implementation | `skills/feature-slice-builder` |
-| Simulator/mobile-web/device evidence | `skills/interactive-preview-loop` |
-| Natural context boundary | `skills/session-handoff` |
-| Exhausted repair attempts | `skills/blocker-note` |
-
+Route standalone work through the matching skill in `docs/LOOP_ENGINEERING.md`.
 GitHub is read-only by default.
 
 ## Inputs expected
 
-- Repository and PR number or PR URL.
-- Whether a local checkout is available.
-- Whether edits are authorized or the task is read-only triage.
-- Optional existing human dispositions, finding IDs, or thread IDs.
+- Repository and PR number or URL.
+- Local-checkout availability.
+- Read-only triage versus explicit edit/scope authorization.
+- Optional prior dispositions, finding IDs, or thread IDs.
 
-Resolve information already available from the connected repository or current
-checkout instead of asking the user to repeat it. A severity threshold is not
-authority to suppress a concrete high-impact defect.
+Resolve available repository facts instead of asking the user to repeat them.
+A severity threshold never authorizes suppressing a concrete high-impact defect.
 
 ## Read first
 
-1. `AGENTS.md`.
-2. The current task in `docs/TASKS.md`, when one exists.
-3. `docs/LOOP_ENGINEERING.md`.
-4. The relevant parts of `docs/AGENT_WORKFLOW.md`.
-5. The live PR: actual current head SHA, base branch, description, changed
-   files, comments, submitted reviews, resolved and unresolved threads, and
-   current-head workflow checks.
-6. Only task-relevant product or engineering contracts.
-7. `docs/SECURITY.md` when findings involve authentication, authorization,
-   sessions, credentials, private data, destructive actions, external
+1. `AGENTS.md` and `docs/LOOP_ENGINEERING.md`.
+2. Relevant validation/authority sections of `docs/AGENT_WORKFLOW.md`.
+3. The live PR: actual head and base, changed files, description, comments,
+   reviews, resolved and unresolved threads, and exact-head checks.
+4. Only contracts relevant to the findings; include `docs/SECURITY.md` for
+   auth, sessions, credentials, private data, destructive behavior, external
    environments, or production boundaries.
 
-Do not assume the PR body's claimed SHA is current. An unresolved thread is not
-proof of a live defect, and a resolved thread is not proof that a root cause
-was fixed correctly.
+The PR body's SHA and thread resolution state are evidence inputs, not truth
+about the current head or whether a root cause is fixed.
 
 ## Routine
 
 1. **Confirm authority and live state.**
-   - Record repository, PR number, base branch, actual current head, review
-     sources, current-head checks, and edit authorization.
-   - Keep GitHub read-only unless the exact write action is separately
-     authorized.
-   - If the task is triage-only, do not edit the checkout.
+   - Record repository, PR, base, actual head, review sources, exact-head
+     checks, and edit authorization.
+   - If triage-only, do not edit the checkout. Keep GitHub read-only unless an
+     exact write is separately authorized.
+   - If the head moves during triage, refresh state before accepting any
+     remediation set; stop if it cannot be refreshed.
 
-2. **Freeze one review epoch before classifying findings.**
-
-   Record:
+2. **Freeze one review epoch.**
 
    ```text
    repository
@@ -111,8 +79,6 @@ was fixed correctly.
    reviewInputs:
      - source
        reviewedSha
-   reviewedFindingIds
-   findingRootCauses
    reviewBudgetUsed
    nextEpochAuthorization:
      status
@@ -123,32 +89,21 @@ was fixed correctly.
    openedUnderAuthorization
    ```
 
-   - `epochBaselineSha` is the live PR head when initial epoch triage is frozen.
-   - `reviewInputs` is a list or set of `{source, reviewedSha}` inputs; exact
-     duplicates may collapse. Preserve each ledger entry's `source` and
-     `reviewSha`, evaluate staleness/currentness against that SHA and the
-     current head, and re-evaluate older findings instead of dropping them.
-   - `remediationStartSha` is the live PR head when the accepted fix set begins.
-   - `remediationHeadSha` is the head after the primary remediation pass.
-   - `findingRootCauses` contains deduplicated causes, not comment count.
-   - `reviewBudgetUsed` records whether an explicitly authorized targeted
-     follow-up review occurred.
-   - `nextEpochAuthorization.status` is `none | granted` and defaults to `none`.
-     A grant names `authorizedBy`, `authorizedFromHead`, and `scope`; `grantedAt`
-     is optional. Never infer it from remediation, findings, or review risk.
+   - `epochBaselineSha` is the live head when initial triage freezes, not a
+     claim that every source reviewed that head.
+   - `reviewInputs` is a list/set of `{source, reviewedSha}`; exact duplicates
+     may collapse, but older inputs remain and are re-evaluated on current head.
+   - `remediationStartSha` freezes when the accepted fix set begins;
+     `remediationHeadSha` advances after its primary pass. Fix commits do not
+     create another epoch.
+   - `nextEpochAuthorization.status` is `none | granted`, default `none`. A
+     grant names `authorizedBy`, `authorizedFromHead`, and `scope`; `grantedAt`
+     is optional and never inferred from risk, findings, or a remediation.
    - Opening the named next epoch records `openedUnderAuthorization`, consumes
-     the grant, and resets pending authorization to `none`; it cannot be
-     reused. A material head or scope change requires a fresh grant.
-   - If the PR head changes during initial triage, refresh live state before
-     accepting the fix set. Fix commits update the remediation head but do not
-     create a new epoch or restart a full audit.
-   - A later epoch requires explicit authorization and is justified only by a
-     materially distinct concrete blocker, or a substantial high-risk change
-     for which the parent explicitly requests another review.
+     the grant, and resets pending authorization to `none`. It cannot be reused;
+     a material head or scope change requires a fresh grant.
 
-3. **Build one ledger entry per root cause, not per comment.**
-
-   Use:
+3. **Build one ledger entry per root cause.**
 
    ```text
    rootCauseId
@@ -168,187 +123,113 @@ was fixed correctly.
    owner
    ```
 
-   Allowed dispositions:
+   Preserve `{findingId, source, reviewSha}` for every grouped finding and
+   evaluate each against its own reviewed SHA, current head, and task contract.
+   Group by violated invariant, not wording, reviewer, severity, or comment
+   count. Allowed dispositions are `accepted-blocker`, `accepted-nonblocking`,
+   `already-fixed`, `stale`, `duplicate-root-cause`, `out-of-scope`,
+   `documented-follow-up`, `human-decision-required`, `insufficient-evidence`,
+   and `not-reproducible`.
 
-   ```text
-   accepted-blocker
-   accepted-nonblocking
-   already-fixed
-   stale
-   duplicate-root-cause
-   out-of-scope
-   documented-follow-up
-   human-decision-required
-   insufficient-evidence
-   not-reproducible
-   ```
+   Accept a general finding only when it is PR-introduced/materially exposed,
+   reachable, concrete, relevant to correctness/security/privacy/data integrity
+   or acceptance, not prevented, and not already covered. A lifecycle/race
+   finding must identify state, operations, ordering, result, invariant, and
+   why existing serialization/cancellation/provenance/stale-result guards fail.
+   A security finding must identify preconditions, entry point, protected
+   boundary, impact, missing/bypassed defense, and an evidence path. Always
+   surface concrete account takeover, wrong-account/private-data mutation,
+   auth bypass, identity mismatch, cross-user exposure, credential leakage,
+   destructive loss, revocation error, production-boundary violation, or core
+   acceptance-flow failure regardless of a P1/P2/P3 label.
 
-   Group comments that describe the same violated invariant and preserve each
-   finding's `{findingId, source, reviewSha}` under that root cause. Grouping
-   collapses redundant comments, not materially contradictory evidence. Do not
-   count increasingly narrow variants of one mechanism as independent progress.
-   Validate every finding against its own reviewed SHA, the current head, and
-   task contract; neither lateness nor reviewer identity determines validity.
-   Separate facts, inferences, recommendations, and human product choices.
+   When findings share a lifecycle, cache, callback, navigation, transaction,
+   or concurrency mechanism, map authoritative state, operations, ordering,
+   cancellation, stale completion, event provenance, winning user action,
+   fallback, and required regression coverage. Prefer the missing invariant
+   over another special-case patch.
 
-4. **Apply the finding quality bars.**
-   - A general finding qualifies only when it is introduced or materially
-     exposed by the PR, reachable under documented behavior, concrete enough
-     to name an exact failure, relevant to correctness, security, privacy,
-     data integrity, or acceptance, not currently prevented, and not already
-     proven by regression coverage. Style preferences, optional abstractions,
-     and speculative refactors do not qualify.
-   - For a race or lifecycle concern, require the initial principal/session/
-     route/state, operation A, operation B or SDK event, exact ordering,
-     resulting state, violated invariant, and why serialization, generation
-     checks, cancellation, reconciliation, cleanup, provenance, or a stale-
-     result guard does not prevent it.
-   - For a security concern, require user or attacker preconditions, reachable
-     entry point, protected asset or trust boundary, concrete impact, bypassed
-     or missing defense, and a realistic reproduction or evidence path.
-     Classify it as `vulnerability`, `correctness defect in security-sensitive
-     code`, `defense-in-depth improvement`, or `accepted product tradeoff`.
-     Do not reopen a human-accepted tradeoff unless this PR materially expands
-     its threat surface.
-   - Regardless of P1/P2/P3 labels, always surface a concrete in-scope account
-     takeover; wrong-account password, profile, rating, or private-data
-     mutation; auth bypass; bearer-session identity mismatch; cross-user
-     private-data exposure; secret, token, or complete callback-URL leakage;
-     destructive data loss; global revocation when local sign-out is intended;
-     production-boundary violation; or core acceptance-flow failure.
+4. **Freeze the accepted remediation set before editing.**
+   Record included and excluded/deferred root causes, exact file/contract
+   boundary, assigned inner routine, regression evidence, validation commands,
+   human/environment gates, and whether a targeted follow-up may be considered.
+   Combine true duplicates and address causes. Do not edit before this set
+   exists unless prior authority explicitly covers every qualifying blocker.
+   Stop if the correction expands architecture, schema, product, task, or file
+   scope; a review comment is not expansion authority.
 
-5. **Collapse finding chains into an invariant map.**
-   When two or more findings involve the same auth provider, lifecycle system,
-   cache ownership mechanism, reconciliation path, callback processor,
-   navigation stack, database transaction, or concurrency coordinator, pause
-   comment-by-comment patching and record:
+5. **Assign inner routines without yielding outer ownership.**
+   - `skills/bugfix-debug-loop`: reproduce and correct one accepted root cause.
+   - `skills/test-and-validation-loop`: choose checks, classify failures, and
+     apply its bounded caused-by-change repair; it cannot accept findings or
+     authorize an epoch.
+   - `skills/feature-slice-builder`: preserve task-mode contracts for an inner
+     feature correction.
+   - Use `supabase-schema-change`, `ui-screen-builder`,
+     `product-data-modeling`, or `refactor-safety-loop` only when the accepted
+     scope explicitly selects that domain routine.
+   - Use `interactive-preview-loop`, `pr-human-review`, `session-handoff`, and
+     `blocker-note` only at their documented evidence, acceptance, boundary,
+     or exhausted-attempt triggers.
 
-   ```text
-   authoritative state
-   participating operations
-   serialization rule
-   cancellation rule
-   stale-completion rule
-   event provenance rule
-   which explicit user action wins
-   failure fallback
-   required regression matrix
-   ```
+6. **Apply one primary remediation pass.**
+   For each accepted cause, name the invariant, reproduce the concrete failure,
+   make the smallest contract-preserving fix, add focused regression coverage,
+   and verify affected neighboring behavior. Avoid unrelated cleanup,
+   dependencies, renaming, or architecture. A code change alone is not proof;
+   demonstrate the original failure and the corrected regression.
 
-   Ask: "Are these independent defects, or evidence that one root invariant is
-   still missing?" Prefer the root invariant over another special case. Stop
-   for scope authorization if the correction becomes an architecture rewrite,
-   schema change, product redesign, or task expansion; a review comment does
-   not authorize that expansion.
+7. **Validate under the trust and repair budgets.**
+   Before any PR-head command, classify `validationTrust` against a trusted
+   base. Package scripts/hooks, tests, JavaScript configs, and validation inputs
+   are executable.
 
-6. **Establish one accepted remediation set before editing.**
-   Record accepted and rejected/deferred root causes, the exact edit boundary,
-   the inner routine for each accepted cause, regression evidence, validation
-   commands, human/environment gates, and whether a targeted follow-up review
-   may be considered. Combine duplicates and address root causes.
+   - `untrusted` or `not-established`: never execute on the agent host, with
+     agent credentials, or through sandbox escalation. Use disposable,
+     credential-free isolation pinned to the exact SHA and inspect results
+     read-only.
+   - `trusted`: host/out-of-sandbox execution is allowed only after reviewing
+     every executable validation surface against the trusted base. Cache or
+     permission errors and `strict-allow-scripts` do not establish trust.
 
-   Do not edit before this set exists unless prior user authorization clearly
-   approves fixing every qualifying in-scope blocker.
+   Follow `docs/AGENT_WORKFLOW.md`: focused regression, affected suite,
+   typecheck/lint when relevant, affected generated/database checks,
+   `npm run check:readonly`, then parent-owned Expo/environment validation when
+   required. Record trust, base, execution environment, and passed/failed/
+   pending/not-run/environment-owned evidence. Inspect exact-head CI; physical
+   device work remains a human/interactive-preview gate.
 
-7. **Compose the existing inner routines while retaining outer ownership.**
-   - `skills/bugfix-debug-loop` owns the reproduction-driven correction for one
-     assigned accepted root cause; this skill retains the epoch, accepted set,
-     scope, and final disposition.
-   - `skills/test-and-validation-loop` owns check selection, failure
-     classification, and bounded caused-by-change repair; it cannot accept
-     findings or authorize another epoch.
-   - `skills/feature-slice-builder` still governs task-mode contracts for an
-     inner correction; this skill becomes outer owner once external findings
-     need triage.
-   - Explicitly use `skills/supabase-schema-change` for schema/RLS/grant/
-     function/trigger corrections, `skills/ui-screen-builder` for a one-screen
-     visual correction, or `skills/product-data-modeling` for frontend-only
-     shape changes. A behavior-preserving restructure needs a separate
-     `skills/refactor-safety-loop` scope decision.
-   - Use `skills/interactive-preview-loop` only when real-journey or screenshot
-     evidence is specifically required.
-   - After remediation and exact-head validation, return to
-     `skills/pr-human-review` only when human acceptance remains pending.
-   - Use `skills/session-handoff` at a natural context boundary and
-     `skills/blocker-note` after exhausted repair attempts or stalled
-     debugging.
+   For each directly evidenced caused-by-change failure, allow at most two
+   repairs. Before each, state one hypothesis, make one minimal correction, and
+   rerun the narrow failure. Cosmetic variants do not reset the budget. After
+   two failures, stop, preserve exact redacted evidence, and use/recommend
+   `blocker-note`; do not open another review epoch.
 
-8. **Apply one primary remediation pass.**
-   For each accepted root cause: name the invariant, choose the inner routine,
-   form a concrete reproduction, apply the smallest contract-preserving fix,
-   add focused behavioral regression coverage, and preserve neighboring
-   accepted behavior. Avoid cleanup, renaming, dependencies, and unrelated
-   architecture work. Update canonical documentation only when behavior or a
-   contract actually changes.
+8. **Classify post-remediation evidence without recursion.**
+   - A true `duplicate-root-cause` adds no materially new current-head
+     reachability, ordering, impact, failed-fix, guard-bypass, or regression
+     evidence. Group it without another cycle.
+   - If the same invariant is still concretely reachable on remediation head,
+     keep/reopen `accepted-blocker`, mark remediation incomplete, report the
+     evidence, forbid `COMPLETE`, and stop for an explicit decision. Do not
+     auto-patch or auto-review it.
+   - Use `already-fixed`/`stale` only from current code/test evidence, not thread
+     state. Route distinct nonblockers to `documented-follow-up`; unsupported
+     concerns to `insufficient-evidence`/`not-reproducible`.
+   - A materially distinct concrete blocker stops the epoch with its evidence,
+     impact, required scope, and owner; a new epoch needs fresh authorization.
 
-   A code change is not proof of a fix. Establish the original failure,
-   demonstrate the regression passes after correction, and verify directly
-   affected neighboring behavior.
+9. **Enforce the follow-up review budget.**
+   Default after validation is `no second review`. One targeted follow-up is
+   allowed only when explicitly authorized and remediation materially changed
+   auth, authorization, session ownership, data integrity, destructive or
+   other high-risk behavior, or substantial new behavior. Limit it to the
+   remediation diff, new code, directly affected neighboring invariants,
+   remediation regressions, and touched high-risk boundaries. Record
+   `reviewBudgetUsed: true`. Never restart the feature audit or review again
+   automatically after fixing a targeted-review finding.
 
-9. **Validate with the bounded repair budget.**
-   Before any PR-head command, classify `validationTrust` against a trusted base. Treat package scripts/hooks, tests, JavaScript configs, and validation inputs as executable:
-   - `untrusted` or `not-established`: do not execute them on the agent host, with agent credentials, or through a sandbox escalation. Use disposable, credential-free isolation pinned to the exact SHA and inspect its results read-only.
-   - `trusted`: host or out-of-sandbox execution is allowed only after trusted-base review establishes that every executable validation surface is trusted.
-   Cache/permission failures and `strict-allow-scripts` do not establish trust.
-
-   Run, in order:
-
-   1. Narrowest focused regression.
-   2. Affected test file or suite.
-   3. `npm run typecheck` when logic or types changed.
-   4. `npm run lint` when relevant.
-   5. Affected database or generated-contract check when relevant.
-   6. `npm run check:readonly` on the final tree.
-   7. Parent-owned Expo or environment validation separately when required.
-
-   Physical-device work remains a human or interactive-preview gate. Inspect
-   exact-head GitHub CI rather than inferring it.
-
-   For each directly evidenced caused-by-change validation failure, permit at
-   most two repair attempts. Before each, write one hypothesis, make one
-   minimal correction, and rerun the narrow failure. Cosmetic symptom variants
-   do not reset the budget. After exhaustion, stop editing, use or recommend
-   `skills/blocker-note`, preserve exact redacted evidence, and return control
-   without opening a new review epoch.
-
-10. **Handle post-remediation findings without recursion.**
-    - True duplicate: use `duplicate-root-cause` only when the report adds no
-      materially new current-head reachability, ordering, impact, failed-fix,
-      guard-bypass, or regression evidence. Group redundant wording under the
-      existing root cause without starting another cycle.
-    - Failed remediation of the same root cause: if current-head evidence shows
-      the affected invariant remains reachable, keep or reopen it as an
-      `accepted-blocker`, mark remediation incomplete, forbid `COMPLETE`, report
-      the evidence, and stop for an explicit next decision. Do not auto-patch or
-      auto-review it.
-    - Fixed or stale: inspect current code/tests and use `already-fixed` or
-      `stale`; an unresolved thread alone does not require code changes.
-    - Distinct nonblocking issue: use `documented-follow-up` and route it to its
-      owner; do not fix opportunistically.
-    - Distinct concrete blocker: stop and report why it is materially distinct,
-      why current guards/tests miss it, impact, required scope, and task
-      ownership. Require explicit authorization for a new epoch.
-    - Theoretical or unsupported concern: use `insufficient-evidence` or
-      `not-reproducible`, name the missing evidence, and do not edit.
-
-11. **Use the follow-up review budget only when explicitly authorized.**
-    The default after successful validation is `no second review`. One targeted
-    follow-up may occur only when the parent explicitly authorizes it and the
-    remediation materially changed authentication, authorization, session
-    ownership, data integrity, destructive behavior, another high-risk
-    contract, or substantial new behavior.
-
-    Limit it to the remediation diff, directly affected neighboring
-    invariants, new code, remediation-created regressions, and high-risk
-    boundaries directly touched. Do not restart the original feature audit.
-    Record `reviewBudgetUsed: true`. Do not automatically review again after
-    fixing a targeted-review finding; a materially distinct blocker returns
-    for an explicit new-epoch decision.
-
-12. **Stop with exactly one terminal verdict.**
-
-    `COMPLETE` is forbidden while any accepted blocker has current-head evidence
-    that its affected invariant remains reachable.
+10. **Stop with exactly one terminal verdict.**
 
     ```text
     COMPLETE — accepted findings remediated and current-head validation passed.
@@ -360,140 +241,65 @@ was fixed correctly.
     DEFERRED — remaining findings are nonblocking or owned by another task.
     ```
 
-    Never use `CONTINUE`, end with "run another full review," or silently open
-    another epoch.
+    `COMPLETE` is impossible while an accepted blocker has current-head evidence
+    that its invariant remains reachable. Never use `CONTINUE`, end by asking
+    for another full review, or silently open another epoch.
 
 ## Verification
 
-- The live current head and checks were resolved, not inferred from the PR body.
-- One review epoch records its baseline and one-shot authorization state, plus
-  one ledger entry per root cause with ID/source/review SHA for every finding.
-- Every accepted finding passes its applicable general, lifecycle, and
-  security quality bar.
-- One accepted remediation set existed before edits.
-- The primary pass stayed within its file/contract boundary and has focused
-  regression evidence.
-- Validation records trust, trusted base, execution environment, and passed,
-  failed, pending, not-run, and environment-owned evidence separately.
-- No second review or new epoch occurred without explicit authorization.
-- No accepted blocker with a currently reachable invariant was marked complete.
-- No GitHub write occurred without authorization for that exact action.
-- The result uses one approved terminal verdict.
+- Live head/base, PR state, threads, and exact-head checks were resolved.
+- Triage made no edit without explicit edit/scope authority.
+- Epoch baseline, multi-source review inputs, remediation heads, and one-shot
+  authorization/consumption are recorded.
+- Every ledger root preserves each finding's ID/source/review SHA and applies
+  the general/lifecycle/security quality bars.
+- The accepted set preceded edits; outer ownership and inner routing held.
+- Validation used an allowed trust environment and respected the two-repair
+  budget; follow-up review/new epoch never occurred implicitly.
+- Redundant comments were deduplicated, but failed-remediation evidence stayed
+  blocking and could not produce `COMPLETE`.
+- No GitHub write occurred without authority for that exact action.
+- Exactly one approved terminal verdict is reported.
 
 ## Stop conditions
 
-- Repository, PR, or current head cannot be resolved.
-- PR head changes during triage and live state cannot be refreshed.
-- The accepted set or edit authority is missing.
-- A finding needs a human product/risk choice.
-- Remediation requires architecture, schema, product, task, or file-scope
-  expansion without explicit authorization.
-- High-risk code or required current-head/environment evidence is unavailable.
-- An untrusted PR head lacks disposable, credential-free validation isolation.
-- A materially distinct blocker appears after remediation.
-- Two repairs for one validation failure are exhausted.
-- A session boundary or stalled-debugging trigger requires
-  `skills/session-handoff` or `skills/blocker-note`.
+- Repository, PR, head, accepted set, or required authority cannot be resolved.
+- Head changes during triage and live state cannot be refreshed.
+- A human product/risk decision or unauthorized scope expansion is required.
+- High-risk/current-head/environment evidence is unavailable.
+- An untrusted head lacks exact-SHA disposable, credential-free isolation.
+- A distinct blocker appears after remediation or two repair attempts fail.
+- `session-handoff` or `blocker-note` reaches its documented trigger.
 
 ## Memory step
 
-- Do not update task status, decisions, notes, PR metadata, comments, thread
-  state, or repository memory merely to persist epoch authorization.
-- Use `skills/session-handoff` for a real session boundary and
-  `skills/blocker-note` after the repair budget is exhausted.
-- Propose task or decision documentation only when a separate current contract
-  requires it, and apply it only within explicit edit authority. A routine
-  review-finding closure is not an ADR.
+- Do not persist epoch authorization in task status, decisions, notes, PR
+  metadata, comments, threads, or other repository memory.
+- Use `session-handoff` only at a real boundary and `blocker-note` after the
+  repair budget is exhausted.
+- Update tasks or decisions only when a separate canonical contract and edit
+  authority require it; routine finding closure is not an ADR.
 
 ## Common mistakes
 
-- Treating every comment as a new defect instead of grouping root causes.
-- Trusting the PR body's SHA, unresolved-thread count, severity label, or
-  reviewer identity as disposition authority.
-- Patching another state-machine branch without mapping the missing invariant.
-- Editing before the accepted remediation set exists.
-- Letting an inner bugfix or validation routine own PR-wide scope or review
-  budget.
-- Running another complete review after every fix commit.
-- Fixing a distinct nonblocking issue opportunistically.
-- Treating sandboxing, install-script controls, or green CI as code trust,
-  human acceptance, or merge authorization.
-- Writing, resolving, approving, or merging on GitHub without exact authority.
+- Counting comments instead of grouping root invariants and provenance.
+- Trusting PR-body SHA, thread state, severity, or reviewer identity as truth.
+- Editing before the accepted set or outside its authority.
+- Letting an inner routine own PR state, scope, review budget, or verdict.
+- Treating sandboxing, install controls, or green CI as code trust or human
+  acceptance.
+- Auto-patching failed remediation, fixing distinct nonblockers, or recursively
+  running another review.
+- Writing to GitHub without exact action authority.
 
 ## Human-readable handoff
 
-Use:
+Use the five sections in `docs/AGENT_WORKFLOW.md`. Include: repository/PR/base;
+epoch baseline, remediation start/head, review inputs, edit authority, CI,
+review budget, and next-epoch status/by/from/scope/consumption; each root cause
+with every finding's ID/source/review SHA, invariant, scenario, evidence,
+disposition, action, and owner; accepted/excluded scope and inner routines;
+changes and regressions; validation trust/base/environment and all outcomes;
+remaining decisions; and exactly one terminal verdict.
 
-```markdown
-# PR review remediation: [PR title]
-
-## Review epoch
-
-- Repository
-- PR number
-- Base branch
-- Epoch baseline SHA
-- Remediation start SHA
-- Remediation head SHA
-- Review inputs (source and reviewed SHA)
-- Edit authorization
-- Current-head CI
-- Review budget used
-- Next-epoch authorization status
-- Authorized by (or N/A)
-- Authorized-from SHA (or N/A)
-- Authorized scope (or N/A)
-- Consumed / not consumed
-
-## Root-cause finding ledger
-
-For each root cause:
-
-- Root-cause ID
-- Findings (ID, source, and review SHA)
-- Reported severity
-- Affected invariant
-- Concrete scenario
-- Current-head evidence
-- Disposition
-- Accepted action
-- Owner
-
-## Accepted remediation set
-
-- Included findings
-- Excluded findings
-- File/scope boundary
-- Inner routines
-- Regression requirements
-- Validation plan
-
-## Changes applied
-
-For each accepted root cause:
-
-- Smallest correction
-- Affected files
-- Focused regression
-- Documentation impact
-
-## Validation
-
-- Passed
-- Failed
-- Pending
-- Not run
-- Validation trust, trusted base, and execution environment
-- Environment-owned
-
-## Remaining decisions or blockers
-
-Only unresolved matters.
-
-## Terminal verdict
-
-One approved terminal verdict.
-```
-
-Keep GitHub read-only unless a later user instruction authorizes an exact write
-action.
+Keep GitHub read-only unless a later instruction authorizes an exact write.
