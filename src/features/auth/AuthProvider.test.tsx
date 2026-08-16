@@ -1536,6 +1536,22 @@ describe('AuthProvider password recovery', () => {
     );
 
     await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|processing',
+      ),
+    );
+    await act(async () => {
+      mock.emit('INITIAL_SESSION', {
+        id: 'user-b',
+        email: 'b@example.com',
+      });
+      resolveValidation?.({
+        data: { user: { id: 'user-b', email: 'b@example.com' } },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() =>
       expect(
         (
           mock.client.auth as unknown as {
@@ -1546,10 +1562,6 @@ describe('AuthProvider password recovery', () => {
     );
 
     await act(async () => {
-      mock.emit('INITIAL_SESSION', {
-        id: 'user-b',
-        email: 'b@example.com',
-      });
       mock.emit('PASSWORD_RECOVERY', {
         id: 'user-a',
         email: 'a@example.com',
@@ -1572,14 +1584,6 @@ describe('AuthProvider password recovery', () => {
         'signed-in|user-a|a@example.com|verified',
       ),
     );
-
-    await act(async () => {
-      resolveValidation?.({
-        data: { user: { id: 'user-b', email: 'b@example.com' } },
-        error: null,
-      });
-      await Promise.resolve();
-    });
     await rendered.cleanup();
   });
 
@@ -1878,7 +1882,7 @@ describe('AuthProvider password recovery', () => {
     },
   );
 
-  it('ignores invalid-bootstrap cleanup while recovery exchange is in flight', async () => {
+  it('waits for invalid-bootstrap cleanup before exchanging a recovery link', async () => {
     type ValidationResult = {
       data: { user: null };
       error: {
@@ -1950,6 +1954,7 @@ describe('AuthProvider password recovery', () => {
         '|processing',
       ),
     );
+    expect(mock.client.auth.exchangeCodeForSession).not.toHaveBeenCalled();
 
     await act(async () => {
       resolveValidation?.({
@@ -1966,6 +1971,11 @@ describe('AuthProvider password recovery', () => {
     });
     await waitFor(() =>
       expect(mock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' }),
+    );
+    await waitFor(() =>
+      expect(mock.client.auth.exchangeCodeForSession).toHaveBeenCalledWith(
+        'BOOTSTRAP_CLEANUP_CODE',
+      ),
     );
 
     await act(async () => {

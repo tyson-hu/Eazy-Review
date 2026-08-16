@@ -228,10 +228,12 @@ reading the persisted local principal. Only that principal's matching delayed
 that occurs while the local read is pending remains a newer transition.
 The automatic local `SIGNED_OUT` emitted while bootstrap clears a definitively
 invalid persisted session is maintenance too; it cannot consume a recovery
-link that was opened while bootstrap validation was still finishing. Bootstrap
-clears only the exact access/refresh-token session it validated; if recovery
-has already installed a fresh session for the same account, that replacement
-session remains current. An explicit user sign-out remains superseding.
+link that was opened while bootstrap validation was still finishing. The link
+enters processing immediately, but its Auth exchange waits until bootstrap
+restoration and any conditional cleanup settle; it therefore cannot install a
+fresh same-account session between the stale-session recheck and local
+sign-out. A replacement already present at the recheck remains current. An
+explicit user sign-out remains superseding.
 If the stale SDK event has already installed its session, whether emitted as
 `PASSWORD_RECOVERY` or
 ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the

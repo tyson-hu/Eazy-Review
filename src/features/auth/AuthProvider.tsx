@@ -165,6 +165,8 @@ export function AuthProvider({
   const recoveryGenerationRef = useRef(0);
   /** Serializes all single-use recovery callback exchanges. */
   const recoveryExchangeInFlightRef = useRef(false);
+  /** Prevents recovery exchange from replacing a session during bootstrap cleanup. */
+  const sessionRestoreRef = useRef<Promise<void>>(Promise.resolve());
   /** Explicit auth operations wait until stale-session reconciliation settles. */
   const recoveryReconciliationRef = useRef<Promise<void>>(Promise.resolve());
   /** Reconciliation snapshots explicit auth operations that already started. */
@@ -375,12 +377,14 @@ export function AuthProvider({
     const generationAtBootstrapStart = authGenerationRef.current;
 
     const bootstrap = async () => {
-      const restored = await restoreSession({
+      const restore = restoreSession({
         client,
         onInvalidLocalSessionCleanupChange: (isCleaning) => {
           invalidBootstrapCleanupInFlightRef.current = isCleaning;
         },
       });
+      sessionRestoreRef.current = restore.then(() => undefined);
+      const restored = await restore;
       if (cancelled) {
         return;
       }
@@ -559,6 +563,15 @@ export function AuthProvider({
         pendingInitialSession: undefined,
       };
       setRecoveryPhase('processing');
+
+      // A recovery exchange can replace the stored session. Keep it behind
+      // bootstrap validation and any conditional stale-session cleanup so a
+      // later local sign-out cannot consume the newly exchanged session.
+      await sessionRestoreRef.current;
+      if (cancelled || recoveryGenerationRef.current !== generation) {
+        recoveryExchangeInFlightRef.current = false;
+        return;
+      }
 
       // A cold initial URL can resolve before Auth publishes its persisted
       // INITIAL_SESSION. Snapshot local storage so that delayed notification is

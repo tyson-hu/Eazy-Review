@@ -376,11 +376,12 @@ Task 16 functions (email/password only):
   local persisted session with `getSession()`, then when the device is online
   validates the principal with Auth `getUser()` (server-backed). Definitive
   invalid identity/session errors clear the local session only (scope
-  `local`) when the exact access/refresh-token session being validated is
-  still current. A replacement session, including same-principal password
-  recovery, is preserved; offline and transient transport/5xx validation
-  failures preserve the local principal. Profile rows are not the identity
-  validity check.
+  `local`) after rechecking the access/refresh-token session being validated.
+  Recovery callback exchange waits for bootstrap restoration and any cleanup
+  to settle, so it cannot replace that session between the recheck and local
+  sign-out. A replacement session already present at the recheck is preserved;
+  offline and transient transport/5xx validation failures preserve the local
+  principal. Profile rows are not the identity validity check.
 
 Task 16 routes:
 - `app/auth/sign-in.tsx`
@@ -446,7 +447,9 @@ local session. A delayed bootstrap `INITIAL_SESSION` remains maintenance only
 when it matches that snapshot; any other auth transition during the read stays
 superseding. The automatic local
 `SIGNED_OUT` emitted when bootstrap clears a definitively invalid persisted
-session is also non-superseding while recovery exchange is in flight; explicit
+session is also non-superseding while a recovery attempt waits for bootstrap;
+the recovery Auth exchange starts only after restoration and any conditional
+cleanup settle, closing the recheck-to-sign-out replacement window. Explicit
 sign-out still wins. Because Supabase installs a
 recovery session before emitting its SDK event, rejecting a stale event also
 gates authenticated UI and restores the superseding full session outside the
