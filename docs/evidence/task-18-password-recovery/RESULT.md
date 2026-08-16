@@ -2,7 +2,7 @@
 
 ## Status
 
-**Task 18 — implementation complete / acceptance pending.**
+**Task 18 — Human accepted — merge pending.**
 
 | Surface | Status |
 | --- | --- |
@@ -13,8 +13,8 @@
 | iOS Simulator interactive recovery walk | **not-run** |
 | Local Auth runtime (LAN verify origin + app-scheme allowlist) | **pass** — effective container configuration + LAN health verified 2026-08-13 |
 | Physical device (recovery A–F) | **tested-pass** — full matrix completed 2026-08-15 on `acac64d2fa77641839b96892da8e3b12b9ee05b3` |
-| Old-password rejection after reset | **not recorded** — required before formal acceptance |
-| Human acceptance | **not claimed** |
+| Old-password rejection after reset | **tested-pass** — human reported the prior password was rejected on 2026-08-15 |
+| Human acceptance | **Done — human accepted on 2026-08-15; PR #37 merge pending** |
 | Staging Auth redirect configuration | **not performed** |
 | Production Auth redirect configuration | **not performed** |
 
@@ -206,8 +206,8 @@ Tested commit SHA: `acac64d2fa77641839b96892da8e3b12b9ee05b3`
 
 The full matrix was completed through iPhone Mirroring with human handoffs for
 password entry, force-quit, and the Wi-Fi-off portions that disconnect
-Mirroring. This satisfies the physical evidence prerequisite but does not by
-itself claim formal Task 18 human acceptance (`docs/TASKS.md`).
+Mirroring. The human subsequently reported that the replaced old password was
+rejected and explicitly accepted Task 18 for merge.
 
 ## Full physical A–F recovery walk (2026-08-15)
 
@@ -223,8 +223,8 @@ itself claim formal Task 18 human acceptance (`docs/TASKS.md`).
 - **Tested SHA:** `acac64d2fa77641839b96892da8e3b12b9ee05b3`
 - **Environment matrix:** iOS Simulator `not-run`; mobile web `not-run`;
   physical device `tested-pass`
-- **Overall result:** `tested-pass` for recovery scenarios A–F; formal human
-  acceptance remains not claimed
+- **Overall result:** `tested-pass` for recovery scenarios A–F plus the
+  old-password rejection; human accepted on 2026-08-15; merge pending
 
 ### Step-by-step result
 
@@ -235,7 +235,7 @@ itself claim formal Task 18 human acceptance (`docs/TASKS.md`).
 | C — expired link | **PASS** | A real two-day-old local recovery email settled on **Link not valid** with **Request a new password-reset email** and **Back to sign in**. |
 | D — reused link | **PASS** | Reopening the freshly consumed link settled on the same actionable invalid-link state and did not expose the password form. |
 | E — offline request/update | **PASS** | With Wi-Fi off, request settled with **Could not send a password-reset email. Please try again.** After reconnect, manual retry reached **Check your email**. A fresh verified form submitted offline settled with **Could not update your password. Please try again.**, preserved both masked fields, and enabled retry; reconnect + manual retry reached **Password updated**. |
-| F — relaunch/sign-in | **PASS** | Force-quit and relaunch restored the authenticated Account state; sign-out returned to the signed-out Account surface; sign-in with the latest password returned to the same authenticated account. |
+| F — relaunch/sign-in | **PASS** | Force-quit and relaunch restored the authenticated Account state; sign-out returned to the signed-out Account surface; the human reported that the replaced old password was rejected, and sign-in with the latest password returned to the same authenticated account. |
 
 ### Evidence files and GitHub disposition
 
@@ -262,9 +262,9 @@ states. The report retains the distinct observed sequence and limitations.
 ### Findings and limitations
 
 - **Findings:** none. No P0–P3 product finding was observed during A–F.
-- The task acceptance contract also requires proving the old password fails.
-  The run recorded successful sign-in with the latest password but did not
-  record an old-password rejection, so formal acceptance remains blocked.
+- The human reported the replaced old password was rejected. No password or
+  credential value was captured; this completes the remaining acceptance
+  criterion.
 - iPhone Mirroring disconnects when device Wi-Fi is disabled. The human
   performed the Wi-Fi-off request/update taps, restored Wi-Fi, and locked the
   phone; the agent then captured the preserved error states before retry.
@@ -280,11 +280,8 @@ states. The report retains the distinct observed sequence and limitations.
 
 - The six representative files above are selected for PR #37; the other five
   remain local-only under the task-specific `.gitignore` rules.
-- Required next step: on the physical device, sign out and confirm the prior
-  password is rejected, then explicitly accept Task 18 (or explicitly waive
-  that acceptance criterion). Until then, do not merge PR #37 or start Task 19.
-  Physical `tested-pass` does not mark Task 18 accepted, ready-for-review,
-  merged, or Task 19 started.
+- Human acceptance is complete and PR #37 is authorized for guarded merge.
+  Task 19 remains not started until the merge is verified on `origin/master`.
 
 ## Targeted physical A/B — recovery callback fallback (2026-08-13)
 

@@ -34,15 +34,15 @@
   DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
   reverted). Evidence:
   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
-- Task 18 is **implementation complete / acceptance pending** (PR #37).
+- Task 18 is **Human accepted — merge pending** (PR #37).
   Password recovery request (`/auth/forgot-password`), recovery deep-link
   target (`/auth/reset-password`), `PASSWORD_RECOVERY` handling,
   non-enumerating confirmation, and focused automated recovery tests.
   Local/dev redirect paths use the `eazyreview` scheme. Physical device
   recovery matrix: **tested-pass** on SHA `acac64d` (2026-08-15).
-  Web/simulator recovery walks: **not-run**. The required old-password
-  rejection is **not recorded**; human acceptance is **not claimed**. Task 19
-  is not started. Evidence:
+  Web/simulator recovery walks: **not-run**. The old-password rejection
+  **tested-pass** by human report and Task 18 was human accepted on 2026-08-15.
+  Task 19 remains not started until PR #37 is merged. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
@@ -194,7 +194,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted |
-| 18 | Password Recovery And Deep Links | Implementation complete / acceptance pending |
+| 18 | Password Recovery And Deep Links | Human accepted — merge pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
@@ -744,7 +744,7 @@ Non-goals:
 
 ## Task 18: Password Recovery And Deep Links
 
-Status: **Implementation complete / acceptance pending.**
+Status: **Human accepted — merge pending.**
 
 Depends on: Task 16.
 
@@ -786,12 +786,13 @@ Deliverables:
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
 - Physical-device deep-link verification in a development build: full A–F
-  matrix **tested-pass** on SHA `acac64d` (2026-08-15); formal human acceptance
-  remains pending because the required old-password rejection is not recorded.
+  matrix **tested-pass** on SHA `acac64d` (2026-08-15); the old-password
+  rejection **tested-pass** by human report and formal human acceptance is
+  complete.
 - Focused recovery-state tests for verified, ordinary-session, direct,
   expired, replayed, and malformed states.
 
-Implementation notes (acceptance pending):
+Implementation notes (human accepted; merge pending):
 
 - Sign In and logged-out Account expose **Forgot password?**.
 - Request uses `supabase.auth.resetPasswordForEmail` with
@@ -869,7 +870,7 @@ Acceptance:
 - The new password works and the old password fails.
 - Recovery is proven outside web-only development.
 
-Human acceptance: **not claimed.**
+Human acceptance: **Done — human accepted on 2026-08-15; PR #37 merge pending.**
 
 ## Task 19: Protected Account Deletion
 
