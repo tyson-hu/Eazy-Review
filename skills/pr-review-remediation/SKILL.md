@@ -79,6 +79,10 @@ about the current head or whether a root cause is fixed.
    reviewInputs:
      - source
        reviewedSha
+   taskFinalReview:
+     status
+     source
+     reviewedSha
    reviewBudgetUsed
    nextEpochAuthorization:
      status
@@ -93,6 +97,8 @@ about the current head or whether a root cause is fixed.
      claim that every source reviewed that head.
    - `reviewInputs` is a list/set of `{source, reviewedSha}`; exact duplicates
      may collapse, but older inputs remain and are re-evaluated on current head.
+   - `taskFinalReview.status` is `pending | satisfied`. Record its source and
+     reviewed SHA when satisfied; remediation head changes never reset it.
    - `remediationStartSha` freezes when the accepted fix set begins;
      `remediationHeadSha` advances after its primary pass. Fix commits do not
      create another epoch.
@@ -220,14 +226,20 @@ about the current head or whether a root cause is fixed.
      impact, required scope, and owner; a new epoch needs fresh authorization.
 
 9. **Enforce the follow-up review budget.**
-   Default after validation is `no second review`. One targeted follow-up is
-   allowed only when explicitly authorized and remediation materially changed
-   auth, authorization, session ownership, data integrity, destructive or
-   other high-risk behavior, or substantial new behavior. Limit it to the
-   remediation diff, new code, directly affected neighboring invariants,
-   remediation regressions, and touched high-risk boundaries. Record
-   `reviewBudgetUsed: true`. Never restart the feature audit or review again
-   automatically after fixing a targeted-review finding.
+   Preserve the final integrated review required by `docs/AGENT_WORKFLOW.md`:
+   it runs exactly once per task, never once per remediation head. If that
+   review supplied a finding that opened this epoch, mark it satisfied; if it
+   has not run, it remains a once-only task gate and does not consume the
+   targeted-follow-up budget.
+
+   After that required gate, default to `no additional review`. One targeted
+   post-remediation follow-up is allowed only when explicitly authorized and
+   remediation materially changed auth, authorization, session ownership,
+   data integrity, destructive or other high-risk behavior, or substantial
+   new behavior. Limit it to the remediation diff, new code, directly affected
+   neighboring invariants, remediation regressions, and touched high-risk
+   boundaries. Only that follow-up sets `reviewBudgetUsed: true`. Never restart
+   the feature audit or review again automatically after fixing its finding.
 
 10. **Stop with exactly one terminal verdict.**
 
@@ -242,8 +254,9 @@ about the current head or whether a root cause is fixed.
     ```
 
     `COMPLETE` is impossible while an accepted blocker has current-head evidence
-    that its invariant remains reachable. Never use `CONTINUE`, end by asking
-    for another full review, or silently open another epoch.
+    that its invariant remains reachable or `taskFinalReview.status` is
+    `pending`. Never use `CONTINUE`, end by asking for another full review, or
+    silently open another epoch.
 
 ## Verification
 
@@ -256,6 +269,8 @@ about the current head or whether a root cause is fixed.
 - The accepted set preceded edits; outer ownership and inner routing held.
 - Validation used an allowed trust environment and respected the two-repair
   budget; follow-up review/new epoch never occurred implicitly.
+- The task's final integrated review remained required exactly once, never
+  reset after satisfaction, and stayed separate from targeted-review budget use.
 - Redundant comments were deduplicated, but failed-remediation evidence stayed
   blocking and could not produce `COMPLETE`.
 - No GitHub write occurred without authority for that exact action.
@@ -296,7 +311,8 @@ about the current head or whether a root cause is fixed.
 
 Use the five sections in `docs/AGENT_WORKFLOW.md`. Include: repository/PR/base;
 epoch baseline, remediation start/head, review inputs, edit authority, CI,
-review budget, and next-epoch status/by/from/scope/consumption; each root cause
+task-final-review status/source/SHA, review budget, and next-epoch
+status/by/from/scope/consumption; each root cause
 with every finding's ID/source/review SHA, invariant, scenario, evidence,
 disposition, action, and owner; accepted/excluded scope and inner routines;
 changes and regressions; validation trust/base/environment and all outcomes;

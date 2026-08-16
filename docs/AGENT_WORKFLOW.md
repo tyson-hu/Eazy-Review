@@ -160,7 +160,16 @@ preserves the exact non-sensitive error text and command context after
 redacting secrets, credentials, tokens, personal data, and private notes.
 Lossy paraphrases such as “the check had an issue” are not evidence.
 
-Review economy: per-packet independent review is required for meaningful code or contract changes; the parent may skip it for trivial follow-up packets; one final integrated review always runs across the whole task. A materially behavior-changing verifier fix may require another reviewer pass, but only when the parent explicitly authorizes it — typo and lint fixes do not.
+Review economy: per-packet independent review is required for meaningful code
+or contract changes; the parent may skip it for trivial follow-up packets; one
+final integrated review runs exactly once across the whole task. It is a
+task-level gate, not a head-level gate: remediation commits and other head
+changes never repeat it. If that final review supplies a finding that opens a
+`pr-review-remediation` epoch, it is already satisfied for the task. A
+materially behavior-changing verifier fix may require another reviewer pass,
+but only when the parent explicitly authorizes it — typo and lint fixes do not.
+Inside remediation, any additional post-remediation review is limited to the
+skill's explicitly authorized targeted-review budget.
 
 #### Existing PR finding remediation
 
@@ -169,12 +178,13 @@ including read-only triage. The parent owns the epoch baseline, review-input
 provenance, accepted finding set, review budget, and one-shot new-epoch
 authorization. GitHub comment/thread handlers are scoped inner capabilities;
 they do not authorize edits, epochs, replies, resolutions, or other writes. A
-remediation commit does not authorize another complete review. When an
-explicitly authorized correction materially changes
-behavior or a high-risk boundary, the parent may authorize one targeted
-follow-up review of that correction. A materially distinct blocker found
-afterward returns to the parent or human instead of restarting review
-automatically.
+remediation commit neither authorizes another complete review nor resets the
+task's final integrated review. If that review opened the remediation epoch,
+record it as already satisfied; otherwise it remains a once-only task gate.
+When an explicitly authorized correction materially changes behavior or a
+high-risk boundary, the parent may authorize one targeted follow-up review of
+that correction. A materially distinct blocker found afterward returns to the
+parent or human instead of restarting review automatically.
 
 ### Execution Graph
 
