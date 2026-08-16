@@ -828,9 +828,10 @@ Implementation notes (acceptance pending):
   UI is gated whether Auth emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`,
   with current-device sign-out as the safe failure fallback. If that fallback
   errors or throws, provider state still settles signed-out instead of loading
-  indefinitely. Recovery callback exchanges are serialized across both
-  duplicate and different links so only one single-use code can be consumed at
-  a time; retry after a completed temporary failure remains supported. Explicit
+  indefinitely. Recovery callback exchanges remain serialized through any
+  stale-session reconciliation they start, across both duplicate and different
+  links, so only one callback can mutate the SDK session at a time; retry after
+  both stages settle remains supported. Explicit
   sign-in, sign-up, and sign-out wait for reconciliation that started first;
   reconciliation waits for an explicit auth operation already in flight and
   stops if it establishes a newer auth state, so neither start order can

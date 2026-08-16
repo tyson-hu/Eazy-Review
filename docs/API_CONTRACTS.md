@@ -452,10 +452,10 @@ ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
 out the current device only rather than expose an identity/bearer mismatch or
 revoke other-device sessions. A failed or throwing local sign-out still
 settles provider state to signed-out instead of leaving auth initializing. All
-recovery callback exchanges are serialized: a callback delivered while any
-single-use recovery exchange is processing is ignored, including a different
-link, so concurrent exchanges cannot race to install different sessions. A
-later reopen after processing finishes can still retry a temporary failure.
+recovery callback exchanges are serialized through any stale-session
+reconciliation they start: a callback delivered while either stage is pending
+is ignored, including a different link, so an exchange cannot race a prior
+session restore. A later reopen after both stages finish can still retry.
 Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
 started first. Reconciliation waits for any explicit auth operation already in
 flight and stops if that operation establishes a newer auth state, ensuring the

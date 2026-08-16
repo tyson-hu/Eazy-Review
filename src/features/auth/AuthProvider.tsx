@@ -644,6 +644,7 @@ export function AuthProvider({
             : 'temporary-failure',
         );
       } finally {
+        await recoveryReconciliationRef.current;
         recoveryExchangeInFlightRef.current = false;
       }
     };

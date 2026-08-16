@@ -235,10 +235,11 @@ If the stale SDK event has already installed its session, whether emitted as
 ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the
 superseding session; reconciliation failure uses current-device sign-out and
 explicitly settles signed-out instead of leaving auth loading. Duplicate
-delivery of any recovery callback while another single-use exchange is still
-in flight is ignored, including a different link; reopening a link after a
-temporary failure completes remains retryable. Explicit sign-in, sign-up, and
-sign-out wait for recovery reconciliation that started first; reconciliation
+delivery of any recovery callback while another single-use exchange or its
+stale-session reconciliation is still in flight is ignored, including a
+different link; reopening a link after that work completes remains retryable.
+Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
+started first; reconciliation
 waits for an explicit auth operation that started first and stops when that
 operation establishes a newer auth state. Neither ordering can overwrite the
 newer user action. When several transitions occur after callback start, the

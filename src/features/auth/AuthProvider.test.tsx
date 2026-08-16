@@ -2743,6 +2743,131 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('keeps recovery callbacks locked until stale-session reconciliation settles', async () => {
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveFirstExchange: ((result: ExchangeResult) => void) | null = null;
+    let resolveRestore: (() => void) | null = null;
+    const exchangeCodeForSession = jest
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<ExchangeResult>((resolve) => {
+            resolveFirstExchange = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({
+        data: {
+          session: { user: { id: 'user-c', email: 'c@example.com' } },
+          user: { id: 'user-c', email: 'c@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = exchangeCodeForSession;
+    (mock.client.auth as unknown as { setSession: jest.Mock }).setSession =
+      jest.fn(
+        () =>
+          new Promise((resolve) => {
+            resolveRestore = () => {
+              mock.emit('SIGNED_IN', {
+                id: 'user-b',
+                email: 'b@example.com',
+              });
+              resolve({ data: { session: null, user: null }, error: null });
+            };
+          }),
+      );
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=STALE_RECOVERY_CODE',
+        });
+      }
+    });
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      mock.emit('SIGNED_IN', { id: 'user-a', email: 'a@example.com' });
+      resolveFirstExchange?.({
+        data: {
+          session: { user: { id: 'user-a', email: 'a@example.com' } },
+          user: { id: 'user-a', email: 'a@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(mock.client.auth.setSession).toHaveBeenCalled());
+
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=NEW_RECOVERY_CODE',
+        });
+      }
+      await Promise.resolve();
+    });
+    expect(exchangeCodeForSession).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveRestore?.();
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b@example.com|idle',
+      ),
+    );
+
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=NEW_RECOVERY_CODE',
+        });
+      }
+    });
+    await waitFor(() =>
+      expect(exchangeCodeForSession).toHaveBeenCalledTimes(2),
+    );
+
+    await rendered.cleanup();
+  });
+
   it('lets a newer sign-in wait for and then supersede recovery reconciliation', async () => {
     type ExchangeResult = {
       data: {
