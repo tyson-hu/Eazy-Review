@@ -457,9 +457,11 @@ reconciliation they start: a callback delivered while either stage is pending
 is ignored, including a different link, so an exchange cannot race a prior
 session restore. A later reopen after both stages finish can still retry.
 Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
-started first. Reconciliation waits for any explicit auth operation already in
-flight and stops if that operation establishes a newer auth state, ensuring the
-newer explicit transition wins in either start order. Reconciliation retains
+started first. Reconciliation snapshots and waits only for explicit auth
+operations already in flight; later operations wait behind reconciliation
+without extending that snapshot. It stops if an earlier operation establishes
+a newer auth state, ensuring the newer explicit transition wins without a
+cross-wait deadlock. Reconciliation retains
 explicit-operation provenance and selects the latest superseding transition,
 including an explicit same-principal sign-in after an earlier sign-out; a
 same-principal SDK event from recovery itself is not treated as superseding.

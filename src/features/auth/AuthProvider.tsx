@@ -167,12 +167,10 @@ export function AuthProvider({
   const recoveryExchangeInFlightRef = useRef(false);
   /** Explicit auth operations wait until stale-session reconciliation settles. */
   const recoveryReconciliationRef = useRef<Promise<void>>(Promise.resolve());
-  /** Reconciliation waits for explicit auth operations that already started. */
-  const explicitAuthOperationsInFlightRef = useRef(0);
-  const explicitAuthOperationsSettledRef = useRef<Promise<void>>(
-    Promise.resolve(),
+  /** Reconciliation snapshots explicit auth operations that already started. */
+  const explicitAuthOperationSettlementsRef = useRef(
+    new Set<Promise<void>>(),
   );
-  const settleExplicitAuthOperationsRef = useRef<(() => void) | null>(null);
   /** Labels restoreSession's automatic cleanup of its pre-existing session. */
   const invalidBootstrapCleanupInFlightRef = useRef(false);
   /** Binds SDK recovery events to the auth state that started the URL attempt. */
@@ -240,12 +238,11 @@ export function AuthProvider({
   );
 
   const beginExplicitAuthOperation = useCallback(() => {
-    if (explicitAuthOperationsInFlightRef.current === 0) {
-      explicitAuthOperationsSettledRef.current = new Promise<void>((resolve) => {
-        settleExplicitAuthOperationsRef.current = resolve;
-      });
-    }
-    explicitAuthOperationsInFlightRef.current += 1;
+    let settleOperation: () => void = () => undefined;
+    const settlement = new Promise<void>((resolve) => {
+      settleOperation = resolve;
+    });
+    explicitAuthOperationSettlementsRef.current.add(settlement);
     let finished = false;
 
     return () => {
@@ -253,11 +250,8 @@ export function AuthProvider({
         return;
       }
       finished = true;
-      explicitAuthOperationsInFlightRef.current -= 1;
-      if (explicitAuthOperationsInFlightRef.current === 0) {
-        settleExplicitAuthOperationsRef.current?.();
-        settleExplicitAuthOperationsRef.current = null;
-      }
+      explicitAuthOperationSettlementsRef.current.delete(settlement);
+      settleOperation();
     };
   }, []);
 
@@ -268,7 +262,9 @@ export function AuthProvider({
       // Invalidate the stale SDK event's already-queued state application.
       authGenerationRef.current += 1;
       const reconciliationGeneration = authGenerationRef.current;
-      const explicitOperations = explicitAuthOperationsSettledRef.current;
+      const explicitOperations = Promise.all([
+        ...explicitAuthOperationSettlementsRef.current,
+      ]);
       latestAuthPrincipalRef.current = null;
       latestAuthSessionRef.current = null;
       setRecoveryPhase('idle');
@@ -408,7 +404,7 @@ export function AuthProvider({
             eventPrincipal === currentAttempt.authPrincipalAtStart) ||
           (event === 'SIGNED_OUT' &&
             invalidBootstrapCleanupInFlightRef.current &&
-            explicitAuthOperationsInFlightRef.current === 0));
+            explicitAuthOperationSettlementsRef.current.size === 0));
       if (
         currentAttempt != null &&
         recoveryGenerationRef.current === currentAttempt.generation &&
@@ -423,7 +419,7 @@ export function AuthProvider({
         ) {
           const lastTransition = transitions[lastIndex];
           const isExplicitAuthOperation =
-            explicitAuthOperationsInFlightRef.current > 0;
+            explicitAuthOperationSettlementsRef.current.size > 0;
           if (isExplicitAuthOperation || !lastTransition.isExplicitAuthOperation) {
             transitions[lastIndex] = {
               session,
@@ -434,7 +430,7 @@ export function AuthProvider({
           transitions.push({
             session,
             isExplicitAuthOperation:
-              explicitAuthOperationsInFlightRef.current > 0,
+              explicitAuthOperationSettlementsRef.current.size > 0,
           });
           if (transitions.length > 2) {
             transitions.shift();

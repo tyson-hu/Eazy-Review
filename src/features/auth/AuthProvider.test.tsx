@@ -3098,6 +3098,125 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('does not add reconciliation-blocked sign-ins to the awaited operation snapshot', async () => {
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    let resolveFirstSignIn: (() => void) | null = null;
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+    (mock.client.auth.signInWithPassword as jest.Mock)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirstSignIn = () => {
+              resolve(mockSignedInResponse('user-c', 'c@example.com'));
+            };
+          }),
+      )
+      .mockResolvedValueOnce(mockSignedInResponse('user-d', 'd@example.com'));
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const authRef: { current: AuthContextValue | null } = { current: null };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthControllerProbe authRef={authRef} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=SNAPSHOT_RACE_CODE',
+        });
+      }
+    });
+
+    let firstSignIn: Promise<SignInResult> | undefined;
+    await act(async () => {
+      firstSignIn = authRef.current?.signIn({
+        email: 'c@example.com',
+        password: 'correct horse battery staple',
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(mock.client.auth.signInWithPassword).toHaveBeenCalledTimes(1),
+    );
+
+    await act(async () => {
+      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      resolveExchange?.({
+        data: {
+          session: { user: { id: 'user-a', email: 'a@example.com' } },
+          user: { id: 'user-a', email: 'a@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'initializing',
+      ),
+    );
+
+    let secondSignIn: Promise<SignInResult> | undefined;
+    await act(async () => {
+      secondSignIn = authRef.current?.signIn({
+        email: 'd@example.com',
+        password: 'correct horse battery staple',
+      });
+      await Promise.resolve();
+    });
+    expect(mock.client.auth.signInWithPassword).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveFirstSignIn?.();
+      await firstSignIn;
+    });
+    await waitFor(() =>
+      expect(mock.client.auth.signInWithPassword).toHaveBeenCalledTimes(2),
+    );
+    await act(async () => {
+      await secondSignIn;
+    });
+
+    await rendered.cleanup();
+  });
+
   it('clears recovery phase on sign-out', async () => {
     const mock = createMockAuthClient({
       initialUser: { id: 'user-a', email: 'a@example.com' },
