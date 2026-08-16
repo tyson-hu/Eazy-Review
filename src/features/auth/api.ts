@@ -234,7 +234,8 @@ export async function restoreSession(
       return null;
     }
 
-    const localUser = toAuthUser(data.session.user);
+    const restoredSession = data.session;
+    const localUser = toAuthUser(restoredSession.user);
 
     // Offline: cannot validate without risking false logout. Keep local state.
     if (!isOnline(options)) {
@@ -257,18 +258,21 @@ export async function restoreSession(
       return toAuthUser(userData.user);
     }
 
-    // Definitive invalid principal/session — clear only if the same principal
-    // is still restored. A newer sign-in while getUser was in flight must not
-    // be wiped by stale zombie cleanup.
+    // Definitive invalid principal/session — clear only if the exact session
+    // is still restored. A newer sign-in or same-user recovery session while
+    // getUser was in flight must not be wiped by stale zombie cleanup.
     if (isDefinitiveInvalidSessionError(userError)) {
       try {
         const current = await client.auth.getSession();
-        const currentId = current.data.session?.user?.id ?? null;
-        if (currentId != null && currentId !== localUser.id) {
-          // Principal changed during validation; keep the newer local session.
-          return current.data.session?.user
-            ? toAuthUser(current.data.session.user)
-            : null;
+        const currentSession = current.data.session;
+        if (
+          currentSession &&
+          (currentSession.user.id !== restoredSession.user.id ||
+            currentSession.access_token !== restoredSession.access_token ||
+            currentSession.refresh_token !== restoredSession.refresh_token)
+        ) {
+          // Session changed during validation; keep the newer local session.
+          return toAuthUser(currentSession.user);
         }
       } catch {
         // Fall through to cleanup of the known-invalid principal.

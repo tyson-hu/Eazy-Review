@@ -337,6 +337,53 @@ describe('auth api', () => {
       expect(signOutMock).not.toHaveBeenCalled();
     });
 
+    it('does not clear a fresh same-user recovery session after delayed invalid validation', async () => {
+      const signOutMock = jest.fn(async () => ({ error: null }));
+      const client = mockClient({
+        getSession: jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: {
+              session: {
+                access_token: 'expired-access-token',
+                refresh_token: 'expired-refresh-token',
+                user: { id: 'user-a', email: 'a@example.com' },
+              },
+            },
+            error: null,
+          })
+          // Recovery replaced the expired session while getUser was in flight.
+          .mockResolvedValueOnce({
+            data: {
+              session: {
+                access_token: 'recovery-access-token',
+                refresh_token: 'recovery-refresh-token',
+                user: { id: 'user-a', email: 'a@example.com' },
+              },
+            },
+            error: null,
+          }),
+        getUser: jest.fn(async () => ({
+          data: { user: null },
+          error: {
+            name: 'AuthApiError',
+            code: 'session_not_found',
+            status: 403,
+            message: 'Session from session_id claim in JWT does not exist',
+          },
+        })),
+        signOut: signOutMock,
+      });
+
+      await expect(
+        restoreSession({ client, isOnline: () => true }),
+      ).resolves.toEqual({
+        id: 'user-a',
+        email: 'a@example.com',
+      });
+      expect(signOutMock).not.toHaveBeenCalled();
+    });
+
     it('G: still returns signed-out when local cleanup fails after invalid session', async () => {
       const signOutMock = jest.fn(async () => {
         throw new Error('storage write failed');

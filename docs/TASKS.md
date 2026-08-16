@@ -820,7 +820,9 @@ Implementation notes (acceptance pending):
   maintenance; sign-in or sign-out during that read remains superseding.
   Bootstrap's automatic local `SIGNED_OUT`
   cleanup for a definitively invalid persisted session is also maintenance
-  while recovery exchange is in flight, without weakening explicit sign-out.
+  while recovery exchange is in flight, without weakening explicit sign-out;
+  cleanup rechecks the exact access/refresh-token session so a fresh
+  same-account recovery session installed during validation is preserved.
   Callback-URL provider errors share SDK error normalization, so transient
   server failures remain retryable while definitive expired, replayed, and
   unusable-verifier failures remain invalid. A stale SDK-installed

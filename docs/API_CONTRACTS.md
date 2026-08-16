@@ -376,8 +376,11 @@ Task 16 functions (email/password only):
   local persisted session with `getSession()`, then when the device is online
   validates the principal with Auth `getUser()` (server-backed). Definitive
   invalid identity/session errors clear the local session only (scope
-  `local`); offline and transient transport/5xx validation failures preserve
-  the local principal. Profile rows are not the identity validity check.
+  `local`) when the exact access/refresh-token session being validated is
+  still current. A replacement session, including same-principal password
+  recovery, is preserved; offline and transient transport/5xx validation
+  failures preserve the local principal. Profile rows are not the identity
+  validity check.
 
 Task 16 routes:
 - `app/auth/sign-in.tsx`
