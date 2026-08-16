@@ -844,7 +844,8 @@ Implementation notes (acceptance pending):
   A definitive missing/expired recovery session clears the verified form and
   offers the safe request-new-link restart. A new callback on the still-mounted
   Reset Password route clears the prior attempt's password fields, error, and
-  success card while verification is processing.
+  success card while verification is processing, and invalidates any in-flight
+  update so its late result cannot overwrite or clear the new attempt.
 - Evidence (SOP surface vocabulary in `docs/evidence/README.md`):
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 

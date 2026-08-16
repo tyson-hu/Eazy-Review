@@ -250,7 +250,9 @@ was verified, a failed update clears the form and returns to the invalid-link
 restart state. Weak-password and temporary failures keep the form for manual
 retry. If another recovery link opens while Reset Password remains mounted,
 entering `processing` clears the prior password values, error, and success card
-so the newly verified account receives a fresh form.
+so the newly verified account receives a fresh form. Any password-update
+request still in flight from the preceding attempt loses authority to change
+the new form or clear the new recovery phase when it later settles.
 
 Recovery redirect matrix (scheme `eazyreview` from `app.json`):
 

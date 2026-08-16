@@ -452,6 +452,57 @@ describe('password recovery screens', () => {
     rendered.unmount();
   });
 
+  it('ignores an in-flight update after a new recovery link starts', async () => {
+    let resolveUpdate: (value: unknown) => void = () => {};
+    mockRecoveryPhase = 'verified';
+    mockAuthStatus = 'signed-in';
+    mockIsSignedIn = true;
+    mockUpdatePasswordFromRecovery.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    const rendered = await render(<ResetPasswordScreen />);
+
+    await act(async () => {
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-new'),
+        'firstpass1',
+      );
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-confirm'),
+        'firstpass1',
+      );
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('reset-password-submit'));
+    });
+
+    mockRecoveryPhase = 'processing';
+    await act(async () => {
+      rendered.rerender(<ResetPasswordScreen />);
+    });
+    mockRecoveryPhase = 'verified';
+    await act(async () => {
+      rendered.rerender(<ResetPasswordScreen />);
+    });
+
+    await act(async () => {
+      resolveUpdate({
+        kind: 'updated',
+        user: { id: 'user-a', email: 'a@example.com' },
+      });
+    });
+
+    await waitFor(() => {
+      expect(rendered.getByTestId('reset-password-form')).toBeTruthy();
+      expect(rendered.queryByTestId('reset-password-success')).toBeNull();
+      expect(mockClearRecoveryPhase).not.toHaveBeenCalled();
+    });
+    rendered.unmount();
+  });
+
   it('hides the form when the recovery session expires during update', async () => {
     mockRecoveryPhase = 'verified';
     mockAuthStatus = 'signed-in';

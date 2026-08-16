@@ -1,5 +1,5 @@
 import { Link, Stack, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
@@ -34,16 +34,24 @@ export default function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false);
   const [previousRecoveryPhase, setPreviousRecoveryPhase] =
     useState(recoveryPhase);
+  const activeUpdateRef = useRef<symbol | null>(null);
 
   if (recoveryPhase !== previousRecoveryPhase) {
     setPreviousRecoveryPhase(recoveryPhase);
     if (recoveryPhase === 'processing') {
       setPassword('');
       setConfirmPassword('');
+      setPending(false);
       setErrorMessage(null);
       setSuccess(false);
     }
   }
+
+  useLayoutEffect(() => {
+    if (recoveryPhase === 'processing') {
+      activeUpdateRef.current = null;
+    }
+  }, [recoveryPhase]);
 
   // Clear secrets when leaving the screen.
   useEffect(() => {
@@ -70,15 +78,23 @@ export default function ResetPasswordScreen() {
       return;
     }
 
+    const updateAttempt = Symbol('password-update');
+    activeUpdateRef.current = updateAttempt;
     setPending(true);
     setErrorMessage(null);
     try {
       await updatePasswordFromRecovery(password);
+      if (activeUpdateRef.current !== updateAttempt) {
+        return;
+      }
       setPassword('');
       setConfirmPassword('');
       setSuccess(true);
       clearRecoveryPhase();
     } catch (error) {
+      if (activeUpdateRef.current !== updateAttempt) {
+        return;
+      }
       if (
         error instanceof AuthError &&
         error.code === 'recovery-link-invalid'
@@ -91,7 +107,10 @@ export default function ResetPasswordScreen() {
       // Preserve field values on recoverable failure so the user can retry.
       setErrorMessage(getAuthErrorMessage(error));
     } finally {
-      setPending(false);
+      if (activeUpdateRef.current === updateAttempt) {
+        activeUpdateRef.current = null;
+        setPending(false);
+      }
     }
   };
 
