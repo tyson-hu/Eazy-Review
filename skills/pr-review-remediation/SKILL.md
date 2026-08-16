@@ -4,9 +4,9 @@ Goal: close one explicitly accepted set of existing pull-request review
 findings against one frozen review epoch, or stop with a precise human, scope,
 evidence, or validation decision.
 
-This skill is the outer orchestration loop. It owns live PR state, the review
-baseline and current head, the finding ledger, root-cause grouping, the
-accepted remediation set and scope, the review budget, and the stop decision.
+This skill is the outer orchestration loop. It owns live PR state, the epoch
+baseline, review-input provenance, current head, finding ledger, root-cause
+grouping, accepted remediation set and scope, review budget, and stop decision.
 It does not replace feature implementation, domain correction, standalone
 debugging, check selection, interactive verification, human acceptance,
 session handoff, or blocker persistence.
@@ -19,7 +19,8 @@ Use only when all are true:
    inline review findings.
 2. The user asks to triage, address, fix, verify, or close those findings.
 3. Current-head review state and finding history matter.
-4. The work needs a bounded remediation cycle, not a first-pass review.
+4. The work needs PR-wide triage or a bounded remediation cycle, not a
+   first-pass review.
 
 Examples:
 
@@ -30,6 +31,12 @@ Examples:
 - "The reviewer keeps finding another auth race; group the root causes and
   close one review epoch."
 
+For an Eazy Review PR with existing findings, this repository-local skill is
+the outer route even for read-only triage. Triage is mandatory and may be
+terminal; remediation needs separate explicit edit and scope authority. A
+GitHub comment/thread handler may be an inner capability only after scope is
+set; it cannot authorize edits, epochs, replies, resolutions, or other writes.
+
 ## When not to use
 
 - First-pass code or acceptance review.
@@ -37,6 +44,7 @@ Examples:
 - A standalone bug without PR-finding context, or generic debugging.
 - Checks-only requests.
 - Broad architecture or repository-wide security audits.
+- Generic GitHub review-comment work outside an Eazy Review remediation context.
 - Initial feature implementation.
 - Simulator or physical-device verification by itself.
 - Refactoring working code.
@@ -101,28 +109,44 @@ was fixed correctly.
    ```text
    repository
    prNumber
-   reviewBaselineSha
+   epochBaselineSha
    remediationStartSha
    remediationHeadSha
-   reviewSource
+   reviewInputs:
+     - source
+       reviewedSha
    reviewedFindingIds
    findingRootCauses
    reviewBudgetUsed
-   nextEpochAuthorized
+   nextEpochAuthorization:
+     status
+     authorizedBy
+     authorizedFromHead
+     scope
+     grantedAt
+   openedUnderAuthorization
    ```
 
-   - `reviewBaselineSha` is the commit actually reviewed by the source.
+   - `epochBaselineSha` is the live PR head when initial epoch triage is frozen.
+   - `reviewInputs` is a list or set of `{source, reviewedSha}` inputs; exact
+     duplicates may collapse. Preserve each ledger entry's `source` and
+     `reviewSha`, evaluate staleness/currentness against that SHA and the
+     current head, and re-evaluate older findings instead of dropping them.
    - `remediationStartSha` is the live PR head when the accepted fix set begins.
    - `remediationHeadSha` is the head after the primary remediation pass.
    - `findingRootCauses` contains deduplicated causes, not comment count.
    - `reviewBudgetUsed` records whether an explicitly authorized targeted
      follow-up review occurred.
-   - `nextEpochAuthorized` is explicit parent or human authorization; never
-     infer it.
+   - `nextEpochAuthorization.status` is `none | granted` and defaults to `none`.
+     A grant names `authorizedBy`, `authorizedFromHead`, and `scope`; `grantedAt`
+     is optional. Never infer it from remediation, findings, or review risk.
+   - Opening the named next epoch records `openedUnderAuthorization`, consumes
+     the grant, and resets pending authorization to `none`; it cannot be
+     reused. A material head or scope change requires a fresh grant.
    - If the PR head changes during initial triage, refresh live state before
      accepting the fix set. Fix commits update the remediation head but do not
      create a new epoch or restart a full audit.
-   - A second epoch requires explicit authorization and is justified only by a
+   - A later epoch requires explicit authorization and is justified only by a
      materially distinct concrete blocker, or a substantial high-risk change
      for which the parent explicitly requests another review.
 
@@ -163,7 +187,8 @@ was fixed correctly.
    ```
 
    Group comments that describe the same violated invariant and preserve every
-   finding ID under that root cause. Do not count increasingly narrow variants
+   finding ID under that root cause. Grouping collapses redundant comments, not
+   materially contradictory evidence. Do not count increasingly narrow variants
    of one mechanism as independent progress. Validate every finding against the
    current head and task contract; neither lateness nor reviewer identity
    determines validity. Separate facts, inferences, recommendations, and human
@@ -287,8 +312,15 @@ was fixed correctly.
    without opening a new review epoch.
 
 10. **Handle post-remediation findings without recursion.**
-    - Same root cause: update its entry or use `duplicate-root-cause`; do not
-      start another cycle for different wording or event variation.
+    - True duplicate: use `duplicate-root-cause` only when the report adds no
+      materially new current-head reachability, ordering, impact, failed-fix,
+      guard-bypass, or regression evidence. Group redundant wording under the
+      existing root cause without starting another cycle.
+    - Failed remediation of the same root cause: if current-head evidence shows
+      the affected invariant remains reachable, keep or reopen it as an
+      `accepted-blocker`, mark remediation incomplete, forbid `COMPLETE`, report
+      the evidence, and stop for an explicit next decision. Do not auto-patch or
+      auto-review it.
     - Fixed or stale: inspect current code/tests and use `already-fixed` or
       `stale`; an unresolved thread alone does not require code changes.
     - Distinct nonblocking issue: use `documented-follow-up` and route it to its
@@ -315,6 +347,9 @@ was fixed correctly.
 
 12. **Stop with exactly one terminal verdict.**
 
+    `COMPLETE` is forbidden while any accepted blocker has current-head evidence
+    that its affected invariant remains reachable.
+
     ```text
     COMPLETE — accepted findings remediated and current-head validation passed.
     READY — triage complete; implementation authorization required.
@@ -331,8 +366,8 @@ was fixed correctly.
 ## Verification
 
 - The live current head and checks were resolved, not inferred from the PR body.
-- One review epoch records every required field and one ledger entry per root
-  cause.
+- One review epoch records its baseline, per-source reviewed SHAs, one-shot
+  authorization state, and one ledger entry per root cause.
 - Every accepted finding passes its applicable general, lifecycle, and
   security quality bar.
 - One accepted remediation set existed before edits.
@@ -341,6 +376,7 @@ was fixed correctly.
 - Validation names passed, failed, pending, not-run, and environment-owned
   evidence separately.
 - No second review or new epoch occurred without explicit authorization.
+- No accepted blocker with a currently reachable invariant was marked complete.
 - No GitHub write occurred without authorization for that exact action.
 - The result uses one approved terminal verdict.
 
@@ -360,8 +396,8 @@ was fixed correctly.
 
 ## Memory step
 
-- Do not update task status, decisions, notes, PR metadata, comments, or thread
-  state merely because triage or remediation occurred.
+- Do not update task status, decisions, notes, PR metadata, comments, thread
+  state, or repository memory merely to persist epoch authorization.
 - Use `skills/session-handoff` for a real session boundary and
   `skills/blocker-note` after the repair budget is exhausted.
 - Propose task or decision documentation only when a separate current contract
@@ -394,13 +430,18 @@ Use:
 - Repository
 - PR number
 - Base branch
-- Review baseline SHA
+- Epoch baseline SHA
 - Remediation start SHA
 - Remediation head SHA
-- Review source
+- Review inputs (source and reviewed SHA)
 - Edit authorization
 - Current-head CI
 - Review budget used
+- Next-epoch authorization status
+- Authorized by (or N/A)
+- Authorized-from SHA (or N/A)
+- Authorized scope (or N/A)
+- Consumed / not consumed
 
 ## Root-cause finding ledger
 

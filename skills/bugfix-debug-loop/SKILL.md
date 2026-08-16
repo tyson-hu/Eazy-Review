@@ -11,11 +11,16 @@ Goal: fix one reported bug with the smallest change that makes the reproduction 
 
 ## When not to use
 
-- One defect is an accepted root cause inside an active PR-remediation epoch:
-  `skills/pr-review-remediation` owns the PR baseline, accepted set, scope, and
-  review budget; use this routine only for the assigned root cause.
+- Do not use this skill as the PR-wide outer orchestration loop for an accepted
+  root cause inside an active PR-remediation epoch.
 - The failure was caused by the change you are currently validating: fix it inside `skills/test-and-validation-loop` (max 2 tries) instead.
 - The "fix" is really a restructure of working code: use `skills/refactor-safety-loop`.
+
+### When used inside PR remediation
+
+For one assigned accepted root cause, run this reproduction-driven routine and
+its retry limits normally. `skills/pr-review-remediation` retains ownership of
+the epoch, accepted set, scope, review budget, and terminal disposition.
 
 ## Inputs expected
 

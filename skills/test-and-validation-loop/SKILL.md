@@ -9,11 +9,16 @@ Goal: run the narrowest project checks for a finished change, fix only failures 
 
 ## When not to use
 
-- Checks run inside PR remediation: this skill owns command selection, failure
-  classification, and caused-by-change repair; `skills/pr-review-remediation`
-  owns finding disposition and whether another review epoch is allowed.
+- Do not use this skill as the PR-wide outer orchestration loop for checks run
+  inside PR remediation.
 - A failure is pre-existing (present without the current change): record it in `docs/TASKS.md` and leave it for `skills/bugfix-debug-loop` as its own task.
 - No change is in flight and the goal is fixing a known bug: use `skills/bugfix-debug-loop`.
+
+### When used inside PR remediation
+
+Run command selection, failure classification, and caused-by-change repair with
+this routine's normal limits. `skills/pr-review-remediation` retains finding
+disposition, epoch authority, scope, and the terminal verdict.
 
 ## Inputs expected
 

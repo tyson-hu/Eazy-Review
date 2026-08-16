@@ -164,10 +164,13 @@ Review economy: per-packet independent review is required for meaningful code or
 
 #### Existing PR finding remediation
 
-Existing external PR findings route through `skills/pr-review-remediation`.
-The parent owns the baseline SHA, accepted finding set, review budget, and any
-new-epoch authorization. A remediation commit does not authorize another
-complete review. When an explicitly authorized correction materially changes
+Existing Eazy Review PR findings route through `skills/pr-review-remediation`,
+including read-only triage. The parent owns the epoch baseline, review-input
+provenance, accepted finding set, review budget, and one-shot new-epoch
+authorization. GitHub comment/thread handlers are scoped inner capabilities;
+they do not authorize edits, epochs, replies, resolutions, or other writes. A
+remediation commit does not authorize another complete review. When an
+explicitly authorized correction materially changes
 behavior or a high-risk boundary, the parent may authorize one targeted
 follow-up review of that correction. A materially distinct blocker found
 afterward returns to the parent or human instead of restarting review
