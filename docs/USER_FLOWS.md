@@ -222,6 +222,8 @@ initiating attempt; they may promote recovery only when its verified principal
 still matches the latest authenticated principal. `INITIAL_SESSION` and
 `TOKEN_REFRESHED` maintenance events for the principal that predated the link
 do not count as newer user transitions and cannot reject deliberate recovery.
+A matching `USER_UPDATED` event is maintenance too, so a password update from
+the preceding recovery cannot consume the new link when it settles late.
 On a cold recovery launch, the app marks the callback attempt as started before
 reading the persisted local principal. Only that principal's matching delayed
 `INITIAL_SESSION` is reclassified as pre-link maintenance; sign-in or sign-out

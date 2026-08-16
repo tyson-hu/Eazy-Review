@@ -818,7 +818,9 @@ Implementation notes (human accepted; merge pending):
   different-principal auth transition supersedes it; this guard covers both
   the SDK recovery event and the callback result. Pre-existing-principal
   `INITIAL_SESSION` and `TOKEN_REFRESHED` maintenance events do not supersede a
-  deliberately opened recovery link. Cold initial-link processing records the
+  deliberately opened recovery link. A matching `USER_UPDATED` event is also
+  maintenance, so a late password update from the preceding recovery cannot
+  consume the new link. Cold initial-link processing records the
   callback-start generation before reading the persisted local principal, then
   classifies only a matching delayed bootstrap `INITIAL_SESSION` as pre-link
   maintenance; sign-in or sign-out during that read remains superseding.

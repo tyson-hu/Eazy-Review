@@ -3337,6 +3337,93 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('ignores a stale password-update event after a new recovery starts', async () => {
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    const mock = createMockAuthClient({
+      initialUser: { id: 'user-a', email: 'a@example.com' },
+    });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-a|a@example.com|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=NEW_RECOVERY_CODE',
+        });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|processing',
+      ),
+    );
+
+    await act(async () => {
+      mock.emit('USER_UPDATED', { id: 'user-a', email: 'a@example.com' });
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-b',
+        email: 'b@example.com',
+      });
+      resolveExchange?.({
+        data: {
+          session: { user: { id: 'user-b', email: 'b@example.com' } },
+          user: { id: 'user-b', email: 'b@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b@example.com|verified',
+      ),
+    );
+    expect(mock.client.auth.setSession).not.toHaveBeenCalled();
+
+    await rendered.cleanup();
+  });
+
   it('does not add reconciliation-blocked sign-ins to the awaited operation snapshot', async () => {
     type ExchangeResult = {
       data: {

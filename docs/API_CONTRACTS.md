@@ -441,11 +441,13 @@ in-flight callback, neither its late SDK `PASSWORD_RECOVERY` event nor its resul
 can promote the phase to `verified`. Same-principal SDK transitions emitted by
 the recovery exchange remain valid. Background `INITIAL_SESSION` or
 `TOKEN_REFRESHED` events for the principal present before the callback started
-are maintenance, not superseding user transitions. Initial-link processing
-captures the recovery attempt's start generation before reading the persisted
-local session. A delayed bootstrap `INITIAL_SESSION` remains maintenance only
-when it matches that snapshot; any other auth transition during the read stays
-superseding. The automatic local
+are maintenance, not superseding user transitions. A matching `USER_UPDATED`
+event is also maintenance, so a password update from the preceding recovery
+cannot consume a newly opened recovery link when it settles late. Initial-link
+processing captures the recovery attempt's start generation before reading the
+persisted local session. A delayed bootstrap `INITIAL_SESSION` remains
+maintenance only when it matches that snapshot; any other auth transition
+during the read stays superseding. The automatic local
 `SIGNED_OUT` emitted when bootstrap clears a definitively invalid persisted
 session is also non-superseding while a recovery attempt waits for bootstrap;
 the recovery Auth exchange starts only after restoration and any conditional

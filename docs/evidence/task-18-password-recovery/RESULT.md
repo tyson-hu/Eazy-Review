@@ -47,7 +47,9 @@ Environment status labels follow `docs/evidence/README.md`
    without exposing the form, while transient verification failures remain
    retryable by reopening the same link. Recovery results superseded by sign-out
    or a different current principal cannot reopen the password form, including
-   when the superseded exchange later emits an SDK recovery event. The provider
+   when the superseded exchange later emits an SDK recovery event. A late
+   `USER_UPDATED` event from the principal that predated a new recovery is
+   treated as maintenance and cannot consume the new link. The provider
    gates authenticated UI while restoring the superseding SDK session whether
    the stale exchange emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`, and
    uses current-device sign-out if reconciliation fails. A failed or throwing

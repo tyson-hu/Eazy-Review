@@ -458,6 +458,8 @@ export function AuthProvider({
         (isPendingInitialSession ||
           ((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') &&
             eventPrincipal === currentAttempt.authPrincipalAtStart) ||
+          (event === 'USER_UPDATED' &&
+            eventPrincipal === currentAttempt.authPrincipalAtStart) ||
           (event === 'SIGNED_OUT' &&
             invalidBootstrapCleanupInFlightRef.current &&
             explicitAuthOperationSettlementsRef.current.size === 0));
