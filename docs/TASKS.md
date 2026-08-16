@@ -34,13 +34,15 @@
   DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
   reverted). Evidence:
   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
-- Task 18 is **implementation complete / acceptance pending** (draft PR #37).
+- Task 18 is **implementation complete / acceptance pending** (PR #37).
   Password recovery request (`/auth/forgot-password`), recovery deep-link
   target (`/auth/reset-password`), `PASSWORD_RECOVERY` handling,
   non-enumerating confirmation, and focused automated recovery tests.
   Local/dev redirect paths use the `eazyreview` scheme. Physical device
-  recovery matrix: **not-tested**. Web/simulator recovery walks: **not-run**.
-  Human acceptance is **not claimed**. Task 19 is not started. Evidence:
+  recovery matrix: **tested-pass** on SHA `acac64d` (2026-08-15).
+  Web/simulator recovery walks: **not-run**. The required old-password
+  rejection is **not recorded**; human acceptance is **not claimed**. Task 19
+  is not started. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
@@ -783,8 +785,9 @@ Deliverables:
   Tasks 25–26.
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
-- Physical-device deep-link verification in a development or preview build
-  (evidence slot: **not-tested** until a human records results).
+- Physical-device deep-link verification in a development build: full A–F
+  matrix **tested-pass** on SHA `acac64d` (2026-08-15); formal human acceptance
+  remains pending because the required old-password rejection is not recorded.
 - Focused recovery-state tests for verified, ordinary-session, direct,
   expired, replayed, and malformed states.
 

@@ -8,11 +8,12 @@
 | --- | --- |
 | Automated (local `npm run check:expo`) | **pass** — see Validation below |
 | GitHub CI `validate` on PR head | **pass** (see PR #37 checks; re-check after each push) |
-| GitHub CI `database` on PR head | **pending / not yet green on write** — re-check PR checks; no schema change claimed |
+| GitHub CI `database` on PR head | **pass** (see PR #37 checks; re-check after each push; no schema change claimed) |
 | Web mobile preview | **not-run** |
 | iOS Simulator interactive recovery walk | **not-run** |
 | Local Auth runtime (LAN verify origin + app-scheme allowlist) | **pass** — effective container configuration + LAN health verified 2026-08-13 |
-| Physical device (recovery A–F) | **not-tested** |
+| Physical device (recovery A–F) | **tested-pass** — full matrix completed 2026-08-15 on `acac64d2fa77641839b96892da8e3b12b9ee05b3` |
+| Old-password rejection after reset | **not recorded** — required before formal acceptance |
 | Human acceptance | **not claimed** |
 | Staging Auth redirect configuration | **not performed** |
 | Production Auth redirect configuration | **not performed** |
@@ -171,6 +172,14 @@ Tenth review-remediation worktree verification (2026-08-14):
 | `npm test -- --runInBand --forceExit` | pass — 37 suites, **308** tests |
 | `git diff --check` | pass |
 
+Final documentation/evidence review tree (2026-08-15):
+
+| Command | Result |
+| --- | --- |
+| `npm run check:readonly` | pass |
+| `npm test -- --runInBand --forceExit` | pass — 37 suites, **323** tests |
+| Independent integrated review | no new code defect; old-password rejection evidence remains the acceptance blocker |
+
 The Jest run still prints the branch's existing React `act()` / worker teardown
 warnings while exiting successfully; these review fixes do not claim those
 warnings are resolved.
@@ -180,29 +189,109 @@ claim that Task 11–13 database gates were re-run for new schema behavior.
 
 ## Physical iPhone checklist (human)
 
-Build type: Development (`npm run ios:device` / CNG path).  
+Build type: Development (`npm run ios:device` / CNG path).
 Backend: local Supabase (LAN) for implementation acceptance.
 
-Device: ________________  iOS: ________________  
-Tested commit SHA: ________________
+Device: iPhone 17 Pro Max; iOS: 27.0
+Tested commit SHA: `acac64d2fa77641839b96892da8e3b12b9ee05b3`
 
 | Scenario | Result |
 | --- | --- |
-| A. Cold open (terminated → email link → reset → new password) | not-tested |
-| B. Warm open (app running → fresh link → single recovery route) | not-tested |
-| C. Invalid / expired link → actionable error + request new email | not-tested |
-| D. Reused link after successful reset | not-tested |
-| E. Offline request/update + manual retry after reconnect | not-tested |
-| F. Relaunch after success → session + sign out + sign in with new password | not-tested |
+| A. Cold open (terminated → email link → reset → new password) | tested-pass |
+| B. Warm open (app running → fresh link → single recovery route) | tested-pass |
+| C. Invalid / expired link → actionable error + request new email | tested-pass |
+| D. Reused link after successful reset | tested-pass |
+| E. Offline request/update + manual retry after reconnect | tested-pass |
+| F. Relaunch after success → session + sign out + sign in with new password | tested-pass |
 
-Do not mark `tested-pass` without a human report. Physical deep-link proof is
-required for formal Task 18 acceptance (`docs/TASKS.md`).
+The full matrix was completed through iPhone Mirroring with human handoffs for
+password entry, force-quit, and the Wi-Fi-off portions that disconnect
+Mirroring. This satisfies the physical evidence prerequisite but does not by
+itself claim formal Task 18 human acceptance (`docs/TASKS.md`).
+
+## Full physical A–F recovery walk (2026-08-15)
+
+- **Mode:** physical-device recovery walk through iPhone Mirroring, with human
+  handoffs where credential entry or the Wi-Fi-off state could not remain
+  mirrored
+- **Journey:** signed-out recovery request → warm and cold recovery links →
+  password update → expired/reused handling → offline failures and retries →
+  restored session → sign out → new-password sign in
+- **Device:** physical iPhone 17 Pro Max, iOS 27.0
+- **Build:** Development build served by Metro at the Mac LAN URL
+- **Backend:** local Supabase over the Mac LAN; no staging or production contact
+- **Tested SHA:** `acac64d2fa77641839b96892da8e3b12b9ee05b3`
+- **Environment matrix:** iOS Simulator `not-run`; mobile web `not-run`;
+  physical device `tested-pass`
+- **Overall result:** `tested-pass` for recovery scenarios A–F; formal human
+  acceptance remains not claimed
+
+### Step-by-step result
+
+| Scenario | Result | Observed proof |
+| --- | --- | --- |
+| A — cold open | **PASS** | With Eazy Review force-quit, the newest local recovery email opened the app into one gated Reset Password form; the human entered and submitted a new password; the app settled on **Password updated**. |
+| B — warm open | **PASS** | With the app running, a fresh link opened one Reset Password route; password update succeeded and **Go to Account** showed the authenticated local account. |
+| C — expired link | **PASS** | A real two-day-old local recovery email settled on **Link not valid** with **Request a new password-reset email** and **Back to sign in**. |
+| D — reused link | **PASS** | Reopening the freshly consumed link settled on the same actionable invalid-link state and did not expose the password form. |
+| E — offline request/update | **PASS** | With Wi-Fi off, request settled with **Could not send a password-reset email. Please try again.** After reconnect, manual retry reached **Check your email**. A fresh verified form submitted offline settled with **Could not update your password. Please try again.**, preserved both masked fields, and enabled retry; reconnect + manual retry reached **Password updated**. |
+| F — relaunch/sign-in | **PASS** | Force-quit and relaunch restored the authenticated Account state; sign-out returned to the signed-out Account surface; sign-in with the latest password returned to the same authenticated account. |
+
+### Evidence files and GitHub disposition
+
+Selected representative non-sensitive GitHub proof:
+
+- `screenshots/physical-01-warm-reset-form.png` — gated recovery form
+- `screenshots/physical-02-password-updated.png` — successful update state
+- `screenshots/physical-04-reused-link.png` — consumed-link restart state
+- `screenshots/physical-06-offline-request-error.png` — request failure
+- `screenshots/physical-07-offline-update-error.png` — preserved retry form
+- `screenshots/physical-09-relaunch-session-restored.png` — restored session
+
+Local-only raw capture IDs (ignored; not repository-hosted):
+
+- `physical-03-authenticated-account.png`
+- `physical-05-expired-link.png`
+- `physical-08-online-update-retry-success.png`
+- `physical-10-new-password-sign-in.png`
+- `physical-11-cold-open-password-updated.png`
+
+The omitted captures duplicate the selected success, invalid-link, or Account
+states. The report retains the distinct observed sequence and limitations.
+
+### Findings and limitations
+
+- **Findings:** none. No P0–P3 product finding was observed during A–F.
+- The task acceptance contract also requires proving the old password fails.
+  The run recorded successful sign-in with the latest password but did not
+  record an old-password rejection, so formal acceptance remains blocked.
+- iPhone Mirroring disconnects when device Wi-Fi is disabled. The human
+  performed the Wi-Fi-off request/update taps, restored Wi-Fi, and locked the
+  phone; the agent then captured the preserved error states before retry.
+- Credential entry and password-update submission were human-performed. No
+  password, recovery token, or full recovery URL was captured or recorded.
+- The cold-open Reset Password form was human-observed during the disconnected
+  force-quit handoff; the resulting **Password updated** state is captured.
+- Simulator and web recovery walks were not part of this run.
+- Automated checks were not re-run; the separately recorded exact-branch
+  automated results above remain the applicable automation evidence.
+
+### GitHub disposition and next decision
+
+- The six representative files above are selected for PR #37; the other five
+  remain local-only under the task-specific `.gitignore` rules.
+- Required next step: on the physical device, sign out and confirm the prior
+  password is rejected, then explicitly accept Task 18 (or explicitly waive
+  that acceptance criterion). Until then, do not merge PR #37 or start Task 19.
+  Physical `tested-pass` does not mark Task 18 accepted, ready-for-review,
+  merged, or Task 19 started.
 
 ## Targeted physical A/B — recovery callback fallback (2026-08-13)
 
 This was a narrow physical-device diagnostic, **not** the full recovery A–F
-matrix above. The A–F matrix remains `not-tested`, and Task 18 human acceptance
-is still not claimed.
+matrix above. At the time of this diagnostic, the A–F matrix was `not-tested`
+and Task 18 human acceptance was not claimed. The later 2026-08-15 full matrix
+is recorded separately above.
 
 - **Mode:** targeted physical A/B callback walk (interactive preview evidence)
 - **Journey:** local recovery email → terminated app → Safari confirmation →
@@ -216,7 +305,7 @@ is still not claimed.
   that same fallback with fixed-label recovery diagnostics
 - **Targeted physical result:** `tested-pass` for both A and B reaching the
   gated Reset Password form
-- **Full physical A–F result:** `not-tested`
+- **Full physical A–F result at the time:** `not-tested`
 
 ### Observed A/B steps
 
@@ -252,8 +341,8 @@ Known limits:
 **Decision applied:** retained the observed explicit `tokens-recovery` path,
 removed the committed 750 ms fallback, and removed the temporary diagnostics.
 Automated regression coverage now proves an ordinary PKCE `SIGNED_IN` session
-remains gated without `PASSWORD_RECOVERY`. The full physical A–F matrix remains
-required for formal Task 18 acceptance.
+remains gated without `PASSWORD_RECOVERY`. At the time, the full physical A–F
+matrix was still required; it was subsequently completed on 2026-08-15 above.
 
 ## Security boundary confirmed
 
@@ -269,7 +358,7 @@ required for formal Task 18 acceptance.
 
 | Environment | URL | Status |
 | --- | --- | --- |
-| Local + Development build | device-reachable Auth `/verify` → `Linking.createURL('/auth/reset-password')` / `eazyreview://…` | Running local Auth verified 2026-08-13; targeted callback A/B pass; full physical A–F pending |
+| Local + Development build | device-reachable Auth `/verify` → `Linking.createURL('/auth/reset-password')` / `eazyreview://…` | Running local Auth verified 2026-08-13; targeted callback A/B pass; full physical A–F `tested-pass` on 2026-08-15 |
 | Preview / staging | deferred | Separate approval |
 | Production | deferred | Tasks 25–26 + human |
 
