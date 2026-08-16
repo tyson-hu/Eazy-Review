@@ -449,8 +449,10 @@ superseding. The automatic local
 `SIGNED_OUT` emitted when bootstrap clears a definitively invalid persisted
 session is also non-superseding while a recovery attempt waits for bootstrap;
 the recovery Auth exchange starts only after restoration and any conditional
-cleanup settle, closing the recheck-to-sign-out replacement window. Explicit
-sign-out still wins. Because Supabase installs a
+cleanup settle, closing the recheck-to-sign-out replacement window. The wait
+uses the shared request deadline: timeout does not exchange the single-use
+link, settles `temporary-failure`, and allows the link to be reopened after
+restoration completes. Explicit sign-out still wins. Because Supabase installs a
 recovery session before emitting its SDK event, rejecting a stale event also
 gates authenticated UI and restores the superseding full session outside the
 auth callback, including when the exchange reports the stale session through
@@ -494,6 +496,8 @@ Password route clears the preceding attempt's password fields, error, and
 success state before the new attempt can expose its verified form. It also
 invalidates any in-flight update from that attempt; a stale completion cannot
 set success or error, change pending state, or clear the new recovery phase.
+Unmounting Reset Password invalidates its active update token for the same
+reason, so a departed screen cannot clear a later recovery attempt.
 
 Successful recovery keeps the authenticated session and dismisses to Account;
 it does not reuse Rate `returnTo` routing. Physical proof that the new password

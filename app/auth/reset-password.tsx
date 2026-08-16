@@ -56,6 +56,7 @@ export default function ResetPasswordScreen() {
   // Clear secrets when leaving the screen.
   useEffect(() => {
     return () => {
+      activeUpdateRef.current = null;
       setPassword('');
       setConfirmPassword('');
     };

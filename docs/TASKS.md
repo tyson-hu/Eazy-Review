@@ -828,7 +828,9 @@ Implementation notes (human accepted; merge pending):
   sign-out. Recovery Auth exchange starts only after bootstrap restoration and
   any conditional cleanup settle, so it cannot install a fresh same-account
   session between the stale-session recheck and local sign-out; a replacement
-  already present at the recheck is preserved.
+  already present at the recheck is preserved. That wait uses the shared
+  request deadline; a timeout does not exchange the link, settles to the
+  retryable temporary-failure state, and permits reopen after restore settles.
   Callback-URL provider errors share SDK error normalization, so transient
   server failures remain retryable while definitive expired, replayed, and
   unusable-verifier failures remain invalid. A stale SDK-installed
@@ -857,7 +859,9 @@ Implementation notes (human accepted; merge pending):
   offers the safe request-new-link restart. A new callback on the still-mounted
   Reset Password route clears the prior attempt's password fields, error, and
   success card while verification is processing, and invalidates any in-flight
-  update so its late result cannot overwrite or clear the new attempt.
+  update so its late result cannot overwrite or clear the new attempt. Leaving
+  the screen also invalidates its pending update so it cannot clear a later
+  recovery attempt after unmount.
 - Evidence (SOP surface vocabulary in `docs/evidence/README.md`):
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 

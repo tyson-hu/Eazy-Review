@@ -70,6 +70,52 @@ describe('password recovery screens', () => {
     mockIsSignedIn = false;
   });
 
+  it('ignores an in-flight update after the reset screen unmounts', async () => {
+    let resolveUpdate: (value: unknown) => void = () => {};
+    mockRecoveryPhase = 'verified';
+    mockAuthStatus = 'signed-in';
+    mockIsSignedIn = true;
+    mockUpdatePasswordFromRecovery.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    const rendered = await render(<ResetPasswordScreen />);
+
+    await act(async () => {
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-new'),
+        'firstpass1',
+      );
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-confirm'),
+        'firstpass1',
+      );
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('reset-password-submit'));
+    });
+    await waitFor(() =>
+      expect(mockUpdatePasswordFromRecovery).toHaveBeenCalledTimes(1),
+    );
+
+    await act(async () => {
+      rendered.unmount();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      resolveUpdate({
+        kind: 'updated',
+        user: { id: 'user-a', email: 'a@example.com' },
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockClearRecoveryPhase).not.toHaveBeenCalled();
+  });
+
   it('exposes Forgot password on Sign In', async () => {
     const rendered = await render(<SignInScreen />);
     expect(rendered.getByTestId('sign-in-forgot-password')).toBeTruthy();

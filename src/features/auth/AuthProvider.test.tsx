@@ -2010,6 +2010,115 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('makes a recovery link retryable when session restore stalls', async () => {
+    jest.useFakeTimers();
+    try {
+      type ValidationResult = {
+        data: { user: { id: string; email: string } };
+        error: null;
+      };
+      let resolveValidation: ((result: ValidationResult) => void) | null = null;
+      const getUser = jest.fn(
+        () =>
+          new Promise<ValidationResult>((resolve) => {
+            resolveValidation = resolve;
+          }),
+      );
+      const mock = createMockAuthClient({
+        initialUser: { id: 'user-b', email: 'b@example.com' },
+        getUser,
+      });
+      const exchangeCodeForSession = jest.fn(async () => ({
+        data: { session: null },
+        error: {
+          message: 'Email link is invalid or has expired',
+          code: 'otp_expired',
+          status: 403,
+        },
+      }));
+      (
+        mock.client.auth as unknown as {
+          exchangeCodeForSession?: jest.Mock;
+        }
+      ).exchangeCodeForSession = exchangeCodeForSession;
+
+      const listeners: ((event: { url: string }) => void)[] = [];
+      const linking = {
+        getInitialURL: jest.fn(async () => null),
+        addEventListener: jest.fn(
+          (_type: 'url', listener: (event: { url: string }) => void) => {
+            listeners.push(listener);
+            return { remove: jest.fn() };
+          },
+        ),
+      };
+      const queryClient = createAppQueryClient({
+        defaultOptions: { queries: { gcTime: Infinity } },
+      });
+      const rendered = await renderWithProviders(
+        <AuthProvider client={mock.client} enableSession linking={linking}>
+          <AuthProbe />
+        </AuthProvider>,
+        { queryClient },
+      );
+
+      await waitFor(() => expect(getUser).toHaveBeenCalledTimes(1));
+      await act(async () => {
+        for (const listener of listeners) {
+          listener({
+            url: 'eazyreview://auth/reset-password?code=RESTORE_TIMEOUT_CODE',
+          });
+        }
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toContain(
+          '|processing',
+        ),
+      );
+
+      await act(async () => {
+        jest.advanceTimersByTime(10_000);
+        await Promise.resolve();
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toContain(
+          '|temporary-failure',
+        ),
+      );
+      expect(exchangeCodeForSession).not.toHaveBeenCalled();
+
+      await act(async () => {
+        resolveValidation?.({
+          data: { user: { id: 'user-b', email: 'b@example.com' } },
+          error: null,
+        });
+        await Promise.resolve();
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|user-b|b@example.com|temporary-failure',
+        ),
+      );
+
+      await act(async () => {
+        for (const listener of listeners) {
+          listener({
+            url: 'eazyreview://auth/reset-password?code=RESTORE_TIMEOUT_CODE',
+          });
+        }
+      });
+      await waitFor(() =>
+        expect(exchangeCodeForSession).toHaveBeenCalledWith(
+          'RESTORE_TIMEOUT_CODE',
+        ),
+      );
+
+      await rendered.cleanup();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('marks recovery unavailable when a warm recovery link is expired', async () => {
     const mock = createMockAuthClient({ initialUser: null });
     (

@@ -233,7 +233,10 @@ enters processing immediately, but its Auth exchange waits until bootstrap
 restoration and any conditional cleanup settle; it therefore cannot install a
 fresh same-account session between the stale-session recheck and local
 sign-out. A replacement already present at the recheck remains current. An
-explicit user sign-out remains superseding.
+explicit user sign-out remains superseding. That wait is bounded by the shared
+request deadline. If restoration stalls, the link is not exchanged and the
+screen settles to the retryable temporary-failure state; reopening the link
+after restoration completes can process it.
 If the stale SDK event has already installed its session, whether emitted as
 `PASSWORD_RECOVERY` or
 ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the
@@ -261,7 +264,9 @@ retry. If another recovery link opens while Reset Password remains mounted,
 entering `processing` clears the prior password values, error, and success card
 so the newly verified account receives a fresh form. Any password-update
 request still in flight from the preceding attempt loses authority to change
-the new form or clear the new recovery phase when it later settles.
+the new form or clear the new recovery phase when it later settles. Leaving
+the Reset Password screen also invalidates its pending update, so a completion
+from the departed screen cannot clear a recovery attempt opened afterward.
 
 Recovery redirect matrix (scheme `eazyreview` from `app.json`):
 

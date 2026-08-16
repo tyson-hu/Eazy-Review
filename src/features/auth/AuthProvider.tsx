@@ -33,6 +33,7 @@ import type {
   SignUpResult,
 } from '@/src/features/auth/types';
 import { isAuthCallbackUrl } from '@/src/features/auth/recoveryUrl';
+import { DEFAULT_REQUEST_TIMEOUT_MS } from '@/src/lib/network/requestTimeout';
 import { removeUserScopedQueries } from '@/src/lib/query/userScopedCache';
 import { getSupabase } from '@/src/lib/supabase/client';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
@@ -112,6 +113,32 @@ function resolveClient(
     return getSupabase();
   } catch {
     return null;
+  }
+}
+
+/**
+ * Bound only the recovery callback's wait for bootstrap. The restore itself
+ * must continue so any stale-session cleanup settles before a retry exchanges
+ * the single-use link.
+ */
+async function waitForSessionRestore(
+  restore: Promise<void>,
+): Promise<boolean> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      restore.then(() => true),
+      new Promise<false>((resolve) => {
+        timeoutId = setTimeout(
+          () => resolve(false),
+          DEFAULT_REQUEST_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -567,7 +594,16 @@ export function AuthProvider({
       // A recovery exchange can replace the stored session. Keep it behind
       // bootstrap validation and any conditional stale-session cleanup so a
       // later local sign-out cannot consume the newly exchanged session.
-      await sessionRestoreRef.current;
+      const restoreSettled = await waitForSessionRestore(
+        sessionRestoreRef.current,
+      );
+      if (!restoreSettled) {
+        if (!cancelled && recoveryGenerationRef.current === generation) {
+          setRecoveryPhase('temporary-failure');
+        }
+        recoveryExchangeInFlightRef.current = false;
+        return;
+      }
       if (cancelled || recoveryGenerationRef.current !== generation) {
         recoveryExchangeInFlightRef.current = false;
         return;

@@ -172,13 +172,31 @@ Tenth review-remediation worktree verification (2026-08-14):
 | `npm test -- --runInBand --forceExit` | pass — 37 suites, **308** tests |
 | `git diff --check` | pass |
 
-Final documentation/evidence review tree (2026-08-15):
+Final documentation/evidence review tree before human acceptance (2026-08-15):
 
 | Command | Result |
 | --- | --- |
 | `npm run check:readonly` | pass |
 | `npm test -- --runInBand --forceExit` | pass — 37 suites, **323** tests |
-| Independent integrated review | no new code defect; old-password rejection evidence remains the acceptance blocker |
+| Independent integrated review | no new code defect; old-password rejection evidence remained the acceptance blocker at that revision |
+
+Final merge-review remediation tree (2026-08-15):
+
+| Command | Result |
+| --- | --- |
+| Focused `AuthProvider` + recovery-screen suites | pass — 2 suites, **62** tests |
+| `npm run check:readonly` | pass |
+| `npm test -- --runInBand --forceExit` | pass — 37 suites, **325** tests |
+| `npm run check:expo` | pass — 37 suites, **325** tests; Expo Doctor **21/21**; dependencies up to date |
+| `git diff --check` | pass |
+
+The final pre-merge thread refresh found two valid P2 races: a departed Reset
+Password screen could let an older update clear a later recovery phase, and a
+stalled bootstrap restore could leave recovery processing indefinitely. The
+remediation invalidates update authority on unmount and bounds the restore
+wait without consuming the single-use recovery link. Both paths have focused
+regression coverage; the exact pushed head must still pass GitHub CI before
+merge.
 
 The Jest run still prints the branch's existing React `act()` / worker teardown
 warnings while exiting successfully; these review fixes do not claim those
@@ -273,8 +291,9 @@ states. The report retains the distinct observed sequence and limitations.
 - The cold-open Reset Password form was human-observed during the disconnected
   force-quit handoff; the resulting **Password updated** state is captured.
 - Simulator and web recovery walks were not part of this run.
-- Automated checks were not re-run; the separately recorded exact-branch
-  automated results above remain the applicable automation evidence.
+- Automated checks were re-run after the final merge-review remediation; the
+  focused and repository-wide results are recorded above. Exact-head GitHub CI
+  remains a separate pre-merge gate after the remediation commit is pushed.
 
 ### GitHub disposition and next decision
 
