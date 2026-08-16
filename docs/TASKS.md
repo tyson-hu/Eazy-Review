@@ -840,7 +840,9 @@ Implementation notes (acceptance pending):
   stops if an earlier operation establishes a newer auth state, so neither
   start order can overwrite the newer user action or deadlock. When post-start
   transitions return to the recovery account, the latest explicit sign-in or
-  sign-out remains authoritative while recovery itself stays unverified.
+  sign-out remains authoritative while recovery itself stays unverified;
+  provenance is attached only after the explicit operation succeeds, so a
+  failed queued sign-in cannot claim and consume the recovery event.
 - Expo SDK 57 direct dependencies are aligned to the Expo Doctor-compatible
   patch versions recorded in `package.json` and `package-lock.json`.
 - Successful update uses `supabase.auth.updateUser({ password })` once (no

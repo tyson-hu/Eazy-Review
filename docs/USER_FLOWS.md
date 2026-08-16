@@ -248,7 +248,9 @@ reconciliation without joining that snapshot, so the two sides cannot
 deadlock. Neither ordering can overwrite the newer user action. When several
 transitions occur after callback start, the latest explicit sign-in/sign-out
 remains authoritative even if it returns to the same account as the recovery
-link; recovery stays unverified.
+link; recovery stays unverified. Event provenance is confirmed only when that
+explicit operation succeeds, so a queued sign-in that fails cannot consume the
+valid recovery event emitted while it was pending.
 
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link

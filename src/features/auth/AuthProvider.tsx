@@ -255,6 +255,31 @@ export function AuthProvider({
     };
   }, []);
 
+  /** Promote only the SDK event proven to belong to a successful user action. */
+  const markExplicitAuthTransition = useCallback(
+    (principal: string | null) => {
+      const attempt = recoveryAttemptRef.current;
+      if (
+        attempt == null ||
+        recoveryGenerationRef.current !== attempt.generation
+      ) {
+        return;
+      }
+      for (
+        let index = attempt.authTransitions.length - 1;
+        index >= 0;
+        index -= 1
+      ) {
+        const transition = attempt.authTransitions[index];
+        if (userIdFromSession(transition.session) === principal) {
+          transition.isExplicitAuthOperation = true;
+          return;
+        }
+      }
+    },
+    [],
+  );
+
   const reconcileSupersededRecovery = useCallback(
     (client: AppSupabaseClient, supersedingSession: Session | null) => {
       recoveryGenerationRef.current += 1;
@@ -418,19 +443,16 @@ export function AuthProvider({
             userIdFromSession(session)
         ) {
           const lastTransition = transitions[lastIndex];
-          const isExplicitAuthOperation =
-            explicitAuthOperationSettlementsRef.current.size > 0;
-          if (isExplicitAuthOperation || !lastTransition.isExplicitAuthOperation) {
+          if (!lastTransition.isExplicitAuthOperation) {
             transitions[lastIndex] = {
               session,
-              isExplicitAuthOperation,
+              isExplicitAuthOperation: false,
             };
           }
         } else {
           transitions.push({
             session,
-            isExplicitAuthOperation:
-              explicitAuthOperationSettlementsRef.current.size > 0,
+            isExplicitAuthOperation: false,
           });
           if (transitions.length > 2) {
             transitions.shift();
@@ -694,6 +716,7 @@ export function AuthProvider({
           throw new Error('Auth client is unavailable.');
         }
         const result = await signInWithPassword(credentials, { client });
+        markExplicitAuthTransition(result.user.id);
         authGenerationRef.current += 1;
         const generation = authGenerationRef.current;
         latestAuthPrincipalRef.current = result.user.id;
@@ -718,6 +741,7 @@ export function AuthProvider({
     [
       beginExplicitAuthOperation,
       clientProp,
+      markExplicitAuthTransition,
       prepareUserScopedCacheForPrincipal,
       resolveOptimisticSignedIn,
     ],
@@ -734,6 +758,7 @@ export function AuthProvider({
         }
         const result = await signUpWithPassword(credentials, { client });
         if (result.kind === 'signed-in') {
+          markExplicitAuthTransition(result.user.id);
           authGenerationRef.current += 1;
           const generation = authGenerationRef.current;
           latestAuthPrincipalRef.current = result.user.id;
@@ -758,6 +783,7 @@ export function AuthProvider({
     [
       beginExplicitAuthOperation,
       clientProp,
+      markExplicitAuthTransition,
       prepareUserScopedCacheForPrincipal,
       resolveOptimisticSignedIn,
     ],
@@ -782,6 +808,7 @@ export function AuthProvider({
         return;
       }
       await signOutApi({ client });
+      markExplicitAuthTransition(null);
       authGenerationRef.current += 1;
       const generation = authGenerationRef.current;
       latestAuthPrincipalRef.current = null;
@@ -795,7 +822,12 @@ export function AuthProvider({
     } finally {
       finishExplicitAuthOperation();
     }
-  }, [beginExplicitAuthOperation, clientProp, prepareUserScopedCacheForPrincipal]);
+  }, [
+    beginExplicitAuthOperation,
+    clientProp,
+    markExplicitAuthTransition,
+    prepareUserScopedCacheForPrincipal,
+  ]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

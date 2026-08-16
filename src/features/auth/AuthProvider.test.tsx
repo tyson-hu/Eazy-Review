@@ -3098,6 +3098,126 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
+  it('keeps recovery verified when a concurrently queued sign-in fails', async () => {
+    type ExchangeResult = {
+      data: {
+        session: { user: { id: string; email: string } };
+        user: { id: string; email: string };
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    let resolveSignInFailure: (() => void) | null = null;
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+    (mock.client.auth.signInWithPassword as jest.Mock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSignInFailure = () => {
+            resolve({
+              data: { session: null, user: null },
+              error: {
+                name: 'AuthApiError',
+                code: 'invalid_credentials',
+                status: 400,
+                message: 'Invalid login credentials',
+              },
+            });
+          };
+        }),
+    );
+
+    const listeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          listeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const authRef: { current: AuthContextValue | null } = { current: null };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthControllerProbe authRef={authRef} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|idle',
+      ),
+    );
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=FAILED_SIGN_IN_RACE_CODE',
+        });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|processing',
+      ),
+    );
+
+    let signInPromise: Promise<SignInResult> | undefined;
+    await act(async () => {
+      signInPromise = authRef.current?.signIn({
+        email: 'c@example.com',
+        password: 'wrong password',
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(mock.client.auth.signInWithPassword).toHaveBeenCalledTimes(1),
+    );
+
+    await act(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-a',
+        email: 'a@example.com',
+      });
+      resolveExchange?.({
+        data: {
+          session: { user: { id: 'user-a', email: 'a@example.com' } },
+          user: { id: 'user-a', email: 'a@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      resolveSignInFailure?.();
+      await expect(signInPromise).rejects.toMatchObject({
+        code: 'invalid-credentials',
+      });
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-a|a@example.com|verified',
+      ),
+    );
+    expect(mock.client.auth.setSession).not.toHaveBeenCalled();
+
+    await rendered.cleanup();
+  });
+
   it('does not add reconciliation-blocked sign-ins to the awaited operation snapshot', async () => {
     type ExchangeResult = {
       data: {
