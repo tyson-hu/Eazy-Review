@@ -842,7 +842,9 @@ Implementation notes (acceptance pending):
 - Successful update uses `supabase.auth.updateUser({ password })` once (no
   automatic retry/queue) and routes to Account while remaining signed in.
   A definitive missing/expired recovery session clears the verified form and
-  offers the safe request-new-link restart.
+  offers the safe request-new-link restart. A new callback on the still-mounted
+  Reset Password route clears the prior attempt's password fields, error, and
+  success card while verification is processing.
 - Evidence (SOP surface vocabulary in `docs/evidence/README.md`):
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 

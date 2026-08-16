@@ -32,6 +32,18 @@ export default function ResetPasswordScreen() {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [previousRecoveryPhase, setPreviousRecoveryPhase] =
+    useState(recoveryPhase);
+
+  if (recoveryPhase !== previousRecoveryPhase) {
+    setPreviousRecoveryPhase(recoveryPhase);
+    if (recoveryPhase === 'processing') {
+      setPassword('');
+      setConfirmPassword('');
+      setErrorMessage(null);
+      setSuccess(false);
+    }
+  }
 
   // Clear secrets when leaving the screen.
   useEffect(() => {

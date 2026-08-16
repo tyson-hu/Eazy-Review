@@ -480,7 +480,9 @@ the provider settles recovery to `unavailable` unless an SDK
 If the verified recovery session becomes definitively missing or expired while
 updating, clear the verified phase and replace the form with that safe restart
 state. Temporary and password-validation failures keep the form for manual
-retry.
+retry. A new callback entering `processing` on an already-mounted Reset
+Password route clears the preceding attempt's password fields, error, and
+success state before the new attempt can expose its verified form.
 
 Successful recovery keeps the authenticated session and dismisses to Account;
 it does not reuse Rate `returnTo` routing. Physical proof that the new password
@@ -494,7 +496,8 @@ Still deferred (Task 19):
 ### Password-recovery completion (Task 18)
 
 Tests cover a valid recovery session, direct navigation, an ordinary session,
-and expired/invalid recovery state. Human physical deep-link matrix is separate
+expired/invalid recovery state, and warm same-route recovery callbacks after a
+completed or failed attempt. Human physical deep-link matrix is separate
 evidence.
 
 ### Delete-current-user server contract (required for Task 19)

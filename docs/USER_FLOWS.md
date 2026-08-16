@@ -248,7 +248,9 @@ the same account as the recovery link; recovery stays unverified.
 If the recovery session becomes definitively missing or expires after the form
 was verified, a failed update clears the form and returns to the invalid-link
 restart state. Weak-password and temporary failures keep the form for manual
-retry.
+retry. If another recovery link opens while Reset Password remains mounted,
+entering `processing` clears the prior password values, error, and success card
+so the newly verified account receives a fresh form.
 
 Recovery redirect matrix (scheme `eazyreview` from `app.json`):
 

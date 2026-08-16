@@ -322,6 +322,52 @@ describe('password recovery screens', () => {
     rendered.unmount();
   });
 
+  it('replaces a completed recovery with a fresh form for a new link', async () => {
+    mockRecoveryPhase = 'verified';
+    mockAuthStatus = 'signed-in';
+    mockIsSignedIn = true;
+    mockUpdatePasswordFromRecovery.mockResolvedValue({
+      kind: 'updated',
+      user: { id: 'user-a', email: 'a@example.com' },
+    });
+    const rendered = await render(<ResetPasswordScreen />);
+
+    await act(async () => {
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-new'),
+        'newpass1',
+      );
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-confirm'),
+        'newpass1',
+      );
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('reset-password-submit'));
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('reset-password-success')).toBeTruthy(),
+    );
+
+    mockRecoveryPhase = 'processing';
+    await act(async () => {
+      rendered.rerender(<ResetPasswordScreen />);
+    });
+    await waitFor(() => {
+      expect(rendered.getByTestId('reset-password-loading')).toBeTruthy();
+      expect(rendered.queryByTestId('reset-password-success')).toBeNull();
+    });
+
+    mockRecoveryPhase = 'verified';
+    await act(async () => {
+      rendered.rerender(<ResetPasswordScreen />);
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('reset-password-form')).toBeTruthy(),
+    );
+    rendered.unmount();
+  });
+
   it('does not auto-retry a failed password update', async () => {
     mockRecoveryPhase = 'verified';
     mockAuthStatus = 'signed-in';
@@ -355,6 +401,54 @@ describe('password recovery screens', () => {
     expect(rendered.getByTestId('reset-password-new').props.value).toBe(
       'newpass1',
     );
+    rendered.unmount();
+  });
+
+  it('clears failed attempt values when a new recovery link starts', async () => {
+    mockRecoveryPhase = 'verified';
+    mockAuthStatus = 'signed-in';
+    mockIsSignedIn = true;
+    mockUpdatePasswordFromRecovery.mockRejectedValue(
+      new AuthError(
+        'password-update-failed',
+        AUTH_USER_MESSAGES.passwordUpdateFailed,
+      ),
+    );
+    const rendered = await render(<ResetPasswordScreen />);
+
+    await act(async () => {
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-new'),
+        'failedpass1',
+      );
+      fireEvent.changeText(
+        rendered.getByTestId('reset-password-confirm'),
+        'failedpass1',
+      );
+    });
+    await act(async () => {
+      fireEvent.press(rendered.getByTestId('reset-password-submit'));
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('reset-password-error')).toBeTruthy(),
+    );
+
+    mockRecoveryPhase = 'processing';
+    await act(async () => {
+      rendered.rerender(<ResetPasswordScreen />);
+    });
+    mockRecoveryPhase = 'verified';
+    await act(async () => {
+      rendered.rerender(<ResetPasswordScreen />);
+    });
+
+    await waitFor(() => {
+      expect(rendered.getByTestId('reset-password-new').props.value).toBe('');
+      expect(rendered.getByTestId('reset-password-confirm').props.value).toBe(
+        '',
+      );
+      expect(rendered.queryByTestId('reset-password-error')).toBeNull();
+    });
     rendered.unmount();
   });
 
