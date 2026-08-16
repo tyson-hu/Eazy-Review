@@ -203,6 +203,13 @@ in the standardized Task 13–29 metadata in `docs/TASKS.md`.
 
 This sequence extends the Definition Of Done and Validation Commands below; it does not replace them.
 
+Before any validation step, classify the changed tree against a trusted base.
+Package scripts/hooks, tests, JavaScript configs, and validation inputs are
+executable even when a command is described as read-only. An untrusted or
+unreviewed tree runs only in disposable, credential-free isolation pinned to
+its exact SHA — never on the agent host, outside the sandbox, or with agent
+credentials. This trust gate overrides every skill or SOP instruction below.
+
 1. **Scope check** — confirm the work stayed inside its assigned slice.
 2. **Implementation and self-cleanup** — apply the Abstraction And Cleanup Checklist below.
 3. **Independent read-only review** — required for meaningful code or contract changes; optional only for trivial edits.
@@ -212,12 +219,14 @@ This sequence extends the Definition Of Done and Validation Commands below; it d
    verifier starts.
 6. **Read-only verifier** — run the narrowest command and, for a finished
    packet, `npm run check:readonly` after the final modification. The verifier
-   never runs an intentionally mutating preparation command.
+   never runs an intentionally mutating preparation command, and its execution
+   environment must satisfy the trust gate above.
 7. **Bounded repair or debugger escalation** — only a directly evidenced
    caused-by-change failure enters the repair budgets above; the verifier
    reruns after any modification.
-8. **Parent Expo gate** — when required, the parent runs
-   `npm run check:expo` / `npm run check` outside the sandbox.
+8. **Parent Expo gate** — when required, the parent runs `npm run check:expo` /
+   `npm run check`; host or out-of-sandbox execution additionally requires the
+   trusted-base review above.
 9. **Documentation gate** — tasks, contracts, decisions, and affected docs per
    `docs/DOCUMENTATION_POLICY.md`. Documentation-only changes do not require
    unrelated application checks. When step 9 changes any registered document,
@@ -296,15 +305,15 @@ Pick the narrowest command that covers the change:
 - `npm run types:generate` / `npm run types:check` — write or verify
   `src/types/database.generated.ts` from the **local** Supabase schema only.
   Requires `supabase start`; does not contact staging or production.
-- `npm run check:readonly` — verifier-safe repository gate: skill wrappers,
-  decisions, secrets, agent infrastructure, typecheck, and lint. It does not
-  intentionally modify tracked files.
+- `npm run check:readonly` — non-mutating repository gate: skill wrappers,
+  decisions, secrets, agent infrastructure, typecheck, and lint. It still
+  executes repository-controlled code and is subject to the trust gate.
 - `npm run prepare:routes` — parent/CI-owned route/config preparation (backed
   by `npm run generate:routes`). Inspect `git diff --exit-code -- tsconfig.json`
   afterward; a read-only verifier does not run this command.
 - `npm run check:expo` — parent-owned route preparation, read-only gate,
   frontend unit tests, Expo Doctor, and Expo dependency alignment. Run outside
-  the sandbox.
+  the sandbox only after the trust gate permits host execution.
 - `npm run check` — alias for the full parent-owned `check:expo` handoff gate.
 - `npm run test:db:reset` — verifies the Task 13 canonical/reapply seed copies
   are byte-identical, then runs the local-only database reset, pgTAP, and
@@ -318,7 +327,14 @@ Pick the narrowest command that covers the change:
 - Interactive UX / simulator / mobile-web walks — `skills/interactive-preview-loop` (SOPs under `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`; evidence under `docs/evidence/`). These do not replace the npm commands above.
 - Docs-only changes use a targeted check when one exists (for example, `npm run decisions:check`); otherwise say why no command was needed in Validation.
 
-### Expo doctor and dependency checks — agent sandbox
+### Expo doctor and dependency checks — trust and sandbox
+
+Never move validation to the host merely because the sandbox cannot access an
+Expo cache. For an untrusted or unreviewed tree, use exact-SHA disposable,
+credential-free isolation such as CI. Host or unrestricted execution is
+permitted only after reviewing every executable validation surface against a
+trusted base; `strict-allow-scripts` limits dependency lifecycle scripts but
+does not establish repository trust.
 
 `npx expo-doctor` and `npx expo install --check` (also the tail of
 `npm run check:expo` / `npm run check`) read and write under the host `~/.expo`
@@ -330,9 +346,12 @@ Observed failure modes (recurring — do not treat sandboxed output as authorita
 | --- | --- |
 | `expo-doctor` reports **20/20** / “No issues detected” | False clean. Outside the sandbox the same tree may still fail “packages match versions required by installed Expo SDK”. |
 | `expo install --check` exits with **`EPERM`** opening `~/.expo/native-modules-cache/…` | Environment/permission noise, not a real dependency verdict. |
-| `npm run check:expo` / `npm run check` “passes” or “fails” only in the Expo doctor / install-check steps under sandbox | Re-run those steps (or the full parent gate) **outside the sandbox** (`required_permissions: ["all"]` or equivalent unrestricted host shell) before claiming alignment or opening a version-fix packet. |
+| `npm run check:expo` / `npm run check` “passes” or “fails” only in the Expo doctor / install-check steps under sandbox | After the trust gate passes, re-run those steps outside the sandbox before claiming alignment; otherwise use exact-SHA disposable, credential-free isolation. |
 
-Rule for agents: after any Expo dependency edit, or when doctor/install-check results will gate handoff or a fix, run `npx expo-doctor` and `npx expo install --check` with unrestricted host access. If sandboxed and unrestricted results disagree, trust the unrestricted run. Same class of issue as Simulator/`simctl` needing host access (`docs/MOBILE_SIMULATOR_SOP.md`).
+Rule for agents: after any Expo dependency edit, or when doctor/install-check
+results gate handoff, obtain authoritative results in an environment allowed
+by the trust gate. If trust is established, unrestricted host output supersedes
+sandbox cache noise; otherwise exact-SHA isolated results are authoritative.
 
 ## Human-Readable Handoff
 

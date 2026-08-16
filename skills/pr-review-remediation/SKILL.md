@@ -27,9 +27,6 @@ Examples:
 - "Codex left findings on PR #40; triage and fix the valid ones."
 - "Address the unresolved review threads on this PR."
 - "Determine which comments are stale, duplicated, already fixed, or blocking."
-- "Complete one bounded finding-fix pass and tell me when to stop."
-- "The reviewer keeps finding another auth race; group the root causes and
-  close one review epoch."
 
 For an Eazy Review PR with existing findings, this repository-local skill is
 the outer route even for read-only triage. Triage is mandatory and may be
@@ -69,7 +66,6 @@ GitHub is read-only by default.
 - Whether a local checkout is available.
 - Whether edits are authorized or the task is read-only triage.
 - Optional existing human dispositions, finding IDs, or thread IDs.
-- Optional reporting preference.
 
 Resolve information already available from the connected repository or current
 checkout instead of asking the user to repeat it. A severity threshold is not
@@ -156,9 +152,10 @@ was fixed correctly.
 
    ```text
    rootCauseId
-   findingIds
-   source
-   reviewSha
+   findings:
+     - findingId
+       source
+       reviewSha
    reportedSeverity
    affectedFiles
    affectedInvariant
@@ -186,13 +183,13 @@ was fixed correctly.
    not-reproducible
    ```
 
-   Group comments that describe the same violated invariant and preserve every
-   finding ID under that root cause. Grouping collapses redundant comments, not
-   materially contradictory evidence. Do not count increasingly narrow variants
-   of one mechanism as independent progress. Validate every finding against the
-   current head and task contract; neither lateness nor reviewer identity
-   determines validity. Separate facts, inferences, recommendations, and human
-   product choices.
+   Group comments that describe the same violated invariant and preserve each
+   finding's `{findingId, source, reviewSha}` under that root cause. Grouping
+   collapses redundant comments, not materially contradictory evidence. Do not
+   count increasingly narrow variants of one mechanism as independent progress.
+   Validate every finding against its own reviewed SHA, the current head, and
+   task contract; neither lateness nor reviewer identity determines validity.
+   Separate facts, inferences, recommendations, and human product choices.
 
 4. **Apply the finding quality bars.**
    - A general finding qualifies only when it is introduced or materially
@@ -289,6 +286,11 @@ was fixed correctly.
    affected neighboring behavior.
 
 9. **Validate with the bounded repair budget.**
+   Before any PR-head command, classify `validationTrust` against a trusted base. Treat package scripts/hooks, tests, JavaScript configs, and validation inputs as executable:
+   - `untrusted` or `not-established`: do not execute them on the agent host, with agent credentials, or through a sandbox escalation. Use disposable, credential-free isolation pinned to the exact SHA and inspect its results read-only.
+   - `trusted`: host or out-of-sandbox execution is allowed only after trusted-base review establishes that every executable validation surface is trusted.
+   Cache/permission failures and `strict-allow-scripts` do not establish trust.
+
    Run, in order:
 
    1. Narrowest focused regression.
@@ -299,10 +301,8 @@ was fixed correctly.
    6. `npm run check:readonly` on the final tree.
    7. Parent-owned Expo or environment validation separately when required.
 
-   In Eazy Review, the parent owns `npm run prepare:routes` and runs
-   `npm run check:expo` / `npm run check` outside the sandbox. Physical-device
-   work remains a human or interactive-preview gate. Inspect current-head
-   GitHub CI rather than inferring it.
+   Physical-device work remains a human or interactive-preview gate. Inspect
+   exact-head GitHub CI rather than inferring it.
 
    For each directly evidenced caused-by-change validation failure, permit at
    most two repair attempts. Before each, write one hypothesis, make one
@@ -366,15 +366,15 @@ was fixed correctly.
 ## Verification
 
 - The live current head and checks were resolved, not inferred from the PR body.
-- One review epoch records its baseline, per-source reviewed SHAs, one-shot
-  authorization state, and one ledger entry per root cause.
+- One review epoch records its baseline and one-shot authorization state, plus
+  one ledger entry per root cause with ID/source/review SHA for every finding.
 - Every accepted finding passes its applicable general, lifecycle, and
   security quality bar.
 - One accepted remediation set existed before edits.
 - The primary pass stayed within its file/contract boundary and has focused
   regression evidence.
-- Validation names passed, failed, pending, not-run, and environment-owned
-  evidence separately.
+- Validation records trust, trusted base, execution environment, and passed,
+  failed, pending, not-run, and environment-owned evidence separately.
 - No second review or new epoch occurred without explicit authorization.
 - No accepted blocker with a currently reachable invariant was marked complete.
 - No GitHub write occurred without authorization for that exact action.
@@ -389,6 +389,7 @@ was fixed correctly.
 - Remediation requires architecture, schema, product, task, or file-scope
   expansion without explicit authorization.
 - High-risk code or required current-head/environment evidence is unavailable.
+- An untrusted PR head lacks disposable, credential-free validation isolation.
 - A materially distinct blocker appears after remediation.
 - Two repairs for one validation failure are exhausted.
 - A session boundary or stalled-debugging trigger requires
@@ -415,7 +416,8 @@ was fixed correctly.
   budget.
 - Running another complete review after every fix commit.
 - Fixing a distinct nonblocking issue opportunistically.
-- Treating green CI as human acceptance or merge authorization.
+- Treating sandboxing, install-script controls, or green CI as code trust,
+  human acceptance, or merge authorization.
 - Writing, resolving, approving, or merging on GitHub without exact authority.
 
 ## Human-readable handoff
@@ -448,7 +450,7 @@ Use:
 For each root cause:
 
 - Root-cause ID
-- Finding IDs
+- Findings (ID, source, and review SHA)
 - Reported severity
 - Affected invariant
 - Concrete scenario
@@ -481,6 +483,7 @@ For each accepted root cause:
 - Failed
 - Pending
 - Not run
+- Validation trust, trusted base, and execution environment
 - Environment-owned
 
 ## Remaining decisions or blockers
