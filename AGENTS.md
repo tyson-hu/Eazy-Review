@@ -4,8 +4,9 @@ Eazy Review is a mobile-first sneaker/product review and discovery app.
 Core flow: Browse -> Product Detail -> Eazy Score / Community Score -> My Rating.
 Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase;
 Tasks 15–18 connect Supabase/PostgreSQL catalog reads, authentication, durable
-ratings/Rated Products, and password recovery through TanStack Query and the
-shared Expo client.
+ratings/Rated Products, and password recovery through the shared Expo Supabase
+client, with TanStack Query managing connected query state and connectivity
+lifecycle where applicable.
 
 ## Non-Negotiable Product Rules
 

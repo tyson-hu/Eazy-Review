@@ -297,11 +297,13 @@ Keep `private_note` on the owner-only row. Community Score reads come from
 
 The accepted forward-only Task 12 migration implements this policy/grant
 contract after the Task 11 schema migrations. The migration itself added no
-application runtime integration. Task 14 provides the Expo client/query
-foundation; Tasks 15–18 now consume it for connected catalog reads,
-authentication, durable ratings, Rated Products, and password recovery. Exact
-local and staging acceptance results, including the hosted-test fallback and
-production boundary, live in the historical evidence record linked at the top.
+application runtime integration. Task 14 provides the shared Expo Supabase
+client and TanStack Query foundations. Tasks 15–18 use the client for connected
+catalog reads, authentication, durable ratings/Rated Products, and password
+recovery. TanStack Query manages connected query state and connectivity
+lifecycle where applicable. Exact local and staging acceptance results,
+including the hosted-test fallback and production boundary, live in the
+historical evidence record linked at the top.
 
 ## Task 19 Account-Deletion Consequences
 
