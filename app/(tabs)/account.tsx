@@ -79,6 +79,14 @@ export default function AccountScreen() {
               });
             }}
           />
+          <Button
+            testID="account-forgot-password"
+            label="Forgot password?"
+            variant="ghost"
+            onPress={() => {
+              router.push('/auth/forgot-password');
+            }}
+          />
           <AppText variant="caption" className="text-center">
             You can keep browsing without signing in.
           </AppText>

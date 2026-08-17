@@ -151,6 +151,44 @@ remain part of the same plugin for the tested environment; they were not
 independently re-failed in that A/B run. Decision record:
 `docs/decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md`.
 
+### Password recovery (Task 18 local)
+
+Email/password recovery uses the app scheme `eazyreview` and the route
+`/auth/reset-password`.
+
+- Request screen: **Forgot password?** on Sign In or signed-out Account →
+  `/auth/forgot-password`.
+- Completion deep-link target: `/auth/reset-password`.
+- `redirectTo` is built with `expo-linking` `createURL('/auth/reset-password')`
+  (not a production host).
+- For physical-device recovery, set the running local Auth email-link origin in
+  the gitignored root `.env` (the `/auth/v1` suffix is required):
+
+  ```bash
+  SUPABASE_AUTH_EXTERNAL_URL=http://<Mac-LAN-IP>:54321/auth/v1
+  ```
+
+  This controls the verification link host in the email and is separate from
+  `EXPO_PUBLIC_SUPABASE_URL`. A phone cannot reach a `127.0.0.1` verification
+  link because that address points back to the phone.
+- Local Supabase Auth must allow the documented scheme/path variants in
+  `supabase/config.toml` `additional_redirect_urls`. Restart local Supabase
+  after changing that list or `SUPABASE_AUTH_EXTERNAL_URL`, then request a
+  fresh recovery email; old links retain their original host and redirect.
+- Staging/production Auth redirect allowlists are **not** configured by this
+  task (Tasks 25–26 + human).
+- Prefer a Development build (`npm run ios:device`) for physical recovery-link
+  acceptance. Do not log recovery tokens or paste complete recovery URLs into
+  chats.
+
+Evidence and the physical device checklist:
+`docs/evidence/task-18-password-recovery/RESULT.md`.
+
+Expo SDK packages must remain on the compatible patch versions reported by
+Expo Doctor. Use `npx expo install <package>` for Expo-managed dependencies and
+verify alignment with `npx expo install --check`; the exact versions are in
+`package.json`.
+
 ### Daily development
 
 ```bash

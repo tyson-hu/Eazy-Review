@@ -34,7 +34,17 @@
   DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
   reverted). Evidence:
   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
-  Task 18 remains Pending / not started.
+- Task 18 is **Human accepted — merge pending** (PR #37).
+  Password recovery request (`/auth/forgot-password`), recovery deep-link
+  target (`/auth/reset-password`), `PASSWORD_RECOVERY` handling,
+  non-enumerating confirmation, and focused automated recovery tests.
+  Local/dev redirect paths use the `eazyreview` scheme. Physical device
+  recovery matrix: **tested-pass** on SHA `acac64d` (2026-08-15).
+  Web/simulator recovery walks: **not-run**. The old-password rejection
+  **tested-pass** by human report and Task 18 was human accepted on 2026-08-15.
+  Task 19 remains not started until PR #37 is merged. Evidence:
+  [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
+  PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -184,7 +194,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted |
-| 18 | Password Recovery And Deep Links | Pending |
+| 18 | Password Recovery And Deep Links | Human accepted — merge pending |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
@@ -734,7 +744,7 @@ Non-goals:
 
 ## Task 18: Password Recovery And Deep Links
 
-Status: Pending.
+Status: **Human accepted — merge pending.**
 
 Depends on: Task 16.
 
@@ -747,7 +757,8 @@ Parallel-safe with: Task 17 after all prerequisites are accepted and edit
 scopes are file-disjoint.
 
 Human gate: Preview/staging redirect configuration requires separate approval;
-production configuration remains owned by Tasks 25–26 and a human.
+production configuration remains owned by Tasks 25–26 and a human. Physical
+iPhone deep-link matrix is human-run before formal acceptance.
 
 Goal: let email users recover access without mixing recovery risk into core
 authentication.
@@ -774,9 +785,89 @@ Deliverables:
   Tasks 25–26.
 - Expired, replayed, malformed, direct-navigation, and ordinary-session states.
 - New-password confirmation.
-- Physical-device deep-link verification in a development or preview build.
+- Physical-device deep-link verification in a development build: full A–F
+  matrix **tested-pass** on SHA `acac64d` (2026-08-15); the old-password
+  rejection **tested-pass** by human report and formal human acceptance is
+  complete.
 - Focused recovery-state tests for verified, ordinary-session, direct,
   expired, replayed, and malformed states.
+
+Implementation notes (human accepted; merge pending):
+
+- Sign In and logged-out Account expose **Forgot password?**.
+- Request uses `supabase.auth.resetPasswordForEmail` with
+  `Linking.createURL('/auth/reset-password')` as `redirectTo`. Known
+  account-existence rejections return the same non-enumerating submitted state;
+  transport/service failures remain visible.
+- Local Supabase `additional_redirect_urls` includes the documented dev
+  scheme/path variants. Staging/production redirects are not configured.
+- Local Auth `external_url` is environment-backed from the gitignored root
+  `.env` (`SUPABASE_AUTH_EXTERNAL_URL`) so physical-device recovery emails use
+  a device-reachable Mac LAN `/auth/v1` verification host. Restart the local
+  stack after changing it and request a fresh link.
+- AuthProvider tracks `recoveryPhase` (`idle` | `processing` | `verified` |
+  `temporary-failure` | `unavailable`) and processes cold/warm auth deep links
+  without logging tokens or full URLs. Verified PKCE recovery exchanges use
+  the SDK `redirectType`; ordinary PKCE/token sessions remain gated and settle
+  to the safe unavailable state instead of leaving verification loading. Only
+  `verified` enables password update. Transient callback failures can be
+  retried by reopening the same link and are not mislabeled expired/replayed.
+  Missing or mismatched PKCE verifier failures are definitive and offer a new
+  recovery request because the same link cannot succeed on that installation.
+  A late recovery result cannot re-enable the form after sign-out or a
+  different-principal auth transition supersedes it; this guard covers both
+  the SDK recovery event and the callback result. Pre-existing-principal
+  `INITIAL_SESSION` and `TOKEN_REFRESHED` maintenance events do not supersede a
+  deliberately opened recovery link. A matching `USER_UPDATED` event is also
+  maintenance, so a late password update from the preceding recovery cannot
+  consume the new link. Cold initial-link processing records the
+  callback-start generation before reading the persisted local principal, then
+  classifies only a matching delayed bootstrap `INITIAL_SESSION` as pre-link
+  maintenance; sign-in or sign-out during that read remains superseding.
+  Bootstrap's automatic local `SIGNED_OUT`
+  cleanup for a definitively invalid persisted session is also maintenance
+  while a recovery attempt waits for bootstrap, without weakening explicit
+  sign-out. Recovery Auth exchange starts only after bootstrap restoration and
+  any conditional cleanup settle, so it cannot install a fresh same-account
+  session between the stale-session recheck and local sign-out; a replacement
+  already present at the recheck is preserved. That wait uses the shared
+  request deadline; a timeout does not exchange the link, settles to the
+  retryable temporary-failure state, and permits reopen after restore settles.
+  Callback-URL provider errors share SDK error normalization, so transient
+  server failures remain retryable while definitive expired, replayed, and
+  unusable-verifier failures remain invalid. A stale SDK-installed
+  recovery session is reconciled to the superseding session while authenticated
+  UI is gated whether Auth emits `PASSWORD_RECOVERY` or ordinary `SIGNED_IN`,
+  with current-device sign-out as the safe failure fallback. If that fallback
+  errors or throws, provider state still settles signed-out instead of loading
+  indefinitely. Recovery callback exchanges remain serialized through any
+  stale-session reconciliation they start, so only one callback can mutate the
+  SDK session at a time. Duplicate active/pending delivery is ignored; a newer
+  distinct link replaces the pending callback, remains visibly processing, and
+  runs automatically when the active stages settle. The older attempt cannot
+  expose or retain a password form after the newer link arrives. Explicit
+  sign-in, sign-up, and sign-out wait for reconciliation that started first;
+  reconciliation snapshots only explicit auth operations already in flight,
+  while later operations wait behind it without extending that snapshot. It
+  stops if an earlier operation establishes a newer auth state, so neither
+  start order can overwrite the newer user action or deadlock. When post-start
+  transitions return to the recovery account, the latest explicit sign-in or
+  sign-out remains authoritative while recovery itself stays unverified;
+  provenance is attached only after the explicit operation succeeds, so a
+  failed queued sign-in cannot claim and consume the recovery event.
+- Expo SDK 57 direct dependencies are aligned to the Expo Doctor-compatible
+  patch versions recorded in `package.json` and `package-lock.json`.
+- Successful update uses `supabase.auth.updateUser({ password })` once (no
+  automatic retry/queue) and routes to Account while remaining signed in.
+  A definitive missing/expired recovery session clears the verified form and
+  offers the safe request-new-link restart. A new callback on the still-mounted
+  Reset Password route clears the prior attempt's password fields, error, and
+  success card while verification is processing, and invalidates any in-flight
+  update so its late result cannot overwrite or clear the new attempt. Leaving
+  the screen also invalidates its pending update so it cannot clear a later
+  recovery attempt after unmount.
+- Evidence (SOP surface vocabulary in `docs/evidence/README.md`):
+  [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
 
 Acceptance:
 
@@ -786,6 +877,8 @@ Acceptance:
 - Expired/replayed links offer a safe restart.
 - The new password works and the old password fails.
 - Recovery is proven outside web-only development.
+
+Human acceptance: **Done — human accepted on 2026-08-15; PR #37 merge pending.**
 
 ## Task 19: Protected Account Deletion
 

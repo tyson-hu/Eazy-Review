@@ -103,6 +103,7 @@ describe('Account screen', () => {
     ).toBeTruthy();
     expect(rendered.getByTestId('account-sign-in')).toBeTruthy();
     expect(rendered.getByTestId('account-create-account')).toBeTruthy();
+    expect(rendered.getByTestId('account-forgot-password')).toBeTruthy();
     expect(rendered.getByText('You can keep browsing without signing in.')).toBeTruthy();
     await rendered.cleanup();
   });

@@ -35,6 +35,14 @@ export default function RootLayout() {
           options={{ title: 'Create account', presentation: 'card' }}
         />
         <Stack.Screen
+          name="auth/forgot-password"
+          options={{ title: 'Forgot password', presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="auth/reset-password"
+          options={{ title: 'Reset password', presentation: 'card' }}
+        />
+        <Stack.Screen
           name="account/rated-products"
           options={{ title: 'Rated Products' }}
         />

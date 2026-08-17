@@ -1,13 +1,27 @@
 import { onlineManager } from '@tanstack/react-query';
 
 import {
+  isValidEmailFormat,
+  normalizeEmail,
+} from '@/src/features/auth/email';
+import {
   AuthError,
   AUTH_USER_MESSAGES,
+  isAccountExistenceError,
   isDefinitiveInvalidSessionError,
   normalizeAuthError,
 } from '@/src/features/auth/errors';
+import { getPasswordRecoveryRedirectTo } from '@/src/features/auth/recoveryRedirect';
+import {
+  classifyAuthCallback,
+  isAuthCallbackUrl,
+  parseAuthCallbackParams,
+} from '@/src/features/auth/recoveryUrl';
 import type {
+  AuthCallbackProcessResult,
   AuthUser,
+  PasswordResetRequestResult,
+  PasswordUpdateSuccess,
   SignInCredentials,
   SignInSuccess,
   SignUpCredentials,
@@ -19,6 +33,10 @@ import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 export type AuthApiOptions = {
   client?: AppSupabaseClient;
   isOnline?: () => boolean;
+};
+
+type RestoreSessionOptions = AuthApiOptions & {
+  onInvalidLocalSessionCleanupChange?: (isCleaning: boolean) => void;
 };
 
 function resolveClient(options?: AuthApiOptions): AppSupabaseClient {
@@ -207,7 +225,7 @@ async function clearInvalidLocalSession(
  * Identity validity is Auth-server only via `getUser()`.
  */
 export async function restoreSession(
-  options?: AuthApiOptions,
+  options?: RestoreSessionOptions,
 ): Promise<AuthUser | null> {
   try {
     const client = resolveClient(options);
@@ -216,7 +234,8 @@ export async function restoreSession(
       return null;
     }
 
-    const localUser = toAuthUser(data.session.user);
+    const restoredSession = data.session;
+    const localUser = toAuthUser(restoredSession.user);
 
     // Offline: cannot validate without risking false logout. Keep local state.
     if (!isOnline(options)) {
@@ -239,24 +258,32 @@ export async function restoreSession(
       return toAuthUser(userData.user);
     }
 
-    // Definitive invalid principal/session — clear only if the same principal
-    // is still restored. A newer sign-in while getUser was in flight must not
-    // be wiped by stale zombie cleanup.
+    // Definitive invalid principal/session — clear only if the exact session
+    // is still restored. A newer sign-in or same-user recovery session while
+    // getUser was in flight must not be wiped by stale zombie cleanup.
     if (isDefinitiveInvalidSessionError(userError)) {
       try {
         const current = await client.auth.getSession();
-        const currentId = current.data.session?.user?.id ?? null;
-        if (currentId != null && currentId !== localUser.id) {
-          // Principal changed during validation; keep the newer local session.
-          return current.data.session?.user
-            ? toAuthUser(current.data.session.user)
-            : null;
+        const currentSession = current.data.session;
+        if (
+          currentSession &&
+          (currentSession.user.id !== restoredSession.user.id ||
+            currentSession.access_token !== restoredSession.access_token ||
+            currentSession.refresh_token !== restoredSession.refresh_token)
+        ) {
+          // Session changed during validation; keep the newer local session.
+          return toAuthUser(currentSession.user);
         }
       } catch {
         // Fall through to cleanup of the known-invalid principal.
       }
 
-      await clearInvalidLocalSession(client);
+      options?.onInvalidLocalSessionCleanupChange?.(true);
+      try {
+        await clearInvalidLocalSession(client);
+      } finally {
+        options?.onInvalidLocalSessionCleanupChange?.(false);
+      }
       return null;
     }
 
@@ -272,4 +299,219 @@ export function mapAuthUserFromSessionUser(user: {
   email?: string | null;
 }): AuthUser {
   return toAuthUser(user);
+}
+
+/**
+ * Request a password-reset email. Always resolves with a non-enumerating
+ * success result when the provider accepts the request. Client-side malformed
+ * email fails before the network call.
+ *
+ * Does not retry. Does not reveal account existence.
+ */
+export async function requestPasswordReset(
+  email: string,
+  options?: AuthApiOptions & { redirectTo?: string },
+): Promise<PasswordResetRequestResult> {
+  if (!isValidEmailFormat(email)) {
+    throw new AuthError('invalid-email', AUTH_USER_MESSAGES.invalidEmail, {
+      source: 'credentials',
+    });
+  }
+
+  if (!isOnline(options)) {
+    throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
+      source: 'transport',
+    });
+  }
+
+  const normalized = normalizeEmail(email);
+  const redirectTo =
+    options?.redirectTo ?? getPasswordRecoveryRedirectTo();
+
+  try {
+    const client = resolveClient(options);
+    const { error } = await client.auth.resetPasswordForEmail(normalized, {
+      redirectTo,
+    });
+
+    if (error) {
+      if (isAccountExistenceError(error)) {
+        return { kind: 'submitted' };
+      }
+      // Provider errors must not become account-existence signals.
+      throw normalizeAuthError(error, {
+        operation: 'password-reset-request',
+        isOffline: !isOnline(options),
+      });
+    }
+
+    return { kind: 'submitted' };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    throw normalizeAuthError(error, {
+      operation: 'password-reset-request',
+      isOffline: !isOnline(options),
+    });
+  }
+}
+
+/**
+ * Update password after a verified PASSWORD_RECOVERY session.
+ * Callers must gate the form on recovery phase `verified`.
+ * Does not retry and does not queue offline mutations.
+ */
+export async function updatePasswordFromRecovery(
+  newPassword: string,
+  options?: AuthApiOptions,
+): Promise<PasswordUpdateSuccess> {
+  if (!isOnline(options)) {
+    throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
+      source: 'transport',
+    });
+  }
+
+  try {
+    const client = resolveClient(options);
+    const { data, error } = await client.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      throw normalizeAuthError(error, {
+        operation: 'password-update',
+        isOffline: !isOnline(options),
+      });
+    }
+
+    if (!data.user) {
+      throw new AuthError(
+        'password-update-failed',
+        AUTH_USER_MESSAGES.passwordUpdateFailed,
+      );
+    }
+
+    return {
+      kind: 'updated',
+      user: toAuthUser(data.user),
+    };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    throw normalizeAuthError(error, {
+      operation: 'password-update',
+      isOffline: !isOnline(options),
+    });
+  }
+}
+
+/**
+ * Exchange or apply auth tokens/code from a recovery (or other) callback URL.
+ * Never logs the URL or raw tokens. Returns a coarse kind for callers.
+ *
+ * When the URL has no processable auth payload, returns `{ kind: 'ignored' }`.
+ */
+export async function processAuthCallbackUrl(
+  url: string,
+  options?: AuthApiOptions,
+): Promise<AuthCallbackProcessResult> {
+  if (!isAuthCallbackUrl(url)) {
+    return { kind: 'ignored' };
+  }
+
+  const params = parseAuthCallbackParams(url);
+  const classified = classifyAuthCallback(params);
+
+  if (classified.kind === 'empty') {
+    return { kind: 'ignored' };
+  }
+
+  if (classified.kind === 'error') {
+    throw normalizeAuthError(
+      {
+        message: classified.error,
+        code: classified.errorCode,
+      },
+      {
+        operation: 'recovery-callback',
+        isOffline: !isOnline(options),
+      },
+    );
+  }
+
+  if (!isOnline(options)) {
+    throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
+      source: 'transport',
+    });
+  }
+
+  try {
+    const client = resolveClient(options);
+
+    if (classified.kind === 'pkce') {
+      const { data, error } = await client.auth.exchangeCodeForSession(
+        classified.code,
+      );
+      if (error) {
+        throw normalizeAuthError(error, {
+          operation: 'recovery-callback',
+          isOffline: !isOnline(options),
+        });
+      }
+      if (!data.session?.user) {
+        throw new AuthError(
+          'recovery-link-invalid',
+          AUTH_USER_MESSAGES.recoveryLinkInvalid,
+        );
+      }
+      // auth-js 2.112 returns `redirectType` here at runtime, but its public
+      // AuthTokenResponse type omits the field. Read it through a narrow
+      // structural guard until the dependency type matches the runtime shape.
+      const redirectType = (
+        data as typeof data & { redirectType?: unknown }
+      ).redirectType;
+      // PKCE recovery emails typically establish a recovery session; callers
+      // may also observe PASSWORD_RECOVERY from the SDK auth listener.
+      return {
+        kind:
+          redirectType === 'recovery' ? 'password-recovery' : 'session',
+        user: toAuthUser(data.session.user),
+      };
+    }
+
+    const { data, error } = await client.auth.setSession({
+      access_token: classified.accessToken,
+      refresh_token: classified.refreshToken,
+    });
+
+    if (error) {
+      throw normalizeAuthError(error, {
+        operation: 'recovery-callback',
+        isOffline: !isOnline(options),
+      });
+    }
+
+    if (!data.session?.user) {
+      throw new AuthError(
+        'recovery-link-invalid',
+        AUTH_USER_MESSAGES.recoveryLinkInvalid,
+      );
+    }
+
+    return {
+      kind:
+        classified.type === 'recovery' ? 'password-recovery' : 'session',
+      user: toAuthUser(data.session.user),
+    };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+    throw normalizeAuthError(error, {
+      operation: 'recovery-callback',
+      isOffline: !isOnline(options),
+    });
+  }
 }

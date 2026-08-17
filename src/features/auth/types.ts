@@ -9,6 +9,23 @@ export type AuthUser = {
 
 export type AuthStatus = 'initializing' | 'signed-out' | 'signed-in';
 
+/**
+ * Password-recovery session phase (Task 18).
+ * Distinct from ordinary sign-in / session restoration.
+ *
+ * - idle: no recovery callback in progress (direct navigation / ordinary session)
+ * - processing: deep-link tokens/code exchange in flight
+ * - verified: PASSWORD_RECOVERY observed; password-update form may run
+ * - temporary-failure: transport/server failure; reopening the same link may retry
+ * - unavailable: expired, reused, or malformed recovery link
+ */
+export type RecoveryPhase =
+  | 'idle'
+  | 'processing'
+  | 'verified'
+  | 'temporary-failure'
+  | 'unavailable';
+
 export type SignInCredentials = {
   email: string;
   password: string;
@@ -49,3 +66,21 @@ export type SignUpResult =
   | SignUpSuccess
   | SignUpConfirmationRequired
   | AuthOperationSuperseded;
+
+export type PasswordResetRequestResult = {
+  kind: 'submitted';
+};
+
+export type PasswordUpdateSuccess = {
+  kind: 'updated';
+  user: AuthUser;
+};
+
+/**
+ * Result of consuming an auth deep-link / recovery callback URL.
+ * Never includes raw tokens.
+ */
+export type AuthCallbackProcessResult =
+  | { kind: 'password-recovery'; user: AuthUser }
+  | { kind: 'session'; user: AuthUser }
+  | { kind: 'ignored' };

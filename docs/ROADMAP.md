@@ -27,10 +27,20 @@ Task detail, dependencies, acceptance, and current status live in
   (regression smoke). Web **PASS**; iOS Simulator **PASS with documented
   limits**. VoiceOver and maximum Dynamic Type remain **DEFERRED BY HUMAN
   SCOPE DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice;
-  `a635251` reverted). Task 18 remains Pending / not started. Excluded
-  identity features (social login, passkeys/MFA, editable/public profile,
-  global session revocation, secure native session storage revisit) stay
-  deferred — not part of Tasks 16–19 unless separately promoted.
+  `a635251` reverted). Excluded identity features (social login, passkeys/MFA,
+  editable/public profile, global session revocation, secure native session
+  storage revisit) stay deferred — not part of Tasks 16–19 unless separately
+  promoted.
+- Task 18: **Human accepted — merge pending** (PR #37).
+  Email password recovery request + reset deep-link route, non-enumerating
+  confirmation, recovery-only Auth phase, local/dev `eazyreview` redirect
+  allowlist. Automated local gate greened; physical device recovery matrix
+  **tested-pass** on SHA `acac64d` (2026-08-15); web/simulator recovery walks
+  **not-run**. The old-password rejection **tested-pass** by human report and
+  Task 18 was human accepted on 2026-08-15. Task 19 remains not started until
+  PR #37 is merged.
+  Production recovery host configuration remains Tasks 25–26. Evidence:
+  `docs/evidence/task-18-password-recovery/RESULT.md`.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,

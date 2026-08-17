@@ -376,8 +376,12 @@ Task 16 functions (email/password only):
   local persisted session with `getSession()`, then when the device is online
   validates the principal with Auth `getUser()` (server-backed). Definitive
   invalid identity/session errors clear the local session only (scope
-  `local`); offline and transient transport/5xx validation failures preserve
-  the local principal. Profile rows are not the identity validity check.
+  `local`) after rechecking the access/refresh-token session being validated.
+  Recovery callback exchange waits for bootstrap restoration and any cleanup
+  to settle, so it cannot replace that session between the recheck and local
+  sign-out. A replacement session already present at the recheck is preserved;
+  offline and transient transport/5xx validation failures preserve the local
+  principal. Profile rows are not the identity validity check.
 
 Task 16 routes:
 - `app/auth/sign-in.tsx`
@@ -389,29 +393,131 @@ external URLs and schemes are rejected. Post-auth navigation uses
 duplicated via forward `replace`.
 
 Task 16 does **not** implement:
-- password recovery or recovery deep links (Task 18)
 - account deletion (Task 19)
 - social login / MFA / passkeys (deferred unless roadmap promotes)
-- rating writes (Task 17)
 
-Later (Task 18 / 19) functions remain planned:
-- `requestPasswordReset(email)`
-- `updatePasswordFromRecovery(newPassword)`
+Task 17 rating writes are separate from auth.
+
+### Task 18 password recovery
+
+Functions (file: `src/features/auth/api.ts`):
+
+- `requestPasswordReset(email)` — calls
+  `client.auth.resetPasswordForEmail` with
+  `redirectTo = Linking.createURL('/auth/reset-password')` (scheme
+  `eazyreview`). Trims/lowercases the email. Rejects obviously malformed
+  addresses client-side. Never retries. Success copy is always
+  non-enumerating: it does not claim whether an account exists. Known
+  account-existence provider rejections (for example `user_not_found`) return
+  the same submitted result as an accepted request; transport and service
+  failures remain visible and retryable.
+- Local physical-device recovery also requires the Auth email-link origin from
+  `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`, including the
+  `/auth/v1` suffix. It must use a Mac LAN host the device can reach; this is
+  separate from the app callback supplied as `redirectTo`.
+- `updatePasswordFromRecovery(newPassword)` — calls
+  `client.auth.updateUser({ password })` once. Enabled only after a verified
+  recovery phase. Never retries or queues offline password updates.
+- `processAuthCallbackUrl(url)` — exchanges a PKCE `code` or applies
+  access/refresh tokens from a recovery deep link without logging the URL or
+  tokens. Provider errors encoded directly in the callback URL use the same
+  normalization as SDK exchange errors: transport/server failures are
+  temporary, while definitive expired, replayed, or unusable-verifier failures
+  make the link unavailable.
+
+AuthProvider recovery phase (not ordinary session status):
+
+- `idle` — no recovery callback
+- `processing` — deep-link exchange in flight
+- `verified` — `PASSWORD_RECOVERY` (or verified recovery callback); form OK
+- `temporary-failure` — transport/server verification failed; reopening the
+  same link may retry without treating it as expired
+- `unavailable` — expired, reused, malformed, or unusable-on-this-installation
+  link, including missing or mismatched PKCE verifier state
+
+Recovery-link processing is also bound to the authoritative auth generation and
+principal. If sign-out or a different-account auth transition supersedes an
+in-flight callback, neither its late SDK `PASSWORD_RECOVERY` event nor its result
+can promote the phase to `verified`. Same-principal SDK transitions emitted by
+the recovery exchange remain valid. Background `INITIAL_SESSION` or
+`TOKEN_REFRESHED` events for the principal present before the callback started
+are maintenance, not superseding user transitions. A matching `USER_UPDATED`
+event is also maintenance, so a password update from the preceding recovery
+cannot consume a newly opened recovery link when it settles late. Initial-link
+processing captures the recovery attempt's start generation before reading the
+persisted local session. A delayed bootstrap `INITIAL_SESSION` remains
+maintenance only when it matches that snapshot; any other auth transition
+during the read stays superseding. The automatic local
+`SIGNED_OUT` emitted when bootstrap clears a definitively invalid persisted
+session is also non-superseding while a recovery attempt waits for bootstrap;
+the recovery Auth exchange starts only after restoration and any conditional
+cleanup settle, closing the recheck-to-sign-out replacement window. The wait
+uses the shared request deadline: timeout does not exchange the single-use
+link, settles `temporary-failure`, and allows the link to be reopened after
+restoration completes. Explicit sign-out still wins. Because Supabase installs a
+recovery session before emitting its SDK event, rejecting a stale event also
+gates authenticated UI and restores the superseding full session outside the
+auth callback, including when the exchange reports the stale session through
+ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
+out the current device only rather than expose an identity/bearer mismatch or
+revoke other-device sessions. A failed or throwing local sign-out still
+settles provider state to signed-out instead of leaving auth initializing. All
+recovery callback exchanges are serialized through any stale-session
+reconciliation they start, so an exchange cannot race a prior session restore.
+Duplicate delivery of the active or already-pending callback is ignored. A
+newer distinct link replaces the pending callback, keeps recovery processing,
+and runs automatically after both active stages settle; the older attempt
+cannot expose or retain a password form after that newer delivery.
+Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
+started first. Reconciliation snapshots and waits only for explicit auth
+operations already in flight; later operations wait behind reconciliation
+without extending that snapshot. It stops if an earlier operation establishes
+a newer auth state, ensuring the newer explicit transition wins without a
+cross-wait deadlock. Reconciliation assigns explicit-operation provenance only
+after that operation succeeds, then selects the latest superseding transition.
+This includes an explicit same-principal sign-in after an earlier sign-out; a
+pending or failed operation cannot claim a same-principal SDK event emitted by
+recovery itself.
+
+Routes:
+
+- `app/auth/forgot-password.tsx` — request only
+- `app/auth/reset-password.tsx` — completion + deep-link target
+
+`app/auth/reset-password.tsx` may call `updatePasswordFromRecovery` only when
+`recoveryPhase === 'verified'`. Direct navigation, an ordinary signed-in
+session, an expired link, or a replayed/invalid link must not expose a working
+password-update action; show a safe error and route to a new recovery request.
+After a successful ordinary PKCE or token callback returns `kind: 'session'`,
+the provider settles recovery to `unavailable` unless an SDK
+`PASSWORD_RECOVERY` event already verified the attempt; it must not remain in
+`processing` indefinitely.
+If the verified recovery session becomes definitively missing or expired while
+updating, clear the verified phase and replace the form with that safe restart
+state. Temporary and password-validation failures keep the form for manual
+retry. A new callback entering `processing` on an already-mounted Reset
+Password route clears the preceding attempt's password fields, error, and
+success state before the new attempt can expose its verified form. It also
+invalidates any in-flight update from that attempt; a stale completion cannot
+set success or error, change pending state, or clear the new recovery phase.
+Unmounting Reset Password invalidates its active update token for the same
+reason, so a departed screen cannot clear a later recovery attempt.
+
+Successful recovery keeps the authenticated session and dismisses to Account;
+it does not reuse Rate `returnTo` routing. Physical proof that the new password
+works and the old password fails remains on the human iPhone checklist.
+
+Still deferred (Task 19):
+
 - `deleteCurrentUser()` — calls a protected server endpoint; no user id
   parameter
 
-### Password-recovery completion (required for Task 18)
-
-`app/auth/reset-password.tsx` is a recovery-only completion route. It may call
-`updatePasswordFromRecovery` only after the app has exchanged/verified the
-provider deep link and observed a valid `PASSWORD_RECOVERY` auth event/session.
-Direct navigation, an ordinary signed-in session, an expired link, or a
-replayed/invalid link must not expose a working password-update action; show a
-safe error and route back to a new recovery request instead.
+### Password-recovery completion (Task 18)
 
 Tests cover a valid recovery session, direct navigation, an ordinary session,
-and expired/invalid recovery state. Successful completion proves the new
-password works and the old password does not.
+expired/invalid recovery state, and warm same-route recovery callbacks after a
+completed, failed, or still-pending attempt. Human physical deep-link matrix is
+separate evidence.
 
 ### Delete-current-user server contract (required for Task 19)
 

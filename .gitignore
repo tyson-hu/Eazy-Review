@@ -101,3 +101,13 @@ docs/evidence/task-15-public-catalog/screenshots/*
 !docs/evidence/task-15-public-catalog/screenshots/03-samba-detail.png
 !docs/evidence/task-15-public-catalog/screenshots/04-samba-missing-offers.png
 !docs/evidence/task-15-public-catalog/screenshots/06-browse-clean.png
+
+# Task 18 physical recovery acceptance: retain the full raw set locally;
+# GitHub keeps six representative non-sensitive A-F proof PNGs.
+docs/evidence/task-18-password-recovery/screenshots/physical-*.png
+!docs/evidence/task-18-password-recovery/screenshots/physical-01-warm-reset-form.png
+!docs/evidence/task-18-password-recovery/screenshots/physical-02-password-updated.png
+!docs/evidence/task-18-password-recovery/screenshots/physical-04-reused-link.png
+!docs/evidence/task-18-password-recovery/screenshots/physical-06-offline-request-error.png
+!docs/evidence/task-18-password-recovery/screenshots/physical-07-offline-update-error.png
+!docs/evidence/task-18-password-recovery/screenshots/physical-09-relaunch-session-restored.png

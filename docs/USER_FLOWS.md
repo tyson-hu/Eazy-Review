@@ -177,15 +177,17 @@ Routes:
 - Completion: `app/auth/reset-password.tsx` (`/auth/reset-password`)
 
 ```txt
-Logged-out user opens Account
+Logged-out user opens Account or Sign In
 -> User taps Forgot Password
 -> Forgot Password screen (request recovery email)
--> User submits email; honest success/error state
+-> User submits email; non-enumerating confirmation
 -> User opens recovery deep link / email link
 -> App exchanges/verifies the link and observes a PASSWORD_RECOVERY session
 -> App opens Reset Password (completion)
 -> User sets a new password; honest success/error state
--> User signs in with the new password only (old password fails)
+-> User remains on the authenticated recovery session and continues to Account
+  (sign-in is not required again when the session is already established)
+-> Later sign-in uses the new password only (old password fails)
 ```
 
 `forgot-password.tsx` owns the recovery-request UI only. `reset-password.tsx`
@@ -196,7 +198,92 @@ the forgot-password route.
 Reset Password enables its completion form only for a verified recovery
 session. Direct navigation, an ordinary signed-in session, or an
 expired/replayed/invalid recovery link shows a safe error with a path to request
-a new email; it must not call the password-update API.
+a new email; it must not call the password-update API. A completed ordinary
+PKCE or token callback settles into that safe unavailable state rather than
+remaining on the verification loader.
+
+The request outcome also remains non-enumerating when Auth explicitly rejects
+an absent account: the screen shows the same submitted confirmation as an
+accepted request. Transport and service failures still show honest retryable
+errors.
+
+A temporary transport/server failure stays distinct from an expired, replayed,
+or unusable-PKCE-verifier link and tells the user to check connectivity and
+reopen the same link. This applies whether the provider failure arrives in the
+callback URL or during SDK exchange. Reopening the link retries verification;
+a definitive expired/replayed code or missing/mismatched PKCE verifier instead
+offers a new recovery request because the same link cannot succeed. Password
+update remains gated until verification succeeds.
+
+If recovery-link verification overlaps a newer auth transition, a late callback
+must not reopen the password form for a different current account or after
+sign-out. Both the SDK recovery event and the callback result are bound to the
+initiating attempt; they may promote recovery only when its verified principal
+still matches the latest authenticated principal. `INITIAL_SESSION` and
+`TOKEN_REFRESHED` maintenance events for the principal that predated the link
+do not count as newer user transitions and cannot reject deliberate recovery.
+A matching `USER_UPDATED` event is maintenance too, so a password update from
+the preceding recovery cannot consume the new link when it settles late.
+On a cold recovery launch, the app marks the callback attempt as started before
+reading the persisted local principal. Only that principal's matching delayed
+`INITIAL_SESSION` is reclassified as pre-link maintenance; sign-in or sign-out
+that occurs while the local read is pending remains a newer transition.
+The automatic local `SIGNED_OUT` emitted while bootstrap clears a definitively
+invalid persisted session is maintenance too; it cannot consume a recovery
+link that was opened while bootstrap validation was still finishing. The link
+enters processing immediately, but its Auth exchange waits until bootstrap
+restoration and any conditional cleanup settle; it therefore cannot install a
+fresh same-account session between the stale-session recheck and local
+sign-out. A replacement already present at the recheck remains current. An
+explicit user sign-out remains superseding. That wait is bounded by the shared
+request deadline. If restoration stalls, the link is not exchanged and the
+screen settles to the retryable temporary-failure state; reopening the link
+after restoration completes can process it.
+If the stale SDK event has already installed its session, whether emitted as
+`PASSWORD_RECOVERY` or
+ordinary `SIGNED_IN`, authenticated UI stays gated while the app restores the
+superseding session; reconciliation failure uses current-device sign-out and
+explicitly settles signed-out instead of leaving auth loading. Duplicate
+delivery of the active or already-pending recovery callback is ignored. A
+newer distinct link replaces the pending callback, immediately keeps the reset
+route in processing, and runs automatically after the active single-use
+exchange and its stale-session reconciliation settle. The older attempt cannot
+expose or retain a password form once that newer link arrives.
+Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
+started first; reconciliation
+waits only for the snapshot of explicit auth operations that started first and
+stops when one establishes a newer auth state. A later operation waits behind
+reconciliation without joining that snapshot, so the two sides cannot
+deadlock. Neither ordering can overwrite the newer user action. When several
+transitions occur after callback start, the latest explicit sign-in/sign-out
+remains authoritative even if it returns to the same account as the recovery
+link; recovery stays unverified. Event provenance is confirmed only when that
+explicit operation succeeds, so a queued sign-in that fails cannot consume the
+valid recovery event emitted while it was pending.
+
+If the recovery session becomes definitively missing or expires after the form
+was verified, a failed update clears the form and returns to the invalid-link
+restart state. Weak-password and temporary failures keep the form for manual
+retry. If another recovery link opens while Reset Password remains mounted,
+entering `processing` clears the prior password values, error, and success card
+so the newly verified account receives a fresh form. Any password-update
+request still in flight from the preceding attempt loses authority to change
+the new form or clear the new recovery phase when it later settles. Leaving
+the Reset Password screen also invalidates its pending update, so a completion
+from the departed screen cannot clear a recovery attempt opened afterward.
+
+Recovery redirect matrix (scheme `eazyreview` from `app.json`):
+
+| Environment | Redirect | Configured by |
+| --- | --- | --- |
+| Local Supabase + Development build | `Linking.createURL('/auth/reset-password')` (typically `eazyreview://…/auth/reset-password`) | Task 18 (`supabase/config.toml` allowlist variants) |
+| Preview / staging Auth host | Same app scheme after host allowlist; optional after human approval | Task 18/25 as separately approved |
+| Production | Human-applied allowlist only | Tasks 25–26 |
+
+For the physical local row, the email first opens the Auth verification origin
+from `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`. That origin
+must be the Mac's device-reachable LAN URL with `/auth/v1`; after verification,
+Auth redirects to the separate app-scheme URL shown in the matrix.
 
 ## Flow 6: Delete Account
 
