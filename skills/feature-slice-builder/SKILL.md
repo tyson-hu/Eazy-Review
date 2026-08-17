@@ -26,7 +26,10 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 
 For an assigned correction, apply this skill's matching task-mode contracts and
 routine normally. `skills/pr-review-remediation` retains the epoch, finding
-disposition, remediation scope, review budget, and terminal verdict.
+disposition, remediation scope, review budget, and terminal verdict. The
+memory step is report-only: report task-status, ADR, follow-up, handoff, or
+blocker needs to the outer owner, and do not edit those files unless the outer
+accepted scope explicitly includes them.
 
 ## Inputs expected
 
@@ -138,6 +141,9 @@ introduced.
 
 ## Memory step
 
+- Inside PR remediation, report all memory needs to the outer owner without
+  editing; only an explicit outer accepted scope for the target files permits
+  those writes.
 - Update the task's status in `docs/TASKS.md` (Done / Partial, plus newly discovered follow-ups).
 - Add or update a `docs/decisions/*.md` record only if work beyond the written task introduced a durable high-impact contract, route, or component decision under `docs/decisions/README.md`.
 

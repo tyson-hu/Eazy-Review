@@ -20,7 +20,10 @@ Goal: fix one reported bug with the smallest change that makes the reproduction 
 
 For one assigned accepted root cause, run this reproduction-driven routine and
 its retry limits normally. `skills/pr-review-remediation` retains ownership of
-the epoch, accepted set, scope, review budget, and terminal disposition.
+the epoch, accepted set, scope, review budget, and terminal disposition. The
+memory step is report-only: report task-status, ADR, follow-up, handoff, or
+blocker needs to the outer owner, and do not edit those files unless the outer
+accepted scope explicitly includes them.
 
 ## Inputs expected
 
@@ -84,6 +87,9 @@ the epoch, accepted set, scope, review budget, and terminal disposition.
 
 ## Memory step
 
+- Inside PR remediation, report all memory needs to the outer owner without
+  editing; only an explicit outer accepted scope for the target files permits
+  those writes.
 - Update `docs/TASKS.md`: mark the bug task done, and record any different pre-existing issues discovered along the way as new items (do not fix them now).
 - If this bug has a related `docs/notes/blocker-*.md`, delete it and remove the `docs/TASKS.md` pointer after the blocker is resolved, or mark the note as resolved if the record is still useful.
 - Add or update a `docs/decisions/*.md` record only if the fix introduced a durable high-impact contract or behavior decision under `docs/decisions/README.md`; a routine fix that restores the existing contract is not an ADR.

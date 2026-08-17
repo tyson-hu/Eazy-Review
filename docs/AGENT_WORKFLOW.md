@@ -162,14 +162,16 @@ Lossy paraphrases such as “the check had an issue” are not evidence.
 
 Review economy: per-packet independent review is required for meaningful code
 or contract changes; the parent may skip it for trivial follow-up packets; one
-final integrated review runs exactly once across the whole task. It is a
-task-level gate, not a head-level gate: remediation commits and other head
-changes never repeat it. If that final review supplies a finding that opens a
-`pr-review-remediation` epoch, it is already satisfied for the task. A
-materially behavior-changing verifier fix may require another reviewer pass,
-but only when the parent explicitly authorizes it — typo and lint fixes do not.
-Inside remediation, any additional post-remediation review is limited to the
-skill's explicitly authorized targeted-review budget.
+qualifying final integrated review runs exactly once across the whole task. It
+is a task-level gate, not a head-level gate: remediation commits and other head
+changes never repeat it. If a prior review predates a later remediation
+`epochBaselineSha`, it remains a `reviewInput` but does not consume this gate;
+exactly one qualifying integrated review may replace it on the baseline. Once
+that baseline review is satisfied, in-epoch remediation never resets or repeats
+it. A materially behavior-changing verifier fix may require another reviewer
+pass, but only when the parent explicitly authorizes it — typo and lint fixes do
+not. Inside remediation, any additional post-remediation review is limited to
+the skill's explicitly authorized targeted-review budget.
 
 #### Existing PR finding remediation
 
@@ -179,8 +181,13 @@ provenance, accepted finding set, review budget, and one-shot new-epoch
 authorization. GitHub comment/thread handlers are scoped inner capabilities;
 they do not authorize edits, epochs, replies, resolutions, or other writes. A
 remediation commit neither authorizes another complete review nor resets the
-task's final integrated review. If that review opened the remediation epoch,
-record it as already satisfied; otherwise it remains a once-only task gate.
+task's qualifying baseline review. A review that opened the remediation epoch
+is satisfied only when its reviewed SHA equals `epochBaselineSha`; an older
+review remains input evidence and leaves the once-only baseline gate available.
+Inner `bugfix-debug-loop`, `test-and-validation-loop`, and
+`feature-slice-builder` routines report task-status, ADR, follow-up, handoff, or
+blocker memory needs to the outer owner instead of writing them, unless the
+outer accepted scope explicitly includes those files.
 When an explicitly authorized correction materially changes behavior or a
 high-risk boundary, the parent may authorize one targeted follow-up review of
 that correction. A materially distinct blocker found afterward returns to the

@@ -118,10 +118,14 @@ about the current head or whether a root cause is fixed.
      no-edit epoch retains its baseline head.
    - `reviewInputs` is a list/set of `{source, reviewedSha}`; exact duplicates
      may collapse, but older inputs remain and are re-evaluated on current head.
-   - `taskFinalReview.status` is `pending | satisfied`; it may be satisfied only
-     when its `reviewedSha` equals `epochBaselineSha`. Older reviews remain
-     `reviewInputs` but cannot satisfy a later baseline. In-epoch remediation
-     head changes never reset a satisfied baseline review.
+     A review whose `reviewedSha` predates `epochBaselineSha` is only a
+     `reviewInput`: it neither satisfies nor consumes the task-level final
+     integrated review.
+   - `taskFinalReview.status` is `pending | satisfied`; exactly one qualifying
+     integrated review may satisfy it, and only when its `reviewedSha` equals
+     `epochBaselineSha`. That baseline review replaces stale review eligibility;
+     it is not a second qualifying final review. In-epoch remediation head
+     changes never reset or repeat a satisfied baseline review.
    - Fix commits do not create another epoch.
    - `nextEpochAuthorization.status` is `none | granted`, default `none`. A
      grant names `authorizedBy`, `authorizedFromHead`, and `scope`; `grantedAt`
@@ -198,6 +202,9 @@ about the current head or whether a root cause is fixed.
    - Use `interactive-preview-loop`, `pr-human-review`, `session-handoff`, and
      `blocker-note` only at their documented evidence, acceptance, boundary,
      or exhausted-attempt triggers.
+   - Inner routines report task-status, ADR, follow-up, handoff, and blocker
+     memory needs to this outer owner. They do not perform those writes unless
+     the affected files are explicitly included in the accepted outer scope.
 
 6. **Apply one primary remediation pass.**
    Skip edits when every finding is terminal and no accepted blocker/action
@@ -245,11 +252,12 @@ about the current head or whether a root cause is fixed.
 
 9. **Enforce the follow-up review budget.**
    Preserve the final integrated review required by `docs/AGENT_WORKFLOW.md`:
-   it runs exactly once per task, never once per remediation head. Apply the
-   step-2 baseline equality even when its finding opened this epoch; retain an
-   older review and triage its findings while the gate stays pending. Once the
-   baseline review is satisfied, in-epoch remediation never resets or repeats
-   it. An unmet gate does not consume the targeted-follow-up budget.
+   exactly one qualifying integrated review may run on `epochBaselineSha`,
+   never once per remediation head. A review predating the baseline remains a
+   `reviewInput` for triage but does not consume this task-level gate; run its
+   one permitted baseline replacement. Once the baseline review is satisfied,
+   in-epoch remediation never resets or repeats it. An unmet gate does not
+   consume the targeted-follow-up budget.
 
    After that required gate, default to `no additional review`. One targeted
    post-remediation follow-up is allowed only when explicitly authorized and
@@ -332,6 +340,8 @@ about the current head or whether a root cause is fixed.
   repair budget is exhausted.
 - Update tasks or decisions only when a separate canonical contract and edit
   authority require it; routine finding closure is not an ADR.
+- Treat memory needs reported by inner routines as report-only unless their
+  target files are explicitly included in the accepted remediation scope.
 
 ## Common mistakes
 

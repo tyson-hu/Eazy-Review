@@ -18,7 +18,10 @@ Goal: run the narrowest project checks for a finished change, fix only failures 
 
 Run command selection, failure classification, and caused-by-change repair with
 this routine's normal limits. `skills/pr-review-remediation` retains finding
-disposition, epoch authority, scope, and the terminal verdict.
+disposition, epoch authority, scope, and the terminal verdict. The memory step
+is report-only: report task-status, ADR, follow-up, handoff, or blocker needs to
+the outer owner, and do not edit those files unless the outer accepted scope
+explicitly includes them.
 
 ## Inputs expected
 
@@ -78,6 +81,9 @@ disposition, epoch authority, scope, and the terminal verdict.
 
 ## Memory step
 
+- Inside PR remediation, report all memory needs to the outer owner without
+  editing; only an explicit outer accepted scope for the target files permits
+  those writes.
 - Add pre-existing failures to `docs/TASKS.md` as new task items with the exact
   error text after redacting secrets, credentials, tokens, personal data, and
   private notes.
