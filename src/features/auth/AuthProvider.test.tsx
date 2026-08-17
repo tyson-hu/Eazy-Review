@@ -2770,7 +2770,7 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
-  it('serializes different recovery links while one exchange is in flight', async () => {
+  it('makes the latest different recovery link authoritative while exchanges stay serialized', async () => {
     type ExchangeResult = {
       data: {
         session: { user: { id: string; email: string } };
@@ -2779,25 +2779,22 @@ describe('AuthProvider password recovery', () => {
       };
       error: null;
     };
-    let resolveExchange: ((result: ExchangeResult) => void) | null = null;
+    let resolveFirstExchange: ((result: ExchangeResult) => void) | null = null;
+    let resolveSecondExchange: ((result: ExchangeResult) => void) | null = null;
     const exchangeCodeForSession = jest
       .fn()
       .mockImplementationOnce(
         () =>
           new Promise<ExchangeResult>((resolve) => {
-            resolveExchange = resolve;
+            resolveFirstExchange = resolve;
           }),
       )
-      .mockResolvedValueOnce({
-        data: {
-          session: {
-            user: { id: 'user-b', email: 'b@example.com' },
-          },
-          user: { id: 'user-b', email: 'b@example.com' },
-          redirectType: 'recovery',
-        },
-        error: null,
-      });
+      .mockImplementationOnce(
+        () =>
+          new Promise<ExchangeResult>((resolve) => {
+            resolveSecondExchange = resolve;
+          }),
+      );
     const mock = createMockAuthClient({ initialUser: null });
     (
       mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
@@ -2833,15 +2830,23 @@ describe('AuthProvider password recovery', () => {
         listener({
           url: 'eazyreview://auth/reset-password?code=FIRST_RECOVERY_CODE',
         });
+      }
+    });
+
+    await waitFor(() => expect(exchangeCodeForSession).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      for (const listener of listeners) {
         listener({
           url: 'eazyreview://auth/reset-password?code=SECOND_RECOVERY_CODE',
         });
       }
     });
-
-    expect(exchangeCodeForSession).toHaveBeenCalledTimes(1);
     await act(async () => {
-      resolveExchange?.({
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-a',
+        email: 'a@example.com',
+      });
+      resolveFirstExchange?.({
         data: {
           session: {
             user: { id: 'user-a', email: 'a@example.com' },
@@ -2853,16 +2858,41 @@ describe('AuthProvider password recovery', () => {
       });
       await Promise.resolve();
     });
+    await waitFor(() => expect(exchangeCodeForSession).toHaveBeenCalledTimes(2));
+    expect(rendered.getByTestId('auth-probe').props.children).toBe(
+      'signed-in|user-a|a@example.com|processing',
+    );
+
+    await act(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'user-b',
+        email: 'b@example.com',
+      });
+      resolveSecondExchange?.({
+        data: {
+          session: {
+            user: { id: 'user-b', email: 'b@example.com' },
+          },
+          user: { id: 'user-b', email: 'b@example.com' },
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
     await waitFor(() =>
-      expect(rendered.getByTestId('auth-probe').props.children).toContain(
-        '|verified',
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|user-b|b@example.com|verified',
       ),
     );
+    await expect(mock.client.auth.getSession()).resolves.toMatchObject({
+      data: { session: { user: { id: 'user-b' } } },
+    });
 
     await rendered.cleanup();
   });
 
-  it('keeps recovery callbacks locked until stale-session reconciliation settles', async () => {
+  it('queues the latest recovery callback until stale-session reconciliation settles', async () => {
     type ExchangeResult = {
       data: {
         session: { user: { id: string; email: string } };
@@ -2973,13 +3003,6 @@ describe('AuthProvider password recovery', () => {
       ),
     );
 
-    await act(async () => {
-      for (const listener of listeners) {
-        listener({
-          url: 'eazyreview://auth/reset-password?code=NEW_RECOVERY_CODE',
-        });
-      }
-    });
     await waitFor(() =>
       expect(exchangeCodeForSession).toHaveBeenCalledTimes(2),
     );

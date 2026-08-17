@@ -463,9 +463,11 @@ out the current device only rather than expose an identity/bearer mismatch or
 revoke other-device sessions. A failed or throwing local sign-out still
 settles provider state to signed-out instead of leaving auth initializing. All
 recovery callback exchanges are serialized through any stale-session
-reconciliation they start: a callback delivered while either stage is pending
-is ignored, including a different link, so an exchange cannot race a prior
-session restore. A later reopen after both stages finish can still retry.
+reconciliation they start, so an exchange cannot race a prior session restore.
+Duplicate delivery of the active or already-pending callback is ignored. A
+newer distinct link replaces the pending callback, keeps recovery processing,
+and runs automatically after both active stages settle; the older attempt
+cannot expose or retain a password form after that newer delivery.
 Explicit sign-in, sign-up, and sign-out wait for recovery reconciliation that
 started first. Reconciliation snapshots and waits only for explicit auth
 operations already in flight; later operations wait behind reconciliation

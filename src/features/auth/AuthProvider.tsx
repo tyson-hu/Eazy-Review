@@ -190,8 +190,9 @@ export function AuthProvider({
   const authGenerationRef = useRef(0);
   /** Ensures only the latest recovery-link processing commit wins. */
   const recoveryGenerationRef = useRef(0);
-  /** Serializes all single-use recovery callback exchanges. */
-  const recoveryExchangeInFlightRef = useRef(false);
+  /** Active and latest pending callbacks keep single-use exchanges serialized. */
+  const activeRecoveryUrlRef = useRef<string | null>(null);
+  const pendingRecoveryUrlRef = useRef<string | null>(null);
   /** Prevents recovery exchange from replacing a session during bootstrap cleanup. */
   const sessionRestoreRef = useRef<Promise<void>>(Promise.resolve());
   /** Explicit auth operations wait until stale-session reconciliation settles. */
@@ -214,6 +215,7 @@ export function AuthProvider({
     }[];
     localSessionSnapshotPending: boolean;
     pendingInitialSession: Session | null | undefined;
+    supersededByNewerCallback: boolean;
   } | null>(null);
 
   /**
@@ -508,7 +510,9 @@ export function AuthProvider({
           reconcileSupersededRecovery(client, supersedingSession);
           return;
         }
-        setRecoveryPhase('verified');
+        if (!attempt?.supersededByNewerCallback) {
+          setRecoveryPhase('verified');
+        }
       } else if (
         event === 'SIGNED_OUT' &&
         !isNonSupersedingAttemptMaintenance
@@ -573,10 +577,32 @@ export function AuthProvider({
       if (!url || cancelled || !isAuthCallbackUrl(url)) {
         return;
       }
-      if (recoveryExchangeInFlightRef.current) {
+      const activeRecoveryUrl = activeRecoveryUrlRef.current;
+      if (activeRecoveryUrl != null) {
+        if (url !== activeRecoveryUrl) {
+          pendingRecoveryUrlRef.current = url;
+          const activeAttempt = recoveryAttemptRef.current;
+          if (
+            activeAttempt != null &&
+            recoveryGenerationRef.current === activeAttempt.generation
+          ) {
+            activeAttempt.supersededByNewerCallback = true;
+          }
+          setRecoveryPhase('processing');
+        }
         return;
       }
-      recoveryExchangeInFlightRef.current = true;
+      activeRecoveryUrlRef.current = url;
+
+      const finishRecoveryExchange = async () => {
+        await recoveryReconciliationRef.current;
+        activeRecoveryUrlRef.current = null;
+        const pendingUrl = pendingRecoveryUrlRef.current;
+        pendingRecoveryUrlRef.current = null;
+        if (pendingUrl != null) {
+          void handleUrl(pendingUrl);
+        }
+      };
 
       recoveryGenerationRef.current += 1;
       const generation = recoveryGenerationRef.current;
@@ -590,6 +616,7 @@ export function AuthProvider({
         authTransitions: [],
         localSessionSnapshotPending: authPrincipalAtCallbackStart == null,
         pendingInitialSession: undefined,
+        supersededByNewerCallback: false,
       };
       setRecoveryPhase('processing');
 
@@ -600,14 +627,18 @@ export function AuthProvider({
         sessionRestoreRef.current,
       );
       if (!restoreSettled) {
-        if (!cancelled && recoveryGenerationRef.current === generation) {
+        if (
+          !cancelled &&
+          recoveryGenerationRef.current === generation &&
+          !recoveryAttemptRef.current?.supersededByNewerCallback
+        ) {
           setRecoveryPhase('temporary-failure');
         }
-        recoveryExchangeInFlightRef.current = false;
+        await finishRecoveryExchange();
         return;
       }
       if (cancelled || recoveryGenerationRef.current !== generation) {
-        recoveryExchangeInFlightRef.current = false;
+        await finishRecoveryExchange();
         return;
       }
 
@@ -624,12 +655,12 @@ export function AuthProvider({
         }
       }
       if (cancelled) {
-        recoveryExchangeInFlightRef.current = false;
+        await finishRecoveryExchange();
         return;
       }
       const attempt = recoveryAttemptRef.current;
       if (attempt?.generation !== generation) {
-        recoveryExchangeInFlightRef.current = false;
+        await finishRecoveryExchange();
         return;
       }
       attempt.localSessionSnapshotPending = false;
@@ -650,10 +681,17 @@ export function AuthProvider({
         }
         attempt.pendingInitialSession = undefined;
       }
+      if (attempt.supersededByNewerCallback) {
+        await finishRecoveryExchange();
+        return;
+      }
 
       try {
         const result = await processAuthCallbackUrl(url, { client });
         if (cancelled || recoveryGenerationRef.current !== generation) {
+          return;
+        }
+        if (recoveryAttemptRef.current?.supersededByNewerCallback) {
           return;
         }
         if (result.kind === 'ignored') {
@@ -707,17 +745,18 @@ export function AuthProvider({
         if (cancelled || recoveryGenerationRef.current !== generation) {
           return;
         }
+        if (recoveryAttemptRef.current?.supersededByNewerCallback) {
+          return;
+        }
         setRecoveryPhase(
           error instanceof AuthError && error.code === 'recovery-link-invalid'
             ? 'unavailable'
             : 'temporary-failure',
         );
       } finally {
-        await recoveryReconciliationRef.current;
-        recoveryExchangeInFlightRef.current = false;
+        await finishRecoveryExchange();
       }
     };
-
     void linking.getInitialURL().then((url) => {
       void handleUrl(url);
     });

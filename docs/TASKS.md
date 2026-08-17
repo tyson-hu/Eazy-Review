@@ -841,9 +841,11 @@ Implementation notes (human accepted; merge pending):
   with current-device sign-out as the safe failure fallback. If that fallback
   errors or throws, provider state still settles signed-out instead of loading
   indefinitely. Recovery callback exchanges remain serialized through any
-  stale-session reconciliation they start, across both duplicate and different
-  links, so only one callback can mutate the SDK session at a time; retry after
-  both stages settle remains supported. Explicit
+  stale-session reconciliation they start, so only one callback can mutate the
+  SDK session at a time. Duplicate active/pending delivery is ignored; a newer
+  distinct link replaces the pending callback, remains visibly processing, and
+  runs automatically when the active stages settle. The older attempt cannot
+  expose or retain a password form after the newer link arrives. Explicit
   sign-in, sign-up, and sign-out wait for reconciliation that started first;
   reconciliation snapshots only explicit auth operations already in flight,
   while later operations wait behind it without extending that snapshot. It
