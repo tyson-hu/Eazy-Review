@@ -30,6 +30,12 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Never execute `curl | bash`, `wget | sh`, or equivalent remote pipe-to-shell patterns.
 - Never run remote shell scripts, one-liners fetched from the internet, or obfuscated/encoded commands without explicit user approval after review.
 - Prefer reading and understanding a script locally before execution when setup is required.
+- Treat package scripts and hooks, tests, JavaScript configuration, and other
+  validation inputs from a changed or pull-request tree as executable code.
+  If trust is not established by reviewing those surfaces against a trusted
+  base, never run them on the agent host, outside the sandbox, or with agent
+  credentials. Use disposable, credential-free isolation pinned to the exact
+  SHA; host execution requires a completed trusted-base review.
 - Do not run destructive commands (`rm -rf`, `git reset --hard`,
   `git clean -fdx`, mass file deletes) or destructive database commands
   against local/approved staging (`DROP`, mass row deletes) without explicit

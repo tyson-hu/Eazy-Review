@@ -88,6 +88,7 @@ Outside `docs/notes/`, no scratch files, no notes docs, no status comments in co
 | Change database schema, RLS, migrations, or rating-summary logic | `skills/supabase-schema-change` |
 | Change frontend product/rating data shape, types, or mock data | `skills/product-data-modeling` |
 | Review an implementation-complete pull request for human acceptance, separating product and behavior decisions from automated verification | `skills/pr-human-review` |
+| Existing Eazy Review pull request findings need read-only current-head triage, stale/already-fixed or root-cause classification, remediation planning, or an authorized bounded remediation epoch | `skills/pr-review-remediation` |
 | Fix a reported bug in existing behavior | `skills/bugfix-debug-loop` |
 | Restructure code without changing behavior | `skills/refactor-safety-loop` |
 | Bring drifted docs back in sync with code | `skills/docs-sync-loop` |
@@ -100,6 +101,11 @@ Outside `docs/notes/`, no scratch files, no notes docs, no status comments in co
 ## Disambiguation
 
 When two loops seem to apply, use these precedence rules. Each pair is also cross-referenced in the skills' "When not to use" sections.
+
+For Eazy Review PR findings, `pr-review-remediation` owns the PR epoch and
+accepted remediation set even when the request is triage-only. Existing skills
+and GitHub comment/thread handlers may own scoped inner routines, but cannot
+authorize edits, epochs, replies, resolutions, or other GitHub writes.
 
 | Situation | Use | Not |
 | --- | --- | --- |
@@ -114,7 +120,15 @@ When two loops seem to apply, use these precedence rules. Each pair is also cros
 | Frontend-only shape, type, mock, or display change | `product-data-modeling` | `supabase-schema-change` |
 | Validation failure caused by the current change | Fix inside `test-and-validation-loop` (max 2 tries) | `bugfix-debug-loop` |
 | Run TypeScript, lint, Expo Doctor, dependency, or route checks | `test-and-validation-loop` | `interactive-preview-loop` / `pr-human-review` |
-| Review a finished PR to decide whether its behavior and tradeoffs are acceptable | `pr-human-review` | `test-and-validation-loop` alone |
+| First-pass finished-PR acceptance review | `pr-human-review` | `pr-review-remediation` |
+| Existing Eazy Review PR has findings requiring triage, planning, or remediation | `pr-review-remediation` | `pr-human-review` / standalone `bugfix-debug-loop` / GitHub handler as outer |
+| Generic GitHub review-comment work outside Eazy Review remediation | The applicable repository/platform handler | Claiming `pr-review-remediation` globally |
+| Read or address assigned Eazy Review review threads inside a frozen remediation scope | `pr-review-remediation` outer + GitHub comment/thread handler inner | Letting the handler authorize scope, epochs, or GitHub writes |
+| One accepted defect inside a PR-remediation epoch | `pr-review-remediation` outer loop + `bugfix-debug-loop` inner routine | Letting `bugfix-debug-loop` own PR-wide review state |
+| Validation inside remediation | `test-and-validation-loop` inner routine | Letting validation authorize another review epoch |
+| Initial feature implementation before review findings | `feature-slice-builder` | `pr-review-remediation` |
+| Review fix requires schema/RLS/grant work | `pr-review-remediation` outer loop; explicit `supabase-schema-change` authorization | Treating a review comment as schema authorization |
+| New materially distinct blocker after the review budget is used | Stop for explicit new-epoch authorization | Automatic re-review recursion |
 | Verify a user journey in a running simulator or mobile web preview and capture evidence | `interactive-preview-loop` | `test-and-validation-loop` / `pr-human-review` alone |
 | Change screen layout, styling, hierarchy, or components | `ui-screen-builder` | `interactive-preview-loop` |
 | Investigate and fix a known behavior defect | `bugfix-debug-loop` | `interactive-preview-loop` / `pr-human-review` |

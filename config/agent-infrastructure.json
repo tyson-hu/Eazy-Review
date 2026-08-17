@@ -405,6 +405,12 @@
       "staleScan": false
     },
     {
+      "path": "skills/pr-review-remediation/SKILL.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
       "path": "skills/product-data-modeling/SKILL.md",
       "kind": "file",
       "lifecycle": "evergreen",
@@ -706,6 +712,21 @@
       "document": "skills/interactive-preview-loop/SKILL.md",
       "dependsOn": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
       "reason": "The evidence loop delegates capture details to the SOP."
+    },
+    {
+      "document": "skills/pr-review-remediation/SKILL.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "PR remediation preserves parent ownership, validation, and handoff boundaries."
+    },
+    {
+      "document": "skills/pr-review-remediation/SKILL.md",
+      "dependsOn": "docs/LOOP_ENGINEERING.md",
+      "reason": "Review epochs inherit the global retry and stop rules."
+    },
+    {
+      "document": "skills/pr-review-remediation/SKILL.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Finding triage preserves security, privacy, and environment boundaries."
     },
     {
       "document": "skills/supabase-schema-change/SKILL.md",

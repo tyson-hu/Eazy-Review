@@ -50,7 +50,7 @@ Read only what the task needs (full map with sections and exclusions: `docs/AGEN
 ## Skill Index
 
 Loop routines live in `skills/<name>/SKILL.md` (trigger mapping in `docs/LOOP_ENGINEERING.md`; authoritative discovery metadata in `skills/manifest.json`):
-`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `pr-human-review`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
+`feature-slice-builder`, `ui-screen-builder`, `supabase-schema-change`, `product-data-modeling`, `pr-human-review`, `pr-review-remediation`, `bugfix-debug-loop`, `refactor-safety-loop`, `docs-sync-loop`, `test-and-validation-loop`, `interactive-preview-loop`, `session-handoff`, `blocker-note`, `skill-creator`.
 
 Generate both discovery-wrapper trees from the manifest with `npm run skills:generate`; do not edit generated wrappers by hand.
 
@@ -68,19 +68,20 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
   stale-term, impact-rule, and task-graph contract.
 - `npm run check:skill-wrappers` after canonical skill, manifest, generator, or discovery-wrapper edits (also part of `npm run check`).
 - `npm run decisions:check` after decision-record or decision-index tooling edits (also part of `npm run check`).
-- `npm run check:readonly` is the verifier-safe gate: skill wrappers, decision
-  index, secrets, agent infrastructure, typecheck, and lint. It intentionally
-  does not prepare routes or run the Expo cache-owning checks.
+- `npm run check:readonly` is the non-mutating verifier gate: skill wrappers,
+  decision index, secrets, agent infrastructure, typecheck, and lint. It still
+  executes repository-controlled code and requires the validation trust gate
+  in `docs/AGENT_WORKFLOW.md`.
 - `npm run prepare:routes` is parent/CI-owned preparation. After it runs, check
   tracked config drift before delegating read-only verification.
 - `npm run check:expo` is the parent-owned full Expo gate: route preparation,
   read-only checks, frontend unit tests, Expo Doctor, and dependency alignment.
   `npm run check` remains an alias for this full handoff gate.
 - If a requested check does not exist in `package.json`, say so instead of pretending it ran.
-- `expo-doctor` / `expo install --check` (and thus `check:expo` / `check`) must
-  run **outside the agent sandbox** — sandboxed runs can false-pass doctor or
-  `EPERM` on `~/.expo`. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation
-  Commands → Expo doctor and dependency checks — agent sandbox.
+- `expo-doctor` / `expo install --check` (and thus `check:expo` / `check`) need
+  host access only after trusted-base review permits it. Untrusted or
+  unreviewed PR trees run solely in exact-SHA disposable, credential-free
+  isolation. Canonical detail: `docs/AGENT_WORKFLOW.md`, Validation Commands.
 
 ## Pointers
 

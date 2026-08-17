@@ -10,6 +10,10 @@ Goal: review one implementation-complete pull request for human acceptance by ex
 
 ## When not to use
 
+- Existing review findings require current-head triage, root-cause
+  deduplication, or remediation: use `skills/pr-review-remediation`. Return
+  here after remediation and current-head verification when human acceptance
+  remains pending.
 - The request is only to run or interpret project checks: use `skills/test-and-validation-loop`.
 - The request is to interactively verify a journey in a simulator or mobile-web preview: use `skills/interactive-preview-loop`; cite that evidence here when it already exists, but do not launch the preview loop from this skill.
 - A known defect must be fixed: use `skills/bugfix-debug-loop`, or fix a caused-by-change validation failure inside `skills/test-and-validation-loop`.
