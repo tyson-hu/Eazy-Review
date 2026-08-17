@@ -141,7 +141,7 @@ uses `derive_user_rating_composite` / `derive_eazy_assessment_composite`
 -- Task 17 forward migration.
 ```
 
-Task 15 will select the primary image by `sort_order ASC`, then
+Task 15 selects the primary image by `sort_order ASC`, then
 `created_at ASC`, then `id ASC`. No image maps to `imageUrl: null`.
 
 MVP offer rows accept `US` and `USD` only. Seed/import code must trim and
@@ -297,10 +297,11 @@ Keep `private_note` on the owner-only row. Community Score reads come from
 
 The accepted forward-only Task 12 migration implements this policy/grant
 contract after the Task 11 schema migrations. The migration itself added no
-application runtime integration. Task 14 now provides the Expo client/query
-foundation, while screens remain mock-backed until Task 15+. Exact local and
-staging acceptance results, including the hosted-test fallback and production
-boundary, live in the historical evidence record linked at the top.
+application runtime integration. Task 14 provides the Expo client/query
+foundation; Tasks 15–18 now consume it for connected catalog reads,
+authentication, durable ratings, Rated Products, and password recovery. Exact
+local and staging acceptance results, including the hosted-test fallback and
+production boundary, live in the historical evidence record linked at the top.
 
 ## Task 19 Account-Deletion Consequences
 

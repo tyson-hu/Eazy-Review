@@ -19,7 +19,8 @@ Task detail, dependencies, acceptance, and current status live in
   authentication and Account state; corrected physical iPhone checklist PASS;
   automated and web verification PASS. Task 17 owns durable My Rating and
   Rated Products.
-- Task 17: **Done — human accepted** (PR #36). Durable My Rating
+- Task 17: **Done — human accepted and merged in PR #36 on 2026-08-11.**
+  Durable My Rating
   (sneaker-10-v1), Community aggregates, Rated Products, Product Detail
   restoration, slider, offline/timeout reliability, zombie-session restore,
   incomplete-submit feedback. Full physical A–G **PASS** on SHA `1325198`;
@@ -31,14 +32,14 @@ Task detail, dependencies, acceptance, and current status live in
   editable/public profile, global session revocation, secure native session
   storage revisit) stay deferred — not part of Tasks 16–19 unless separately
   promoted.
-- Task 18: **Human accepted — merge pending** (PR #37).
+- Task 18: **Done — human accepted and merged in PR #37 on 2026-08-17.**
   Email password recovery request + reset deep-link route, non-enumerating
   confirmation, recovery-only Auth phase, local/dev `eazyreview` redirect
   allowlist. Automated local gate greened; physical device recovery matrix
   **tested-pass** on SHA `acac64d` (2026-08-15); web/simulator recovery walks
   **not-run**. The old-password rejection **tested-pass** by human report and
-  Task 18 was human accepted on 2026-08-15. Task 19 remains not started until
-  PR #37 is merged.
+  Task 18 was human accepted on 2026-08-15. Task 19 remains not started; the
+  merge satisfies its Task 18 dependency but does not authorize implementation.
   Production recovery host configuration remains Tasks 25–26. Evidence:
   `docs/evidence/task-18-password-recovery/RESULT.md`.
 - Post–Task 12 review: **GO with roadmap revision**.

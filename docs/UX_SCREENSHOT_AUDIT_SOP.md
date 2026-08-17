@@ -83,7 +83,7 @@ Tab nav → Browse default
 → search hit / empty / recoverable error
 → product card → Detail (unrated + rated + null/zero score edges)
 → Rate / Edit → invalid submit → valid submit → updated My Rating
-→ back navigation → session honesty → reload reset
+→ back navigation → persisted/backend truth → hard-reload session restoration
 → unknown Detail and Rate routes
 ```
 

@@ -81,10 +81,10 @@ Rules:
 - Prefer viewport captures for “what the user sees first”; use scrolling + a second shot when the acceptance criterion requires below-the-fold content (e.g. primary CTA).
 - Never put secrets, tokens, or `.env` values in screenshots (`docs/SECURITY.md`).
 
-Mock My Rating session writes were **removed in Task 15**. The legacy rate route
-shows **Rating unavailable**; do not plan capture steps that expect a fake
-session save or reload-reset of mock ratings. Tasks 16–17 reintroduce durable
-rating after sign-in.
+Mock My Rating session writes were **removed in Task 15**. The current Rate/Edit
+route uses Task 16 authentication and Task 17 durable rating persistence; do
+not plan capture steps that expect a fake session save or reload-reset of mock
+ratings.
 
 ## Navigation Patterns
 
@@ -100,21 +100,23 @@ Open a route on the booted simulator (replace host/port with the Metro URL from 
 
 ```bash
 xcrun simctl openurl booted "exp://127.0.0.1:8081/--/browse"
-xcrun simctl openurl booted "exp://127.0.0.1:8081/--/product/2"
-xcrun simctl openurl booted "exp://127.0.0.1:8081/--/product/2/rate"
+xcrun simctl openurl booted "exp://127.0.0.1:8081/--/product/a1000000-0000-4000-8000-000000000001"
+xcrun simctl openurl booted "exp://127.0.0.1:8081/--/product/a1000000-0000-4000-8000-000000000001/rate"
 ```
 
 Limits (must state in findings when relevant):
 
 - Rapid successive deep links **pollute the navigation stack**. Back button titles may show the previous deep-linked screen, not the product under test.
 - Do **not** file stack-title bugs from deep-link-only sequences unless reproduced on Browse → Detail → Rate.
-- Unknown-id and edge fixtures are fine via deep link (`/product/999`, `/product/6`, `/product/8`).
-- `/product/:id/rate` shows **Rating unavailable** after Task 15 (no mock session save).
+- Use a valid seeded UUID for connected Detail/Rate checks. Numeric mock IDs
+  such as `2`, `6`, and `8` belong only to historical mock fixtures.
+- `/product/:id/rate` enforces authentication and then loads or creates the
+  owner's durable My Rating.
 
 ## What Simulator Proves Well
 
 - Native tab bar and header chrome.
-- `Alert.alert` success copy and button dismissal.
+- Native route transitions, authentication gates, and form states.
 - True device-pixel mobile layout and safe areas.
 - Visual hierarchy at phone width.
 
@@ -136,7 +138,7 @@ Browse tab → default list
 → Product Detail (scores, My Rating, CTA)
 → Rate or Edit
 → invalid submit (stay on form; field errors)
-→ valid submit → session honesty feedback → Detail My Rating updated
+→ valid submit → Detail My Rating refreshed from the backend
 → Back to prior meaningful screen
 ```
 

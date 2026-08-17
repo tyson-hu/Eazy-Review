@@ -80,7 +80,7 @@ Users should be allowed to browse without logging in.
 
 ## Flow 2: Rate Product
 
-Target backend path (Tasks 16–17):
+Current connected path (Tasks 16–17):
 
 ```txt
 User opens Product Detail
@@ -94,7 +94,7 @@ User opens Product Detail
 -> Product page shows My Rating
 ```
 
-Current mock path (Task 9 session-only; see Task 9 mock behavior below):
+Historical mock path (Task 9 session-only; retained for chronology):
 
 ```txt
 User opens Product Detail
@@ -139,7 +139,7 @@ User opens Product Detail while signed in
 
 ## Flow 3: Edit Own Rating
 
-Target backend path (after auth + Supabase):
+Current connected edit path (auth + Supabase):
 
 ```txt
 User opens Product Detail
@@ -150,7 +150,7 @@ User opens Product Detail
 -> Community Score is recalculated
 ```
 
-Current mock path (Task 9 session-only):
+Historical mock path (Task 9 session-only; retained for chronology):
 
 ```txt
 User opens Product Detail
@@ -408,14 +408,9 @@ During the fake-local-state phase:
   connected Task 17 form.
 - The real query invalidation behavior below applies after Supabase integration.
 
-After successful real submission:
-- Invalidate `['product', productId]`.
-- Invalidate `['products']`.
-- Invalidate `['userRating', userId, productId]`.
-- Invalidate `['ratedProducts', userId]`.
-- Navigate back to Product Detail.
-
-The shared `['product', productId]` query stores public detail data only.
-Product Detail composes My Rating from `['userRating', userId, productId]`;
-never cache `privateNote` or other viewer-owned state under the shared product
-key.
+After successful connected submission, invalidate the public product/list and
+owner rating/Rated Products scopes through the canonical key factories in
+[`docs/API_CONTRACTS.md`](API_CONTRACTS.md#ratings-mutations), then navigate
+back to Product Detail. Product Detail composes public detail with the
+owner-scoped My Rating; never cache `privateNote` or other viewer-owned state
+under a public catalog key.

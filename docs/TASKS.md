@@ -23,7 +23,8 @@
   iPhone checklist re-verified on the corrected build (human-reported PASS).
   Automated and web verification pass. Evidence:
   [`docs/evidence/task-16-auth-account/RESULT.md`](evidence/task-16-auth-account/RESULT.md).
-- Task 17 is **Done — human accepted.** My Rating persistence (sneaker-10-v1),
+- Task 17 is **Done — human accepted and merged in PR #36 on 2026-08-11.**
+  My Rating persistence (sneaker-10-v1),
   Community aggregate/server truth, Rated Products, Product Detail restoration,
   slider, offline/timeout reliability, zombie-session restore hardening, and
   incomplete-submit feedback. Full physical A–G matrix **PASS** on SHA
@@ -34,7 +35,8 @@
   DECISION — POST-LAUNCH** → Task 27 (Dynamic Type failed twice; `a635251`
   reverted). Evidence:
   [`docs/evidence/task-17-my-rating-persistence/RESULT.md`](evidence/task-17-my-rating-persistence/RESULT.md).
-- Task 18 is **Human accepted — merge pending** (PR #37).
+- Task 18 is **Done — human accepted and merged in PR #37 on 2026-08-17**
+  (`10fdcbcda9f2f9c0fa096f6ed39e3273fc59c533`).
   Password recovery request (`/auth/forgot-password`), recovery deep-link
   target (`/auth/reset-password`), `PASSWORD_RECOVERY` handling,
   non-enumerating confirmation, and focused automated recovery tests.
@@ -42,7 +44,8 @@
   recovery matrix: **tested-pass** on SHA `acac64d` (2026-08-15).
   Web/simulator recovery walks: **not-run**. The old-password rejection
   **tested-pass** by human report and Task 18 was human accepted on 2026-08-15.
-  Task 19 remains not started until PR #37 is merged. Evidence:
+  Task 19 remains not started; the merge satisfies its Task 18 dependency but
+  does not authorize Task 19 implementation. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
@@ -193,8 +196,8 @@ Work in order unless a task explicitly states that it is conditional.
 | 14 | Connected Client And Query Foundation | Done |
 | 15 | Real Public Catalog Reads | Done — human accepted and merged in PR #32 |
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
-| 17 | My Rating Persistence And Rated Products | Done — human accepted |
-| 18 | Password Recovery And Deep Links | Human accepted — merge pending |
+| 17 | My Rating Persistence And Rated Products | Done — human accepted and merged in PR #36 on 2026-08-11 |
+| 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
 | 19 | Protected Account Deletion | Pending |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
@@ -549,7 +552,7 @@ Non-goals (remain later work — do not implement in Task 16):
 
 ## Task 17: My Rating Persistence And Rated Products
 
-Status: **Done — human accepted.**
+Status: **Done — human accepted and merged in PR #36 on 2026-08-11.**
 
 **Scope correction (physical-device):** While validating the first Task 17
 implementation, two reproducible defects blocked acceptance: (A) Overall on a
@@ -744,7 +747,7 @@ Non-goals:
 
 ## Task 18: Password Recovery And Deep Links
 
-Status: **Human accepted — merge pending.**
+Status: **Done — human accepted and merged in PR #37 on 2026-08-17.**
 
 Depends on: Task 16.
 
@@ -792,7 +795,7 @@ Deliverables:
 - Focused recovery-state tests for verified, ordinary-session, direct,
   expired, replayed, and malformed states.
 
-Implementation notes (human accepted; merge pending):
+Implementation notes (human accepted and merged):
 
 - Sign In and logged-out Account expose **Forgot password?**.
 - Request uses `supabase.auth.resetPasswordForEmail` with
@@ -878,7 +881,8 @@ Acceptance:
 - The new password works and the old password fails.
 - Recovery is proven outside web-only development.
 
-Human acceptance: **Done — human accepted on 2026-08-15; PR #37 merge pending.**
+Human acceptance and merge: **Done — human accepted on 2026-08-15 and merged
+in PR #37 on 2026-08-17.**
 
 ## Task 19: Protected Account Deletion
 

@@ -66,18 +66,22 @@ Checksum discipline:
 2. Prefer `fill` for replacing the query; use `slowly` / sequential typing only when testing live filter-as-you-type.
 3. Wait for result text or empty/error copy before screenshotting.
 
-Deterministic Browse error (mock): query `__error__` → expect recovery via **Try again** (clears query and reloads list).
+The former `__error__` query trigger belongs only to archived mock audits. For
+connected Browse, reproduce error/retry through the task's approved backend or
+focused test setup; ordinary search text must not manufacture a network error.
 
 ### Forms And Dialogs
 
 1. Invalid submit: click primary submit with empty required fields; wait for field error text; screenshot full page.
-2. Valid submit on web: RN `Alert` is unreliable — the app uses `window.alert` then navigates. After submit, expect a browser dialog:
-
-   - Handle with `browser_handle_dialog` (`accept: true`), **or**
-   - Register `page.once('dialog', …)` inside `browser_run_code_unsafe` before click.
-
-3. If MCP reports a stuck modal state after accept, open a **new tab** (`browser_tabs` action `new`) rather than fighting the dead dialog handle.
-4. Prefer SPA transitions (`click` / in-app navigation) to keep session mock ratings. A full `browser_navigate` / `page.goto` remounts JS and **resets** session-only My Rating fixtures.
+2. After a valid connected submit, wait for the routed destination and verify
+   the refreshed server-backed state; do not expect a mock-save alert.
+3. If the flow under test intentionally opens a browser dialog, handle it with
+   `browser_handle_dialog`. If MCP remains stuck afterward, open a new tab
+   rather than fighting the dead dialog handle.
+4. Prefer SPA transitions (`click` / in-app navigation) for navigation fidelity.
+   A full `browser_navigate` / `page.goto` remounts JavaScript and exercises
+   auth/session restoration; a persisted My Rating should return when the same
+   account and backend remain available.
 
 ### Reachability Checks
 
@@ -102,7 +106,7 @@ Web does **not** prove iOS soft-keyboard occlusion; mark keyboard criteria Parti
 ## Navigation Integrity
 
 - Prefer: Browse → tap product card → Detail → Rate/Edit → back.
-- Direct URLs (`/product/2`, `/product/2/rate`) are fine for static states.
+- Direct URLs using a seeded Supabase product UUID are fine for static states.
 - Web headers may expose odd accessible names (e.g. `(tabs), back`) or surprising `href` values while the visual back still works. File findings only when reproduced on the real user path; cite snapshot refs.
 
 ## What Web Proves Well
@@ -110,8 +114,8 @@ Web does **not** prove iOS soft-keyboard occlusion; mark keyboard criteria Parti
 - Scripted multi-step journeys with stable evidence.
 - Full-page layout and below-the-fold CTAs.
 - Accessibility tree / labels for forms and errors.
-- Session Alert copy (via `window.alert` text).
-- Reload-reset behavior (`goto` same Detail URL).
+- Connected form validation, mutation failures, and routed success states.
+- Auth/session and PostgreSQL-backed My Rating restoration after a hard reload.
 
 ## What Web Does Not Prove Alone
 
@@ -126,12 +130,12 @@ Web does **not** prove iOS soft-keyboard occlusion; mark keyboard criteria Parti
 | Navigate timeout / blank page | Confirm Metro URL; wait for bundle; retry once |
 | Dialog blocks later tools | `browser_handle_dialog` or new tab |
 | Full-page files identical across steps | If steps claim different UI: recapture or use snapshot/observed-step. If intentional convergence: document shared hash + route proof |
-| Session rating “lost” after navigate | Expected after hard `goto`; keep submit→assert in one SPA session |
+| Persisted rating missing after hard navigate | Verify the same account restored and Supabase is reachable; do not classify it as expected session-only behavior |
 
 ## Report Requirements
 
 1. Viewport size used (must include 393 width for mobile-web claims).
 2. MCP vs other driver.
 3. Which steps were web-only vs also on simulator.
-4. Dialog / session-reset limits called out.
+4. Dialog, auth-restoration, and backend-reachability limits called out.
 5. Evidence paths + snapshot or observed-step citations for each finding.
