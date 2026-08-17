@@ -76,6 +76,7 @@ about the current head or whether a root cause is fixed.
    epochBaselineSha
    remediationStartSha
    remediationHeadSha
+   preVerdictHeadSha
    reviewInputs:
      - source
        reviewedSha
@@ -241,13 +242,20 @@ about the current head or whether a root cause is fixed.
    boundaries. Only that follow-up sets `reviewBudgetUsed: true`. Never restart
    the feature audit or review again automatically after fixing its finding.
 
-10. **Stop with exactly one terminal verdict.**
+10. **Re-resolve the live head, then stop with exactly one terminal verdict.**
+    Immediately before choosing a verdict, resolve the live GitHub PR head and
+    record `preVerdictHeadSha`. `COMPLETE` requires it to equal
+    `remediationHeadSha` and every required validation result to be bound to
+    that same SHA. If it differs, record both heads; do not silently refresh
+    the epoch, absorb or validate unseen commits, or return `COMPLETE`. Stop for
+    current-head re-triage or explicit next-epoch authority.
 
     ```text
     COMPLETE — accepted findings remediated and current-head validation passed.
     READY — triage complete; implementation authorization required.
     BLOCKED — human product or risk decision required.
     BLOCKED — remediation exceeds the authorized scope.
+    BLOCKED — live PR head changed; re-triage or next authority required.
     BLOCKED — current-head validation or environment evidence is unavailable.
     BLOCKED — repair budget exhausted; blocker recorded.
     DEFERRED — remaining findings are nonblocking or owned by another task.
@@ -261,6 +269,10 @@ about the current head or whether a root cause is fixed.
 ## Verification
 
 - Live head/base, PR state, threads, and exact-head checks were resolved.
+- Immediately pre-verdict, the live GitHub head was re-resolved and recorded.
+- `COMPLETE` required the pre-verdict head, remediation head, and all required
+  validation evidence to name the same SHA; a mismatch stopped without
+  absorbing or validating unseen commits.
 - Triage made no edit without explicit edit/scope authority.
 - Epoch baseline, multi-source review inputs, remediation heads, and one-shot
   authorization/consumption are recorded.
@@ -280,6 +292,7 @@ about the current head or whether a root cause is fixed.
 
 - Repository, PR, head, accepted set, or required authority cannot be resolved.
 - Head changes during triage and live state cannot be refreshed.
+- The pre-verdict live GitHub head differs from `remediationHeadSha`.
 - A human product/risk decision or unauthorized scope expansion is required.
 - High-risk/current-head/environment evidence is unavailable.
 - An untrusted head lacks exact-SHA disposable, credential-free isolation.
@@ -303,6 +316,7 @@ about the current head or whether a root cause is fixed.
 - Letting an inner routine own PR state, scope, review budget, or verdict.
 - Treating sandboxing, install controls, or green CI as code trust or human
   acceptance.
+- Returning `COMPLETE` from an earlier or local head without live re-resolution.
 - Auto-patching failed remediation, fixing distinct nonblockers, or recursively
   running another review.
 - Writing to GitHub without exact action authority.
@@ -311,8 +325,9 @@ about the current head or whether a root cause is fixed.
 
 Use the five sections in `docs/AGENT_WORKFLOW.md`. Include: repository/PR/base;
 epoch baseline, remediation start/head, review inputs, edit authority, CI,
-task-final-review status/source/SHA, review budget, and next-epoch
-status/by/from/scope/consumption; each root cause
+pre-verdict live head and same-SHA validation binding, task-final-review
+status/source/SHA, review budget, and next-epoch status/by/from/scope/
+consumption; each root cause
 with every finding's ID/source/review SHA, invariant, scenario, evidence,
 disposition, action, and owner; accepted/excluded scope and inner routines;
 changes and regressions; validation trust/base/environment and all outcomes;
