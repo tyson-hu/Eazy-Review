@@ -2,7 +2,7 @@
 
 ## Status
 
-**Task 18 — Human accepted — merge pending.**
+**Task 18 — Done — human accepted and merged in PR #37.**
 
 | Surface | Status |
 | --- | --- |
@@ -14,7 +14,7 @@
 | Local Auth runtime (LAN verify origin + app-scheme allowlist) | **pass** — effective container configuration + LAN health verified 2026-08-13 |
 | Physical device (recovery A–F) | **tested-pass** — full matrix completed 2026-08-15 on `acac64d2fa77641839b96892da8e3b12b9ee05b3` |
 | Old-password rejection after reset | **tested-pass** — human reported the prior password was rejected on 2026-08-15 |
-| Human acceptance | **Done — human accepted on 2026-08-15; PR #37 merge pending** |
+| Human acceptance and merge | **Done — human accepted on 2026-08-15; merged in PR #37 on 2026-08-17** |
 | Staging Auth redirect configuration | **not performed** |
 | Production Auth redirect configuration | **not performed** |
 
@@ -29,7 +29,9 @@ Environment status labels follow `docs/evidence/README.md`
 - Branch: `agent/task-18-password-recovery`
 - Starting master SHA: `3af5e33f202d382c073d2377ee85966d75ac9002` (PR #36 merge / Task 17 accepted)
 - Implementation commit (product code): `e43cfead8e39cd72267d03d45eed5f1632c9b6d6`
-- PR tip / this evidence revision: run `git rev-parse HEAD` on the branch or open PR #37 head OID (do not treat a stale prose SHA as authoritative after later docs-only commits)
+- Final PR head: `61b18a129c955a3f7ece6ed434b9656d78143749`
+- Master merge commit: `10fdcbcda9f2f9c0fa096f6ed39e3273fc59c533`
+  (PR #37, 2026-08-17)
 
 ## What was implemented
 
@@ -244,7 +246,8 @@ rejected and explicitly accepted Task 18 for merge.
 - **Environment matrix:** iOS Simulator `not-run`; mobile web `not-run`;
   physical device `tested-pass`
 - **Overall result:** `tested-pass` for recovery scenarios A–F plus the
-  old-password rejection; human accepted on 2026-08-15; merge pending
+  old-password rejection; human accepted on 2026-08-15; later merged in PR #37
+  on 2026-08-17
 
 ### Step-by-step result
 
@@ -295,14 +298,17 @@ states. The report retains the distinct observed sequence and limitations.
 - Simulator and web recovery walks were not part of this run.
 - Automated checks were re-run after the final merge-review remediation; the
   focused and repository-wide results are recorded above. Exact-head GitHub CI
-  remains a separate pre-merge gate after the remediation commit is pushed.
+  was tracked as a separate pre-merge gate; the verified merge is recorded
+  below.
 
 ### GitHub disposition and next decision
 
 - The six representative files above are selected for PR #37; the other five
   remain local-only under the task-specific `.gitignore` rules.
-- Human acceptance is complete and PR #37 is authorized for guarded merge.
-  Task 19 remains not started until the merge is verified on `origin/master`.
+- Human acceptance is complete. PR #37 was merged into `origin/master` as
+  `10fdcbcda9f2f9c0fa096f6ed39e3273fc59c533` on 2026-08-17. Task 19 remains
+  not started; the verified merge satisfies its Task 18 dependency but does
+  not authorize implementation.
 
 ## Targeted physical A/B — recovery callback fallback (2026-08-13)
 

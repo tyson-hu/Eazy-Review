@@ -1,12 +1,50 @@
 # Eazy Review
 
-Eazy Review is a mobile-first product review and discovery app focused on sneakers and products. The core loop is simple: browse products, open a product detail page, compare Eazy Score with Community Score, submit or edit My Rating, and find rated products later.
+Eazy Review is an independent engineering project: a mobile-first sneaker and
+product review app for browsing a catalog, comparing Eazy Score with Community
+Score, and maintaining a personal My Rating.
 
-The repository contains the accepted mock Browse → Product Detail → Rating
-Form experience plus the accepted local/staging Supabase schema and
-least-privilege authorization foundation. Expo still uses mock data and
-session-only My Rating state; `docs/TASKS.md` is the sole current-status and
-implementation-order source.
+## Current Status
+
+- Anonymous Browse and Product Detail load published catalog records through
+  Supabase/PostgreSQL.
+- Email/password accounts gate rating. Completed ratings persist per user,
+  refresh the trigger-owned Community Score, and appear in the authenticated
+  Rated Products history.
+- Local/development password recovery uses `eazyreview` app deep links and a
+  recovery-only authorization state. Preview and production recovery setup
+  remains later release work.
+- Connected reads and writes distinguish offline, reconnect, timeout, and
+  backend-unreachable states; auth/recovery logic guards stale-session races.
+  Failed rating writes preserve form input for manual retry; there is no
+  durable offline cache or write queue.
+
+Feed remains a placeholder, and protected account deletion and release work
+remain pending. Current task status and implementation order live in
+[`docs/TASKS.md`](docs/TASKS.md).
+
+## Current Stack
+
+- React Native, Expo SDK 57, and Expo Router
+- TypeScript and NativeWind
+- Supabase with PostgreSQL and PostgreSQL Row Level Security (RLS)
+- TanStack Query and NetInfo for connected state and request lifecycle
+
+## Engineering Evidence
+
+- Least-privilege grants, owner-scoped RLS, server-derived scores, and
+  concurrency behavior: [data model and authorization contract](docs/DATA_MODEL.md)
+  and [Tasks 11–12 database acceptance](docs/evidence/task-11-12-database-acceptance/RESULT.md).
+- Catalog and rating failure handling, including physical-device offline and
+  reconnect checks: [connected-request reliability decision](docs/decisions/2026-08-09-connected-request-reliability.md),
+  [Task 15 evidence](docs/evidence/task-15-public-catalog/RESULT.md), and
+  [Task 17 evidence](docs/evidence/task-17-my-rating-persistence/RESULT.md).
+- Authentication, session restoration, and password recovery:
+  [Task 16 evidence](docs/evidence/task-16-auth-account/RESULT.md) and
+  [Task 18 evidence](docs/evidence/task-18-password-recovery/RESULT.md).
+- Automated frontend, database, security, and concurrency gates:
+  [Expo CI](.github/workflows/expo-ci.yml) and
+  [Database CI](.github/workflows/database-ci.yml).
 
 ## Documentation Map
 
@@ -29,16 +67,6 @@ implementation-order source.
 - `docs/DECISIONS.md`: generated index of current high-impact decisions.
 - `docs/decisions/`: human-authored ADR-style records, recording rules, and the legacy archive.
 - `docs/RELEASE_CHECKLIST.md`: release-readiness checklist.
-
-## Stack Direction
-
-- Expo SDK 57
-- Expo Router
-- React Native
-- TypeScript
-- NativeWind
-- Supabase (schema/authorization shipped; Expo client foundation in Task 14)
-- TanStack Query (foundation in Task 14; screen queries in Task 15+)
 
 Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
 
@@ -307,15 +335,3 @@ acceptance for this branch (2026-08-07) is recorded in
 ## Documentation Discipline
 
 Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commit/PR handoff.
-
-## Current Product State
-
-Browse → Product Detail → Rating Form mock UX and the Tasks 11–14 database,
-authorization, seed, client, query, lifecycle, and test foundations are
-accepted. Task 15 connects anonymous Browse and Product Detail to the two
-deterministic local catalog fixtures through the accepted Supabase and TanStack
-Query boundary, with physical-iPhone LAN and offline/reconnect acceptance
-recorded on this branch (including Metro-independent Release cold start).
-Authentication and rating persistence remain out of scope. Task 15 did not
-contact staging or production. `docs/TASKS.md` is the sole current-status and
-implementation-order ledger.

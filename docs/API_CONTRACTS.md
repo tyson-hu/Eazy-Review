@@ -265,7 +265,7 @@ src/
       queries.ts                # User-scoped profile query
 
     ratings/
-      # connected modules arrive with Task 17
+      # Task 17 connected ratings, persistence, and Rated Products modules
 
   lib/
     env/
@@ -703,7 +703,7 @@ Rules:
 - `private_note` / `privateNote` is owner-only and at most 500 characters
   (database check plus connected form validation).
 - Public written reviews are not implemented.
-- Task 17 changes the optional-field label from **Comment** to
+- Task 17 changed the optional-field label from **Comment** to
   **Private note** and the property from `comment` to `privateNote` together.
 - Data API grants land only after Task 12 RLS policies.
 
@@ -717,7 +717,7 @@ Community Score; they never invent client-side score math.
 ## Mock Data Contract
 
 After Task 15, these modules are retained only for tests, isolated component
-fixtures, legacy mock Rating routes, or explicitly named development helpers.
+fixtures, or explicitly named development helpers.
 Runtime Browse and Product Detail must not import them or silently fall back to
 them when a remote request fails:
 
@@ -729,14 +729,13 @@ them when a remote request fails:
   `myRating` is always `null` on this helper; the product-ID-only mock session map
   and `saveMockMyRating` write API were removed so connected Supabase UUIDs cannot
   claim a fake session save.
-- Legacy `/product/[id]/rate` is an honest **Rating unavailable** screen until
-  Tasks 16–17 own sign-in and durable My Rating. It must not write mock ratings.
+- Historical Task 15 interim: `/product/[id]/rate` showed **Rating
+  unavailable** and did not write mock ratings. The current route uses Task 16
+  authentication and Task 17 durable `user_ratings` persistence.
 
-When Task 15 switches Browse/Detail to Supabase UUIDs, it does not adapt
-session-only My Rating persistence to connected products. The Rate action stays
-honestly unavailable/gated until Tasks 16–17 provide identity and durable
-persistence; no temporary viewer/product map is part of the connected
-contract.
+Task 15 did not adapt session-only My Rating persistence to connected products.
+That interim ended when Tasks 16–17 supplied identity and durable persistence;
+no temporary viewer/product map is part of the connected contract.
 
 ```ts
 import type { Product } from '@/src/types/product';
@@ -790,7 +789,7 @@ const detail = getMockProductDetailById('1');
 // detail.myRating — always null on the mock helper after Task 15
 ```
 
-## Current Product Example
+## Mock Product Example
 
 ```ts
 import type { ProductDetailData } from '@/src/types/product';
