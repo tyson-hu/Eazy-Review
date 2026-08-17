@@ -118,8 +118,10 @@ about the current head or whether a root cause is fixed.
      no-edit epoch retains its baseline head.
    - `reviewInputs` is a list/set of `{source, reviewedSha}`; exact duplicates
      may collapse, but older inputs remain and are re-evaluated on current head.
-   - `taskFinalReview.status` is `pending | satisfied`. Record its source and
-     reviewed SHA when satisfied; remediation head changes never reset it.
+   - `taskFinalReview.status` is `pending | satisfied`; it may be satisfied only
+     when its `reviewedSha` equals `epochBaselineSha`. Older reviews remain
+     `reviewInputs` but cannot satisfy a later baseline. In-epoch remediation
+     head changes never reset a satisfied baseline review.
    - Fix commits do not create another epoch.
    - `nextEpochAuthorization.status` is `none | granted`, default `none`. A
      grant names `authorizedBy`, `authorizedFromHead`, and `scope`; `grantedAt`
@@ -243,10 +245,11 @@ about the current head or whether a root cause is fixed.
 
 9. **Enforce the follow-up review budget.**
    Preserve the final integrated review required by `docs/AGENT_WORKFLOW.md`:
-   it runs exactly once per task, never once per remediation head. If that
-   review supplied a finding that opened this epoch, mark it satisfied; if it
-   has not run, it remains a once-only task gate and does not consume the
-   targeted-follow-up budget.
+   it runs exactly once per task, never once per remediation head. Apply the
+   step-2 baseline equality even when its finding opened this epoch; retain an
+   older review and triage its findings while the gate stays pending. Once the
+   baseline review is satisfied, in-epoch remediation never resets or repeats
+   it. An unmet gate does not consume the targeted-follow-up budget.
 
    After that required gate, default to `no additional review`. One targeted
    post-remediation follow-up is allowed only when explicitly authorized and
@@ -303,7 +306,8 @@ about the current head or whether a root cause is fixed.
 - Validation used the pre-established environment and two-repair budget; every
   repair-created head advanced `remediationHeadSha` and reran all terminal
   gates on that SHA; follow-up review/new epoch never occurred implicitly.
-- Final integrated review ran once and stayed separate from targeted-review use.
+- Final integrated review covered `epochBaselineSha` once, survived in-epoch
+  remediation, and stayed separate from targeted-review use.
 - Duplicate comments collapsed; failed-remediation evidence stayed blocking.
 - No GitHub write occurred without authority for that exact action.
 - Exactly one approved terminal verdict is reported.
