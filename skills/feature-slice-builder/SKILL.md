@@ -13,12 +13,23 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 
 ## When not to use
 
+- Do not use this skill as the PR-wide outer orchestration loop when an
+  implementation PR has existing findings requiring current-head triage.
 - The work is purely one screen's visuals or layout: use `skills/ui-screen-builder`.
 - Task 14 client/query/test infrastructure with no connected screen: follow
   the task contract and canonical workflow directly.
 - The work needs SQL, a migration, or RLS: use `skills/supabase-schema-change` first (then return here for the UI/integration packet).
 - The work only reshapes frontend types or mock data with no screen work: use `skills/product-data-modeling`.
 - Directly deleting accounts (or any other MCP **FORBIDDEN** action) on local, staging, or production: never — implementing the in-app delete-account flow is allowed; performing account deletion through MCP/tools is not (`docs/SECURITY.md`, `docs/MCP_WORKFLOW.md`).
+
+### When used inside PR remediation
+
+For an assigned correction, apply this skill's matching task-mode contracts and
+routine normally. `skills/pr-review-remediation` retains the epoch, finding
+disposition, remediation scope, review budget, and terminal verdict. The
+memory step is report-only: report task-status, ADR, follow-up, handoff, or
+blocker needs to the outer owner, and do not edit those files unless the outer
+accepted scope explicitly includes them.
 
 ## Inputs expected
 
@@ -130,6 +141,9 @@ introduced.
 
 ## Memory step
 
+- Inside PR remediation, report all memory needs to the outer owner without
+  editing; only an explicit outer accepted scope for the target files permits
+  those writes.
 - Update the task's status in `docs/TASKS.md` (Done / Partial, plus newly discovered follow-ups).
 - Add or update a `docs/decisions/*.md` record only if work beyond the written task introduced a durable high-impact contract, route, or component decision under `docs/decisions/README.md`.
 
