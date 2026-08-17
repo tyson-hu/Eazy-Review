@@ -219,10 +219,13 @@ about the current head or whether a root cause is fixed.
    device work remains a human/interactive-preview gate.
 
    For each directly evidenced caused-by-change failure, allow at most two
-   repairs. Before each, state one hypothesis, make one minimal correction, and
-   rerun the narrow failure. Cosmetic variants do not reset the budget. After
-   two failures, stop, preserve exact redacted evidence, and use/recommend
-   `blocker-note`; do not open another review epoch.
+   repairs. Before each, state one hypothesis and make one minimal correction. If
+   that creates a candidate commit, immediately set `remediationHeadSha` to its
+   exact SHA and discard terminal evidence from the prior head. Rerun the narrow
+   failure; its pass proves only the repair hypothesis, so rerun every required
+   gate on the new `remediationHeadSha` before `COMPLETE`. Cosmetic variants do
+   not reset the budget. After two failures, stop, preserve exact redacted
+   evidence, and use/recommend `blocker-note`; do not open another review epoch.
 
 8. **Classify post-remediation evidence without recursion.**
    - A true `duplicate-root-cause` adds no materially new current-head
@@ -297,8 +300,9 @@ about the current head or whether a root cause is fixed.
 - Every ledger root preserves each finding's ID/source/review SHA and applies
   the general/lifecycle/security quality bars.
 - Outer ownership and inner routing held.
-- Validation used the pre-established environment and two-repair budget;
-  follow-up review/new epoch never occurred implicitly.
+- Validation used the pre-established environment and two-repair budget; every
+  repair-created head advanced `remediationHeadSha` and reran all terminal
+  gates on that SHA; follow-up review/new epoch never occurred implicitly.
 - Final integrated review ran once and stayed separate from targeted-review use.
 - Duplicate comments collapsed; failed-remediation evidence stayed blocking.
 - No GitHub write occurred without authority for that exact action.
