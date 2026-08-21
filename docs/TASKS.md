@@ -903,6 +903,9 @@ staging destructive checklist is also human-run.
 Goal: provide complete in-app account deletion through a trusted server
 boundary.
 
+Planning state: the revised design and implementation plan were human-approved
+on 2026-08-20. Local implementation remains a separate unauthorized gate.
+
 Deliverables:
 
 - One authenticated Supabase Edge Function.
