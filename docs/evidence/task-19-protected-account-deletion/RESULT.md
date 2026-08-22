@@ -6,10 +6,12 @@
 
 This packet is published in draft PR #43 on
 `codex/task-19-guarded-account-deletion`. The original implementation head is
-`1391effa102e3f0434c69ede179144c2213d3c53`; the current local remediation is
-not yet published. The live PR becomes authoritative for its exact head and
-checks after push. No deployment, hosted configuration, account deletion,
-readiness transition, acceptance, merge, or production action occurred.
+`1391effa102e3f0434c69ede179144c2213d3c53`; the first validation remediation
+is published at `1a515e13b1992f6dcc53f08a030e28acf0022d13`. The final
+test-orchestration repair is not yet published. The live PR becomes
+authoritative for that repair's exact head and checks after push. No
+deployment, hosted configuration, account deletion, readiness transition,
+acceptance, merge, or production action occurred.
 
 ## Evidence matrix
 
@@ -19,12 +21,12 @@ readiness transition, acceptance, merge, or production action occurred.
 | Principal-bound Auth-storage races | **pass** | Exact post-SDK adoption, pre-dispatch raw authority, exact displaced-A CAS, C-before-B with delayed event delivery, empty/A2/malformed/blocked preservation, unavailable/invalid replacement, and final raw-publication regressions pass |
 | Preparing/pending/settled, offline bootstrap, and late Auth proof | **pass** | Non-destructive unit/provider tests; no hosted session used |
 | Two-context notification, cache isolation, foreground/mount reconciliation | **pass** | Payload-free web/native coordination and provider tests; foreground behavior is mocked, not interactive proof |
-| Client/provider/UI Jest | **pass** | Default parallel Jest and a Node 24 three-worker no-cache run each passed 41 suites / 465 tests after the online test-isolation correction; existing React `act` and forced-exit teardown warnings remain visible |
-| Read-only FK metadata proof | **pass** | Exact-head Database CI on `1391effa...` passed the two pg_catalog assertions, local reset, pgTAP/concurrency suite, and generated-type parity without deleting an account |
+| Client/provider/UI Jest | **pass** | Default parallel Jest and a Node 24 three-worker no-cache run each passed 41 suites / 465 tests after the final controlled warm-link test repair; existing React `act` and forced-exit teardown warnings remain visible |
+| Read-only FK metadata proof | **pass** | Exact-head Database CI on `1a515e1...` passed the two pg_catalog assertions, local reset, pgTAP/concurrency suite, and generated-type parity without deleting an account |
 | `npm run check:readonly` | **pass** | Skill wrappers, decisions, secrets, agent infrastructure, typecheck, and lint passed on the corrected tree |
 | `npm run check:expo` | **pass** | Post-`npm ci` remediation run passed route preparation, `check:readonly`, 41 suites / 465 Jest tests, Expo Doctor 21/21, and Expo dependency alignment |
-| Exact-head Expo CI | **not-run** | Corrected remediation head is not yet published. The prior `1391effa...` head failed twice with a first timeout consistent with the locally reproduced offline-`onlineManager` state; the failed runners did not directly record the singleton value |
-| Exact-head Database CI | **not-run** | Corrected remediation head is not yet published; prior `1391effa...` Database CI passed |
+| Exact-head Expo CI | **not-run** | Final repair is not yet published. The prior `1a515e1...` head retained the same first timeout, proving the online reset alone was insufficient |
+| Exact-head Database CI | **pass** | `1a515e1...` passed Deno Function checks, local reset, pgTAP/concurrency tests, generated-type parity, and cleanup; final test-only repair is not yet published |
 | Web mobile preview | **not-run** | No authenticated safe review session was used |
 | iOS Simulator | **not-run** | No authenticated safe review session was used |
 | Physical device | **not-tested** | Human-only review remains outstanding |
@@ -114,7 +116,9 @@ ready, merged, or production verification.
 | `npm run check:readonly` after CAS docs | **pass** — wrappers, decisions, secrets, agent infrastructure, typecheck, and lint |
 | `npm test -- --runInBand --forceExit` after CAS | **pass** — 41 suites / 465 tests; pre-existing React `act` and forced-exit teardown warnings remain |
 | Exact-head Expo CI reproduction on `1391effa...` | **fail** — both attempts reached the same first 5-second recovery-test timeout and the same nine contaminated follow-on failures |
-| Offline-singleton RED / GREEN | **pass** — forcing `onlineManager` offline reproduced the exact first timeout; resetting it in the file-level `beforeEach` made the focused test pass without increasing a timeout |
+| Offline-singleton RED / GREEN | **pass, insufficient alone** — forcing `onlineManager` offline reproduced the exact first timeout and justified the file-level reset, but `1a515e1...` exact-head CI retained the timeout |
+| Exact-head Expo CI on `1a515e1...` | **fail** — the same first timeout and nine follow-on failures recurred after online reset and SDK patch alignment; Database CI passed |
+| Final controlled warm-link repair | **pass locally** — the test waits for signed-out bootstrap, seeds A/B cache, triggers the same callback through the provider listener, retains every authority/storage/cache assertion, and cleans up in `finally`; focused 50/50 and full 465/465 passed |
 | Node 24 CI-shaped Jest | **pass** — 41 suites / 465 tests with three workers and a cold Jest cache |
 | Expo SDK 57 patch alignment | **pass** — Expo resolved the five direct packages to `expo` 57.0.15, `expo-constants` 57.0.13, `expo-dev-client` 57.0.14, `expo-linking` 57.0.7, and `expo-router` 57.0.15; clean `npm ci` passed |
 | Current `npm run check:expo` | **pass** — route preparation, `check:readonly`, 41 suites / 465 Jest tests, Expo Doctor 21/21, and dependency alignment passed after clean install |

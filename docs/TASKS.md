@@ -50,11 +50,12 @@
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - Task 19 is **Partial — implementation complete; human staging deletion
   pending.**
-  The non-destructive implementation is committed and pushed in draft PR #43;
-  the current validation remediation is locally complete but not yet
-  published. Exact-head CI, deployment/configuration, device review,
-  destructive staging proof, human acceptance, readiness, merge, and
-  production remain outstanding. Evidence:
+  The non-destructive implementation and first validation remediation are
+  committed and pushed in draft PR #43. Database CI passed on `1a515e1`, while
+  Expo CI repeated the recovery-test timeout. The final test-orchestration
+  repair is locally complete but not yet published. Exact-head CI,
+  deployment/configuration, device review, destructive staging proof, human
+  acceptance, readiness, merge, and production remain outstanding. Evidence:
   [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
@@ -914,10 +915,12 @@ boundary.
 
 Planning state: the revised design and implementation plan were human-approved
 on 2026-08-20. Local non-destructive implementation was authorized on
-2026-08-21 and committed/pushed in draft PR #43. The current validation
-remediation is locally complete but not yet published. Exact-head CI, hosted
-configuration, deployment, destructive verification, acceptance, readiness,
-merge, and production remain separate gates.
+2026-08-21 and committed/pushed in draft PR #43. The first validation
+remediation is published at `1a515e1`; Database CI passed and Expo CI repeated
+the recovery-test timeout. The final test-orchestration repair is locally
+complete but not yet published. Exact-head CI, hosted configuration,
+deployment, destructive verification, acceptance, readiness, merge, and
+production remain separate gates.
 
 Implementation evidence:
 [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).

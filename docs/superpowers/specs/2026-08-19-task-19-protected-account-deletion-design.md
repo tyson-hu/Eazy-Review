@@ -6,10 +6,14 @@ in chat on 2026-08-20. Local non-destructive implementation and the bounded
 current-version C-before-B correction were authorized on 2026-08-21 and are
 complete and published in draft PR #43. A bounded review-remediation pass
 isolates the online recovery test precondition and aligns the five Expo SDK 57
-patch dependencies required by Expo Doctor. The live PR head and check results
-remain the source for exact-head CI state. Deployment/configuration,
-interactive review, human staging deletion, human acceptance, readiness,
-merge, and production remain separate outstanding gates.
+patch dependencies required by Expo Doctor. Its published `1a515e1` head passed
+Database CI but repeated the Expo recovery-test timeout. A final bounded repair
+removes that regression's unrelated cold-link/manual-latch orchestration while
+retaining the superseded-recovery authority and cache assertions; it is not yet
+published. The live PR head and check results remain the source for exact-head
+CI state. Deployment/configuration, interactive review, human staging
+deletion, human acceptance, readiness, merge, and production remain separate
+outstanding gates.
 
 ## Purpose
 

@@ -1588,22 +1588,8 @@ describe('AuthProvider password recovery', () => {
     const queryClient = createAppQueryClient({
       defaultOptions: { queries: { gcTime: Infinity } },
     });
-    let releaseWinnerValidation: () => void = () => undefined;
-    let markWinnerValidationStarted: () => void = () => undefined;
-    const winnerValidationStarted = new Promise<void>((resolve) => {
-      markWinnerValidationStarted = resolve;
-    });
-    const winnerValidationHold = new Promise<void>((resolve) => {
-      releaseWinnerValidation = resolve;
-    });
-    let winnerValidationWasMarked = false;
     const validateStoredSession = jest.fn(async (accessToken: string) => {
       if (accessToken === winnerB.access_token) {
-        if (!winnerValidationWasMarked) {
-          winnerValidationWasMarked = true;
-          markWinnerValidationStarted();
-        }
-        await winnerValidationHold;
         return { data: { user: winnerB.user }, error: null };
       }
       return {
@@ -1633,11 +1619,20 @@ describe('AuthProvider password recovery', () => {
         error: null,
       };
     });
+    let emitRecoveryLink: (url: string) => void = () => {
+      throw new Error('Recovery link listener is not ready.');
+    };
     const linking = {
-      getInitialURL: jest.fn(async () =>
-        'eazyreview://auth/reset-password?code=SUPERSEDED_ADOPTION_CODE'
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (
+          _type: 'url',
+          listener: (event: { url: string }) => void,
+        ) => {
+          emitRecoveryLink = (url) => listener({ url });
+          return { remove: jest.fn() };
+        },
       ),
-      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
     };
     const states: string[] = [];
     const rendered = await renderWithProviders(
@@ -1647,44 +1642,53 @@ describe('AuthProvider password recovery', () => {
       { queryClient },
     );
 
-    await winnerValidationStarted;
-    queryClient.setQueryData(accountKeys.profile('principal-a'), { id: 'a' });
-    queryClient.setQueryData(accountKeys.profile('principal-b'), { id: 'b' });
-    await act(async () => {
-      releaseWinnerValidation();
-      await Promise.resolve();
-    });
-    await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
-    await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
-      JSON.stringify(winnerB),
-    );
-    await waitFor(() =>
-      expect(validateStoredSession).toHaveBeenCalledWith(winnerB.access_token),
-    );
-    await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
-      JSON.stringify(winnerB),
-    );
-    await waitFor(() =>
+    try {
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-out|none|idle',
+        ),
+      );
+      queryClient.setQueryData(accountKeys.profile('principal-a'), { id: 'a' });
+      queryClient.setQueryData(accountKeys.profile('principal-b'), { id: 'b' });
+      await act(async () => {
+        emitRecoveryLink(
+          'eazyreview://auth/reset-password?code=SUPERSEDED_ADOPTION_CODE',
+        );
+        await Promise.resolve();
+      });
+      await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+      await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+        JSON.stringify(winnerB),
+      );
+      await waitFor(() =>
+        expect(validateStoredSession).toHaveBeenCalledWith(winnerB.access_token),
+      );
+      await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+        JSON.stringify(winnerB),
+      );
+      await waitFor(() =>
+        expect(
+          queryClient.getQueryData(accountKeys.profile('principal-a')),
+        ).toBeUndefined(),
+      );
+      await waitFor(() =>
+        expect(states).toContain('signed-in|principal-b|idle'),
+      );
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|principal-b|idle',
+      );
+      expect(states).not.toContain('signed-in|principal-a|idle');
+      expect(states).not.toContain('signed-in|principal-a|verified');
       expect(
         queryClient.getQueryData(accountKeys.profile('principal-a')),
-      ).toBeUndefined(),
-    );
-    await waitFor(() =>
-      expect(states).toContain('signed-in|principal-b|idle'),
-    );
-    expect(rendered.getByTestId('auth-probe').props.children).toBe(
-      'signed-in|principal-b|idle',
-    );
-    expect(states).not.toContain('signed-in|principal-a|idle');
-    expect(states).not.toContain('signed-in|principal-a|verified');
-    expect(
-      queryClient.getQueryData(accountKeys.profile('principal-a')),
-    ).toBeUndefined();
-    expect(queryClient.getQueryData(accountKeys.profile('principal-b'))).toEqual({
-      id: 'b',
-    });
-    await rendered.cleanup();
-    await AsyncStorage.clear();
+      ).toBeUndefined();
+      expect(
+        queryClient.getQueryData(accountKeys.profile('principal-b')),
+      ).toEqual({ id: 'b' });
+    } finally {
+      await rendered.cleanup();
+      await AsyncStorage.clear();
+    }
   });
 
   it('settles non-A signed out on unavailable superseded adoption and later converges to stored B', async () => {

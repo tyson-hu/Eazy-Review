@@ -13,9 +13,13 @@ exact displaced-A CAS and deletion reconciles raw authority without writing a
 session. Its independent correction review finding was addressed; final
 read-only verification passed. A bounded review-remediation pass isolates the
 online recovery test precondition and aligns the five Expo SDK 57 patch
-dependencies required by Expo Doctor. The live PR records current exact-head
-CI. Deployment/configuration, destructive staging proof, acceptance,
-readiness, merge, and production remain separate outstanding gates.
+dependencies required by Expo Doctor. Its published `1a515e1` head passed
+Database CI but repeated the Expo recovery-test timeout. A final bounded repair
+removes that regression's unrelated cold-link/manual-latch orchestration while
+retaining the superseded-recovery authority and cache assertions; it is not yet
+published. The live PR records current exact-head CI.
+Deployment/configuration, destructive staging proof, acceptance, readiness,
+merge, and production remain separate outstanding gates.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` only for explicitly bounded,
