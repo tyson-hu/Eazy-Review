@@ -4,11 +4,12 @@
 
 **Partial — implementation complete; human staging deletion pending.**
 
-This packet is local and uncommitted on
-`codex/task-19-guarded-account-deletion`, based on planning commit
-`bd83038c9381231e59a1a53eca627180ba57b77e`. No implementation push,
-deployment, hosted configuration, account deletion, readiness transition,
-acceptance, merge, or production action occurred.
+This packet is published in draft PR #43 on
+`codex/task-19-guarded-account-deletion`. The original implementation head is
+`1391effa102e3f0434c69ede179144c2213d3c53`; the current local remediation is
+not yet published. The live PR becomes authoritative for its exact head and
+checks after push. No deployment, hosted configuration, account deletion,
+readiness transition, acceptance, merge, or production action occurred.
 
 ## Evidence matrix
 
@@ -18,12 +19,12 @@ acceptance, merge, or production action occurred.
 | Principal-bound Auth-storage races | **pass** | Exact post-SDK adoption, pre-dispatch raw authority, exact displaced-A CAS, C-before-B with delayed event delivery, empty/A2/malformed/blocked preservation, unavailable/invalid replacement, and final raw-publication regressions pass |
 | Preparing/pending/settled, offline bootstrap, and late Auth proof | **pass** | Non-destructive unit/provider tests; no hosted session used |
 | Two-context notification, cache isolation, foreground/mount reconciliation | **pass** | Payload-free web/native coordination and provider tests; foreground behavior is mocked, not interactive proof |
-| Client/provider/UI Jest | **pass** | `npm test -- --runInBand --forceExit`: 41 suites / 465 tests after the CAS correction; existing React `act` and forced-exit teardown warnings remain visible |
-| Read-only FK metadata proof | **not-run** | Two exact pg_catalog pgTAP assertions were added; trusted local Supabase/reset was not authorized or run |
+| Client/provider/UI Jest | **pass** | Default parallel Jest and a Node 24 three-worker no-cache run each passed 41 suites / 465 tests after the online test-isolation correction; existing React `act` and forced-exit teardown warnings remain visible |
+| Read-only FK metadata proof | **pass** | Exact-head Database CI on `1391effa...` passed the two pg_catalog assertions, local reset, pgTAP/concurrency suite, and generated-type parity without deleting an account |
 | `npm run check:readonly` | **pass** | Skill wrappers, decisions, secrets, agent infrastructure, typecheck, and lint passed on the corrected tree |
-| `npm run check:expo` | **fail** | Fresh pre-publication run on the final candidate: route preparation, `check:readonly`, and 41 suites / 465 Jest tests passed; Expo Doctor stopped at 20/21 on the five inherited Expo patch mismatches listed below. Task 19 changed no dependency, route, or lockfile |
-| Exact-head Expo CI | **not-run** | No implementation push |
-| Exact-head Database CI | **not-run** | No implementation push |
+| `npm run check:expo` | **pass** | Post-`npm ci` remediation run passed route preparation, `check:readonly`, 41 suites / 465 Jest tests, Expo Doctor 21/21, and Expo dependency alignment |
+| Exact-head Expo CI | **not-run** | Corrected remediation head is not yet published. The prior `1391effa...` head failed twice with a first timeout consistent with the locally reproduced offline-`onlineManager` state; the failed runners did not directly record the singleton value |
+| Exact-head Database CI | **not-run** | Corrected remediation head is not yet published; prior `1391effa...` Database CI passed |
 | Web mobile preview | **not-run** | No authenticated safe review session was used |
 | iOS Simulator | **not-run** | No authenticated safe review session was used |
 | Physical device | **not-tested** | Human-only review remains outstanding |
@@ -112,9 +113,13 @@ ready, merged, or production verification.
 | Prior pre-CAS final verifier | **pass** — historical AuthProvider 49/49, 9-suite matrix 209/209, Deno 25/25, `check:readonly`, whitespace, and migration/generated-type diff |
 | `npm run check:readonly` after CAS docs | **pass** — wrappers, decisions, secrets, agent infrastructure, typecheck, and lint |
 | `npm test -- --runInBand --forceExit` after CAS | **pass** — 41 suites / 465 tests; pre-existing React `act` and forced-exit teardown warnings remain |
-| Fresh pre-publication `npm run check:expo` | **fail** — route preparation, `check:readonly`, and 41 suites / 465 Jest tests passed; Expo Doctor reported 20/21 because of the five inherited patch mismatches; standalone `expo install --check` was not reached |
-| Prior Task 19 `npx expo-doctor` | **pass** — 21/21 (run with an isolated npm cache after the default cache was sandbox-inaccessible) |
-| Prior Task 19 `npx expo install --check` | **fail** — inherited patch alignment: `expo` 57.0.14→~57.0.15, `expo-constants` 57.0.12→~57.0.13, `expo-dev-client` 57.0.13→~57.0.14, `expo-linking` 57.0.6→~57.0.7, `expo-router` 57.0.14→~57.0.15; Task 19 changed no dependency version |
+| Exact-head Expo CI reproduction on `1391effa...` | **fail** — both attempts reached the same first 5-second recovery-test timeout and the same nine contaminated follow-on failures |
+| Offline-singleton RED / GREEN | **pass** — forcing `onlineManager` offline reproduced the exact first timeout; resetting it in the file-level `beforeEach` made the focused test pass without increasing a timeout |
+| Node 24 CI-shaped Jest | **pass** — 41 suites / 465 tests with three workers and a cold Jest cache |
+| Expo SDK 57 patch alignment | **pass** — Expo resolved the five direct packages to `expo` 57.0.15, `expo-constants` 57.0.13, `expo-dev-client` 57.0.14, `expo-linking` 57.0.7, and `expo-router` 57.0.15; clean `npm ci` passed |
+| Current `npm run check:expo` | **pass** — route preparation, `check:readonly`, 41 suites / 465 Jest tests, Expo Doctor 21/21, and dependency alignment passed after clean install |
+| Current `CI=1 npx expo export --platform web` | **pass** — 16 static routes exported; no authenticated or destructive flow was exercised |
+| Prior Task 19 `npx expo install --check` | **fail, resolved locally** — the five inherited patch mismatches above motivated the bounded alignment |
 | `git diff --check` | **pass** |
 | Migration/generated-type diff | **pass** — no changed path under `supabase/migrations` or `src/types/database.generated.ts` |
 

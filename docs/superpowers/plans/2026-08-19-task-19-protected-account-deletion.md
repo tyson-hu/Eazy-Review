@@ -2,7 +2,7 @@
 
 Status: The targeted auth-arbitration and principal-bound storage-settlement
 revision was approved on 2026-08-20. Local non-destructive implementation was
-authorized on 2026-08-21 and is complete in an uncommitted isolated worktree.
+authorized on 2026-08-21 and is complete and published in draft PR #43.
 A separately authorized bounded correction pass restored exact post-SDK
 authority adoption and final raw-storage arbitration before destructive
 dispatch. A fresh-session root-cause pass and the one permitted independent
@@ -11,9 +11,11 @@ invalid-session cleanup, and B-to-C convergence. A second authorized bounded
 correction removed stale restoration `setSession` writes: recovery now uses an
 exact displaced-A CAS and deletion reconciles raw authority without writing a
 session. Its independent correction review finding was addressed; final
-read-only verification passed. Commit/push, exact-head CI,
-deployment/configuration, destructive staging proof, acceptance, readiness,
-merge, and production remain separate outstanding gates.
+read-only verification passed. A bounded review-remediation pass isolates the
+online recovery test precondition and aligns the five Expo SDK 57 patch
+dependencies required by Expo Doctor. The live PR records current exact-head
+CI. Deployment/configuration, destructive staging proof, acceptance,
+readiness, merge, and production remain separate outstanding gates.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` only for explicitly bounded,

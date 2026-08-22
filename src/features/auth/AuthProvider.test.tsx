@@ -1,4 +1,5 @@
 import { act, waitFor } from '@testing-library/react-native';
+import { onlineManager } from '@tanstack/react-query';
 import { useEffect, type MutableRefObject } from 'react';
 import { Text } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
@@ -268,6 +269,7 @@ function createMockAuthClient(options: {
 }
 
 beforeEach(async () => {
+  onlineManager.setOnline(true);
   await AsyncStorage.clear();
   mockAdoptExplicitSession.mockReset();
   mockAdoptExplicitSession.mockResolvedValue('not-guarded');

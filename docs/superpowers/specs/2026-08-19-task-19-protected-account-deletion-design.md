@@ -4,10 +4,12 @@ Status: Baseline approved in chat on 2026-08-19. The targeted auth-arbitration
 and principal-bound storage-settlement corrections were reviewed and approved
 in chat on 2026-08-20. Local non-destructive implementation and the bounded
 current-version C-before-B correction were authorized on 2026-08-21 and are
-complete in an uncommitted isolated worktree. Exact-head CI,
-deployment/configuration, interactive review, human staging deletion, human
-acceptance, commit/push of implementation, readiness, merge, and production
-remain separate outstanding gates.
+complete and published in draft PR #43. A bounded review-remediation pass
+isolates the online recovery test precondition and aligns the five Expo SDK 57
+patch dependencies required by Expo Doctor. The live PR head and check results
+remain the source for exact-head CI state. Deployment/configuration,
+interactive review, human staging deletion, human acceptance, readiness,
+merge, and production remain separate outstanding gates.
 
 ## Purpose
 
