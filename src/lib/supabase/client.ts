@@ -3,6 +3,9 @@ import 'react-native-url-polyfill/auto';
 import { getPublicEnv } from '@/src/lib/env/publicEnv';
 import {
   createAppSupabaseClient,
+  createIsolatedAuthSupabaseClient,
+  createIsolatedFunctionsSupabaseClient,
+  deriveSupabaseAuthStorageKey,
   type AppSupabaseClient,
 } from '@/src/lib/supabase/createClient';
 
@@ -28,6 +31,20 @@ export function getSupabase(): AppSupabaseClient {
     client = createAppSupabaseClient(getPublicEnv());
   }
   return client;
+}
+
+export function createIsolatedAuthClient(): AppSupabaseClient {
+  return createIsolatedAuthSupabaseClient(getPublicEnv());
+}
+
+export function createIsolatedFunctionsClient(
+  accessToken: string,
+): AppSupabaseClient {
+  return createIsolatedFunctionsSupabaseClient(getPublicEnv(), accessToken);
+}
+
+export function getSupabaseAuthStorageKey(): string {
+  return deriveSupabaseAuthStorageKey(getPublicEnv().supabaseUrl);
 }
 
 /** Test-only: drop the singleton between cases. */

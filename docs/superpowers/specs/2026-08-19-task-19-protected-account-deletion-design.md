@@ -2,7 +2,12 @@
 
 Status: Baseline approved in chat on 2026-08-19. The targeted auth-arbitration
 and principal-bound storage-settlement corrections were reviewed and approved
-in chat on 2026-08-20. Implementation authorization remains pending.
+in chat on 2026-08-20. Local non-destructive implementation and the bounded
+current-version C-before-B correction were authorized on 2026-08-21 and are
+complete in an uncommitted isolated worktree. Exact-head CI,
+deployment/configuration, interactive review, human staging deletion, human
+acceptance, commit/push of implementation, readiness, merge, and production
+remain separate outstanding gates.
 
 ## Purpose
 
@@ -25,7 +30,8 @@ The feature is intentionally narrow:
 ## Current Baseline
 
 - Tasks 16–18 are accepted and merged.
-- Task 19 is pending and is not parallel-safe.
+- Task 19 is **Partial — implementation complete; human staging deletion
+  pending.** It remains parent-owned and not parallel-safe.
 - Authentication is email/password only for the MVP.
 - The Account screen is the sole in-app location for the Delete Account action;
   there is no generic Settings route or separate deletion route.
@@ -35,8 +41,8 @@ The feature is intentionally narrow:
   including the last-rater zero-count/null state.
 - Local Auth JWT expiry is 3,600 seconds. Staging's effective value must be
   verified by a human and must not exceed one hour for the MVP.
-- `supabase/functions/` has no existing function implementation or dedicated
-  Deno validation lane.
+- Task 19 adds one `delete-current-user` Function and a dedicated
+  Database-CI-owned `npm run check:functions` Deno lane.
 
 ## Goals
 
@@ -218,18 +224,45 @@ cannot make the deletion request target B.
 
 ### Auth-session writer arbitration
 
-`AuthProvider` serializes every provider-owned SDK operation that can replace
-or clear the shared Auth session through one provider-local writer fence. The
-fence covers explicit sign-in, sign-up, recovery exchange/restore,
-and deletion-winner restoration. Isolated deletion reauthentication is not a
-shared-session writer. Existing bootstrap session restoration still settles
-before deletion can start.
+`AuthProvider` serializes provider-owned operations that can replace the shared
+Auth session through one provider-local writer fence. The fence covers explicit
+sign-in, sign-up, and superseded-recovery's application-owned exact A-to-B
+storage transaction. Deletion-winner restoration performs no shared-session
+write. Isolated deletion reauthentication is not a shared-session writer.
+Existing bootstrap session restoration still settles before deletion can
+start.
+
+Implementation ruling (2026-08-21): the full unabortable
+`processAuthCallbackUrl` exchange is not wrapped in that FIFO. Doing so
+reproduced the accepted Task 18 recovery/explicit-auth cross-wait deadlock.
+The exchange remains governed by Task 18's versioned recovery arbitration;
+after its SDK writer releases, guarded session adoption reacquires the shared
+Auth-operation/storage boundary, exact-compares stored authority, and returns
+token-free `superseded` instead of overwriting B/C. This is a bounded correction
+to the originally approved fence shape, not permission to weaken other writer,
+guard, or exact-publication rules.
+
+Superseded recovery isolate-validates captured B outside all locks, then enters
+the provider writer FIFO and `Auth operation -> storage`. One application-owned
+transaction may replace raw storage only when it still exactly matches the
+guard-allowed displaced A principal/access/refresh/session-ID snapshot and B is
+also guard-allowed. Raw C, newer same-principal A2, empty, malformed, or blocked
+authority is never overwritten. A confirmed or uncertain write emits only the
+payload-free change signal; reconciliation then exact-rechecks raw authority
+before publication. Deletion-winner restoration never calls SDK `setSession`:
+it reconciles, isolate-validates, and exact-rechecks the already-stored B/C.
+Unavailable authority uses a non-A quarantined signed-out shell without broadly
+purging newer/public cache, and definitive invalidity exact-removes only the
+unchanged snapshot.
 
 The fence prevents two writers owned by this provider instance from passing a
-winner-version check and then overwriting one another. It does not claim a
-cross-process compare-and-set primitive that Supabase Auth does not expose.
-Auth events observed from another browser tab or process therefore remain
-authoritative inputs to the deletion attempt's versioned winner state.
+winner-version check and then overwriting one another. Participating current-
+version contexts serialize through the shared Auth/storage locks, and the exact
+raw comparison prevents a stale local restoration from overwriting a completed
+newer write whose Auth event is still delayed. The design does not claim a CAS
+against older or uncontrolled code that writes the backend directly. Auth
+events from another context remain authoritative inputs to the deletion
+attempt's versioned winner state.
 
 The Supabase Auth client and Task 19 also share one platform Auth-operation
 lock. Native uses a process-wide lock; web uses a non-stealing Web Lock. The
@@ -491,24 +524,17 @@ type DeletionWinner =
 ```
 
 An undefined winner means A remains authoritative. Every observed non-A
-session or `SIGNED_OUT` event that is not the attempt's exactly marked
-winner-restoration event replaces the winner and advances
-its version. Other A events are maintenance for the
+session or `SIGNED_OUT` event replaces the winner and advances its version.
+Other A events are maintenance for the
 account already subject to deletion and cannot replace a recorded non-A
 winner. Therefore B -> signed-out leaves signed-out authoritative and B -> C
 leaves C authoritative. A captured B is never sticky across a newer event.
 
-Expected-event markers are operation-specific, not principal-only. A
-winner-restoration marker contains the winner version and exact in-memory
-session snapshot; it consumes an Auth event only when principal, access token,
-and refresh token match that operation-owned snapshot, even if a newer winner
-version was observed first. The captured version is checked after the writer
-settles to prevent stale publication; it is not used to misclassify the delayed
-operation event as a new winner. Unmatched events fall through to ordinary
-winner classification. Markers live only in provider refs, are never logged or
-exposed, and are cleared when their writer settles or fails. Principal-bound
-storage removal emits no synthetic Auth event and therefore needs no
-`SIGNED_OUT` marker.
+Deletion restoration emits no synthetic Auth event because it performs no SDK
+or application-owned session write. Its captured winner version is checked
+around raw reconciliation and isolated validation; raw authority that differs
+from the captured winner replaces it before publication. Principal-bound
+storage removal likewise emits no synthetic `SIGNED_OUT` event.
 
 On any result, the provider rechecks the winner and current authority:
 
@@ -542,17 +568,19 @@ On any result, the provider rechecks the winner and current authority:
 - Isolated A reauthentication never overwrites shared storage. Any B/C winner
   observed before dispatch or settlement is reconciled after the Auth-operation
   lock releases and only when its own guard allows publication.
-- If another external transition arrives during restoration, the stale
-  snapshot is discarded and reconciliation restarts from the newest observed
-  winner. With finitely many external transitions, reconciliation continues
-  until one fenced pass completes without a version change. Unbounded external
-  auth churn has no completion guarantee; safety takes priority over publishing
-  an obsolete principal.
+- If another external transition changes stored authority during restoration,
+  the stale snapshot is discarded and reconciliation restarts from the newest
+  raw winner, even when that winner's Auth event is delayed. With finitely many
+  external transitions, reconciliation continues until one fenced pass
+  completes without a version or exact-storage change. Unbounded external auth
+  churn has no completion guarantee; safety takes priority over publishing an
+  obsolete principal.
 - Immediately before any restored or storage-preserved B/C is manually
   published, deferred reconciliation reacquires `Auth operation -> storage` and
   requires the exact principal/access/refresh snapshot plus allowed session ID
   and guard revision. Newly guarded or changed B/C restarts from current
-  authority; adapter `setSession` success alone is never publication proof.
+  authority. Deletion restoration never calls `setSession`; superseded recovery
+  may write B only through the exact displaced-A transaction described above.
 - Public catalog Query keys and Query entries for newer principals are retained
   in every settlement.
 
@@ -824,14 +852,13 @@ Jest tests prove:
 - web without cross-context storage locking rejects before reauthentication or
   Edge Function invocation;
 - B-to-signed-out and B-to-C transitions during restoration preserve the
-  newest winner and never resurrect B;
-- a newer same-principal B session arriving during restoration replaces the
-  stale expected marker;
-- a delayed exact B1 restoration event after external B2 remains operation
-  maintenance and cannot become a synthetic newer B1 winner;
-- expected winner-restoration events do not replace a newer recorded winner;
-- provider-owned Auth writers cannot interleave between a winner-version check
-  and its session write;
+  newest winner and never resurrect B, including when C is stored before its
+  Auth event is delivered;
+- a newer same-principal B2 snapshot in raw storage replaces captured B1;
+- deletion restoration performs no synthetic session write or Auth event;
+- superseded recovery replaces only exact displaced A with validated B and
+  preserves raw C, A2, empty, malformed, blocked, and uncertain authority;
+- provider-owned Auth writers cannot interleave with the exact recovery CAS;
 - every participating Auth-storage writer uses the same platform-appropriate
   storage lock, and malformed/storage-failure paths make no removal;
 - failure after primary A removal but before companion cleanup is represented
@@ -936,9 +963,9 @@ validation/sign-out, revision-bound guard state, guard-aware recovery/sign-in,
 and sessionless-event reconciliation. Task 18/Flow 5 mechanism text changes
 from shared automatic sign-out to exact isolated cleanup without reopening the
 already accepted Task 18 status/evidence.
-Task status remains Pending until implementation is authorized. After code is
-complete but before human destructive proof, status and evidence remain honest
-about the outstanding staging gate.
+After local code is complete but before human destructive proof, canonical
+status is exactly **Partial — implementation complete; human staging deletion
+pending.**
 
 ## Lifecycle Gates
 

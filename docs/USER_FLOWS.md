@@ -228,13 +228,17 @@ On a cold recovery launch, the app marks the callback attempt as started before
 reading the persisted local principal. Only that principal's matching delayed
 `INITIAL_SESSION` is reclassified as pre-link maintenance; sign-in or sign-out
 that occurs while the local read is pending remains a newer transition.
-The automatic local `SIGNED_OUT` emitted while bootstrap clears a definitively
-invalid persisted session is maintenance too; it cannot consume a recovery
-link that was opened while bootstrap validation was still finishing. The link
-enters processing immediately, but its Auth exchange waits until bootstrap
-restoration and any conditional cleanup settle; it therefore cannot install a
-fresh same-account session between the stale-session recheck and local
-sign-out. A replacement already present at the recheck remains current. An
+The local signed-out transition emitted after bootstrap cleans up a
+definitively invalid persisted session is maintenance too; it cannot consume a
+recovery link that was opened while bootstrap validation was still finishing.
+Bootstrap captures the exact restored session, validates its bearer through an
+isolated non-persisting Auth client, and removes local Auth storage only when
+the principal plus access/refresh snapshot still match. It never uses shared-
+client `auth.signOut()` for this cleanup, so a replacement session already
+present at the exact-session recheck remains current. The link enters
+processing immediately, but its Auth exchange waits until bootstrap restoration
+and any conditional exact-session cleanup settle; it therefore cannot install
+a fresh same-account session between the stale-session recheck and removal. An
 explicit user sign-out remains superseding. That wait is bounded by the shared
 request deadline. If restoration stalls, the link is not exchanged and the
 screen settles to the retryable temporary-failure state; reopening the link
@@ -288,26 +292,69 @@ Auth redirects to the separate app-scheme URL shown in the matrix.
 ## Flow 6: Delete Account
 
 ```txt
-Logged-in user opens Account
--> User taps Delete Account
--> App explains permanent profile/My Rating deletion
--> User confirms and reauthenticates when required
--> Protected server verifies the caller and derives that same user as target
--> Auth Admin global sign-out revokes refresh sessions (failure aborts)
--> Server hard-deletes that auth user
--> Profile and My Rating rows cascade; Community aggregates recompute
--> App clears local session and user-scoped cache
--> App returns to logged-out Account; public browsing remains available
+Signed-in user opens Account
+-> User taps the separate Delete Account action
+-> Inline confirmation opens on Account; no route transition occurs
+-> App shows exact permanent-data and Community Score recalculation copy
+-> User enters Current password
+-> Isolated Auth reauthentication uses the signed-in account's fixed email
+-> Returned principal must match the principal that started deletion
+-> Client invokes the protected function with that exact fresh bearer,
+   no target id, and no request-body content
+-> Server verifies the live caller and derives that caller as the only target
+-> Auth Admin global sign-out revokes refresh sessions (confirmed failure aborts)
+-> Server hard-deletes that auth user at most once
+-> Profile and My Rating rows cascade; Community Score aggregates recompute
+-> Principal-bound local settlement removes/quarantines only that principal
+-> App shows an honest signed-out outcome or preserves the latest newer winner
+-> Public Browse and Product Detail remain available
 ```
 
-The client never chooses a target user id and never contains a service-role
-secret. Task 19 owns this flow. A human—not a coding agent or agent-controlled
-browser/MCP/SQL/admin tool—runs the destructive verification, including a
-second pre-existing session that can no longer refresh. Already-issued JWTs
-may remain valid until the configured expiry; the verification records that
-bounded lifetime. Task 24's public account-deletion information link explains
-this in-app path and the data deletion/retention behavior; it is informational
-and does not replace or invoke the Task 19 action.
+Delete Account is hidden while signed out. The confirmation copy is exact:
+
+> Your Eazy Review account, your My Rating entries, and private notes will be
+> permanently deleted. Public product information will remain. Each affected
+> Community Score will be recalculated without your rating. This cannot be
+> undone.
+
+`Cancel` closes the inline card and clears the password and error without a
+router call. Empty password cannot submit. Pending disables password editing,
+Cancel, Sign out, the Delete Account entry point, and the final destructive
+action, preventing duplicate submission. Pre-revocation wrong-password,
+offline, validation, and service failures use fixed safe errors and keep the
+initiating principal signed in for a deliberate manual retry; the app never
+automatically retries the destructive request.
+
+The signed-out outcome is one of:
+
+- confirmed deletion: `Your account was deleted. You can continue browsing
+  Eazy Review without an account.`;
+- confirmed retained account after revocation: `Your account was not deleted.
+  All sessions were signed out. Sign in again to retry.`; or
+- unresolved revocation/deletion: `We couldn't confirm whether account deletion
+  finished. Sign in again. If your account is still available, you can retry
+  deletion.`
+
+Local coordination binds the attempt to principal A with a revisioned
+preparing/pending/settled deletion guard. Shared-session `auth.signOut()` is not
+used for deletion settlement. Exact principal-bound storage cleanup and
+principal-scoped Query removal affect A only; public catalog cache remains. A
+late A refresh/write/event stays blocked, while the latest allowed B/C session
+or signed-out transition wins. If the attempt is superseded, the Account form,
+password, error, and A outcome notice are cleared; B/C is preserved and no
+deletion claim is shown for that newer principal. Mount, payload-free guard
+signals, and foreground reconciliation recover missed local guard changes.
+
+The client never chooses a target user id, sends a target in the request, or
+contains a service-role secret. Task 19 owns this flow. Only a human—not a
+coding agent or agent-controlled browser/MCP/SQL/admin tool—may activate the
+destructive submit for verification or acceptance, including the second
+pre-existing session check. Already-issued access tokens may remain valid until
+their configured expiry even after refresh-session revocation; human evidence
+records that bounded lifetime without claiming immediate token invalidation.
+Task 24's public account-deletion information link explains this in-app path
+and the data deletion/retention behavior; it is informational and does not
+replace or invoke the Task 19 action.
 
 ## Browse Requirements
 

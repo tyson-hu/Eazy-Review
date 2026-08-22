@@ -3,9 +3,11 @@ import {
   signInWithPassword,
   signOut,
   signUpWithPassword,
+  validateSessionSnapshotIsolated,
 } from '@/src/features/auth/api';
 import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
+import type { Session } from '@supabase/supabase-js';
 
 function mockClient(auth: {
   signInWithPassword?: jest.Mock;
@@ -26,8 +28,23 @@ function mockClient(auth: {
       getUser:
         auth.getUser ??
         jest.fn(async () => ({ data: { user: null }, error: null })),
+      stopAutoRefresh: jest.fn(),
+      admin: {
+        signOut: jest.fn(async () => ({ data: null, error: null })),
+      },
     },
   } as unknown as AppSupabaseClient;
+}
+
+function testOptions(client: AppSupabaseClient, online: boolean) {
+  return {
+    client,
+    isOnline: () => online,
+    createIsolatedAuthClient: () => client,
+    storageKey: 'sb-test-auth-token',
+    removeStoredSessionIfExact: jest.fn(async () => 'removed' as const),
+    adoptExplicitSession: jest.fn(async () => 'not-guarded' as const),
+  };
 }
 
 describe('auth api', () => {
@@ -45,7 +62,7 @@ describe('auth api', () => {
 
     const result = await signInWithPassword(
       { email: 'a@example.com', password: 'secret-pass' },
-      { client, isOnline: () => true },
+      testOptions(client, true),
     );
 
     expect(result).toEqual({
@@ -69,7 +86,7 @@ describe('auth api', () => {
     await expect(
       signInWithPassword(
         { email: 'a@example.com', password: 'wrong' },
-        { client, isOnline: () => true },
+        testOptions(client, true),
       ),
     ).rejects.toMatchObject({
       code: 'invalid-credentials',
@@ -84,7 +101,7 @@ describe('auth api', () => {
     await expect(
       signInWithPassword(
         { email: 'a@example.com', password: 'secret' },
-        { client, isOnline: () => false },
+        testOptions(client, false),
       ),
     ).rejects.toBeInstanceOf(AuthError);
 
@@ -105,7 +122,7 @@ describe('auth api', () => {
     await expect(
       signUpWithPassword(
         { email: 'new@example.com', password: 'secret-pass' },
-        { client, isOnline: () => true },
+        testOptions(client, true),
       ),
     ).resolves.toEqual({
       kind: 'signed-in',
@@ -127,7 +144,7 @@ describe('auth api', () => {
     await expect(
       signUpWithPassword(
         { email: 'pending@example.com', password: 'secret-pass' },
-        { client, isOnline: () => true },
+        testOptions(client, true),
       ),
     ).resolves.toEqual({
       kind: 'confirmation-required',
@@ -135,7 +152,7 @@ describe('auth api', () => {
     });
   });
 
-  it('signs out with explicit local scope only', async () => {
+  it('settles signed out without shared-client signOut when no session is stored', async () => {
     const signOutMock = jest.fn(async () => ({ error: null }));
     const client = mockClient({
       signOut: signOutMock,
@@ -143,14 +160,16 @@ describe('auth api', () => {
     });
 
     await signOut({ client });
-    expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
+    expect(signOutMock).not.toHaveBeenCalled();
     await expect(
-      restoreSession({ client, isOnline: () => true }),
+      restoreSession(testOptions(client, true)),
     ).resolves.toBeNull();
   });
 
   describe('restoreSession', () => {
     const localSession = {
+      access_token: 'restored-access-token',
+      refresh_token: 'restored-refresh-token',
       user: { id: 'restored', email: 'r@example.com' },
     };
 
@@ -165,9 +184,22 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession(testOptions(client, true)),
       ).resolves.toBeNull();
       expect(getUser).not.toHaveBeenCalled();
+    });
+
+    it('keeps bootstrap non-authoritative when stored-session access fails', async () => {
+      const client = mockClient({
+        getSession: jest.fn(async () => ({
+          data: { session: null },
+          error: { status: 500, code: 'storage_unavailable' },
+        })),
+      });
+
+      await expect(
+        restoreSession(testOptions(client, true)),
+      ).rejects.toMatchObject({ code: 'temporary-failure' });
     });
 
     it('B: validates online with getUser and returns the server-backed user', async () => {
@@ -186,7 +218,7 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession(testOptions(client, true)),
       ).resolves.toEqual({
         id: 'restored',
         email: 'r@example.com',
@@ -221,9 +253,9 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession(testOptions(client, true)),
       ).resolves.toBeNull();
-      expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
+      expect(signOutMock).not.toHaveBeenCalled();
     });
 
     it('D: preserves local session when offline without calling getUser', async () => {
@@ -239,7 +271,7 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => false }),
+        restoreSession(testOptions(client, false)),
       ).resolves.toEqual({
         id: 'restored',
         email: 'r@example.com',
@@ -262,7 +294,7 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession(testOptions(client, true)),
       ).resolves.toEqual({
         id: 'restored',
         email: 'r@example.com',
@@ -290,7 +322,7 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession(testOptions(client, true)),
       ).resolves.toEqual({
         id: 'restored',
         email: 'r@example.com',
@@ -305,14 +337,22 @@ describe('auth api', () => {
           .fn()
           .mockResolvedValueOnce({
             data: {
-              session: { user: { id: 'zombie-a', email: 'a@example.com' } },
+              session: {
+                access_token: 'zombie-access-a',
+                refresh_token: 'zombie-refresh-a',
+                user: { id: 'zombie-a', email: 'a@example.com' },
+              },
             },
             error: null,
           })
           // Principal re-check after definitive invalid: B signed in mid-flight.
           .mockResolvedValueOnce({
             data: {
-              session: { user: { id: 'user-b', email: 'b@example.com' } },
+              session: {
+                access_token: 'access-b',
+                refresh_token: 'refresh-b',
+                user: { id: 'user-b', email: 'b@example.com' },
+              },
             },
             error: null,
           }),
@@ -329,7 +369,10 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession({
+          ...testOptions(client, true),
+          removeStoredSessionIfExact: jest.fn(async () => 'changed' as const),
+        }),
       ).resolves.toEqual({
         id: 'user-b',
         email: 'b@example.com',
@@ -376,7 +419,10 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession({
+          ...testOptions(client, true),
+          removeStoredSessionIfExact: jest.fn(async () => 'changed' as const),
+        }),
       ).resolves.toEqual({
         id: 'user-a',
         email: 'a@example.com',
@@ -411,9 +457,33 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession(testOptions(client, true)),
       ).resolves.toBeNull();
-      expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
+      expect(signOutMock).not.toHaveBeenCalled();
+    });
+
+    it('does not claim signed-out when exact invalid-session cleanup is unavailable', async () => {
+      const client = mockClient({
+        getSession: jest.fn(async () => ({
+          data: { session: localSession },
+          error: null,
+        })),
+        getUser: jest.fn(async () => ({
+          data: { user: null },
+          error: {
+            name: 'AuthSessionMissingError',
+            message: 'Auth session missing!',
+            status: 400,
+          },
+        })),
+      });
+
+      await expect(
+        restoreSession({
+          ...testOptions(client, true),
+          removeStoredSessionIfExact: jest.fn(async () => 'unavailable' as const),
+        }),
+      ).rejects.toMatchObject({ code: 'temporary-failure' });
     });
 
     it('clears on session_not_found without leaving signed-in state', async () => {
@@ -442,9 +512,241 @@ describe('auth api', () => {
       });
 
       await expect(
-        restoreSession({ client, isOnline: () => true }),
+        restoreSession(testOptions(client, true)),
       ).resolves.toBeNull();
-      expect(signOutMock).toHaveBeenCalledWith({ scope: 'local' });
+      expect(signOutMock).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('principal-bound exact Auth API', () => {
+  const capturedSession = {
+    access_token: 'captured-access-a',
+    refresh_token: 'captured-refresh-a',
+    user: { id: 'principal-a', email: 'a@example.com' },
+  } as unknown as Session;
+
+  it('signs out through isolated exact bearer and exact local removal only', async () => {
+    const sharedSignOut = jest.fn();
+    const client = mockClient({
+      getSession: jest.fn(async () => ({
+        data: { session: capturedSession },
+        error: null,
+      })),
+      signOut: sharedSignOut,
+    });
+    const isolatedSignOut = jest.fn(async () => ({ data: null, error: null }));
+    const stopAutoRefresh = jest.fn();
+    const isolatedClient = {
+      auth: {
+        admin: { signOut: isolatedSignOut },
+        stopAutoRefresh,
+      },
+    } as unknown as AppSupabaseClient;
+    const removeStoredSessionIfExact = jest.fn(async () => 'removed' as const);
+
+    await expect(
+      signOut({
+        client,
+        createIsolatedAuthClient: () => isolatedClient,
+        storageKey: 'sb-project-auth-token',
+        removeStoredSessionIfExact,
+      }),
+    ).resolves.toEqual({ kind: 'signed-out' });
+    expect(sharedSignOut).not.toHaveBeenCalled();
+    expect(isolatedSignOut).toHaveBeenCalledWith('captured-access-a', 'local');
+    expect(removeStoredSessionIfExact).toHaveBeenCalledWith(
+      'sb-project-auth-token',
+      {
+        principalId: 'principal-a',
+        accessToken: 'captured-access-a',
+        refreshToken: 'captured-refresh-a',
+      },
+    );
+    expect(stopAutoRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves and returns replacement B when exact local removal reports changed', async () => {
+    const replacement = {
+      access_token: 'access-b',
+      refresh_token: 'refresh-b',
+      user: { id: 'principal-b', email: 'b@example.com' },
+    } as unknown as Session;
+    const client = mockClient({
+      getSession: jest
+        .fn()
+        .mockResolvedValueOnce({ data: { session: capturedSession }, error: null })
+        .mockResolvedValueOnce({ data: { session: replacement }, error: null }),
+    });
+    const isolatedClient = {
+      auth: {
+        admin: { signOut: jest.fn(async () => ({ data: null, error: null })) },
+        stopAutoRefresh: jest.fn(),
+      },
+    } as unknown as AppSupabaseClient;
+
+    await expect(
+      signOut({
+        client,
+        createIsolatedAuthClient: () => isolatedClient,
+        storageKey: 'sb-project-auth-token',
+        removeStoredSessionIfExact: jest.fn(async () => 'changed' as const),
+      }),
+    ).resolves.toEqual({
+      kind: 'superseded',
+      user: { id: 'principal-b', email: 'b@example.com' },
+    });
+  });
+
+  it('does not claim signed-out when stored-session access or exact cleanup is unavailable', async () => {
+    const getSessionFailure = mockClient({
+      getSession: jest.fn(async () => ({
+        data: { session: null },
+        error: { status: 500, code: 'storage_unavailable' },
+      })),
+    });
+    await expect(signOut({ client: getSessionFailure })).rejects.toMatchObject({
+      code: 'temporary-failure',
+      message: AUTH_USER_MESSAGES.signOutFailed,
+    });
+
+    const capturedClient = mockClient({
+      getSession: jest.fn(async () => ({
+        data: { session: capturedSession },
+        error: null,
+      })),
+    });
+    await expect(
+      signOut({
+        client: capturedClient,
+        createIsolatedAuthClient: () => ({
+          auth: {
+            admin: { signOut: jest.fn(async () => ({ error: null })) },
+            stopAutoRefresh: jest.fn(),
+          },
+        }) as unknown as AppSupabaseClient,
+        storageKey: 'sb-project-auth-token',
+        removeStoredSessionIfExact: jest.fn(async () => 'unavailable' as const),
+      }),
+    ).rejects.toMatchObject({
+      code: 'temporary-failure',
+      message: AUTH_USER_MESSAGES.signOutFailed,
+    });
+  });
+
+  it('still exact-removes local A when isolated revoke fails', async () => {
+    const client = mockClient({
+      getSession: jest.fn(async () => ({
+        data: { session: capturedSession },
+        error: null,
+      })),
+    });
+    const removeStoredSessionIfExact = jest.fn(async () => 'removed' as const);
+
+    await expect(
+      signOut({
+        client,
+        createIsolatedAuthClient: () => ({
+          auth: {
+            admin: {
+              signOut: jest.fn(async () => {
+                throw new Error('remote unavailable');
+              }),
+            },
+            stopAutoRefresh: jest.fn(),
+          },
+        }) as unknown as AppSupabaseClient,
+        storageKey: 'sb-project-auth-token',
+        removeStoredSessionIfExact,
+      }),
+    ).resolves.toEqual({ kind: 'signed-out' });
+    expect(removeStoredSessionIfExact).toHaveBeenCalledTimes(1);
+  });
+
+  it('validates the captured bearer on isolated Auth without shared getUser', async () => {
+    const sharedGetUser = jest.fn();
+    const client = mockClient({ getUser: sharedGetUser });
+    const isolatedGetUser = jest.fn(async (jwt: string) => ({
+      data: { user: { id: 'principal-a', email: 'a@example.com' } },
+      error: null,
+    }));
+    const isolatedClient = {
+      auth: {
+        getUser: isolatedGetUser,
+        stopAutoRefresh: jest.fn(),
+      },
+    } as unknown as AppSupabaseClient;
+
+    await expect(
+      validateSessionSnapshotIsolated(capturedSession, {
+        client,
+        createIsolatedAuthClient: () => isolatedClient,
+      }),
+    ).resolves.toEqual({
+      kind: 'valid',
+      user: { id: 'principal-a', email: 'a@example.com' },
+    });
+    expect(isolatedGetUser).toHaveBeenCalledWith('captured-access-a');
+    expect(sharedGetUser).not.toHaveBeenCalled();
+  });
+
+  it('adopts a fresh explicit sign-in session before reporting success', async () => {
+    const fullSession = {
+      access_token: 'fresh-access-a',
+      refresh_token: 'fresh-refresh-a',
+      user: { id: 'principal-a', email: 'a@example.com' },
+    } as unknown as Session;
+    const client = mockClient({
+      signInWithPassword: jest.fn(async () => ({
+        data: { session: fullSession },
+        error: null,
+      })),
+    });
+    const adoptExplicitSession = jest.fn(async () => 'adopted' as const);
+
+    await expect(
+      signInWithPassword(
+        { email: 'a@example.com', password: 'password-a' },
+        {
+          client,
+          isOnline: () => true,
+          storageKey: 'sb-project-auth-token',
+          adoptExplicitSession,
+        },
+      ),
+    ).resolves.toEqual({
+      kind: 'signed-in',
+      user: { id: 'principal-a', email: 'a@example.com' },
+    });
+    expect(adoptExplicitSession).toHaveBeenCalledWith(
+      'sb-project-auth-token',
+      fullSession,
+    );
+  });
+
+  it('returns superseded when guarded adoption observes a newer stored winner', async () => {
+    const fullSession = {
+      access_token: 'fresh-access-a',
+      refresh_token: 'fresh-refresh-a',
+      user: { id: 'principal-a', email: 'a@example.com' },
+    } as unknown as Session;
+    const client = mockClient({
+      signInWithPassword: jest.fn(async () => ({
+        data: { session: fullSession },
+        error: null,
+      })),
+    });
+
+    await expect(
+      signInWithPassword(
+        { email: 'a@example.com', password: 'password-a' },
+        {
+          client,
+          isOnline: () => true,
+          storageKey: 'sb-project-auth-token',
+          adoptExplicitSession: jest.fn(async () => 'superseded' as const),
+        },
+      ),
+    ).resolves.toEqual({ kind: 'superseded' });
   });
 });

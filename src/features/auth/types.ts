@@ -50,7 +50,22 @@ export type AuthOperationSuperseded = {
   kind: 'superseded';
 };
 
+export type DeleteAccountOutcome =
+  | { kind: 'deleted' }
+  | { kind: 'not-deleted-signed-out' }
+  | { kind: 'unconfirmed-signed-out' }
+  | AuthOperationSuperseded;
+
+export type DeleteCurrentUserApiOutcome = Exclude<
+  DeleteAccountOutcome,
+  AuthOperationSuperseded
+>;
+
 export type SignInResult = SignInSuccess | AuthOperationSuperseded;
+
+export type ExactLocalSignOutResult =
+  | { kind: 'signed-out' }
+  | { kind: 'superseded'; user: AuthUser };
 
 export type SignUpSuccess = {
   kind: 'signed-in';
@@ -83,4 +98,5 @@ export type PasswordUpdateSuccess = {
 export type AuthCallbackProcessResult =
   | { kind: 'password-recovery'; user: AuthUser }
   | { kind: 'session'; user: AuthUser }
-  | { kind: 'ignored' };
+  | { kind: 'ignored' }
+  | AuthOperationSuperseded;

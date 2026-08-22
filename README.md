@@ -18,9 +18,15 @@ Score, and maintaining a personal My Rating.
   backend-unreachable states; auth/recovery logic guards stale-session races.
   Failed rating writes preserve form input for manual retry; there is no
   durable offline cache or write queue.
+- Task 19 protected account deletion is **Partial — implementation complete;
+  human staging deletion pending.** The local packet adds a reauthenticated
+  inline confirmation, caller-derived Edge Function boundary, and guarded
+  principal-specific local settlement. No coding agent or tool executed
+  deletion. See
+  [Task 19 evidence](docs/evidence/task-19-protected-account-deletion/RESULT.md).
 
-Feed remains a placeholder, and protected account deletion and release work
-remain pending. Current task status and implementation order live in
+Feed remains a placeholder, and Task 19 human staging acceptance plus release
+work remain pending. Current task status and implementation order live in
 [`docs/TASKS.md`](docs/TASKS.md).
 
 ## Current Stack
@@ -42,6 +48,9 @@ remain pending. Current task status and implementation order live in
 - Authentication, session restoration, and password recovery:
   [Task 16 evidence](docs/evidence/task-16-auth-account/RESULT.md) and
   [Task 18 evidence](docs/evidence/task-18-password-recovery/RESULT.md).
+- Protected account-deletion boundary, local orchestration, and outstanding
+  human-only destructive matrix:
+  [Task 19 evidence](docs/evidence/task-19-protected-account-deletion/RESULT.md).
 - Automated frontend, database, security, and concurrency gates:
   [Expo CI](.github/workflows/expo-ci.yml) and
   [Database CI](.github/workflows/database-ci.yml).
@@ -87,6 +96,9 @@ dotfiles such as `.npmrc` and `.editorconfig`. Dependency lockfiles are
 included, and direct PostgreSQL URLs plus non-empty service-role,
 database-password, JWT-signing-secret, or Supabase management-token assignments
 fail the scan regardless of value length.
+Supabase Edge Function sources use the separate `npm run check:functions`
+format/lint/frozen-type/test lane owned by Database CI; Expo and
+`check:readonly` do not imply Deno coverage.
 
 ## Local Supabase
 

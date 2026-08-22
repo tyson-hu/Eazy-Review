@@ -11,6 +11,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
+import { AppState } from 'react-native';
 
 import {
   mapAuthUserFromSessionUser,
@@ -19,12 +20,19 @@ import {
   signInWithPassword,
   signOut as signOutApi,
   signUpWithPassword,
+  validateSessionSnapshotIsolated,
 } from '@/src/features/auth/api';
-import { AuthError } from '@/src/features/auth/errors';
+import {
+  deleteCurrentUser,
+  reauthenticateForAccountDeletion,
+} from '@/src/features/auth/deletion.api';
+import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import type {
   AuthOperationSuperseded,
   AuthStatus,
   AuthUser,
+  DeleteAccountOutcome,
+  DeleteCurrentUserApiOutcome,
   RecoveryPhase,
   SignInCredentials,
   SignInResult,
@@ -34,9 +42,31 @@ import type {
 } from '@/src/features/auth/types';
 import { isAuthCallbackUrl } from '@/src/features/auth/recoveryUrl';
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@/src/lib/network/requestTimeout';
-import { removeUserScopedQueries } from '@/src/lib/query/userScopedCache';
-import { getSupabase } from '@/src/lib/supabase/client';
+import {
+  removePrincipalScopedQueries,
+  removeUserScopedQueries,
+} from '@/src/lib/query/userScopedCache';
+import {
+  getSupabase,
+  getSupabaseAuthStorageKey,
+} from '@/src/lib/supabase/client';
+import { runSupabaseAuthOperation } from '@/src/lib/supabase/authCoordination';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
+import {
+  armPrincipalDeletionGuard,
+  disarmPrincipalDeletionGuard,
+  isSessionBlockedByDeletionGuard,
+  markPrincipalDeletionDispatched,
+  preflightPrincipalBoundAuthStorage,
+  reconcileGuardedAuthStorage,
+  removeStoredSessionIfExact,
+  replaceDisplacedSessionIfExact,
+  settleGuardedPrincipalSession,
+  settlePrincipalDeletionGuard,
+  subscribePrincipalDeletionGuardChanges,
+  type GuardedAuthStorageReconciliation,
+  type PrincipalDeletionGuardDisarmResult,
+} from '@/src/lib/supabase/authStorage';
 
 export type AuthContextValue = {
   status: AuthStatus;
@@ -56,6 +86,7 @@ export type AuthContextValue = {
   signIn: (credentials: SignInCredentials) => Promise<SignInResult>;
   signUp: (credentials: SignUpCredentials) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<DeleteAccountOutcome>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -67,6 +98,53 @@ export type AuthLinkingAdapter = {
     listener: (event: { url: string }) => void,
   ) => { remove: () => void };
 };
+
+type DeletionWinner =
+  | {
+      kind: 'session';
+      version: number;
+      principalId: string;
+      session: Session;
+    }
+  | { kind: 'signed-out'; version: number };
+
+type GuardReconciliationRequest = {
+  forceSettlement?: boolean;
+  displacedPrincipalId?: string | null;
+  displacedSession?: Session | null;
+};
+
+type GuardReconciliationOutcome =
+  | { kind: 'published' }
+  | { kind: 'signed-out' }
+  | { kind: 'quarantined' }
+  | { kind: 'unchanged' };
+
+type ActiveDeletionAttempt = {
+  generation: number;
+  authGenerationAtStart: number;
+  principalId: string;
+  principalEmail: string;
+  guardRevision: number | null;
+  winnerVersion: number;
+  winner: DeletionWinner | undefined;
+};
+
+type AllowedGuardedSession = Extract<
+  GuardedAuthStorageReconciliation,
+  { kind: 'allowed-session' }
+>;
+
+function sameAllowedGuardedSession(
+  current: AllowedGuardedSession,
+  expected: AllowedGuardedSession,
+): boolean {
+  return current.principalId === expected.principalId &&
+    current.session.access_token === expected.session.access_token &&
+    current.session.refresh_token === expected.session.refresh_token &&
+    current.sessionId === expected.sessionId &&
+    current.guardRevision === expected.guardRevision;
+}
 
 const defaultLinking: AuthLinkingAdapter = {
   getInitialURL: () => Linking.getInitialURL(),
@@ -103,6 +181,14 @@ function authUserFromSession(session: Session | null): AuthUser | null {
   return mapAuthUserFromSessionUser(session.user);
 }
 
+function isConfirmedPreRevocationDeletionError(error: unknown): boolean {
+  return error instanceof AuthError &&
+    (error.code === 'offline' ||
+      (error.code === 'account-deletion-failed' &&
+        error.source === 'server' &&
+        error.status != null));
+}
+
 function resolveClient(
   clientProp: AppSupabaseClient | null | undefined,
 ): AppSupabaseClient | null {
@@ -113,6 +199,19 @@ function resolveClient(
     return getSupabase();
   } catch {
     return null;
+  }
+}
+
+function resolveProviderStorageKey(
+  clientProp: AppSupabaseClient | null | undefined,
+): string {
+  try {
+    return getSupabaseAuthStorageKey();
+  } catch (error) {
+    if (clientProp !== undefined) {
+      return 'sb-injected-auth-token';
+    }
+    throw error;
   }
 }
 
@@ -216,7 +315,49 @@ export function AuthProvider({
     localSessionSnapshotPending: boolean;
     pendingInitialSession: Session | null | undefined;
     supersededByNewerCallback: boolean;
+    passwordRecoveryObserved: boolean;
+    passwordRecoveryPrincipalId: string | null;
+    passwordRecoverySession: Session | null;
+    adoptionSuperseded: boolean;
   } | null>(null);
+  /** Serializes provider-owned writes to the shared Supabase Auth session. */
+  const authSessionWriteTailRef = useRef<Promise<void>>(Promise.resolve());
+  const deletionGenerationRef = useRef(0);
+  const activeDeletionAttemptRef = useRef<ActiveDeletionAttempt | null>(null);
+  const deletionInFlightRef = useRef(false);
+  const guardedAuthReconciliationTailRef = useRef<Promise<void>>(
+    Promise.resolve(),
+  );
+  const requestGuardReconciliationRef = useRef<
+    (
+      request?: GuardReconciliationRequest,
+    ) => Promise<GuardReconciliationOutcome>
+  >(async () => ({ kind: 'unchanged' }));
+
+  const runAuthSessionWrite = useCallback(
+    <T,>(write: () => Promise<T>): Promise<T> => {
+      const result = authSessionWriteTailRef.current
+        .catch(() => undefined)
+        .then(write);
+      authSessionWriteTailRef.current = result.then(
+        () => undefined,
+        () => undefined,
+      );
+      return result;
+    },
+    [],
+  );
+
+  const enqueueGuardedAuthWork = useCallback(<T,>(work: () => Promise<T>) => {
+    const result = guardedAuthReconciliationTailRef.current
+      .catch(() => undefined)
+      .then(work);
+    guardedAuthReconciliationTailRef.current = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }, []);
 
   /**
    * Queue a cache transition for `nextUserId`. Transitions run in order;
@@ -241,7 +382,11 @@ export function AuthProvider({
           // Only purge when leaving a real principal (sign-out or A→B).
           // Do not block null → user bootstrap on a purge (Task 16 contract).
           if (previous != null) {
-            await removeUserScopedQueries(queryClient);
+            if (nextUserId == null) {
+              await removeUserScopedQueries(queryClient);
+            } else {
+              await removePrincipalScopedQueries(queryClient, previous);
+            }
           }
           // Claim the cache for the new principal only after cleanup completes.
           cachePrincipalRef.current = nextUserId;
@@ -312,7 +457,12 @@ export function AuthProvider({
   );
 
   const reconcileSupersededRecovery = useCallback(
-    (client: AppSupabaseClient, supersedingSession: Session | null) => {
+    (
+      client: AppSupabaseClient,
+      supersedingSession: Session | null,
+      displacedPrincipalId: string | null,
+      displacedSession: Session | null,
+    ) => {
       recoveryGenerationRef.current += 1;
       recoveryAttemptRef.current = null;
       // Invalidate the stale SDK event's already-queued state application.
@@ -338,47 +488,61 @@ export function AuthProvider({
             if (authGenerationRef.current !== reconciliationGeneration) {
               return;
             }
-            if (supersedingSession) {
-              try {
-                const { error } = await client.auth.setSession({
-                  access_token: supersedingSession.access_token,
-                  refresh_token: supersedingSession.refresh_token,
-                });
-                if (!error) {
-                  return;
-                }
-              } catch {
-                // Fall through to best-effort current-device sign-out.
+            if (supersedingSession != null && displacedSession != null) {
+              const storageKey = resolveProviderStorageKey(clientProp);
+              const validation = await validateSessionSnapshotIsolated(
+                supersedingSession,
+                {
+                  client,
+                  storageKey,
+                  createIsolatedAuthClient:
+                    clientProp !== undefined ? () => client : undefined,
+                },
+              );
+              if (
+                validation.kind === 'valid' &&
+                authGenerationRef.current === reconciliationGeneration
+              ) {
+                await runAuthSessionWrite(() =>
+                  runSupabaseAuthOperation(storageKey, () =>
+                    replaceDisplacedSessionIfExact(
+                      storageKey,
+                      displacedSession,
+                      supersedingSession,
+                    ),
+                  ),
+                );
               }
             }
 
+            let outcome: GuardReconciliationOutcome = { kind: 'unchanged' };
             try {
-              await signOutApi({ client });
+              outcome = await requestGuardReconciliationRef.current({
+                forceSettlement: true,
+                displacedPrincipalId,
+                displacedSession,
+              });
             } catch {
-              // Explicit state settlement below prevents an indefinite loader.
+              // Fall through to a token-free signed-out shell.
             }
-
-            authGenerationRef.current += 1;
-            const signedOutGeneration = authGenerationRef.current;
-            latestAuthPrincipalRef.current = null;
-            latestAuthSessionRef.current = null;
-            try {
-              await prepareUserScopedCacheForPrincipal(null);
-            } catch {
-              // Keep signed out; a later principal transition retries purge.
+            if (outcome.kind === 'unchanged') {
+              authGenerationRef.current += 1;
+              latestAuthPrincipalRef.current = null;
+              latestAuthSessionRef.current = null;
+              setRecoveryPhase('idle');
+              setUser(null);
+              setStatus('signed-out');
             }
-            if (authGenerationRef.current !== signedOutGeneration) {
-              return;
-            }
-            setUser(null);
-            setStatus('signed-out');
           } finally {
             settleReconciliation();
           }
         })();
       });
     },
-    [prepareUserScopedCacheForPrincipal],
+    [
+      clientProp,
+      runAuthSessionWrite,
+    ],
   );
 
   const clearRecoveryPhase = useCallback(() => {
@@ -406,17 +570,30 @@ export function AuthProvider({
     const generationAtBootstrapStart = authGenerationRef.current;
 
     const bootstrap = async () => {
+      const storageKey = resolveProviderStorageKey(clientProp);
       const restore = restoreSession({
         client,
+        storageKey,
+        createIsolatedAuthClient:
+          clientProp !== undefined ? () => client : undefined,
         onInvalidLocalSessionCleanupChange: (isCleaning) => {
           invalidBootstrapCleanupInFlightRef.current = isCleaning;
         },
       });
-      sessionRestoreRef.current = restore.then(() => undefined);
-      const restored = await restore;
+      sessionRestoreRef.current = restore.then(
+        () => undefined,
+        () => undefined,
+      );
+      let restored: AuthUser | null;
+      try {
+        restored = await restore;
+      } catch {
+        return;
+      }
       if (cancelled) {
         return;
       }
+
       // A newer auth event already applied — do not clobber with stale restore.
       if (authGenerationRef.current !== generationAtBootstrapStart) {
         return;
@@ -433,9 +610,12 @@ export function AuthProvider({
 
     void bootstrap();
 
-    const {
-      data: { subscription: authSubscription },
-    } = client.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
+    const processDeferredAuthEvent = async (
+      rawEvent: AuthChangeEvent,
+      rawSession: Session | null,
+    ) => {
+      let event = rawEvent;
+      let session = rawSession;
       // Keep the callback minimal: schedule React state after the event.
       // Do not perform nested Supabase auth calls here.
       // TOKEN_REFRESHED uses the same serialized path as SIGNED_IN so a
@@ -444,8 +624,115 @@ export function AuthProvider({
         return;
       }
 
+      if (event === 'SIGNED_OUT') {
+        const storageKey = resolveProviderStorageKey(clientProp);
+        let stored = await runSupabaseAuthOperation(storageKey, () =>
+          reconcileGuardedAuthStorage(storageKey),
+        );
+        while (stored.kind === 'allowed-session') {
+          const validation = await validateSessionSnapshotIsolated(
+            stored.session,
+            {
+              client,
+              storageKey,
+              createIsolatedAuthClient:
+                clientProp !== undefined ? () => client : undefined,
+            },
+          );
+          if (validation.kind === 'unavailable') return;
+          if (validation.kind === 'invalid') {
+            const invalidStoredSession = stored;
+            const cleanup = await runSupabaseAuthOperation(storageKey, () =>
+              removeStoredSessionIfExact(storageKey, {
+                principalId: invalidStoredSession.principalId,
+                accessToken: invalidStoredSession.session.access_token,
+                refreshToken: invalidStoredSession.session.refresh_token,
+              }),
+            );
+            if (cleanup === 'changed') {
+              stored = await runSupabaseAuthOperation(storageKey, () =>
+                reconcileGuardedAuthStorage(storageKey),
+              );
+              continue;
+            }
+            if (cleanup === 'removed' || cleanup === 'already-empty') {
+              stored = { kind: 'empty', guardedPrincipalIds: [] };
+              break;
+            }
+            return;
+          }
+          const rechecked = await runSupabaseAuthOperation(storageKey, () =>
+            reconcileGuardedAuthStorage(storageKey),
+          );
+          if (
+            rechecked.kind === 'allowed-session' &&
+            sameAllowedGuardedSession(rechecked, stored)
+          ) {
+            event = 'SIGNED_IN';
+            session = rechecked.session;
+            stored = rechecked;
+            break;
+          }
+          stored = rechecked;
+        }
+        if (stored.kind !== 'empty' && stored.kind !== 'allowed-session') {
+          return;
+        }
+      }
+      if (
+        session != null &&
+        (await runSupabaseAuthOperation(
+          resolveProviderStorageKey(clientProp),
+          () =>
+            isSessionBlockedByDeletionGuard(
+              resolveProviderStorageKey(clientProp),
+              session,
+            ),
+        ))
+      ) {
+        return;
+      }
+
+      const deletionAttempt = activeDeletionAttemptRef.current;
+      const deletionEventPrincipal = userIdFromSession(session);
+      let isDeletionMaintenanceEvent = false;
+      if (
+        deletionAttempt != null &&
+        session != null &&
+        deletionEventPrincipal === deletionAttempt.principalId
+      ) {
+        isDeletionMaintenanceEvent = true;
+      } else if (
+        deletionAttempt != null &&
+        session != null &&
+        deletionEventPrincipal != null
+      ) {
+        deletionAttempt.winnerVersion += 1;
+        deletionAttempt.winner = {
+          kind: 'session',
+          version: deletionAttempt.winnerVersion,
+          principalId: deletionEventPrincipal,
+          session,
+        };
+      } else if (deletionAttempt != null && event === 'SIGNED_OUT') {
+        deletionAttempt.winnerVersion += 1;
+        deletionAttempt.winner = {
+          kind: 'signed-out',
+          version: deletionAttempt.winnerVersion,
+        };
+      }
+
       const currentAttempt = recoveryAttemptRef.current;
       const eventPrincipal = userIdFromSession(session);
+      if (
+        currentAttempt != null &&
+        recoveryGenerationRef.current === currentAttempt.generation &&
+        currentAttempt.adoptionSuperseded &&
+        event === 'PASSWORD_RECOVERY' &&
+        currentAttempt.passwordRecoveryPrincipalId === eventPrincipal
+      ) {
+        return;
+      }
       const isPendingInitialSession =
         currentAttempt != null &&
         recoveryGenerationRef.current === currentAttempt.generation &&
@@ -507,10 +794,22 @@ export function AuthProvider({
           latestAuthPrincipalRef.current !== eventPrincipal;
         if (attemptWasSuperseded) {
           const supersedingSession = latestAuthSessionRef.current;
-          reconcileSupersededRecovery(client, supersedingSession);
+          reconcileSupersededRecovery(
+            client,
+            supersedingSession,
+            eventPrincipal,
+            session,
+          );
           return;
         }
-        if (!attempt?.supersededByNewerCallback) {
+        if (
+          attempt != null &&
+          recoveryGenerationRef.current === attempt.generation
+        ) {
+          attempt.passwordRecoveryObserved = true;
+          attempt.passwordRecoveryPrincipalId = eventPrincipal;
+          attempt.passwordRecoverySession = session;
+        } else if (!attempt?.supersededByNewerCallback) {
           setRecoveryPhase('verified');
         }
       } else if (
@@ -521,6 +820,10 @@ export function AuthProvider({
       }
       // Do not clear recovery on SIGNED_IN / USER_UPDATED / TOKEN_REFRESHED —
       // recovery session lives as a normal session with a prior PASSWORD_RECOVERY.
+
+      if (isDeletionMaintenanceEvent) {
+        return;
+      }
 
       // Invalidate any in-flight bootstrap before scheduling application.
       authGenerationRef.current += 1;
@@ -541,6 +844,12 @@ export function AuthProvider({
         }
         void applySession(session, appliedGeneration);
       });
+    };
+
+    const {
+      data: { subscription: authSubscription },
+    } = client.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
+      enqueueGuardedAuthWork(() => processDeferredAuthEvent(event, session));
     });
 
     subscription = authSubscription;
@@ -553,8 +862,256 @@ export function AuthProvider({
     applySession,
     clientProp,
     enableSession,
+    enqueueGuardedAuthWork,
     prepareUserScopedCacheForPrincipal,
     reconcileSupersededRecovery,
+  ]);
+
+  useEffect(() => {
+    if (!enableSession) return;
+    const client = resolveClient(clientProp);
+    if (client == null) return;
+    const storageKey = resolveProviderStorageKey(clientProp);
+    let cancelled = false;
+
+    const settleSignedOut = async (
+      kind: 'signed-out' | 'quarantined',
+      principalId: string | null,
+    ): Promise<GuardReconciliationOutcome> => {
+      authGenerationRef.current += 1;
+      const generation = authGenerationRef.current;
+      latestAuthPrincipalRef.current = null;
+      latestAuthSessionRef.current = null;
+      setRecoveryPhase('idle');
+      if (principalId != null) {
+        try {
+          await removePrincipalScopedQueries(queryClient, principalId);
+        } catch {
+          // The signed-out shell remains safer than publishing stale authority.
+        }
+      }
+      if (cancelled || authGenerationRef.current !== generation) {
+        return { kind: 'unchanged' };
+      }
+      setUser(null);
+      setStatus('signed-out');
+      return { kind };
+    };
+
+    const removeExactCandidate = async (
+      candidate: AllowedGuardedSession,
+    ): Promise<GuardedAuthStorageReconciliation> =>
+      await runSupabaseAuthOperation(storageKey, async () => {
+        const current = await reconcileGuardedAuthStorage(storageKey);
+        if (
+          current.kind !== 'allowed-session' ||
+          !sameAllowedGuardedSession(current, candidate)
+        ) {
+          return current;
+        }
+        const cleanup = await removeStoredSessionIfExact(storageKey, {
+          principalId: candidate.principalId,
+          accessToken: candidate.session.access_token,
+          refreshToken: candidate.session.refresh_token,
+        });
+        if (cleanup === 'removed' || cleanup === 'already-empty') {
+          return {
+            kind: 'empty',
+            guardedPrincipalIds: [candidate.principalId],
+          };
+        }
+        if (cleanup === 'changed') {
+          return await reconcileGuardedAuthStorage(storageKey);
+        }
+        return { kind: 'unavailable' };
+      });
+
+    const reconcileGuardState = async (
+      request: GuardReconciliationRequest = {},
+    ): Promise<GuardReconciliationOutcome> => {
+      let snapshot = await runSupabaseAuthOperation(storageKey, () =>
+        reconcileGuardedAuthStorage(storageKey),
+      );
+      while (!cancelled) {
+        if (snapshot.kind === 'blocked') {
+          const attempt = activeDeletionAttemptRef.current;
+          if (
+            attempt?.principalId === snapshot.principalId &&
+            attempt.guardRevision === snapshot.guardRevision &&
+            (snapshot.guardState === 'preparing' ||
+              snapshot.guardState === 'pending')
+          ) {
+            return { kind: 'unchanged' };
+          }
+          const displayedPrincipal = latestAuthPrincipalRef.current;
+          if (request.forceSettlement || displayedPrincipal != null) {
+            return await settleSignedOut(
+              'signed-out',
+              request.displacedPrincipalId ?? displayedPrincipal,
+            );
+          }
+          return { kind: 'unchanged' };
+        }
+        if (snapshot.kind === 'empty') {
+          const principalId = latestAuthPrincipalRef.current;
+          if (
+            !request.forceSettlement &&
+            (principalId == null ||
+              !snapshot.guardedPrincipalIds.includes(principalId))
+          ) {
+            return { kind: 'unchanged' };
+          }
+          return await settleSignedOut(
+            'signed-out',
+            request.displacedPrincipalId ?? principalId,
+          );
+        }
+        if (snapshot.kind === 'unavailable') {
+          return request.forceSettlement
+            ? await settleSignedOut(
+                'quarantined',
+                request.displacedPrincipalId ?? latestAuthPrincipalRef.current,
+              )
+            : { kind: 'unchanged' };
+        }
+
+        if (
+          request.displacedPrincipalId != null &&
+          snapshot.principalId === request.displacedPrincipalId &&
+          (request.displacedSession == null ||
+            (snapshot.session.access_token ===
+              request.displacedSession.access_token &&
+              snapshot.session.refresh_token ===
+                request.displacedSession.refresh_token))
+        ) {
+          snapshot = await removeExactCandidate(snapshot);
+          continue;
+        }
+
+        const validation = await validateSessionSnapshotIsolated(
+          snapshot.session,
+          {
+            client,
+            storageKey,
+            createIsolatedAuthClient:
+            clientProp !== undefined ? () => client : undefined,
+          },
+        );
+        if (validation.kind === 'unavailable') {
+          const current = await runSupabaseAuthOperation(storageKey, () =>
+            reconcileGuardedAuthStorage(storageKey),
+          );
+          if (
+            current.kind === 'allowed-session' &&
+            sameAllowedGuardedSession(current, snapshot)
+          ) {
+            return request.forceSettlement
+              ? await settleSignedOut(
+                  'quarantined',
+                  request.displacedPrincipalId ?? null,
+                )
+              : { kind: 'unchanged' };
+          }
+          snapshot = current;
+          continue;
+        }
+        if (validation.kind === 'invalid') {
+          snapshot = await removeExactCandidate(snapshot);
+          continue;
+        }
+        const rechecked = await runSupabaseAuthOperation(storageKey, () =>
+          reconcileGuardedAuthStorage(storageKey),
+        );
+        if (
+          rechecked.kind !== 'allowed-session' ||
+          !sameAllowedGuardedSession(rechecked, snapshot)
+        ) {
+          snapshot = rechecked;
+          continue;
+        }
+
+        const displayedPrincipal = latestAuthPrincipalRef.current;
+        if (
+          displayedPrincipal != null &&
+          displayedPrincipal !== rechecked.principalId &&
+          displayedPrincipal !== request.displacedPrincipalId
+        ) {
+          await removePrincipalScopedQueries(queryClient, displayedPrincipal);
+        }
+        if (
+          request.displacedPrincipalId != null &&
+          request.displacedPrincipalId !== rechecked.principalId
+        ) {
+          await removePrincipalScopedQueries(
+            queryClient,
+            request.displacedPrincipalId,
+          );
+        }
+        await cacheTransitionTailRef.current.catch(() => undefined);
+
+        const publication = await runSupabaseAuthOperation(
+          storageKey,
+          async (): Promise<
+            | GuardReconciliationOutcome
+            | { kind: 'changed'; snapshot: GuardedAuthStorageReconciliation }
+          > => {
+            const current = await reconcileGuardedAuthStorage(storageKey);
+            if (
+              current.kind !== 'allowed-session' ||
+              !sameAllowedGuardedSession(current, rechecked)
+            ) {
+              return { kind: 'changed', snapshot: current };
+            }
+            authGenerationRef.current += 1;
+            latestAuthPrincipalRef.current = current.principalId;
+            latestAuthSessionRef.current = current.session;
+            cachePrincipalRef.current = current.principalId;
+            setRecoveryPhase('idle');
+            setUser(authUserFromSession(current.session));
+            setStatus('signed-in');
+            return { kind: 'published' };
+          },
+        );
+        if (publication.kind !== 'changed') {
+          return publication;
+        }
+        snapshot = publication.snapshot;
+      }
+      return { kind: 'unchanged' };
+    };
+
+    const schedule = (request: GuardReconciliationRequest = {}) =>
+      enqueueGuardedAuthWork(() => reconcileGuardState(request));
+    requestGuardReconciliationRef.current = schedule;
+    const unsubscribe = subscribePrincipalDeletionGuardChanges(
+      storageKey,
+      () => {
+        void schedule();
+      },
+    );
+    const appStateSubscription = AppState.addEventListener(
+      'change',
+      (nextState) => {
+        if (nextState === 'active') void schedule();
+      },
+    );
+    void schedule();
+
+    return () => {
+      cancelled = true;
+      if (requestGuardReconciliationRef.current === schedule) {
+        requestGuardReconciliationRef.current = async () => ({
+          kind: 'unchanged',
+        });
+      }
+      unsubscribe();
+      appStateSubscription.remove();
+    };
+  }, [
+    clientProp,
+    enableSession,
+    enqueueGuardedAuthWork,
+    queryClient,
   ]);
 
   /**
@@ -617,6 +1174,10 @@ export function AuthProvider({
         localSessionSnapshotPending: authPrincipalAtCallbackStart == null,
         pendingInitialSession: undefined,
         supersededByNewerCallback: false,
+        passwordRecoveryObserved: false,
+        passwordRecoveryPrincipalId: null,
+        passwordRecoverySession: null,
+        adoptionSuperseded: false,
       };
       setRecoveryPhase('processing');
 
@@ -687,7 +1248,13 @@ export function AuthProvider({
       }
 
       try {
-        const result = await processAuthCallbackUrl(url, { client });
+        const result = await processAuthCallbackUrl(url, {
+          client,
+          storageKey: resolveProviderStorageKey(clientProp),
+          createIsolatedAuthClient:
+            clientProp !== undefined ? () => client : undefined,
+        });
+        await guardedAuthReconciliationTailRef.current;
         if (cancelled || recoveryGenerationRef.current !== generation) {
           return;
         }
@@ -701,11 +1268,64 @@ export function AuthProvider({
           );
           return;
         }
+        if (result.kind === 'superseded') {
+          const attempt = recoveryAttemptRef.current;
+          const displacedPrincipalId =
+            attempt?.passwordRecoveryPrincipalId ??
+            latestAuthPrincipalRef.current;
+          let displacedSession = attempt?.passwordRecoverySession ?? null;
+          if (attempt?.generation === generation && displacedPrincipalId != null) {
+            for (const transition of attempt.authTransitions) {
+              if (
+                !transition.isExplicitAuthOperation &&
+                userIdFromSession(transition.session) === displacedPrincipalId
+              ) {
+                displacedSession = transition.session;
+              }
+            }
+          }
+          if (attempt?.generation === generation) {
+            attempt.adoptionSuperseded = true;
+          }
+          // Invalidate an A state application already queued by the SDK event
+          // before reconciling the exact authority that superseded adoption.
+          authGenerationRef.current += 1;
+          latestAuthPrincipalRef.current = null;
+          latestAuthSessionRef.current = null;
+          setRecoveryPhase('idle');
+          setUser(null);
+          setStatus('initializing');
+          let outcome: GuardReconciliationOutcome = { kind: 'unchanged' };
+          try {
+            outcome = await requestGuardReconciliationRef.current({
+              forceSettlement: true,
+              displacedPrincipalId,
+              displacedSession,
+            });
+          } catch {
+            // Fall through to a token-free signed-out shell.
+          }
+          if (outcome.kind === 'unchanged') {
+            authGenerationRef.current += 1;
+            latestAuthPrincipalRef.current = null;
+            latestAuthSessionRef.current = null;
+            setUser(null);
+            setStatus('signed-out');
+          }
+          return;
+        }
         const attempt = recoveryAttemptRef.current;
         let foundSupersedingSession = false;
         let supersedingSession: Session | null = null;
+        let displacedSession = attempt?.passwordRecoverySession ?? null;
         if (attempt?.generation === generation) {
           for (const transition of attempt.authTransitions) {
+            if (
+              !transition.isExplicitAuthOperation &&
+              userIdFromSession(transition.session) === result.user.id
+            ) {
+              displacedSession = transition.session;
+            }
             if (
               transition.isExplicitAuthOperation ||
               userIdFromSession(transition.session) !== result.user.id
@@ -716,7 +1336,12 @@ export function AuthProvider({
           }
         }
         if (foundSupersedingSession) {
-          reconcileSupersededRecovery(client, supersedingSession);
+          reconcileSupersededRecovery(
+            client,
+            supersedingSession,
+            result.user.id,
+            displacedSession,
+          );
           return;
         }
         const authChangedDuringExchange =
@@ -731,7 +1356,10 @@ export function AuthProvider({
           );
           return;
         }
-        if (result.kind === 'password-recovery') {
+        if (
+          result.kind === 'password-recovery' ||
+          attempt?.passwordRecoveryObserved
+        ) {
           // Token-based recovery with type=recovery; also wait for SDK event.
           setRecoveryPhase('verified');
           return;
@@ -769,7 +1397,12 @@ export function AuthProvider({
       cancelled = true;
       subscription.remove();
     };
-  }, [clientProp, enableSession, linking, reconcileSupersededRecovery]);
+  }, [
+    clientProp,
+    enableSession,
+    linking,
+    reconcileSupersededRecovery,
+  ]);
 
   /**
    * After optimistic principal cleanup: a generation mismatch means a newer
@@ -796,6 +1429,663 @@ export function AuthProvider({
     [],
   );
 
+  const publishSignedOutAfterDeletion = useCallback(
+    async (principalId: string, attempt?: ActiveDeletionAttempt) => {
+      authGenerationRef.current += 1;
+      const generation = authGenerationRef.current;
+      latestAuthPrincipalRef.current = null;
+      latestAuthSessionRef.current = null;
+      setRecoveryPhase('idle');
+      try {
+        await removePrincipalScopedQueries(queryClient, principalId);
+      } catch {
+        // The exact-principal remover attempts physical removal in `finally`.
+        // Guarded auth state remains authoritative even if cancellation fails.
+      }
+      if (authGenerationRef.current !== generation) {
+        return attempt?.winner != null ||
+            latestAuthPrincipalRef.current != null
+          ? 'superseded' as const
+          : 'signed-out' as const;
+      }
+      setUser(null);
+      setStatus('signed-out');
+      return 'signed-out' as const;
+    },
+    [queryClient],
+  );
+
+  const quarantineAfterWinnerRestorationFailure = useCallback(
+    async (attempt: ActiveDeletionAttempt) => {
+      if (latestAuthPrincipalRef.current === attempt.principalId) {
+        await publishSignedOutAfterDeletion(attempt.principalId, attempt);
+        return;
+      }
+      await removePrincipalScopedQueries(queryClient, attempt.principalId);
+    },
+    [publishSignedOutAfterDeletion, queryClient],
+  );
+
+  const restoreDeletionWinner = useCallback(
+    async (
+      client: AppSupabaseClient,
+      attempt: ActiveDeletionAttempt,
+    ): Promise<'session' | 'signed-out' | 'restore-failed'> => {
+      while (true) {
+        const winner = attempt.winner;
+        if (winner == null || winner.kind === 'signed-out') {
+          authGenerationRef.current += 1;
+          latestAuthPrincipalRef.current = null;
+          latestAuthSessionRef.current = null;
+          setRecoveryPhase('idle');
+          setUser(null);
+          setStatus('signed-out');
+          return winner == null ? 'restore-failed' : 'signed-out';
+        }
+
+        const capturedVersion = winner.version;
+        const capturedSession = winner.session;
+        const storageKey = getSupabaseAuthStorageKey();
+        const candidate = await runSupabaseAuthOperation(storageKey, () =>
+          reconcileGuardedAuthStorage(storageKey),
+        );
+        const winnerBeforeValidation = attempt.winner;
+        if (
+          winnerBeforeValidation?.kind !== 'session' ||
+          winnerBeforeValidation.version !== capturedVersion
+        ) {
+          continue;
+        }
+        if (
+          candidate.kind !== 'allowed-session' ||
+          candidate.principalId !== winner.principalId ||
+          candidate.session.access_token !== capturedSession.access_token ||
+          candidate.session.refresh_token !== capturedSession.refresh_token
+        ) {
+          if (candidate.kind === 'allowed-session') {
+            attempt.winnerVersion += 1;
+            attempt.winner = {
+              kind: 'session',
+              version: attempt.winnerVersion,
+              principalId: candidate.principalId,
+              session: candidate.session,
+            };
+            continue;
+          }
+          if (candidate.kind === 'empty' || candidate.kind === 'blocked') {
+            attempt.winnerVersion += 1;
+            attempt.winner = {
+              kind: 'signed-out',
+              version: attempt.winnerVersion,
+            };
+            continue;
+          }
+          await quarantineAfterWinnerRestorationFailure(attempt);
+          return 'restore-failed';
+        }
+
+        const validation = await validateSessionSnapshotIsolated(
+          candidate.session,
+          {
+            client,
+            storageKey,
+            createIsolatedAuthClient:
+              clientProp !== undefined ? () => client : undefined,
+          },
+        );
+        if (validation.kind === 'unavailable') {
+          await quarantineAfterWinnerRestorationFailure(attempt);
+          return 'restore-failed';
+        }
+        if (validation.kind === 'invalid') {
+          const afterInvalid = await runSupabaseAuthOperation(
+            storageKey,
+            async (): Promise<GuardedAuthStorageReconciliation> => {
+              const current = await reconcileGuardedAuthStorage(storageKey);
+              if (
+                current.kind !== 'allowed-session' ||
+                !sameAllowedGuardedSession(current, candidate)
+              ) {
+                return current;
+              }
+              const cleanup = await removeStoredSessionIfExact(storageKey, {
+                principalId: candidate.principalId,
+                accessToken: candidate.session.access_token,
+                refreshToken: candidate.session.refresh_token,
+              });
+              if (cleanup === 'removed' || cleanup === 'already-empty') {
+                return {
+                  kind: 'empty',
+                  guardedPrincipalIds: [candidate.principalId],
+                };
+              }
+              if (cleanup === 'changed') {
+                return await reconcileGuardedAuthStorage(storageKey);
+              }
+              return { kind: 'unavailable' };
+            },
+          );
+          if (afterInvalid.kind === 'allowed-session') {
+            attempt.winnerVersion += 1;
+            attempt.winner = {
+              kind: 'session',
+              version: attempt.winnerVersion,
+              principalId: afterInvalid.principalId,
+              session: afterInvalid.session,
+            };
+            continue;
+          }
+          if (afterInvalid.kind === 'empty' || afterInvalid.kind === 'blocked') {
+            attempt.winnerVersion += 1;
+            attempt.winner = {
+              kind: 'signed-out',
+              version: attempt.winnerVersion,
+            };
+            continue;
+          }
+          await quarantineAfterWinnerRestorationFailure(attempt);
+          return 'restore-failed';
+        }
+
+        const publication = await runSupabaseAuthOperation(
+          storageKey,
+          async (): Promise<'published' | 'changed' | 'unavailable'> => {
+            const newestWinner = attempt.winner;
+            if (
+              newestWinner?.kind !== 'session' ||
+              newestWinner.version !== capturedVersion
+            ) {
+              return 'changed';
+            }
+            const stored = await reconcileGuardedAuthStorage(storageKey);
+            if (
+              stored.kind === 'allowed-session' &&
+              sameAllowedGuardedSession(stored, candidate)
+            ) {
+              authGenerationRef.current += 1;
+              latestAuthPrincipalRef.current = winner.principalId;
+              latestAuthSessionRef.current = capturedSession;
+              setRecoveryPhase('idle');
+              setUser(authUserFromSession(capturedSession));
+              setStatus('signed-in');
+              return 'published';
+            }
+            if (stored.kind === 'allowed-session') {
+              attempt.winnerVersion += 1;
+              attempt.winner = {
+                kind: 'session',
+                version: attempt.winnerVersion,
+                principalId: stored.principalId,
+                session: stored.session,
+              };
+              return 'changed';
+            }
+            if (stored.kind === 'empty' || stored.kind === 'blocked') {
+              attempt.winnerVersion += 1;
+              attempt.winner = {
+                kind: 'signed-out',
+                version: attempt.winnerVersion,
+              };
+              return 'changed';
+            }
+            return 'unavailable';
+          },
+        );
+        if (publication === 'published') return 'session';
+        if (publication === 'unavailable') {
+          await quarantineAfterWinnerRestorationFailure(attempt);
+          return 'restore-failed';
+        }
+      }
+    },
+    [
+      clientProp,
+      quarantineAfterWinnerRestorationFailure,
+    ],
+  );
+
+  const settleDeletedPrincipalLocally = useCallback(
+    async (
+      attempt: ActiveDeletionAttempt,
+      storageKey: string,
+    ): Promise<'signed-out' | 'superseded' | 'cleanup-unconfirmed'> => {
+      if (attempt.winner != null) {
+        return 'superseded';
+      }
+
+      const cleanup = await settleGuardedPrincipalSession(
+        storageKey,
+        attempt.principalId,
+        attempt.guardRevision!,
+      );
+      if (cleanup.kind === 'preserved-winner') {
+        attempt.winnerVersion += 1;
+        attempt.winner = {
+          kind: 'session',
+          version: attempt.winnerVersion,
+          principalId: cleanup.principalId,
+          session: cleanup.session,
+        };
+        return 'superseded';
+      }
+      if (cleanup.kind === 'preserved-guarded') {
+        return 'superseded';
+      }
+      if (cleanup.kind === 'stale-attempt') {
+        return 'superseded';
+      }
+      if (cleanup.kind === 'quarantined-unavailable') {
+        return 'cleanup-unconfirmed';
+      }
+      return cleanup.companionCleanup === 'unconfirmed'
+        ? 'cleanup-unconfirmed'
+        : 'signed-out';
+    },
+    [],
+  );
+
+  const resolveDeletionDisarm = useCallback(
+    async (
+      client: AppSupabaseClient,
+      attempt: ActiveDeletionAttempt,
+      disarm: PrincipalDeletionGuardDisarmResult,
+    ): Promise<{
+      kind: 'disarmed' | 'winner-restored' | 'quarantined';
+      requiresReconciliation: boolean;
+    }> => {
+      if (disarm.kind === 'preserved-winner') {
+        attempt.winnerVersion += 1;
+        attempt.winner = {
+          kind: 'session',
+          version: attempt.winnerVersion,
+          principalId: disarm.principalId,
+          session: disarm.session,
+        };
+      } else if (
+        disarm.kind === 'unconfirmed' ||
+        disarm.kind === 'stale-attempt' ||
+        disarm.kind === 'preserved-guarded'
+      ) {
+        await publishSignedOutAfterDeletion(attempt.principalId, attempt);
+        return { kind: 'quarantined', requiresReconciliation: true };
+      }
+
+      await guardedAuthReconciliationTailRef.current;
+      if (attempt.winner == null) {
+        return { kind: 'disarmed', requiresReconciliation: false };
+      }
+      try {
+        await removePrincipalScopedQueries(queryClient, attempt.principalId);
+        const restored = await restoreDeletionWinner(client, attempt);
+        return {
+          kind: 'winner-restored',
+          requiresReconciliation: restored === 'restore-failed',
+        };
+      } catch {
+        await publishSignedOutAfterDeletion(attempt.principalId, attempt);
+        return { kind: 'quarantined', requiresReconciliation: true };
+      }
+    },
+    [publishSignedOutAfterDeletion, queryClient, restoreDeletionWinner],
+  );
+
+  const deleteAccount = useCallback(
+    async (password: string): Promise<DeleteAccountOutcome> => {
+      if (deletionInFlightRef.current) {
+        throw new AuthError(
+          'account-deletion-in-progress',
+          AUTH_USER_MESSAGES.accountDeletionInProgress,
+        );
+      }
+      deletionInFlightRef.current = true;
+      deletionGenerationRef.current += 1;
+      const deletionGeneration = deletionGenerationRef.current;
+      const finishExplicitAuthOperation = beginExplicitAuthOperation();
+      const storageKey = getSupabaseAuthStorageKey();
+      let attempt: ActiveDeletionAttempt | null = null;
+      let requiresPostFinalizationReconciliation = false;
+      let destructiveOutcome: DeleteCurrentUserApiOutcome | null = null;
+      let destructiveRequestStarted = false;
+      let guardDisarmAttempted = false;
+      try {
+        await recoveryReconciliationRef.current;
+        await sessionRestoreRef.current;
+        const client = resolveClient(clientProp);
+        const principal = user;
+        if (
+          client == null ||
+          status !== 'signed-in' ||
+          principal == null ||
+          principal.id !== latestAuthPrincipalRef.current ||
+          principal.email == null ||
+          principal.email.length === 0
+        ) {
+          throw new AuthError(
+            'account-deletion-failed',
+            AUTH_USER_MESSAGES.accountDeletionFailed,
+          );
+        }
+
+        let preflight: 'ready' | 'guard-busy';
+        try {
+          preflight = await preflightPrincipalBoundAuthStorage(
+            storageKey,
+            principal.id,
+          );
+        } catch {
+          throw new AuthError(
+            'account-deletion-failed',
+            AUTH_USER_MESSAGES.accountDeletionFailed,
+          );
+        }
+        if (preflight === 'guard-busy') {
+          throw new AuthError(
+            'account-deletion-in-progress',
+            AUTH_USER_MESSAGES.accountDeletionInProgress,
+          );
+        }
+
+        attempt = {
+          generation: deletionGeneration,
+          authGenerationAtStart: authGenerationRef.current,
+          principalId: principal.id,
+          principalEmail: principal.email,
+          guardRevision: null,
+          winnerVersion: 0,
+          winner: undefined,
+        };
+        activeDeletionAttemptRef.current = attempt;
+
+        const arm = await armPrincipalDeletionGuard(storageKey, principal.id);
+        if (arm.kind === 'guard-busy') {
+          throw new AuthError(
+            'account-deletion-in-progress',
+            AUTH_USER_MESSAGES.accountDeletionInProgress,
+          );
+        }
+        if (arm.kind === 'preserved-winner') {
+          attempt.winnerVersion += 1;
+          attempt.winner = {
+            kind: 'session',
+            version: attempt.winnerVersion,
+            principalId: arm.principalId,
+            session: arm.session,
+          };
+          await removePrincipalScopedQueries(queryClient, principal.id);
+          await restoreDeletionWinner(client, attempt);
+          return { kind: 'superseded' };
+        }
+        if (arm.kind === 'preserved-guarded') {
+          requiresPostFinalizationReconciliation = true;
+          await publishSignedOutAfterDeletion(principal.id, attempt);
+          return { kind: 'superseded' };
+        }
+        if (arm.kind === 'quarantine-unconfirmed') {
+          requiresPostFinalizationReconciliation = true;
+          const publication = await publishSignedOutAfterDeletion(
+            principal.id,
+            attempt,
+          );
+          if (publication === 'superseded') {
+            return { kind: 'superseded' };
+          }
+          throw new AuthError(
+            'account-deletion-failed',
+            AUTH_USER_MESSAGES.accountDeletionFailed,
+          );
+        }
+        if (arm.kind !== 'armed') {
+          throw new AuthError(
+            'account-deletion-failed',
+            AUTH_USER_MESSAGES.accountDeletionFailed,
+          );
+        }
+        attempt.guardRevision = arm.guardRevision;
+
+        const reauthentication = await reauthenticateForAccountDeletion(
+          {
+            email: attempt.principalEmail,
+            password,
+            expectedPrincipalId: attempt.principalId,
+          },
+          {},
+        );
+        if (attempt.winner != null) {
+          const disarm = await runSupabaseAuthOperation(storageKey, async () => {
+            const result = await disarmPrincipalDeletionGuard(
+              storageKey,
+              attempt!.principalId,
+              attempt!.guardRevision!,
+            );
+            guardDisarmAttempted = true;
+            return result;
+          });
+          const resolution = await resolveDeletionDisarm(client, attempt, disarm);
+          requiresPostFinalizationReconciliation ||=
+            resolution.requiresReconciliation;
+          return { kind: 'superseded' };
+        }
+
+        const lockedResult: {
+          kind: 'pre-dispatch-superseded';
+          disarm: PrincipalDeletionGuardDisarmResult;
+        } | {
+          kind: 'destructive';
+          outcome: DeleteCurrentUserApiOutcome;
+          settlement: 'signed-out' | 'superseded' | 'cleanup-unconfirmed';
+        } = await runSupabaseAuthOperation(storageKey, async () => {
+          if (attempt!.winner != null) {
+            const disarm = await disarmPrincipalDeletionGuard(
+              storageKey,
+              attempt!.principalId,
+              attempt!.guardRevision!,
+            );
+            guardDisarmAttempted = true;
+            return { kind: 'pre-dispatch-superseded', disarm };
+          }
+          const pending = await markPrincipalDeletionDispatched(
+            storageKey,
+            attempt!.principalId,
+            attempt!.guardRevision!,
+          );
+          if (typeof pending === 'object') {
+            attempt!.winnerVersion += 1;
+            attempt!.winner = pending.kind === 'preserved-winner'
+              ? {
+                  kind: 'session',
+                  version: attempt!.winnerVersion,
+                  principalId: pending.principalId,
+                  session: pending.session,
+                }
+              : {
+                  kind: 'signed-out',
+                  version: attempt!.winnerVersion,
+                };
+            const disarm = await disarmPrincipalDeletionGuard(
+              storageKey,
+              attempt!.principalId,
+              attempt!.guardRevision!,
+            );
+            guardDisarmAttempted = true;
+            return { kind: 'pre-dispatch-superseded', disarm };
+          }
+          if (pending !== 'pending') {
+            requiresPostFinalizationReconciliation = true;
+            throw new AuthError(
+              'account-deletion-failed',
+              AUTH_USER_MESSAGES.accountDeletionFailed,
+            );
+          }
+          let outcome: DeleteCurrentUserApiOutcome;
+          try {
+            outcome = await deleteCurrentUser(
+              reauthentication.accessToken,
+              {
+                onInvocationStart: () => {
+                  destructiveRequestStarted = true;
+                },
+              },
+            );
+          } catch (error) {
+            if (
+              !destructiveRequestStarted ||
+              isConfirmedPreRevocationDeletionError(error)
+            ) {
+              destructiveRequestStarted = false;
+              throw error;
+            }
+            outcome = { kind: 'unconfirmed-signed-out' };
+          }
+          destructiveOutcome = outcome;
+          const guardSettlement = await settlePrincipalDeletionGuard(
+            storageKey,
+            attempt!.principalId,
+            attempt!.guardRevision!,
+          );
+          if (guardSettlement !== 'settled') {
+            requiresPostFinalizationReconciliation = true;
+          }
+          const settlement = await settleDeletedPrincipalLocally(
+            attempt!,
+            storageKey,
+          );
+          if (settlement !== 'signed-out') {
+            requiresPostFinalizationReconciliation = true;
+          }
+          return { kind: 'destructive', outcome, settlement };
+        });
+
+        if (lockedResult.kind === 'pre-dispatch-superseded') {
+          const resolution = await resolveDeletionDisarm(
+            client,
+            attempt,
+            lockedResult.disarm,
+          );
+          requiresPostFinalizationReconciliation ||=
+            resolution.requiresReconciliation;
+          return { kind: 'superseded' };
+        }
+
+        await guardedAuthReconciliationTailRef.current;
+        if (attempt.winner != null) {
+          try {
+            await removePrincipalScopedQueries(queryClient, attempt.principalId);
+            const restored = await restoreDeletionWinner(client, attempt);
+            requiresPostFinalizationReconciliation ||=
+              restored === 'restore-failed';
+          } catch {
+            requiresPostFinalizationReconciliation = true;
+            await publishSignedOutAfterDeletion(attempt.principalId, attempt);
+          }
+          return { kind: 'superseded' };
+        }
+        if (lockedResult.settlement === 'superseded') {
+          requiresPostFinalizationReconciliation = true;
+          await publishSignedOutAfterDeletion(attempt.principalId, attempt);
+          return { kind: 'superseded' };
+        }
+        if (lockedResult.settlement === 'cleanup-unconfirmed') {
+          requiresPostFinalizationReconciliation = true;
+        }
+        const publication = await publishSignedOutAfterDeletion(
+          attempt.principalId,
+          attempt,
+        );
+        return publication === 'superseded'
+          ? { kind: 'superseded' }
+          : lockedResult.outcome;
+      } catch (error) {
+        if (
+          (destructiveRequestStarted || destructiveOutcome != null) &&
+          attempt != null
+        ) {
+          requiresPostFinalizationReconciliation = true;
+          destructiveOutcome ??= { kind: 'unconfirmed-signed-out' };
+          const client = resolveClient(clientProp);
+          if (attempt.winner != null) {
+            if (client != null) {
+              try {
+                await removePrincipalScopedQueries(
+                  queryClient,
+                  attempt.principalId,
+                );
+                await restoreDeletionWinner(client, attempt);
+              } catch {
+                await publishSignedOutAfterDeletion(
+                  attempt.principalId,
+                  attempt,
+                );
+              }
+            } else {
+              await publishSignedOutAfterDeletion(
+                attempt.principalId,
+                attempt,
+              );
+            }
+            return { kind: 'superseded' };
+          }
+          const publication = await publishSignedOutAfterDeletion(
+            attempt.principalId,
+            attempt,
+          );
+          return publication === 'superseded'
+            ? { kind: 'superseded' }
+            : destructiveOutcome;
+        }
+        if (attempt?.guardRevision != null && !guardDisarmAttempted) {
+          const client = resolveClient(clientProp);
+          const disarm = await runSupabaseAuthOperation(storageKey, async () => {
+            const result = await disarmPrincipalDeletionGuard(
+              storageKey,
+              attempt!.principalId,
+              attempt!.guardRevision!,
+            );
+            guardDisarmAttempted = true;
+            return result;
+          });
+          if (client != null) {
+            const resolution = await resolveDeletionDisarm(
+              client,
+              attempt,
+              disarm,
+            );
+            requiresPostFinalizationReconciliation ||=
+              resolution.requiresReconciliation;
+            if (resolution.kind === 'winner-restored') {
+              return { kind: 'superseded' };
+            }
+          } else if (disarm.kind !== 'disarmed') {
+            requiresPostFinalizationReconciliation = true;
+            await publishSignedOutAfterDeletion(attempt.principalId, attempt);
+          }
+        }
+        throw error;
+      } finally {
+        if (activeDeletionAttemptRef.current?.generation === deletionGeneration) {
+          activeDeletionAttemptRef.current = null;
+        }
+        if (deletionGenerationRef.current === deletionGeneration) {
+          deletionInFlightRef.current = false;
+        }
+        finishExplicitAuthOperation();
+        if (requiresPostFinalizationReconciliation) {
+          void requestGuardReconciliationRef.current();
+        }
+      }
+    },
+    [
+      beginExplicitAuthOperation,
+      clientProp,
+      publishSignedOutAfterDeletion,
+      queryClient,
+      resolveDeletionDisarm,
+      restoreDeletionWinner,
+      settleDeletedPrincipalLocally,
+      status,
+      user,
+    ],
+  );
+
   const signIn = useCallback(
     async (credentials: SignInCredentials): Promise<SignInResult> => {
       const finishExplicitAuthOperation = beginExplicitAuthOperation();
@@ -805,7 +2095,16 @@ export function AuthProvider({
         if (!client) {
           throw new Error('Auth client is unavailable.');
         }
-        const result = await signInWithPassword(credentials, { client });
+        const result = await runAuthSessionWrite(() =>
+          signInWithPassword(credentials, {
+            client,
+            storageKey: resolveProviderStorageKey(clientProp),
+            createIsolatedAuthClient:
+              clientProp !== undefined ? () => client : undefined,
+          }),
+        );
+        await guardedAuthReconciliationTailRef.current;
+        if (result.kind === 'superseded') return result;
         markExplicitAuthTransition(result.user.id);
         authGenerationRef.current += 1;
         const generation = authGenerationRef.current;
@@ -813,6 +2112,7 @@ export function AuthProvider({
         setRecoveryPhase('idle');
         // onAuthStateChange will sync status; apply optimistically for UX.
         await prepareUserScopedCacheForPrincipal(result.user.id);
+        await guardedAuthReconciliationTailRef.current;
         const resolved = resolveOptimisticSignedIn(result, generation);
         if (resolved.kind === 'superseded') {
           return resolved;
@@ -834,6 +2134,7 @@ export function AuthProvider({
       markExplicitAuthTransition,
       prepareUserScopedCacheForPrincipal,
       resolveOptimisticSignedIn,
+      runAuthSessionWrite,
     ],
   );
 
@@ -846,7 +2147,15 @@ export function AuthProvider({
         if (!client) {
           throw new Error('Auth client is unavailable.');
         }
-        const result = await signUpWithPassword(credentials, { client });
+        const result = await runAuthSessionWrite(() =>
+          signUpWithPassword(credentials, {
+            client,
+            storageKey: resolveProviderStorageKey(clientProp),
+            createIsolatedAuthClient:
+              clientProp !== undefined ? () => client : undefined,
+          }),
+        );
+        await guardedAuthReconciliationTailRef.current;
         if (result.kind === 'signed-in') {
           markExplicitAuthTransition(result.user.id);
           authGenerationRef.current += 1;
@@ -854,6 +2163,7 @@ export function AuthProvider({
           latestAuthPrincipalRef.current = result.user.id;
           setRecoveryPhase('idle');
           await prepareUserScopedCacheForPrincipal(result.user.id);
+          await guardedAuthReconciliationTailRef.current;
           const resolved = resolveOptimisticSignedIn(result, generation);
           if (resolved.kind === 'superseded') {
             return resolved;
@@ -876,6 +2186,7 @@ export function AuthProvider({
       markExplicitAuthTransition,
       prepareUserScopedCacheForPrincipal,
       resolveOptimisticSignedIn,
+      runAuthSessionWrite,
     ],
   );
 
@@ -897,7 +2208,25 @@ export function AuthProvider({
         setStatus('signed-out');
         return;
       }
-      await signOutApi({ client });
+      const result = await signOutApi({
+        client,
+        storageKey: resolveProviderStorageKey(clientProp),
+        createIsolatedAuthClient:
+          clientProp !== undefined ? () => client : undefined,
+      });
+      if (result.kind === 'superseded') {
+        markExplicitAuthTransition(result.user.id);
+        authGenerationRef.current += 1;
+        const generation = authGenerationRef.current;
+        latestAuthPrincipalRef.current = result.user.id;
+        setRecoveryPhase('idle');
+        await prepareUserScopedCacheForPrincipal(result.user.id);
+        if (authGenerationRef.current === generation) {
+          setUser(result.user);
+          setStatus('signed-in');
+        }
+        return;
+      }
       markExplicitAuthTransition(null);
       authGenerationRef.current += 1;
       const generation = authGenerationRef.current;
@@ -929,9 +2258,11 @@ export function AuthProvider({
       signIn,
       signUp,
       signOut,
+      deleteAccount,
     }),
     [
       clearRecoveryPhase,
+      deleteAccount,
       recoveryPhase,
       signIn,
       signOut,

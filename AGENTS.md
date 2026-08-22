@@ -3,10 +3,11 @@
 Eazy Review is a mobile-first sneaker/product review and discovery app.
 Core flow: Browse -> Product Detail -> Eazy Score / Community Score -> My Rating.
 Stack: Expo SDK 57, Expo Router, React Native, TypeScript, NativeWind, Supabase;
-Tasks 15–18 connect Supabase/PostgreSQL catalog reads, authentication, durable
-ratings/Rated Products, and password recovery through the shared Expo Supabase
-client, with TanStack Query managing connected query state and connectivity
-lifecycle where applicable.
+Tasks 15–19 connect Supabase/PostgreSQL catalog reads, authentication, durable
+ratings/Rated Products, password recovery, and protected caller-derived
+account deletion through the shared Expo client plus a server-only Edge
+Function boundary. TanStack Query manages connected query state and
+connectivity lifecycle where applicable.
 
 ## Non-Negotiable Product Rules
 
@@ -65,6 +66,9 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
   screen tests).
 - `npm run types:generate` / `npm run types:check` for local Supabase database
   types (`src/types/database.generated.ts`).
+- `npm run check:functions` for Deno format, lint, frozen type-check, and
+  injected-mock Edge Function tests. Database CI owns this lane;
+  `check:readonly` and Expo CI remain Node/Expo-only.
 - `npm run test:agent-infra` for the manifest/checker unit suite and
   `npm run check:agent-infra` for the repository document, mirror, dependency,
   stale-term, impact-rule, and task-graph contract.

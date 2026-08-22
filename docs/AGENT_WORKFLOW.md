@@ -322,6 +322,10 @@ Pick the narrowest command that covers the change:
 - `npm run types:generate` / `npm run types:check` — write or verify
   `src/types/database.generated.ts` from the **local** Supabase schema only.
   Requires `supabase start`; does not contact staging or production.
+- `npm run check:functions` — Deno format, lint, frozen type-check, and
+  injected-mock unit tests for `supabase/functions/delete-current-user`.
+  Database CI owns this lane. It is deliberately outside `check:readonly` and
+  `check:expo`, so Node/Expo checks never imply Deno coverage.
 - `npm run check:readonly` — non-mutating repository gate: skill wrappers,
   decisions, secrets, agent infrastructure, typecheck, and lint. It still
   executes repository-controlled code and is subject to the trust gate.

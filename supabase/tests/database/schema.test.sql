@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(37);
+select plan(39);
 
 -- Seven Task 11 tables exist.
 select has_table('public', 'profiles', 'profiles exists');
@@ -13,6 +13,66 @@ select has_table('public', 'eazy_assessments', 'eazy_assessments exists');
 select has_table('public', 'user_ratings', 'user_ratings exists');
 select has_table('public', 'rating_aggregates', 'rating_aggregates exists');
 select has_table('public', 'product_offers', 'product_offers exists');
+
+-- Auth-user foreign keys are exact cascading relationships.
+select is(
+  (
+    select count(*)::int
+    from pg_constraint c
+    join pg_class child_table on child_table.oid = c.conrelid
+    join pg_namespace child_namespace on child_namespace.oid = child_table.relnamespace
+    join pg_class parent_table on parent_table.oid = c.confrelid
+    join pg_namespace parent_namespace on parent_namespace.oid = parent_table.relnamespace
+    join unnest(c.conkey) with ordinality as child_key(attnum, ordinality) on true
+    join pg_attribute child_attribute
+      on child_attribute.attrelid = c.conrelid
+      and child_attribute.attnum = child_key.attnum
+    join unnest(c.confkey) with ordinality as parent_key(attnum, ordinality)
+      on parent_key.ordinality = child_key.ordinality
+    join pg_attribute parent_attribute
+      on parent_attribute.attrelid = c.confrelid
+      and parent_attribute.attnum = parent_key.attnum
+    where c.contype = 'f'
+      and child_namespace.nspname = 'public'
+      and child_table.relname = 'profiles'
+      and child_attribute.attname = 'id'
+      and parent_namespace.nspname = 'auth'
+      and parent_table.relname = 'users'
+      and parent_attribute.attname = 'id'
+      and c.confdeltype = 'c'
+  ),
+  1,
+  'profiles.id cascades to auth.users.id'
+);
+select is(
+  (
+    select count(*)::int
+    from pg_constraint c
+    join pg_class child_table on child_table.oid = c.conrelid
+    join pg_namespace child_namespace on child_namespace.oid = child_table.relnamespace
+    join pg_class parent_table on parent_table.oid = c.confrelid
+    join pg_namespace parent_namespace on parent_namespace.oid = parent_table.relnamespace
+    join unnest(c.conkey) with ordinality as child_key(attnum, ordinality) on true
+    join pg_attribute child_attribute
+      on child_attribute.attrelid = c.conrelid
+      and child_attribute.attnum = child_key.attnum
+    join unnest(c.confkey) with ordinality as parent_key(attnum, ordinality)
+      on parent_key.ordinality = child_key.ordinality
+    join pg_attribute parent_attribute
+      on parent_attribute.attrelid = c.confrelid
+      and parent_attribute.attnum = parent_key.attnum
+    where c.contype = 'f'
+      and child_namespace.nspname = 'public'
+      and child_table.relname = 'user_ratings'
+      and child_attribute.attname = 'user_id'
+      and parent_namespace.nspname = 'auth'
+      and parent_table.relname = 'users'
+      and parent_attribute.attname = 'id'
+      and c.confdeltype = 'c'
+  ),
+  1,
+  'user_ratings.user_id cascades to auth.users.id'
+);
 
 -- Key indexes.
 select has_index(

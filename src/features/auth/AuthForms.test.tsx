@@ -71,7 +71,13 @@ describe('auth form behaviors (API + return path)', () => {
 
     const first = signInWithPassword(
       { email: 'a@example.com', password: 'password1' },
-      { client, isOnline: () => true },
+      {
+        client,
+        isOnline: () => true,
+        // This test owns duplicate-request behavior, not the SDK storage side
+        // effect covered by authStorage/recovery integration tests.
+        adoptExplicitSession: jest.fn(async () => 'not-guarded' as const),
+      },
     );
     // UI gates duplicate presses with a pending flag; the API itself is single-call.
     expect(signIn).toHaveBeenCalledTimes(1);

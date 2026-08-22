@@ -1,8 +1,19 @@
 # Task 19 Protected Account Deletion Implementation Plan
 
 Status: The targeted auth-arbitration and principal-bound storage-settlement
-revision to this plan and its design spec was reviewed and approved in chat on
-2026-08-20. Implementation is not authorized.
+revision was approved on 2026-08-20. Local non-destructive implementation was
+authorized on 2026-08-21 and is complete in an uncommitted isolated worktree.
+A separately authorized bounded correction pass restored exact post-SDK
+authority adoption and final raw-storage arbitration before destructive
+dispatch. A fresh-session root-cause pass and the one permitted independent
+review-fix pass completed exact superseded-recovery publication, quarantine,
+invalid-session cleanup, and B-to-C convergence. A second authorized bounded
+correction removed stale restoration `setSession` writes: recovery now uses an
+exact displaced-A CAS and deletion reconciles raw authority without writing a
+session. Its independent correction review finding was addressed; final
+read-only verification passed. Commit/push, exact-head CI,
+deployment/configuration, destructive staging proof, acceptance, readiness,
+merge, and production remain separate outstanding gates.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` only for explicitly bounded,
@@ -101,19 +112,22 @@ NativeWind, Supabase JS/Auth/Functions 2.112.0, Supabase Edge Functions on Deno
 
 ## Execution Preconditions
 
-- Verify the authorized base before work. The planning base was `master` at
-  `72149320c328532d2fb2e01da944bfa4b3cc9244`; preserve untracked `.codex/`.
-- Create an isolated `codex/` worktree at execution time using
-  `superpowers:using-git-worktrees`. Because the revised spec and this plan
-  are currently untracked, first obtain separate authorization to commit the
-  planning documents or explicitly reproduce their reviewed bytes in the new
-  worktree; never lose or silently replace them.
+- The planning documents were committed locally as
+  `bd83038c9381231e59a1a53eca627180ba57b77e`. The implementation/correction
+  candidate lives in `/private/tmp/eazy-review-task19-current-implementation`
+  on `codex/task-19-guarded-account-deletion`; preserve the main checkout's
+  unrelated untracked `.codex/` and do not resume the older Task 19 worktree.
+- Keep implementation, correction, commit, push, exact-head CI, deployment,
+  hosted configuration, destructive staging proof, acceptance, readiness,
+  merge, and production as separate gates. The current authorization covers
+  only the local non-destructive correction pass.
 - Re-read `AGENTS.md`, this plan, the human-reviewed revised spec,
   `docs/notes/handoff.md`, Task 19, and the two accepted account-deletion ADRs
   before edits.
-- Deno was absent in the planning host. Verify `deno --version`; if Deno 2.1
-  is unavailable, request permission for a trusted installation or record the
-  local Deno gate blocked. Never silently download an installer.
+- The prior implementation used an explicitly provisioned Deno 2.1.14 binary
+  for `npm run check:functions`; bare `deno` is not assumed available in later
+  sessions. Never silently download an installer, and do not turn a client-only
+  correction into a Function/toolchain change.
 - Apply the executable-code trust gate in `docs/AGENT_WORKFLOW.md` before tests.
 
 ## Current Primary References
@@ -826,7 +840,18 @@ export async function markPrincipalDeletionDispatched(
   storageKey: string,
   principalId: string,
   guardRevision: number,
-): Promise<'pending' | 'stale-attempt' | 'unconfirmed'>;
+): Promise<
+  | 'pending'
+  | 'stale-attempt'
+  | 'unconfirmed'
+  | { kind: 'signed-out' }
+  | { kind: 'preserved-guarded'; principalId: string }
+  | {
+      kind: 'preserved-winner';
+      principalId: string;
+      session: Session;
+    }
+>;
 export async function settlePrincipalDeletionGuard(
   storageKey: string,
   principalId: string,
@@ -863,6 +888,11 @@ export async function adoptExplicitSessionAfterDeletionGuard(
   storageKey: string,
   session: Session,
 ): Promise<'not-guarded' | 'adopted' | 'guard-busy'>;
+export async function replaceDisplacedSessionIfExact(
+  storageKey: string,
+  expectedDisplaced: Session,
+  validatedReplacement: Session,
+): Promise<GuardedAuthStorageReconciliation>;
 export async function runSupabaseAuthOperation<T>(
   storageKey: string,
   operation: () => Promise<T>,
@@ -919,13 +949,6 @@ type DeletionWinner =
     }
   | { kind: 'signed-out'; version: number };
 
-type ExpectedDeletionAuthEvent = {
-  kind: 'restore-winner';
-  version: number;
-  principalId: string;
-  session: Session;
-};
-
 type ActiveDeletionAttempt = {
   generation: number;
   authGenerationAtStart: number;
@@ -934,7 +957,6 @@ type ActiveDeletionAttempt = {
   guardRevision: number | null;
   winnerVersion: number;
   winner: DeletionWinner | undefined;
-  expectedAuthEvent: ExpectedDeletionAuthEvent | null;
 };
 ```
 
@@ -988,6 +1010,11 @@ const storageCases = [
   'stale settle and disarm cannot mutate a newer guard revision',
   'never reuses a revision after a guard record is removed and rearmed',
   'pre-revocation rollback restores the predecessor settled lineage',
+  'replaces exact allowed displaced A with validated B once',
+  'preserves raw C and newer same-principal A2 before replacement',
+  'preserves empty malformed and blocked raw authority without a write',
+  'does not write B when B is blocked by its own guard',
+  'reports uncertain replacement readback without retry',
   'rejects an actual web lock request failure before reauthentication',
   'never logs a token session principal or raw stored value',
 ] as const;
@@ -1035,13 +1062,13 @@ const providerCases = [
   'preserves or restores B when B arrives during A cleanup',
   'keeps signed-out authoritative when B signs out before A settles',
   'classifies B then SIGNED_OUT while A settlement is pending as signed-out',
-  'keeps C authoritative when C replaces B during winner restoration',
+  'keeps C authoritative when stored before or during B winner reconciliation',
   'does not publish B when B becomes guarded after capture before publication',
   'classifies a newer same-principal B session during restore as a new winner',
-  'keeps B2 authoritative when delayed expected B1 arrives after B2',
+  'keeps B2 authoritative when raw B2 replaces captured B1',
   'restarts restoration from the newest version after an external transition',
-  'does not classify expected restore events as new winners',
-  'serializes provider-owned auth writers around version checks and session writes',
+  'performs no SDK session write during deletion winner restoration',
+  'serializes superseded-recovery CAS behind provider and Auth-operation locks',
   'prevents late A cleanup from removing or repopulating B or C queries',
   'never falls back to shared signOut after storage cleanup failure',
   'post-finalization reconciliation clears initiating A after stale or unconfirmed disarm',
@@ -1349,16 +1376,34 @@ const runAuthSessionWrite = useCallback(<T,>(write: () => Promise<T>): Promise<T
 }, []);
 ```
 
-Route these provider-owned SDK session writers through the fence, without
+Route these provider-owned shared-session writers through the fence, without
 moving their existing state/cache settlement into the critical section:
 
 ```txt
 signInWithPassword
 signUpWithPassword
-processAuthCallbackUrl
-reconcileSupersededRecovery setSession
-deletion-winner setSession
+reconcileSupersededRecovery exact displaced-A CAS
 ```
+
+Deletion-winner restoration is intentionally absent: it performs no session
+write and reconciles the already-stored raw winner.
+
+Bounded implementation ruling (2026-08-21): keep the
+full unabortable `processAuthCallbackUrl` exchange outside this FIFO because
+wrapping it reproduced the accepted Task 18 recovery/explicit-auth cross-wait
+deadlock. After the SDK writer releases, adoption must reacquire
+`Auth operation -> storage` and exact-match principal, access token, refresh
+token, and `session_id` even when no deletion-guard record exists. B/C,
+same-principal newer authority, signed-out/empty storage, malformed storage,
+or a missing session ID cannot report callback success.
+
+`reconcileSupersededRecovery` isolate-validates B, enters the provider FIFO and
+`Auth operation -> storage`, then may replace only the exact, guard-allowed
+displaced A principal/access/refresh/session-ID snapshot. Raw C, newer A2,
+empty, malformed, blocked, or uncertain authority is preserved; the operation
+never retries or emits an SDK Auth event. It emits only the payload-free change
+signal after a confirmed or uncertain write, then runs outcome-bearing guarded
+reconciliation and one final exact read before publication.
 
 Deletion settlement itself uses the storage transaction, not an SDK session
 writer. Bootstrap still settles through `sessionRestoreRef` before deletion
@@ -1370,12 +1415,18 @@ otherwise redesign bootstrap or Task 18 update-password behavior.
 Configure the shared client with the Step 3 non-stealing Auth-operation lock.
 The deletion operation arms first, performs isolated reauthentication without
 holding the shared lock, then calls `runSupabaseAuthOperation(storageKey, ...)`
-around the final winner/revision check, pending transition, one server
-invocation, guard transition/disarm, and guarded primary cleanup. Restoration of B/C occurs after releasing that
-lock and uses the existing writer fence. Ordinary sign-out and recovery cleanup
-use the isolated token-pinned/exact-remove boundary, not shared Auth sign-out.
+around the final winner/revision/raw-storage check, pending transition, one server
+invocation, guard transition/disarm, and guarded primary cleanup. Restoration
+of B/C after release performs no SDK write: it reconciles raw storage, validates
+that exact session in isolation, and exact-rechecks before publication. Ordinary
+sign-out and recovery cleanup use the isolated token-pinned/exact-remove
+boundary, not shared Auth sign-out.
 If ordinary sign-out returns token-free `superseded`, AuthProvider preserves the
 replacement principal and skips signed-out publication/broad cache cleanup.
+The storage transaction that changes `preparing` to `pending` must still find
+raw A with a non-empty `session_id`; stored B/C, guarded B/C, signed-out/empty,
+malformed, or unreadable authority prevents the Function call and settles the
+attempt as superseded or safely unconfirmed.
 
 - [ ] **Step 6: Add versioned operation state and listener classification**
 
@@ -1439,17 +1490,13 @@ if (
 
 const attempt = activeDeletionAttemptRef.current;
 const eventPrincipal = userIdFromSession(classifiedSession);
-const expected = attempt?.expectedAuthEvent;
 
 if (
   attempt != null &&
-  expected?.kind === 'restore-winner' &&
   classifiedSession != null &&
-  eventPrincipal === expected.principalId &&
-  classifiedSession.access_token === expected.session.access_token &&
-  classifiedSession.refresh_token === expected.session.refresh_token
+  eventPrincipal === attempt.principalId
 ) {
-  attempt.expectedAuthEvent = null;
+  return;
 } else if (
   attempt != null &&
   classifiedSession != null &&
@@ -1537,15 +1584,13 @@ async function settleDeletedPrincipalLocally(
 `restoreDeletionWinner` loops over the latest observed version:
 
 1. A `signed-out` winner publishes signed-out without `setSession`/`signOut`.
-2. A session winner enters `runAuthSessionWrite`, rechecks its version, marks
-   `restore-winner` with the exact snapshot, and calls `setSession` with only
-   that snapshot's access/refresh tokens.
-3. The exact operation-owned B1 event is maintenance even after external B2
-   advances the winner. After `setSession`, reacquire
-   `Auth operation -> storage` through deferred reconciliation and require the
-   exact B1 principal/access/refresh plus allowed session ID and guard revision.
-   Publish only if both winner version and guard/storage snapshot remain current;
-   otherwise discard and loop from newest authority.
+2. A session winner acquires `Auth operation -> storage` and reads raw guarded
+   authority without writing. If raw is C/B2/empty/blocked, it replaces the
+   captured winner and loops from that state.
+3. Only an exact allowed raw B1 is isolate-validated. Publication reacquires
+   `Auth operation -> storage` and requires the unchanged winner version plus
+   exact B1 principal/access/refresh/session-ID/guard revision. No SDK Auth
+   event or synthetic restoration write exists.
 4. Finite external transitions converge on one stable pass; impose no cap that
    could publish an obsolete session. This loop never repeats the destructive
    request.

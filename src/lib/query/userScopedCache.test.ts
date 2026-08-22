@@ -1,7 +1,10 @@
 import { QueryClient } from '@tanstack/react-query';
 
 import { accountKeys, catalogKeys, ratingKeys } from '@/src/lib/query/keys';
-import { removeUserScopedQueries } from '@/src/lib/query/userScopedCache';
+import {
+  removePrincipalScopedQueries,
+  removeUserScopedQueries,
+} from '@/src/lib/query/userScopedCache';
 
 describe('removeUserScopedQueries', () => {
   function makeClient() {
@@ -141,6 +144,47 @@ describe('removeUserScopedQueries', () => {
       client.getQueryData(ratingKeys.mine('user-a', 'p1')),
     ).toBeUndefined();
     expect(client.getQueryData(catalogKeys.product('p1'))).toEqual({ id: 'p1' });
+    client.clear();
+  });
+});
+
+describe('removePrincipalScopedQueries', () => {
+  it('cancels then removes only A account/rating keys and retains B/catalog/unknown', async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+    });
+    const aProfile = accountKeys.profile('user-a');
+    const aMine = ratingKeys.mine('user-a', 'product-a');
+    const aRated = ratingKeys.ratedProducts('user-a');
+    const bProfile = accountKeys.profile('user-b');
+    const bMine = ratingKeys.mine('user-b', 'product-b');
+    const catalog = catalogKeys.products();
+    const unknown = ['future-user-family', 'user-a'] as const;
+    for (const key of [aProfile, aMine, aRated, bProfile, bMine, catalog, unknown]) {
+      client.setQueryData(key, { key });
+    }
+    const order: string[] = [];
+    const originalCancel = client.cancelQueries.bind(client);
+    const originalRemove = client.removeQueries.bind(client);
+    jest.spyOn(client, 'cancelQueries').mockImplementation(async (filters) => {
+      order.push('cancel');
+      return await originalCancel(filters);
+    });
+    jest.spyOn(client, 'removeQueries').mockImplementation((filters) => {
+      order.push('remove');
+      return originalRemove(filters);
+    });
+
+    await removePrincipalScopedQueries(client, 'user-a');
+
+    expect(order).toEqual(['cancel', 'remove']);
+    expect(client.getQueryData(aProfile)).toBeUndefined();
+    expect(client.getQueryData(aMine)).toBeUndefined();
+    expect(client.getQueryData(aRated)).toBeUndefined();
+    expect(client.getQueryData(bProfile)).toBeDefined();
+    expect(client.getQueryData(bMine)).toBeDefined();
+    expect(client.getQueryData(catalog)).toBeDefined();
+    expect(client.getQueryData(unknown)).toBeDefined();
     client.clear();
   });
 });

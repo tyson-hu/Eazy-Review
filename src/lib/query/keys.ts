@@ -10,8 +10,9 @@
  *
  * 2. **User-scoped keys** (`accountKeys`, `ratingKeys`) — must include the
  *    authenticated `userId` so owner-only data cannot collide or leak after an
- *    auth transition. Clear prior user scopes on sign-out/account switch via
- *    `removeUserScopedQueries`.
+ *    auth transition. Ordinary full sign-out/known-invalid cleanup may remove
+ *    complete roots; account switching and superseded deletion remove only the
+ *    displaced principal's documented keys.
  *
  * Components should use these factories rather than hand-built key arrays.
  * These factories establish conventions only; Task 15+ owns real query hooks.

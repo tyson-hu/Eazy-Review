@@ -1,17 +1,19 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { ErrorState } from '@/src/components/ui/ErrorState';
+import { Input } from '@/src/components/ui/Input';
 import { LoadingState } from '@/src/components/ui/LoadingState';
 import { Screen } from '@/src/components/ui/Screen';
 import { formatMemberSince } from '@/src/features/account/api';
 import { useMyProfileQuery } from '@/src/features/account/queries';
-import { AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
+import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
+import type { DeleteAccountOutcome } from '@/src/features/auth/types';
 import { useUserRatedProductsQuery } from '@/src/features/ratings/queries';
 
 /** Prefix `@` only when the stored username does not already start with one. */
@@ -19,13 +21,48 @@ function formatUsername(username: string): string {
   return username.startsWith('@') ? username : `@${username}`;
 }
 
+type DeletionNotice = Exclude<DeleteAccountOutcome['kind'], 'superseded'>;
+
+const deletionMessages: Record<DeletionNotice, string> = {
+  deleted:
+    'Your account was deleted. You can continue browsing Eazy Review without an account.',
+  'not-deleted-signed-out':
+    'Your account was not deleted. All sessions were signed out. Sign in again to retry.',
+  'unconfirmed-signed-out':
+    "We couldn't confirm whether account deletion finished. Sign in again. If your account is still available, you can retry deletion.",
+};
+
 export default function AccountScreen() {
   const router = useRouter();
-  const { status, user, isSignedIn, signOut } = useAuth();
+  const { status, user, isSignedIn, signOut, deleteAccount } = useAuth();
   const profileQuery = useMyProfileQuery();
   const ratedProductsQuery = useUserRatedProductsQuery();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletionNotice, setDeletionNotice] =
+    useState<DeletionNotice | null>(null);
+  const priorPrincipalRef = useRef<string | null>(user?.id ?? null);
+  const [deleteOwnerPrincipalId, setDeleteOwnerPrincipalId] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    const nextPrincipal = user?.id ?? null;
+    if (priorPrincipalRef.current === nextPrincipal) return;
+    priorPrincipalRef.current = nextPrincipal;
+    queueMicrotask(() => {
+      if (priorPrincipalRef.current !== nextPrincipal) return;
+      if (nextPrincipal != null) setDeletionNotice(null);
+      setDeleteOpen(false);
+      setCurrentPassword('');
+      setDeleteError(null);
+      setDeleteOwnerPrincipalId(null);
+    });
+  }, [user?.id]);
 
   if (status === 'initializing') {
     return (
@@ -56,6 +93,16 @@ export default function AccountScreen() {
             Save ratings and revisit products you have rated.
           </AppText>
         </View>
+
+        {deletionNotice ? (
+          <AppText
+            testID="account-delete-outcome"
+            variant="caption"
+            className="mt-6 text-center"
+            accessibilityRole="alert">
+            {deletionMessages[deletionNotice]}
+          </AppText>
+        ) : null}
 
         <Card className="mt-8 gap-3">
           <Button
@@ -110,9 +157,11 @@ export default function AccountScreen() {
           ? '—'
           : '0'
       : String(ratedCount);
+  const isDeletionFormVisible =
+    deleteOpen && deleteOwnerPrincipalId === user.id;
 
   const onSignOut = async () => {
-    if (signingOut) {
+    if (signingOut || deletePending) {
       return;
     }
     setSigningOut(true);
@@ -124,6 +173,36 @@ export default function AccountScreen() {
       setSignOutError(AUTH_USER_MESSAGES.signOutFailed);
     } finally {
       setSigningOut(false);
+    }
+  };
+
+  const onDeleteAccount = async () => {
+    if (
+      signingOut ||
+      deletePending ||
+      currentPassword.length === 0 ||
+      deleteOwnerPrincipalId !== user.id
+    ) {
+      return;
+    }
+    setDeletePending(true);
+    setDeleteError(null);
+    try {
+      const outcome = await deleteAccount(currentPassword);
+      setDeleteOwnerPrincipalId(null);
+      setCurrentPassword('');
+      setDeleteOpen(false);
+      if (outcome.kind !== 'superseded') {
+        setDeletionNotice(outcome.kind);
+      }
+    } catch (error) {
+      setDeleteError(
+        error instanceof AuthError
+          ? error.message
+          : AUTH_USER_MESSAGES.accountDeletionFailed,
+      );
+    } finally {
+      setDeletePending(false);
     }
   };
 
@@ -234,12 +313,87 @@ export default function AccountScreen() {
           label="Sign out"
           variant="secondary"
           loading={signingOut}
-          disabled={signingOut}
+          disabled={signingOut || deletePending}
           onPress={() => {
             void onSignOut();
           }}
         />
       </Card>
+
+      <Card className="mt-4 gap-3">
+        <Button
+          testID="account-delete-open"
+          label="Delete Account"
+          variant="secondary"
+          disabled={signingOut || deletePending}
+          onPress={() => {
+            if (signingOut || deletePending) return;
+            setDeleteOwnerPrincipalId(user.id);
+            setCurrentPassword('');
+            setDeleteOpen(true);
+            setDeleteError(null);
+          }}
+        />
+      </Card>
+
+      {isDeletionFormVisible ? (
+        <Card testID="account-delete-confirmation" className="mt-4 gap-3">
+          <AppText testID="account-delete-copy" variant="body">
+            Your Eazy Review account, your My Rating entries, and private notes
+            will be permanently deleted. Public product information will remain.
+            Each affected Community Score will be recalculated without your
+            rating. This cannot be undone.
+          </AppText>
+          <Input
+            testID="account-delete-password"
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="password"
+            textContentType="password"
+            accessibilityLabel="Current password"
+            editable={!signingOut && !deletePending}
+            invalid={deleteError != null}
+            errorMessage={deleteError ?? undefined}
+          />
+          {deleteError ? (
+            <AppText
+              testID="account-delete-error"
+              variant="caption"
+              className="text-accent"
+              accessibilityRole="alert">
+              {deleteError}
+            </AppText>
+          ) : null}
+          <Button
+            testID="account-delete-cancel"
+            label="Cancel"
+            variant="secondary"
+            disabled={signingOut || deletePending}
+            onPress={() => {
+              setDeleteOwnerPrincipalId(null);
+              setDeleteOpen(false);
+              setCurrentPassword('');
+              setDeleteError(null);
+            }}
+          />
+          <Button
+            testID="account-delete-submit"
+            label="Delete my account"
+            variant="destructive"
+            loading={deletePending}
+            disabled={
+              signingOut || deletePending || currentPassword.length === 0
+            }
+            accessibilityLabel="Delete my account"
+            onPress={() => {
+              void onDeleteAccount();
+            }}
+          />
+        </Card>
+      ) : null}
     </Screen>
   );
 }

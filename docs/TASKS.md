@@ -44,10 +44,16 @@
   recovery matrix: **tested-pass** on SHA `acac64d` (2026-08-15).
   Web/simulator recovery walks: **not-run**. The old-password rejection
   **tested-pass** by human report and Task 18 was human accepted on 2026-08-15.
-  Task 19 remains not started; the merge satisfies its Task 18 dependency but
-  does not authorize Task 19 implementation. Evidence:
+  The merge satisfied Task 19's dependency but did not itself authorize Task
+  19 implementation. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
+- Task 19 is **Partial — implementation complete; human staging deletion
+  pending.**
+  Local work is non-destructive and uncommitted; exact-head CI,
+  deployment/configuration, device review, destructive staging proof, human
+  acceptance, readiness, merge, and production remain outstanding. Evidence:
+  [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -198,7 +204,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted and merged in PR #36 on 2026-08-11 |
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
-| 19 | Protected Account Deletion | Pending |
+| 19 | Protected Account Deletion | Partial — implementation complete; human staging deletion pending. |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
 | 22 | Broader Automated App Tests And CI | Pending |
@@ -547,8 +553,9 @@ Non-goals (remain later work — do not implement in Task 16):
   destructive deletion path, secure operational handling.
 - **Deferred — not part of Tasks 16–19 unless separately promoted in the
   roadmap:** Sign in with Apple; Google/social authentication; passkeys; MFA;
-  editable profile; avatar upload; public profile; global/all-device session
-  revocation; stronger native token-storage revisit.
+  editable profile; avatar upload; public profile; standalone user-facing
+  global/all-device sign-out or session management (distinct from Task 19's
+  mandatory internal revocation); stronger native token-storage revisit.
 
 ## Task 17: My Rating Persistence And Rated Products
 
@@ -886,7 +893,7 @@ in PR #37 on 2026-08-17.**
 
 ## Task 19: Protected Account Deletion
 
-Status: Pending.
+Status: **Partial — implementation complete; human staging deletion pending.**
 
 Depends on: Tasks 16–18.
 
@@ -904,12 +911,29 @@ Goal: provide complete in-app account deletion through a trusted server
 boundary.
 
 Planning state: the revised design and implementation plan were human-approved
-on 2026-08-20. Local implementation remains a separate unauthorized gate.
+on 2026-08-20. Local non-destructive implementation was authorized on
+2026-08-21; hosted configuration, deployment, destructive verification,
+acceptance, commit/push of implementation, readiness, merge, and production
+remain separate gates.
+
+Implementation evidence:
+[`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
+
+Correction state: superseded recovery now isolate-validates B and may replace
+only exact guard-allowed displaced A through an application-owned CAS. Raw C,
+newer A2, empty, malformed, blocked, or uncertain authority is preserved.
+Deletion winner restoration performs no shared-session write; both paths use
+final exact raw-authority proof, remove only displaced A cache, and never
+broadly purge newer/public cache.
 
 Deliverables:
 
 - One authenticated Supabase Edge Function.
+- Current-password reauthentication for the fixed signed-in email, with the
+  operation-local bearer pinned to a zero-body Function request.
 - Server validation of the bearer session and caller-derived target user ID.
+- Server-backed caller/claim/session validation plus a password AMR timestamp
+  no older than 300 seconds, allowing at most 60 seconds future clock skew.
 - No authoritative user ID accepted from the client.
 - Revoke all refresh sessions for the verified caller, then hard-delete that
   same Auth user with a server-only secret.
@@ -919,6 +943,12 @@ Deliverables:
 - Existing FK cascades remove profile/ratings and accepted triggers preserve
   aggregates.
 - Local session and user-scoped Query cleanup.
+- A non-stealing shared Auth-operation lock, one distinct storage lock,
+  revision-bound preparing/pending/settled principal guards, payload-free
+  cross-context notification, exact-session cleanup/adoption, and latest-
+  principal arbitration that never removes or republishes a superseding B/C.
+- Honest deleted, retained-account-signed-out, ambiguous-signed-out, and
+  superseded-local outcomes with no automatic destructive retry.
 - Mocked deletion-client orchestration tests that perform no destructive
   account action.
 - Human-run staging destructive-test checklist.
@@ -929,6 +959,8 @@ Acceptance:
 - No server-only secret exists in Expo.
 - The client cannot choose another target.
 - Failed server validation performs no deletion.
+- Revocation or deletion is never automatically retried; one non-destructive
+  lookup may resolve an uncertain delete response.
 - Profile and ratings cascade; affected aggregates remain correct.
 - Local session/cache are removed and deleted credentials cannot sign in.
 - A second pre-existing session for the deleted account cannot refresh after
