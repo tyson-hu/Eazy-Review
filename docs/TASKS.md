@@ -53,8 +53,10 @@
   The non-destructive implementation and first validation remediation are
   committed and pushed in draft PR #43. Database CI passed on `1a515e1`, while
   Expo CI repeated the recovery-test timeout. The final test-orchestration
-  repair is locally complete but not yet published. Exact-head CI,
-  deployment/configuration, device review, destructive staging proof, human
+  repair is published at `9576555`, but Expo CI still fails before isolated B
+  validation while Database CI passes. Current blocker:
+  [`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
+  Deployment/configuration, device review, destructive staging proof, human
   acceptance, readiness, merge, and production remain outstanding. Evidence:
   [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
@@ -918,9 +920,11 @@ on 2026-08-20. Local non-destructive implementation was authorized on
 2026-08-21 and committed/pushed in draft PR #43. The first validation
 remediation is published at `1a515e1`; Database CI passed and Expo CI repeated
 the recovery-test timeout. The final test-orchestration repair is locally
-complete but not yet published. Exact-head CI, hosted configuration,
-deployment, destructive verification, acceptance, readiness, merge, and
-production remain separate gates.
+complete and published at `9576555`, but exact-head Expo CI still fails before
+isolated B validation while Database CI passes. Current blocker:
+[`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
+Hosted configuration, deployment, destructive verification, acceptance,
+readiness, merge, and production remain separate gates.
 
 Implementation evidence:
 [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
