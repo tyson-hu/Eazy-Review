@@ -1,5 +1,8 @@
 # Blocker — Task 19 Expo CI recovery reconciliation — 2026-08-22
 
+Status: **Resolved for PR remediation on implementation head `28ac202`; later
+human and environment gates remain outstanding.**
+
 ## Diagnostic problem
 
 Draft PR #43 diagnostic head `b843dc8` remains the historical failing baseline:
@@ -205,10 +208,11 @@ frontend run, `npm run typecheck`, `npm run lint`, `npm run check:readonly`,
 25/25 Deno tests. Existing React `act(...)` and open-worker warnings remain
 visible and non-failing. No real bearer or account was used.
 
-The remaining PR-remediation gate is publication plus exact-head hosted CI.
-Until then, the live PR still reports the diagnostic head's red Expo CI and
-green Database CI; that old hosted result is not evidence for or against the
-local corrected bytes.
+The remediation and initial documentation sync were published as
+`28ac20204ef4c2386b0aa041f805ee2aea520780`. Exact-head Expo CI run
+`32615690386` passed, clearing the diagnostic failure, and Database CI run
+`32615690393` passed. The old diagnostic hosted result remains historical
+evidence only.
 
 Do not change product timeouts, weaken or serialize CI, deploy/configure
 Supabase, execute deletion, mark the PR ready, accept, merge, or touch

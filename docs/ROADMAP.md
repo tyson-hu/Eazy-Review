@@ -48,8 +48,9 @@ Task detail, dependencies, acceptance, and current status live in
   reauthentication, caller-derived Edge Function validation, global refresh-
   session revocation before hard deletion, honest non-atomic outcomes, and a
   revision-bound principal guard that preserves newer Auth/cache authority.
-  Exact-head CI, staging deployment/configuration, device review, destructive
-  staging proof, human acceptance, merge, and production remain outstanding.
+  Implementation head `28ac202` passed exact-head Expo and Database CI.
+  Staging deployment/configuration, device review, destructive staging proof,
+  human acceptance, merge, and production remain outstanding.
   Evidence: `docs/evidence/task-19-protected-account-deletion/RESULT.md`.
 - Post–Task 12 review: **GO with roadmap revision**.
 

@@ -64,7 +64,9 @@
   `3d8bf2be5cfadab6197c95b4f4036006df4caab4`; 6 affected suites / 205 tests,
   the full 41-suite / 495-test frontend run, `check:readonly`, `check:expo`, and
   25/25 Deno Function tests passed in disposable credential-free validation.
-  Publication and exact-head hosted CI remain separate gates. Diagnostic and
+  The remediation and first documentation sync are published at
+  `28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
+  `32615690386` and Database CI run `32615690393` passed. Diagnostic and
   remediation record:
   [`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
   Deployment/configuration, device review, destructive staging proof, human
@@ -944,7 +946,9 @@ snapshot. The bounded local remediation resolves the storage identity,
 Auth-lock-before-arm, and exact recovery-predecessor/unknown-displacement
 invariants, removes the diagnostic labels, and passes the non-destructive local
 matrix on product/test tree `3d8bf2be5cfadab6197c95b4f4036006df4caab4`.
-Publication and exact-head hosted CI remain separate gates. Remediation record:
+The remediation and initial documentation sync are published at
+`28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
+`32615690386` and Database CI run `32615690393` passed. Remediation record:
 [`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
 Hosted configuration, deployment, destructive verification, acceptance,
 readiness, merge, and production remain separate gates.

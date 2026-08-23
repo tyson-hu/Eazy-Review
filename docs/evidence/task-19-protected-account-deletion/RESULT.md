@@ -10,11 +10,12 @@ This packet is published in draft PR #43 on
 is published at `1a515e13b1992f6dcc53f08a030e28acf0022d13`, the controlled
 warm-link repair at `95765558843cda68150e6fece9a2eda8c37afea3`, and the
 diagnostic baseline at `b843dc8c786d4e2c4ea58856f58926dfb6b69cf9`. The
-bounded three-invariant remediation is frozen locally as product/test Git tree
-`3d8bf2be5cfadab6197c95b4f4036006df4caab4`. At this documentation checkpoint
-those corrected bytes are not yet committed or pushed, so their exact-head
-hosted CI does not yet exist. The live PR becomes authoritative after
-publication. No
+bounded three-invariant remediation was frozen before the documentation gate as
+product/test Git tree
+`3d8bf2be5cfadab6197c95b4f4036006df4caab4`. The remediation and initial
+documentation sync are published at
+`28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
+`32615690386` and Database CI run `32615690393` passed. No
 deployment, hosted configuration, account deletion, readiness transition,
 acceptance, merge, or production action occurred.
 
@@ -37,9 +38,9 @@ acceptance, merge, or production action occurred.
 | `npm run check:readonly` | **pass** | Skill wrappers, decisions, secrets, agent infrastructure, typecheck, and lint passed on product/test tree `3d8bf2b...` in disposable credential-free validation |
 | `npm run check:expo` | **pass** | Product/test tree `3d8bf2b...` passed route preparation, `check:readonly`, 41 suites / 495 Jest tests, Expo Doctor 21/21, and dependency alignment in disposable credential-free validation |
 | Exact-head Expo CI — diagnostic `b843dc8...` | **fail** | Reconciliation read the environment-derived empty Auth slot; 40/41 suites and 455/465 tests passed. This is the frozen diagnostic baseline, not validation of the local remediation |
-| Exact-head Expo CI — remediation candidate | **not-run** | Corrected bytes are not yet published at this documentation checkpoint |
+| Exact-head Expo CI — implementation `28ac202...` | **pass** | Run `32615690386` passed on the published remediation and cleared the diagnostic storage-key failure |
 | Exact-head Database CI — diagnostic `b843dc8...` | **pass** | Deno Function checks, local reset, pgTAP/concurrency tests, generated-type parity, and cleanup passed |
-| Exact-head Database CI — remediation candidate | **not-run** | Corrected bytes are not yet published; no database source changed in this remediation |
+| Exact-head Database CI — implementation `28ac202...` | **pass** | Run `32615690393` passed Deno Function checks, local reset, pgTAP/concurrency tests, generated-type parity, and cleanup; no database source changed in this remediation |
 | Web mobile preview | **not-run** | No authenticated safe review session was used |
 | iOS Simulator | **not-run** | No authenticated safe review session was used |
 | Physical device | **not-tested** | Human-only review remains outstanding |

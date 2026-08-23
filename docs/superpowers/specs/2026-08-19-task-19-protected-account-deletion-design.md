@@ -24,8 +24,10 @@ is frozen as product/test Git tree
 `3d8bf2be5cfadab6197c95b4f4036006df4caab4`. Affected 6-suite / 205-test and
 full 41-suite / 495-test frontend runs, `check:readonly`, `check:expo`, and
 25/25 Deno Function tests passed in disposable credential-free validation.
-Publication and exact-head hosted CI remain separate gates at this design-
-status boundary. Deployment/configuration, interactive review, human
+The remediation and initial documentation sync are published at
+`28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
+`32615690386` and Database CI run `32615690393` passed. Deployment/
+configuration, interactive review, human
 staging deletion, human acceptance, readiness, merge, and production remain
 separate outstanding gates.
 
@@ -53,8 +55,9 @@ The feature is intentionally narrow:
 - Task 19's canonical status remains **Partial — implementation complete; human
   staging deletion pending.** Draft PR #43 contains the implementation, and the
   three accepted blockers below are corrected in the locally validated
-  remediation candidate. Publication, exact-head CI, and later lifecycle gates
-  remain outstanding. Task 19 remains parent-owned and not parallel-safe.
+  remediation published at `28ac202`; exact-head Expo and Database CI passed.
+  Later lifecycle gates remain outstanding. Task 19 remains parent-owned and
+  not parallel-safe.
 - Authentication is email/password only for the MVP.
 - The Account screen is the sole in-app location for the Delete Account action;
   there is no generic Settings route or separate deletion route.
@@ -67,9 +70,9 @@ The feature is intentionally narrow:
 - Task 19 adds one `delete-current-user` Function and a dedicated
   Database-CI-owned `npm run check:functions` Deno lane.
 - Diagnostic head `b843dc8` has green Database CI and red Expo CI. The corrected
-  local product/test tree is `3d8bf2be5cfadab6197c95b4f4036006df4caab4`;
-  its hosted result does not exist until publication. The live PR head and
-  checks remain the source of exact-head truth.
+  product/test tree is `3d8bf2be5cfadab6197c95b4f4036006df4caab4`;
+  implementation head `28ac202` passed exact-head Expo and Database CI. The
+  live PR head and checks remain the source of current exact-head truth.
 
 ## Goals
 

@@ -12,9 +12,11 @@ diagnostics are removed, and the product/test candidate is frozen as Git tree
 `3d8bf2be5cfadab6197c95b4f4036006df4caab4`. Affected 6-suite / 205-test and
 full 41-suite / 495-test frontend runs, `check:readonly`, `check:expo`, and
 25/25 Deno Function tests passed in disposable credential-free validation.
-Commit/push, exact-head hosted CI, deployment/configuration, destructive
-acceptance, readiness, merge, and production remain separate gates. The live
-PR records current exact-head CI.
+The remediation and initial documentation sync are committed/pushed at
+`28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
+`32615690386` and Database CI run `32615690393` passed. Deployment/
+configuration, destructive acceptance, readiness, merge, and production remain
+separate gates. The live PR records current exact-head CI.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` only for explicitly bounded,
