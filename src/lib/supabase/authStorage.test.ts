@@ -233,11 +233,54 @@ function guardRecord(values: Map<string, string>) {
     records: {
       revision: number;
       state: string;
+      leaseExpiresAt: number;
       principalId: string;
       allowedSessionId: string | null;
       predecessor: unknown;
     }[];
   } | null;
+}
+
+function recoveryStorageMethods(
+  controlled: ReturnType<typeof createPrincipalBoundAuthStorage>,
+) {
+  const recovery = controlled as typeof controlled & {
+    captureRecoveryPredecessor?: (storageKey: string) => Promise<unknown>;
+    adoptRecovery?: (
+      storageKey: string,
+      predecessor: unknown,
+      returnedSession: Session,
+    ) => Promise<'adopted' | 'guard-busy' | 'superseded' | 'unconfirmed'>;
+  };
+  return {
+    capture:
+      recovery.captureRecoveryPredecessor ??
+      (async () => ({ kind: 'unavailable' as const })),
+    adopt:
+      recovery.adoptRecovery ??
+      (async () => 'superseded' as const),
+  };
+}
+
+async function createSettledAllowedSession(
+  controlled: ReturnType<typeof createPrincipalBoundAuthStorage>,
+  allowedSession: Session,
+): Promise<void> {
+  const arm = await controlled.arm(STORAGE_KEY, allowedSession.user.id);
+  if (arm.kind !== 'armed') throw new Error('expected armed guard');
+  await controlled.markDispatched(
+    STORAGE_KEY,
+    allowedSession.user.id,
+    arm.guardRevision,
+  );
+  await controlled.settleGuard(
+    STORAGE_KEY,
+    allowedSession.user.id,
+    arm.guardRevision,
+  );
+  await expect(controlled.adopt(STORAGE_KEY, allowedSession)).resolves.toBe(
+    'adopted',
+  );
 }
 
 describe('principal-bound Auth storage', () => {
@@ -384,6 +427,49 @@ describe('principal-bound Auth storage', () => {
       state.store.setItem.mock.calls.filter(([key]) => key === STORAGE_KEY),
     ).toHaveLength(1);
     expect(emitted).toHaveBeenCalledWith(STORAGE_KEY);
+  });
+
+  it('preserves exact displaced A when its guard revision advanced before replacement', async () => {
+    const displacedA = session('principal-a', 'session-a', 'displaced-a');
+    const replacementB = session('principal-b', 'session-b', 'replacement-b');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(displacedA),
+      [GUARD_KEY]: JSON.stringify({
+        version: 1,
+        nextRevision: 9,
+        records: [
+          {
+            revision: 8,
+            state: 'settled',
+            leaseExpiresAt: 0,
+            principalId: 'principal-a',
+            allowedSessionId: 'session-a',
+            predecessor: null,
+          },
+        ],
+      }),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store);
+    const replaceWithRevision = controlled.replaceDisplaced as (
+      storageKey: string,
+      expectedDisplaced: Session,
+      validatedReplacement: Session,
+      expectedGuardRevision: number | null,
+    ) => Promise<unknown>;
+
+    await expect(
+      replaceWithRevision(STORAGE_KEY, displacedA, replacementB, 7),
+    ).resolves.toEqual({
+      kind: 'allowed-session',
+      principalId: 'principal-a',
+      session: displacedA,
+      sessionId: 'session-a',
+      guardRevision: 8,
+    });
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(displacedA));
+    expect(
+      state.store.setItem.mock.calls.filter(([key]) => key === STORAGE_KEY),
+    ).toHaveLength(0);
   });
 
   it('preserves allowed C already stored before displaced A replacement', async () => {
@@ -794,6 +880,404 @@ describe('principal-bound Auth storage', () => {
     ).resolves.toBe('stale-attempt');
   });
 
+  it('captures exact settled S1 and adopts distinct-session S2', async () => {
+    const settledS1 = session('principal-a', 'session-s1', 'settled-s1');
+    const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(settledS1),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => 1_000,
+    });
+    await createSettledAllowedSession(controlled, settledS1);
+    const recovery = recoveryStorageMethods(controlled);
+
+    const predecessor = await recovery.capture(STORAGE_KEY);
+    expect(predecessor).toMatchObject({
+      kind: 'settled-allowed',
+      guard: {
+        principalId: 'principal-a',
+        state: 'settled',
+        allowedSessionId: 'session-s1',
+      },
+      raw: {
+        kind: 'session',
+        snapshot: {
+          principalId: 'principal-a',
+          sessionId: 'session-s1',
+          accessToken: settledS1.access_token,
+          refreshToken: settledS1.refresh_token,
+        },
+      },
+    });
+
+    await expect(
+      recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+    ).resolves.toBe('adopted');
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(returnedS2));
+    expect(guardRecord(state.values)?.records[0]).toMatchObject({
+      revision: 3,
+      state: 'settled',
+      principalId: 'principal-a',
+      allowedSessionId: 'session-s2',
+    });
+    expect(state.values.get(GUARD_KEY)).not.toContain(settledS1.access_token);
+    expect(state.values.get(GUARD_KEY)).not.toContain(settledS1.refresh_token);
+  });
+
+  it('adopts same-session-ID S2 already written by the SDK without a redundant primary write', async () => {
+    const settledS1 = session('principal-a', 'session-shared', 'settled-s1');
+    const returnedS2 = session('principal-a', 'session-shared', 'returned-s2');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(settledS1),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => 1_000,
+    });
+    await createSettledAllowedSession(controlled, settledS1);
+    const recovery = recoveryStorageMethods(controlled);
+    const predecessor = await recovery.capture(STORAGE_KEY);
+    await controlled.adapter.setItem(STORAGE_KEY, JSON.stringify(returnedS2));
+    state.store.setItem.mockClear();
+
+    await expect(
+      recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+    ).resolves.toBe('adopted');
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(returnedS2));
+    expect(
+      state.store.setItem.mock.calls.filter(([key]) => key === STORAGE_KEY),
+    ).toHaveLength(0);
+    expect(guardRecord(state.values)?.records[0]).toMatchObject({
+      revision: 3,
+      allowedSessionId: 'session-shared',
+    });
+  });
+
+  it('adopts S2 from an exact lease-expired-pending empty predecessor', async () => {
+    let now = 1_000;
+    const storedA = session('principal-a', 'session-a', 'pending-a');
+    const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(storedA),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => now,
+    });
+    const arm = await controlled.arm(STORAGE_KEY, 'principal-a');
+    if (arm.kind !== 'armed') throw new Error('expected armed guard');
+    await controlled.markDispatched(
+      STORAGE_KEY,
+      'principal-a',
+      arm.guardRevision,
+    );
+    now += 5 * 60_000 + 1;
+    state.values.delete(STORAGE_KEY);
+    const recovery = recoveryStorageMethods(controlled);
+
+    const predecessor = await recovery.capture(STORAGE_KEY);
+    expect(predecessor).toMatchObject({
+      kind: 'expired-pending',
+      guard: {
+        principalId: 'principal-a',
+        revision: arm.guardRevision,
+        state: 'pending',
+        allowedSessionId: null,
+      },
+      raw: { kind: 'empty' },
+    });
+    await expect(
+      recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+    ).resolves.toBe('adopted');
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(returnedS2));
+    expect(guardRecord(state.values)?.records[0]).toMatchObject({
+      revision: 2,
+      state: 'settled',
+      allowedSessionId: 'session-s2',
+    });
+  });
+
+  it('adopts S2 from an exact lease-expired-pending session predecessor', async () => {
+    let now = 1_000;
+    const storedA = session('principal-a', 'session-a', 'pending-a');
+    const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(storedA),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => now,
+    });
+    const arm = await controlled.arm(STORAGE_KEY, 'principal-a');
+    if (arm.kind !== 'armed') throw new Error('expected armed guard');
+    await controlled.markDispatched(
+      STORAGE_KEY,
+      'principal-a',
+      arm.guardRevision,
+    );
+    now += 5 * 60_000 + 1;
+    const recovery = recoveryStorageMethods(controlled);
+    const predecessor = await recovery.capture(STORAGE_KEY);
+
+    expect(predecessor).toMatchObject({
+      kind: 'expired-pending',
+      raw: {
+        kind: 'session',
+        snapshot: {
+          accessToken: storedA.access_token,
+          refreshToken: storedA.refresh_token,
+          sessionId: 'session-a',
+        },
+      },
+    });
+    await expect(
+      recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+    ).resolves.toBe('adopted');
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(returnedS2));
+  });
+
+  it('preserves a changed winner after lease-expired-pending capture', async () => {
+    let now = 1_000;
+    const storedA = session('principal-a', 'session-a', 'pending-a');
+    const winnerC = session('principal-c', 'session-c', 'winner-c');
+    const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(storedA),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => now,
+    });
+    const arm = await controlled.arm(STORAGE_KEY, 'principal-a');
+    if (arm.kind !== 'armed') throw new Error('expected armed guard');
+    await controlled.markDispatched(
+      STORAGE_KEY,
+      'principal-a',
+      arm.guardRevision,
+    );
+    now += 5 * 60_000 + 1;
+    const recovery = recoveryStorageMethods(controlled);
+    const predecessor = await recovery.capture(STORAGE_KEY);
+    state.values.set(STORAGE_KEY, JSON.stringify(winnerC));
+    const expectedGuard = state.values.get(GUARD_KEY);
+    state.store.setItem.mockClear();
+
+    await expect(
+      recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+    ).resolves.toBe('superseded');
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(winnerC));
+    expect(state.values.get(GUARD_KEY)).toBe(expectedGuard);
+    expect(state.store.setItem).not.toHaveBeenCalled();
+  });
+
+  it('adopts already-exact S2 from expired pending without a redundant primary write', async () => {
+    let now = 1_000;
+    const storedA = session('principal-a', 'session-a', 'pending-a');
+    const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(storedA),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => now,
+    });
+    const arm = await controlled.arm(STORAGE_KEY, 'principal-a');
+    if (arm.kind !== 'armed') throw new Error('expected armed guard');
+    await controlled.markDispatched(
+      STORAGE_KEY,
+      'principal-a',
+      arm.guardRevision,
+    );
+    now += 5 * 60_000 + 1;
+    const recovery = recoveryStorageMethods(controlled);
+    const predecessor = await recovery.capture(STORAGE_KEY);
+    state.values.set(STORAGE_KEY, JSON.stringify(returnedS2));
+    state.store.setItem.mockClear();
+
+    await expect(
+      recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+    ).resolves.toBe('adopted');
+    expect(
+      state.store.setItem.mock.calls.filter(([key]) => key === STORAGE_KEY),
+    ).toHaveLength(0);
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(returnedS2));
+  });
+
+  it.each(['malformed', 'unavailable', 'newly-active'] as const)(
+    'preserves expired-pending authority after capture: %s',
+    async (authority) => {
+      let now = 1_000;
+      const storedA = session('principal-a', 'session-a', 'pending-a');
+      const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+      const state = statefulStore({
+        [STORAGE_KEY]: JSON.stringify(storedA),
+      });
+      const controlled = createPrincipalBoundAuthStorage(state.store, {
+        now: () => now,
+      });
+      const arm = await controlled.arm(STORAGE_KEY, 'principal-a');
+      if (arm.kind !== 'armed') throw new Error('expected armed guard');
+      await controlled.markDispatched(
+        STORAGE_KEY,
+        'principal-a',
+        arm.guardRevision,
+      );
+      now += 5 * 60_000 + 1;
+      const recovery = recoveryStorageMethods(controlled);
+      const predecessor = await recovery.capture(STORAGE_KEY);
+
+      let expected: 'superseded' | 'unconfirmed' | 'guard-busy';
+      if (authority === 'malformed') {
+        state.values.set(STORAGE_KEY, '{malformed');
+        expected = 'superseded';
+      } else if (authority === 'unavailable') {
+        state.store.getItem.mockRejectedValueOnce(
+          new Error('storage unavailable'),
+        );
+        expected = 'unconfirmed';
+      } else {
+        const changedGuard = guardRecord(state.values);
+        if (changedGuard == null) throw new Error('expected guard store');
+        changedGuard.records[0].revision += 1;
+        changedGuard.records[0].state = 'preparing';
+        changedGuard.records[0].leaseExpiresAt = now + 60_000;
+        state.values.set(GUARD_KEY, JSON.stringify(changedGuard));
+        expected = 'guard-busy';
+      }
+      const expectedRaw = state.values.get(STORAGE_KEY);
+      const expectedGuard = state.values.get(GUARD_KEY);
+      state.store.setItem.mockClear();
+
+      await expect(
+        recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+      ).resolves.toBe(expected);
+      expect(state.values.get(STORAGE_KEY)).toBe(expectedRaw);
+      expect(state.values.get(GUARD_KEY)).toBe(expectedGuard);
+      expect(state.store.setItem).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['a2', 'c', 'empty', 'malformed', 'blocked'] as const)(
+    'preserves nonmatching settled authority: %s',
+    async (authority) => {
+      const settledS1 = session('principal-a', 'session-s1', 'settled-s1');
+      const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+      const state = statefulStore({
+        [STORAGE_KEY]: JSON.stringify(settledS1),
+      });
+      const controlled = createPrincipalBoundAuthStorage(state.store, {
+        now: () => 1_000,
+      });
+      await createSettledAllowedSession(controlled, settledS1);
+      const recovery = recoveryStorageMethods(controlled);
+      const predecessor = await recovery.capture(STORAGE_KEY);
+
+      if (authority === 'a2') {
+        state.values.set(
+          STORAGE_KEY,
+          JSON.stringify(session('principal-a', 'session-s1', 'newer-a2')),
+        );
+      } else if (authority === 'c') {
+        state.values.set(
+          STORAGE_KEY,
+          JSON.stringify(session('principal-c', 'session-c', 'winner-c')),
+        );
+      } else if (authority === 'empty') {
+        state.values.delete(STORAGE_KEY);
+      } else if (authority === 'malformed') {
+        state.values.set(STORAGE_KEY, '{malformed');
+      } else {
+        const changedGuard = guardRecord(state.values);
+        if (changedGuard == null) throw new Error('expected guard store');
+        changedGuard.records[0].revision += 1;
+        changedGuard.records[0].allowedSessionId = 'blocked-lineage';
+        state.values.set(GUARD_KEY, JSON.stringify(changedGuard));
+      }
+      const expectedRaw = state.values.get(STORAGE_KEY);
+      const expectedGuard = state.values.get(GUARD_KEY);
+      state.store.setItem.mockClear();
+
+      await expect(
+        recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+      ).resolves.toBe('superseded');
+      expect(state.values.get(STORAGE_KEY)).toBe(expectedRaw);
+      expect(state.values.get(GUARD_KEY)).toBe(expectedGuard);
+      expect(state.store.setItem).not.toHaveBeenCalled();
+    },
+  );
+
+  it('returns unconfirmed without mutation when recovery adoption storage is unavailable', async () => {
+    const settledS1 = session('principal-a', 'session-s1', 'settled-s1');
+    const returnedS2 = session('principal-a', 'session-s2', 'returned-s2');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(settledS1),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => 1_000,
+    });
+    await createSettledAllowedSession(controlled, settledS1);
+    const recovery = recoveryStorageMethods(controlled);
+    const predecessor = await recovery.capture(STORAGE_KEY);
+    const expectedRaw = state.values.get(STORAGE_KEY);
+    const expectedGuard = state.values.get(GUARD_KEY);
+    state.store.setItem.mockClear();
+    state.store.getItem.mockRejectedValueOnce(new Error('storage unavailable'));
+
+    await expect(
+      recovery.adopt(STORAGE_KEY, predecessor, returnedS2),
+    ).resolves.toBe('unconfirmed');
+    expect(state.values.get(STORAGE_KEY)).toBe(expectedRaw);
+    expect(state.values.get(GUARD_KEY)).toBe(expectedGuard);
+    expect(state.store.setItem).not.toHaveBeenCalled();
+  });
+
+  it('does not classify empty authority under a settled guard as unguarded recovery', async () => {
+    const settledS1 = session('principal-a', 'session-s1', 'settled-s1');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(settledS1),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => 1_000,
+    });
+    await createSettledAllowedSession(controlled, settledS1);
+    state.values.delete(STORAGE_KEY);
+    const recovery = recoveryStorageMethods(controlled);
+    const expectedGuard = state.values.get(GUARD_KEY);
+
+    await expect(recovery.capture(STORAGE_KEY)).resolves.toEqual({
+      kind: 'superseded',
+    });
+    expect(state.values.has(STORAGE_KEY)).toBe(false);
+    expect(state.values.get(GUARD_KEY)).toBe(expectedGuard);
+  });
+
+  it('does not classify empty authority with a non-classifiable pending guard as unguarded', async () => {
+    let now = 1_000;
+    const storedA = session('principal-a', 'session-a', 'pending-a');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(storedA),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => now,
+    });
+    const arm = await controlled.arm(STORAGE_KEY, 'principal-a');
+    if (arm.kind !== 'armed') throw new Error('expected armed guard');
+    await controlled.markDispatched(
+      STORAGE_KEY,
+      'principal-a',
+      arm.guardRevision,
+    );
+    now += 5 * 60_000 + 1;
+    const changedGuard = guardRecord(state.values);
+    if (changedGuard == null) throw new Error('expected guard store');
+    changedGuard.records[0].allowedSessionId = 'unexpected-lineage';
+    state.values.set(GUARD_KEY, JSON.stringify(changedGuard));
+    state.values.delete(STORAGE_KEY);
+    const recovery = recoveryStorageMethods(controlled);
+
+    await expect(recovery.capture(STORAGE_KEY)).resolves.toEqual({
+      kind: 'superseded',
+    });
+    expect(state.values.has(STORAGE_KEY)).toBe(false);
+    expect(state.values.get(GUARD_KEY)).toBe(JSON.stringify(changedGuard));
+  });
+
   it('preserves B that wins before guarded A adoption commits', async () => {
     const storedA = session('principal-a', 'session-a');
     const storedB = session('principal-b', 'session-b');
@@ -1014,6 +1498,29 @@ describe('principal-bound Auth storage', () => {
         state: 'preparing',
       }),
     ]);
+  });
+
+  it('preserves exact A2 after post-arm A3 quarantine and pre-revocation disarm', async () => {
+    const persistedA2 = session('principal-a', 'session-a', 'persisted-a2');
+    const blockedA3 = session('principal-a', 'session-a', 'blocked-a3');
+    const state = statefulStore({
+      [STORAGE_KEY]: JSON.stringify(persistedA2),
+    });
+    const controlled = createPrincipalBoundAuthStorage(state.store, {
+      now: () => 1_000,
+    });
+    const arm = await controlled.arm(STORAGE_KEY, 'principal-a');
+    if (arm.kind !== 'armed') throw new Error('expected armed guard');
+
+    await controlled.adapter.setItem(STORAGE_KEY, JSON.stringify(blockedA3));
+    await expect(
+      controlled.disarm(STORAGE_KEY, 'principal-a', arm.guardRevision),
+    ).resolves.toEqual({ kind: 'disarmed' });
+
+    expect(state.values.get(STORAGE_KEY)).toBe(JSON.stringify(persistedA2));
+    await expect(controlled.adapter.getItem(STORAGE_KEY)).resolves.toBe(
+      JSON.stringify(persistedA2),
+    );
   });
 
   it('never disarms a settled guard after destructive dispatch', async () => {

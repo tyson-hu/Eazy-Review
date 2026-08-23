@@ -253,11 +253,12 @@ src/
       mockProductDetails.ts     # isolated legacy fixtures; not runtime Detail
 
     auth/
-      api.ts                    # Task 16 email/password sign-in, sign-up, sign-out
+      api.ts                    # Tasks 16–19 auth, recovery, guarded adoption
+      deletion.api.ts           # Task 19 isolated bearer + Function boundary
       errors.ts                 # Normalized auth errors (no raw SDK text)
       types.ts
       returnPath.ts             # Safe internal returnTo allowlist
-      AuthProvider.tsx          # Session state + user-scoped cache isolation
+      AuthProvider.tsx          # Tasks 16–19 session/recovery/deletion authority
       hooks.ts
 
     account/
@@ -273,7 +274,8 @@ src/
     supabase/
       client.ts                # Task 14 singleton
       createClient.ts
-      authStorage.ts           # Task 14/16 AsyncStorage session adapter (HUMAN ACCEPTED MVP; SecureStore waived for Task 16)
+      authCoordination.ts      # Tasks 18–19 non-stealing Auth/storage ordering
+      authStorage.ts           # Tasks 14–19 guarded AsyncStorage adapter (HUMAN ACCEPTED MVP; SecureStore waived for Task 16)
     query/
       client.ts                # Task 14 QueryClient factory
       keys.ts                  # public catalog vs user-scoped key factories
@@ -427,7 +429,12 @@ Functions (file: `src/features/auth/api.ts`):
   tokens. Provider errors encoded directly in the callback URL use the same
   normalization as SDK exchange errors: transport/server failures are
   temporary, while definitive expired, replayed, or unusable-verifier failures
-  make the link unavailable.
+  make the link unavailable. When Task 19 guard state is present, it first
+  captures an operation-local exact settled or lease-expired-pending
+  predecessor. After the unabortable SDK exchange releases, it adopts the
+  returned same-principal session only through the exact serialized transaction
+  described below; a changed/unknown predecessor returns token-free
+  `superseded` without removing or replacing current authority.
 
 AuthProvider recovery phase (not ordinary session status):
 
@@ -443,7 +450,10 @@ Recovery-link processing is also bound to the authoritative auth generation and
 principal. If sign-out or a different-account auth transition supersedes an
 in-flight callback, neither its late SDK `PASSWORD_RECOVERY` event nor its result
 can promote the phase to `verified`. Same-principal SDK transitions emitted by
-the recovery exchange remain valid. Background `INITIAL_SESSION` or
+an unguarded recovery exchange remain valid. During guarded recovery, S2
+`SIGNED_IN`/`TOKEN_REFRESHED`/`PASSWORD_RECOVERY` events are maintenance-only:
+they cannot publish S2 or verify recovery until exact predecessor-bound adoption
+succeeds and releases the quarantine. Background `INITIAL_SESSION` or
 `TOKEN_REFRESHED` events for the principal present before the callback started
 are maintenance, not superseding user transitions. A matching `USER_UPDATED`
 event is also maintenance, so a password update from the preceding recovery
@@ -463,9 +473,11 @@ recovery session before emitting its SDK event, rejecting a stale event also
 gates authenticated UI and restores the superseding full session outside the
 auth callback, including when the exchange reports the stale session through
 ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
-out the current device only rather than expose an identity/bearer mismatch or
-revoke other-device sessions. A failed or throwing local sign-out still
-settles provider state to signed-out instead of leaving auth initializing. All
+out the captured current-device bearer through an isolated non-persisting Auth
+client and exact-removes shared storage only while the captured principal/
+access/refresh snapshot is unchanged; it never calls shared-client
+`auth.signOut`. A replacement is preserved, and cleanup uncertainty does not
+authorize principal-only removal or a healthy signed-out authority claim. All
 recovery callback exchanges are serialized through any stale-session
 reconciliation they start, so an exchange cannot race a prior session restore.
 Duplicate delivery of the active or already-pending callback is ignored. A
@@ -597,6 +609,18 @@ subject ID, monotonic revision, `preparing`/`pending`/`settled` state, lease,
 optional explicitly adopted `session_id`, and predecessor state. It holds no
 access/refresh token, email, password, profile, rating, note, or server outcome.
 Exact write/readback is required before reauthentication and dispatch.
+Auth storage identity resolves in fixed order: an explicit `storageKey`, then
+the explicitly injected client contract, then the singleton key derived from
+the public Supabase URL. Ambient public configuration cannot redirect an
+injected provider/API instance to a different Auth storage namespace.
+
+After storage capability preflight releases, deletion arms `preparing` inside
+one short `Auth operation -> storage` section. This drains and persists earlier
+Auth work before the guard reads raw authority. The locks release before
+isolated reauthentication, then the provider reacquires the Auth-operation lock
+for its final winner/revision check and destructive boundary. A confirmed
+pre-revocation rollback changes only the owned guard revision; it never rewinds
+raw storage, so a rotated A2 persisted before arm remains authoritative.
 
 The guarded adapter hides blocked A reads, rejects late A writes/removals and A
 events, and allows only explicitly adopted fresh session lineage. Exact cleanup
@@ -609,8 +633,20 @@ the exact stored principal/access/refresh/session ID/guard revision under
 `Auth operation -> storage` before publication. Stale/unconfirmed finalization
 clears the owner exemption before mandatory reconciliation.
 
-Explicit sign-in and verified recovery adopt a fresh `session_id` only under
-the shared Auth/storage boundary and preserve a B/C that won before adoption.
+Explicit sign-in adopts a fresh `session_id` only under the shared Auth/storage
+boundary and preserves a B/C that won before adoption. Verified recovery first
+captures one operation-local exact predecessor: either guard-allowed settled S1
+plus its guard revision, or an exact lease-expired-pending guard plus its raw
+session/empty state. The returned same-principal S2 remains maintenance-only
+and cannot update provider authority before the serialized adoption succeeds.
+Under provider FIFO and `Auth operation -> storage`, adoption writes S2 only
+when guard/raw authority still matches the captured predecessor or is already
+exact S2, accepts a same-session-ID S2, advances the guard revision, and reads
+back both guard and storage. Newer A2, C, empty, malformed, blocked, changed, or
+unavailable authority is preserved without a session removal or replacement;
+the predecessor is never persisted or exposed through context, logs, or
+evidence.
+
 Provider-owned session writers use a FIFO fence. The unabortable
 `processAuthCallbackUrl` exchange is the bounded Task 18 exception: wrapping
 the entire exchange reproduced an accepted recovery/explicit-auth deadlock, so
@@ -625,6 +661,14 @@ change channel. Deletion-winner restoration performs no session write at all:
 it reconciles, validates, and exact-rechecks raw B/C before publication. Only
 the displaced recovery principal's cache is removed; newer-principal and public
 cache remain eligible authority.
+
+Forced recovery reconciliation distinguishes an exact displaced snapshot from
+unknown displacement. Exact cleanup additionally requires unchanged principal,
+access/refresh tokens, session ID, and guard revision. Unknown displacement
+never authorizes primary/companion storage removal or same-principal cache
+removal: current allowed S1 is isolate-validated and exact-rechecked before
+publication, while blocked/unavailable authority remains quarantined and every
+nonmatching authority is preserved according to its current classification.
 
 Local settlement is not a deletion claim. Removed/empty A returns the original
 server outcome even when companion cleanup is unconfirmed. A newer

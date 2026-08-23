@@ -103,16 +103,19 @@ describe('Auth coordination', () => {
     ]);
   });
 
-  it('releases standalone storage work before waiting on Auth operation', async () => {
+  it('releases storage preflight before nesting guard arm under Auth operation', async () => {
     const events: string[] = [];
     const coordination = createAuthCoordination({ platform: 'native' });
     await coordination.runStorageOperation('storage-release-order', async () => {
-      events.push('arm');
+      events.push('preflight');
     });
     await coordination.runAuthOperation('storage-release-order', async () => {
       events.push('auth');
+      await coordination.runStorageOperation('storage-release-order', async () => {
+        events.push('arm');
+      });
     });
-    expect(events).toEqual(['arm', 'auth']);
+    expect(events).toEqual(['preflight', 'auth', 'arm']);
   });
 
   it('broadcasts only one payload-free guard-change label on web', () => {

@@ -38,8 +38,13 @@ Hard lines (full detail in `docs/SECURITY.md`):
   invalid bootstrap, and recovery cleanup never call shared-client sign-out or
   claim signed-out when exact storage cleanup is unavailable. The bounded
   recovery-callback FIFO deviation uses one exact displaced-A CAS after
-  isolated B validation, never overwrites raw C/A2/empty/blocked authority,
-  and gives deletion restoration no shared-session write. Final raw-authority
-  proof preserves newer cache on unavailable quarantine. Hosted
+  isolated B validation, while guarded same-principal recovery captures an
+  operation-local exact predecessor and keeps S2 maintenance-only until exact
+  adoption. Explicit/injected/singleton storage-key precedence, Auth-lock-before-
+  arm ordering, and exact-displacement-only cleanup preserve raw S1/A2/C/empty/
+  malformed/blocked authority; unknown displacement removes no session,
+  companion, or same-principal cache. Deletion restoration performs no shared-
+  session write. Final raw-authority proof preserves newer cache on unavailable
+  quarantine. Hosted
   <=3,600-second JWT expiry also remains human verification; actual deletion
   remains human-only on every environment.

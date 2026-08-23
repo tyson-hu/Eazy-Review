@@ -37,8 +37,13 @@ import {
 } from '@/src/lib/supabase/client';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import {
+  adoptRecoverySessionAfterDeletionGuard,
   adoptExplicitSessionAfterDeletionGuard,
+  captureRecoveryAdoptionPredecessor,
   removeStoredSessionIfExact,
+  type RecoveryAdoptionPredecessor,
+  type RecoveryAdoptionResult,
+  type RecoveryPredecessorCapture,
 } from '@/src/lib/supabase/authStorage';
 
 export type AuthApiOptions = {
@@ -58,6 +63,19 @@ export type AuthApiOptions = {
     storageKey: string,
     session: Session,
   ) => Promise<'not-guarded' | 'adopted' | 'guard-busy' | 'superseded'>;
+  captureRecoveryAdoptionPredecessor?: (
+    storageKey: string,
+  ) => Promise<RecoveryPredecessorCapture>;
+  adoptRecoverySession?: (
+    storageKey: string,
+    predecessor: RecoveryAdoptionPredecessor,
+    returnedSession: Session,
+  ) => Promise<RecoveryAdoptionResult>;
+  runAuthSessionWrite?: <T>(write: () => Promise<T>) => Promise<T>;
+  onRecoveryAdoptionPredecessor?: (
+    predecessor: RecoveryPredecessorCapture,
+  ) => void;
+  onRecoverySession?: (session: Session) => void;
 };
 
 type RestoreSessionOptions = AuthApiOptions & {
@@ -88,17 +106,39 @@ function authStorageKey(options?: AuthApiOptions): string {
 async function adoptAuthenticatedSession(
   session: Session,
   options?: AuthApiOptions,
+  predecessor: RecoveryPredecessorCapture = { kind: 'not-guarded' },
 ): Promise<'adopted' | 'superseded'> {
-  const adopt = options?.adoptExplicitSession ??
-    adoptExplicitSessionAfterDeletionGuard;
   const storageKey = authStorageKey(options);
-  const result = await runSupabaseAuthOperation(storageKey, () =>
-    adopt(storageKey, session),
-  );
+  const guardedPredecessor =
+    predecessor.kind === 'settled-allowed' ||
+      predecessor.kind === 'expired-pending'
+      ? predecessor
+      : null;
+  const runAdoption = () =>
+    runSupabaseAuthOperation(storageKey, () => {
+      if (guardedPredecessor != null) {
+        const adoptRecovery = options?.adoptRecoverySession ??
+          adoptRecoverySessionAfterDeletionGuard;
+        return adoptRecovery(storageKey, guardedPredecessor, session);
+      }
+      const adopt = options?.adoptExplicitSession ??
+        adoptExplicitSessionAfterDeletionGuard;
+      return adopt(storageKey, session);
+    });
+  const result = guardedPredecessor != null
+    ? await (options?.runAuthSessionWrite ??
+      (<T,>(write: () => Promise<T>) => write()))(runAdoption)
+    : await runAdoption();
   if (result === 'guard-busy') {
     throw new AuthError(
       'account-deletion-in-progress',
       AUTH_USER_MESSAGES.accountDeletionInProgress,
+    );
+  }
+  if (result === 'unconfirmed') {
+    throw new AuthError(
+      'temporary-failure',
+      AUTH_USER_MESSAGES.recoveryTemporaryFailure,
     );
   }
   return result === 'superseded' ? 'superseded' : 'adopted';
@@ -592,6 +632,26 @@ export async function processAuthCallbackUrl(
   }
 
   try {
+    const storageKey = authStorageKey(options);
+    const capture = options?.captureRecoveryAdoptionPredecessor ??
+      captureRecoveryAdoptionPredecessor;
+    const predecessor = await capture(storageKey);
+    options?.onRecoveryAdoptionPredecessor?.(predecessor);
+    if (predecessor.kind === 'guard-busy') {
+      throw new AuthError(
+        'account-deletion-in-progress',
+        AUTH_USER_MESSAGES.accountDeletionInProgress,
+      );
+    }
+    if (predecessor.kind === 'superseded') {
+      return { kind: 'superseded' };
+    }
+    if (predecessor.kind === 'unavailable') {
+      throw new AuthError(
+        'temporary-failure',
+        AUTH_USER_MESSAGES.recoveryTemporaryFailure,
+      );
+    }
     const client = resolveClient(options);
 
     if (classified.kind === 'pkce') {
@@ -610,7 +670,11 @@ export async function processAuthCallbackUrl(
           AUTH_USER_MESSAGES.recoveryLinkInvalid,
         );
       }
-      if (await adoptAuthenticatedSession(data.session, options) === 'superseded') {
+      options?.onRecoverySession?.(data.session);
+      if (
+        await adoptAuthenticatedSession(data.session, options, predecessor) ===
+          'superseded'
+      ) {
         return { kind: 'superseded' };
       }
       // auth-js 2.112 returns `redirectType` here at runtime, but its public
@@ -647,7 +711,12 @@ export async function processAuthCallbackUrl(
       );
     }
 
-    if (await adoptAuthenticatedSession(data.session, options) === 'superseded') {
+    options?.onRecoverySession?.(data.session);
+
+    if (
+      await adoptAuthenticatedSession(data.session, options, predecessor) ===
+        'superseded'
+    ) {
       return { kind: 'superseded' };
     }
 

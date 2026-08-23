@@ -159,6 +159,57 @@ export type GuardedAuthStorageReconciliation =
       guardRevision: number | null;
     };
 
+export type ExactStoredSessionSnapshot = {
+  principalId: string;
+  accessToken: string;
+  refreshToken: string;
+  sessionId: string;
+};
+
+export type ExactRecoveryGuardSnapshot = {
+  principalId: string;
+  revision: number;
+  state: 'settled' | 'pending';
+  leaseExpiresAt: number;
+  allowedSessionId: string | null;
+  predecessor:
+    | null
+    | { state: 'settled'; allowedSessionId: string | null };
+};
+
+export type RecoveryAdoptionPredecessor =
+  | {
+      kind: 'settled-allowed';
+      guard: ExactRecoveryGuardSnapshot & {
+        state: 'settled';
+        allowedSessionId: string;
+      };
+      raw: { kind: 'session'; snapshot: ExactStoredSessionSnapshot };
+    }
+  | {
+      kind: 'expired-pending';
+      guard: ExactRecoveryGuardSnapshot & {
+        state: 'pending';
+        allowedSessionId: null;
+      };
+      raw:
+        | { kind: 'empty' }
+        | { kind: 'session'; snapshot: ExactStoredSessionSnapshot };
+    };
+
+export type RecoveryPredecessorCapture =
+  | RecoveryAdoptionPredecessor
+  | { kind: 'not-guarded' }
+  | { kind: 'guard-busy' }
+  | { kind: 'superseded' }
+  | { kind: 'unavailable' };
+
+export type RecoveryAdoptionResult =
+  | 'adopted'
+  | 'guard-busy'
+  | 'superseded'
+  | 'unconfirmed';
+
 type RawAuthStore = Pick<typeof AsyncStorage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export type PrincipalBoundAuthStorageOptions = {
@@ -356,6 +407,56 @@ function sameStoredSessionSnapshot(
     actual.sessionId === expected.sessionId &&
     actual.session.access_token === expected.session.access_token &&
     actual.session.refresh_token === expected.session.refresh_token;
+}
+
+function exactStoredSessionSnapshot(
+  parsed: Extract<ParsedStoredSession, { kind: 'session' }>,
+): ExactStoredSessionSnapshot | null {
+  if (parsed.sessionId == null) return null;
+  return {
+    principalId: parsed.principalId,
+    accessToken: parsed.session.access_token,
+    refreshToken: parsed.session.refresh_token,
+    sessionId: parsed.sessionId,
+  };
+}
+
+function sameExactStoredSessionSnapshot(
+  actual: Extract<ParsedStoredSession, { kind: 'session' }>,
+  expected: ExactStoredSessionSnapshot,
+): boolean {
+  return actual.principalId === expected.principalId &&
+    actual.sessionId === expected.sessionId &&
+    actual.session.access_token === expected.accessToken &&
+    actual.session.refresh_token === expected.refreshToken;
+}
+
+function exactRecoveryGuardSnapshot(
+  record: PrincipalDeletionGuardRecord,
+): ExactRecoveryGuardSnapshot {
+  return {
+    principalId: record.principalId,
+    revision: record.revision,
+    state: record.state === 'pending' ? 'pending' : 'settled',
+    leaseExpiresAt: record.leaseExpiresAt,
+    allowedSessionId: record.allowedSessionId,
+    predecessor: record.predecessor == null
+      ? null
+      : { ...record.predecessor },
+  };
+}
+
+function sameRecoveryGuardSnapshot(
+  actual: PrincipalDeletionGuardRecord | undefined,
+  expected: ExactRecoveryGuardSnapshot,
+): boolean {
+  return actual != null &&
+    actual.principalId === expected.principalId &&
+    actual.revision === expected.revision &&
+    actual.state === expected.state &&
+    actual.leaseExpiresAt === expected.leaseExpiresAt &&
+    actual.allowedSessionId === expected.allowedSessionId &&
+    samePredecessor(actual.predecessor, expected.predecessor);
 }
 
 function allocateRevision(store: PrincipalDeletionGuardStore): number {
@@ -907,6 +1008,190 @@ export function createPrincipalBoundAuthStorage(
         return true;
       }
     },
+    captureRecoveryPredecessor: async (
+      storageKey: string,
+    ): Promise<RecoveryPredecessorCapture> => {
+      try {
+        return await withStorage(storageKey, async () => {
+          const guardStore = await readNormalizedStore(storageKey);
+          if (guardStore == null) return { kind: 'unavailable' } as const;
+          const stored = parseStoredSession(await store.getItem(storageKey));
+          if (stored.kind === 'malformed') {
+            return { kind: 'unavailable' } as const;
+          }
+          if (stored.kind === 'empty') {
+            const hasActiveGuard = guardStore.records.some(
+              (record) =>
+                record.state === 'preparing' ||
+                (record.state === 'pending' && record.leaseExpiresAt > now()),
+            );
+            if (hasActiveGuard) return { kind: 'guard-busy' } as const;
+            const expiredPending = guardStore.records.filter(
+              (record) =>
+                record.state === 'pending' &&
+                record.allowedSessionId == null &&
+                record.leaseExpiresAt <= now(),
+            );
+            if (expiredPending.length === 0) {
+              return guardStore.records.length > 0
+                ? { kind: 'superseded' } as const
+                : { kind: 'not-guarded' } as const;
+            }
+            if (expiredPending.length !== 1) {
+              return { kind: 'superseded' } as const;
+            }
+            const guard = exactRecoveryGuardSnapshot(expiredPending[0]);
+            return {
+              kind: 'expired-pending',
+              guard: {
+                ...guard,
+                state: 'pending',
+                allowedSessionId: null,
+              },
+              raw: { kind: 'empty' },
+            } as const;
+          }
+
+          const guard = recordFor(guardStore, stored.principalId);
+          if (guard == null) return { kind: 'not-guarded' } as const;
+          if (
+            guard.state === 'preparing' ||
+            (guard.state === 'pending' && guard.leaseExpiresAt > now())
+          ) {
+            return { kind: 'guard-busy' } as const;
+          }
+          const snapshot = exactStoredSessionSnapshot(stored);
+          if (snapshot == null) return { kind: 'unavailable' } as const;
+          if (guard.state === 'settled') {
+            if (
+              guard.allowedSessionId == null ||
+              guard.allowedSessionId !== snapshot.sessionId
+            ) {
+              return { kind: 'superseded' } as const;
+            }
+            const exactGuard = exactRecoveryGuardSnapshot(guard);
+            return {
+              kind: 'settled-allowed',
+              guard: {
+                ...exactGuard,
+                state: 'settled',
+                allowedSessionId: snapshot.sessionId,
+              },
+              raw: { kind: 'session', snapshot },
+            } as const;
+          }
+          if (
+            guard.allowedSessionId != null ||
+            guard.leaseExpiresAt > now()
+          ) {
+            return { kind: 'superseded' } as const;
+          }
+          const exactGuard = exactRecoveryGuardSnapshot(guard);
+          return {
+            kind: 'expired-pending',
+            guard: {
+              ...exactGuard,
+              state: 'pending',
+              allowedSessionId: null,
+            },
+            raw: { kind: 'session', snapshot },
+          } as const;
+        });
+      } catch {
+        return { kind: 'unavailable' };
+      }
+    },
+    adoptRecovery: async (
+      storageKey: string,
+      predecessor: RecoveryAdoptionPredecessor,
+      returnedSession: Session,
+    ): Promise<RecoveryAdoptionResult> => {
+      let writeAttempted = false;
+      try {
+        const result = await withStorage(storageKey, async () => {
+          const returned = parseStoredSession(JSON.stringify(returnedSession));
+          if (
+            returned.kind !== 'session' ||
+            returned.sessionId == null ||
+            returned.principalId !== predecessor.guard.principalId
+          ) {
+            return 'guard-busy' as const;
+          }
+          const guardStore = await readNormalizedStore(storageKey);
+          if (guardStore == null) return 'unconfirmed' as const;
+          const currentGuard = recordFor(
+            guardStore,
+            predecessor.guard.principalId,
+          );
+          if (
+            currentGuard?.state === 'preparing' ||
+            (currentGuard?.state === 'pending' &&
+              currentGuard.leaseExpiresAt > now())
+          ) {
+            return 'guard-busy' as const;
+          }
+          if (!sameRecoveryGuardSnapshot(currentGuard, predecessor.guard)) {
+            return 'superseded' as const;
+          }
+
+          const stored = parseStoredSession(await store.getItem(storageKey));
+          if (stored.kind === 'malformed') return 'superseded' as const;
+          const alreadyReturned =
+            stored.kind === 'session' &&
+            sameStoredSessionSnapshot(stored, returned);
+          const predecessorStillCurrent = predecessor.raw.kind === 'empty'
+            ? stored.kind === 'empty'
+            : stored.kind === 'session' &&
+              sameExactStoredSessionSnapshot(
+                stored,
+                predecessor.raw.snapshot,
+              );
+          if (!alreadyReturned && !predecessorStillCurrent) {
+            return 'superseded' as const;
+          }
+
+          const revision = allocateRevision(guardStore);
+          const adoptedRecord: PrincipalDeletionGuardRecord = {
+            revision,
+            state: 'settled',
+            leaseExpiresAt: 0,
+            principalId: returned.principalId,
+            allowedSessionId: returned.sessionId,
+            predecessor: null,
+          };
+          guardStore.records = [
+            ...guardStore.records.filter(
+              (record) => record.principalId !== returned.principalId,
+            ),
+            adoptedRecord,
+          ];
+          writeAttempted = true;
+          await writeStore(storageKey, guardStore);
+          if (!alreadyReturned) {
+            await store.setItem(storageKey, JSON.stringify(returnedSession));
+          }
+          const readback = parseGuardStore(
+            await store.getItem(deletionGuardKey(storageKey)),
+          );
+          const confirmed = readback == null
+            ? undefined
+            : recordFor(readback, returned.principalId);
+          const storedReadback = parseStoredSession(
+            await store.getItem(storageKey),
+          );
+          return sameGuardRecord(confirmed, adoptedRecord) &&
+              storedReadback.kind === 'session' &&
+              sameStoredSessionSnapshot(storedReadback, returned)
+            ? 'adopted' as const
+            : 'unconfirmed' as const;
+        });
+        if (writeAttempted) emitGuardChange(storageKey);
+        return result;
+      } catch {
+        if (writeAttempted) emitGuardChange(storageKey);
+        return 'unconfirmed';
+      }
+    },
     adopt: async (
       storageKey: string,
       session: Session,
@@ -1010,6 +1295,7 @@ export function createPrincipalBoundAuthStorage(
       storageKey: string,
       expectedDisplaced: Session,
       validatedReplacement: Session,
+      expectedGuardRevision: number | null = null,
     ): Promise<GuardedAuthStorageReconciliation> => {
       let writeAttempted = false;
       try {
@@ -1030,6 +1316,8 @@ export function createPrincipalBoundAuthStorage(
             expected.sessionId == null ||
             replacement.sessionId == null ||
             !sameStoredSessionSnapshot(current, expected) ||
+            currentAuthority.kind !== 'allowed-session' ||
+            currentAuthority.guardRevision !== expectedGuardRevision ||
             !sessionAllowedByGuard(guardStore, current) ||
             !sessionAllowedByGuard(guardStore, replacement)
           ) {
@@ -1143,6 +1431,24 @@ export async function isSessionBlockedByDeletionGuard(
   return await principalBoundStorage.isBlocked(storageKey, session);
 }
 
+export async function captureRecoveryAdoptionPredecessor(
+  storageKey: string,
+): Promise<RecoveryPredecessorCapture> {
+  return await principalBoundStorage.captureRecoveryPredecessor(storageKey);
+}
+
+export async function adoptRecoverySessionAfterDeletionGuard(
+  storageKey: string,
+  predecessor: RecoveryAdoptionPredecessor,
+  returnedSession: Session,
+): Promise<RecoveryAdoptionResult> {
+  return await principalBoundStorage.adoptRecovery(
+    storageKey,
+    predecessor,
+    returnedSession,
+  );
+}
+
 export async function adoptExplicitSessionAfterDeletionGuard(
   storageKey: string,
   session: Session,
@@ -1154,11 +1460,13 @@ export async function replaceDisplacedSessionIfExact(
   storageKey: string,
   expectedDisplaced: Session,
   validatedReplacement: Session,
+  expectedGuardRevision: number | null = null,
 ): Promise<GuardedAuthStorageReconciliation> {
   return await principalBoundStorage.replaceDisplaced(
     storageKey,
     expectedDisplaced,
     validatedReplacement,
+    expectedGuardRevision,
   );
 }
 

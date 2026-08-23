@@ -208,6 +208,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
     Guard/session mutations require exact readback; blocked A reads/writes/
     removals/events fail closed; B/C and newer same-principal snapshots are
     preserved through exact principal/access/refresh/session-ID/revision checks.
+    Storage identity resolves explicit key, then injected client, then singleton
+    public environment. After storage preflight releases, guard arm drains
+    earlier Auth work inside a short Auth/storage section and releases before
+    isolated reauthentication, so rollback preserves a rotated A2 already
+    persisted before arm.
   - Ordinary sign-out, invalid bootstrap cleanup, and recovery cleanup never
     call shared-client `auth.signOut`. They use isolated exact-bearer work and
     exact-remove only unchanged shared storage. Storage unavailability makes no
@@ -221,6 +226,13 @@ Canonical security rules for all agent and human work in this repo, regardless o
     recovery/explicit-auth deadlock. Its guarded adoption is instead protected
     by the shared Auth/storage lock, exact storage comparison, and token-free
     `superseded` result.
+  - Guarded same-principal recovery captures an operation-local exact settled
+    or lease-expired-pending predecessor. Recovery-owned S2 events are
+    maintenance-only until one serialized exact transaction adopts S2 and
+    reads back the new guard/storage state; same-session-ID S2 is allowed.
+    Newer A2, C, empty, malformed, blocked, changed, or unavailable authority is
+    preserved, and the predecessor never enters guard metadata, context, logs,
+    or evidence.
   - Superseded recovery isolate-validates B, then an application-owned CAS under
     provider FIFO and `Auth operation -> storage` may replace only exact,
     guard-allowed displaced A. Raw C, newer A2, empty, malformed, blocked, and
@@ -228,6 +240,10 @@ Canonical security rules for all agent and human work in this repo, regardless o
     winner restoration performs no shared-session write; raw reconciliation,
     isolated validation, and a final exact recheck choose B/C. Payload-free
     signaling and A-only cache cleanup remain mandatory.
+  - Forced recovery cleanup requires an exact displaced principal/access/
+    refresh/session-ID/guard-revision snapshot. Unknown displacement never
+    authorizes primary/companion removal or same-principal cache cleanup; valid
+    allowed S1 is published only after isolated validation and exact recheck.
   - Global revocation invalidates refresh capability, not already-issued JWT
     signatures. Hosted JWT expiry must be verified at no more than 3,600
     seconds; residual-token and destructive staging checks remain human-only.

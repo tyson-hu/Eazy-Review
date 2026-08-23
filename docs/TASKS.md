@@ -50,11 +50,22 @@
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - Task 19 is **Partial — implementation complete; human staging deletion
   pending.**
-  The non-destructive implementation and first validation remediation are
-  committed and pushed in draft PR #43. Database CI passed on `1a515e1`, while
-  Expo CI repeated the recovery-test timeout. The final test-orchestration
-  repair is published at `9576555`, but Expo CI still fails before isolated B
-  validation while Database CI passes. Current blocker:
+  Draft PR #43 contains the non-destructive implementation. Diagnostic head
+  `b843dc8` isolated the injected-client Auth storage-key mismatch, and its
+  required integrated review found two additional auth-preservation blockers:
+  deletion guard arm racing an earlier refresh, and same-principal recovery
+  removing valid S1 without an exact displaced snapshot. The bounded local
+  remediation now resolves all three: injected-client storage identity wins
+  over ambient public configuration; guard arm drains earlier Auth work before
+  isolated reauthentication; and guarded recovery publishes S2 only through an
+  exact predecessor-bound transaction while unknown displacement grants no
+  session, companion, or same-principal cache cleanup authority. Temporary
+  diagnostics are removed. The product/test candidate is frozen at Git tree
+  `3d8bf2be5cfadab6197c95b4f4036006df4caab4`; 6 affected suites / 205 tests,
+  the full 41-suite / 495-test frontend run, `check:readonly`, `check:expo`, and
+  25/25 Deno Function tests passed in disposable credential-free validation.
+  Publication and exact-head hosted CI remain separate gates. Diagnostic and
+  remediation record:
   [`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
   Deployment/configuration, device review, destructive staging proof, human
   acceptance, readiness, merge, and production remain outstanding. Evidence:
@@ -920,8 +931,20 @@ on 2026-08-20. Local non-destructive implementation was authorized on
 2026-08-21 and committed/pushed in draft PR #43. The first validation
 remediation is published at `1a515e1`; Database CI passed and Expo CI repeated
 the recovery-test timeout. The final test-orchestration repair is locally
-complete and published at `9576555`, but exact-head Expo CI still fails before
-isolated B validation while Database CI passes. Current blocker:
+complete and published at `9576555`. Diagnostic commit `b843dc8` proved
+exact-head Expo CI resolves an environment-derived Auth storage key for the
+injected test client while the regression writes B to the injected-client key;
+guarded reconciliation therefore reads an empty slot before isolated
+validation. Database CI passes. The required `b843dc8` integrated baseline
+review also found two distinct auth-preservation blockers before any
+remediation edit: standalone guard arm can strand stale raw A after an
+in-flight refresh and pre-revocation rollback, and settled same-principal
+recovery can reject S2 then remove valid S1 without an exact displaced
+snapshot. The bounded local remediation resolves the storage identity,
+Auth-lock-before-arm, and exact recovery-predecessor/unknown-displacement
+invariants, removes the diagnostic labels, and passes the non-destructive local
+matrix on product/test tree `3d8bf2be5cfadab6197c95b4f4036006df4caab4`.
+Publication and exact-head hosted CI remain separate gates. Remediation record:
 [`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
 Hosted configuration, deployment, destructive verification, acceptance,
 readiness, merge, and production remain separate gates.
@@ -934,7 +957,13 @@ only exact guard-allowed displaced A through an application-owned CAS. Raw C,
 newer A2, empty, malformed, blocked, or uncertain authority is preserved.
 Deletion winner restoration performs no shared-session write; both paths use
 final exact raw-authority proof, remove only displaced A cache, and never
-broadly purge newer/public cache.
+broadly purge newer/public cache. Auth storage identity resolves explicit key,
+then injected client, then singleton public environment. Guard arm drains prior
+Auth work before isolated reauthentication, so confirmed rollback preserves a
+rotated A2. Same-principal recovery captures an exact settled or expired-
+pending predecessor; S2 remains maintenance-only until exact adoption succeeds,
+and an unknown displaced snapshot never authorizes session, companion, or
+same-principal cache cleanup.
 
 Deliverables:
 

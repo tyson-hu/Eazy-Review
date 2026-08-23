@@ -1,25 +1,20 @@
 # Task 19 Protected Account Deletion Implementation Plan
 
-Status: The targeted auth-arbitration and principal-bound storage-settlement
-revision was approved on 2026-08-20. Local non-destructive implementation was
-authorized on 2026-08-21 and is complete and published in draft PR #43.
-A separately authorized bounded correction pass restored exact post-SDK
-authority adoption and final raw-storage arbitration before destructive
-dispatch. A fresh-session root-cause pass and the one permitted independent
-review-fix pass completed exact superseded-recovery publication, quarantine,
-invalid-session cleanup, and B-to-C convergence. A second authorized bounded
-correction removed stale restoration `setSession` writes: recovery now uses an
-exact displaced-A CAS and deletion reconciles raw authority without writing a
-session. Its independent correction review finding was addressed; final
-read-only verification passed. A bounded review-remediation pass isolates the
-online recovery test precondition and aligns the five Expo SDK 57 patch
-dependencies required by Expo Doctor. Its published `1a515e1` head passed
-Database CI but repeated the Expo recovery-test timeout. A final bounded repair
-removes that regression's unrelated cold-link/manual-latch orchestration while
-retaining the superseded-recovery authority and cache assertions; it is not yet
-published. The live PR records current exact-head CI.
-Deployment/configuration, destructive staging proof, acceptance, readiness,
-merge, and production remain separate outstanding gates.
+Status: Diagnostic head `b843dc8` proved the injected-client storage-key
+mismatch; Database CI passed and Expo CI remained red. Its integrated review
+also accepted guard-arm ordering and settled same-principal recovery defects.
+The revised design contract covering injection-first storage identity,
+Auth-lock-before-arm sequencing, exact settled/expired-pending recovery
+predecessors, same-session-ID S2, and unknown-snapshot no-cleanup was approved
+in chat on 2026-08-22. This implementation-plan revision was approved in chat
+on 2026-08-22. The bounded local remediation is implemented, the temporary
+diagnostics are removed, and the product/test candidate is frozen as Git tree
+`3d8bf2be5cfadab6197c95b4f4036006df4caab4`. Affected 6-suite / 205-test and
+full 41-suite / 495-test frontend runs, `check:readonly`, `check:expo`, and
+25/25 Deno Function tests passed in disposable credential-free validation.
+Commit/push, exact-head hosted CI, deployment/configuration, destructive
+acceptance, readiness, merge, and production remain separate gates. The live
+PR records current exact-head CI.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` only for explicitly bounded,
@@ -39,6 +34,10 @@ to a zero-body Edge Function invocation, and combines a provider-local Auth
 writer fence, a cross-context principal-bound Auth-storage guard/transaction, a
 versioned latest-winner state, and principal-specific cache cleanup so A's late
 work cannot revoke or remove a newer session or signed-out winner.
+Deletion arms under a short `Auth operation -> storage` section before isolated
+reauthentication, while recovery adopts S2 only from an exact operation-local
+settled or lease-expired-pending predecessor. Unknown displacement never grants
+session, companion, or same-principal cache cleanup authority.
 The Deno function separates a pure request orchestrator from the only Supabase
 Auth Admin adapter; automated server tests use injected mocks and no
 permissions.
@@ -76,7 +75,24 @@ NativeWind, Supabase JS/Auth/Functions 2.112.0, Supabase Edge Functions on Deno
   participating app Auth-storage writes use one platform-appropriate lock. A
   pending A guard must be persisted/read back before server dispatch; it hides
   A reads, blocks stale A writes/events, and lets B pass. The settlement
-  transaction removes a stored session only when its validated principal is A.
+  transaction for destructive deletion removes a stored session only when its
+  validated principal is A and the attempt revision still matches.
+- Auth storage identity resolves in fixed order: explicit `storageKey`,
+  explicitly injected client, then public-URL-derived singleton key. Ambient
+  public configuration never overrides an injected provider/API namespace.
+- After storage capability preflight releases, deletion acquires
+  `Auth operation -> storage` to arm/read back `preparing`; it releases both
+  locks before isolated reauthentication and later reacquires the same order for
+  dispatch and settlement. No path waits for Auth operation while holding
+  storage.
+- Recovery predecessor snapshots remain operation-local and are never persisted
+  or exposed. Settled recovery accepts only exact captured S1 or already-exact
+  returned S2; lease-expired pending accepts only its exact captured session/
+  empty predecessor or already-exact S2. Same-session-ID S2 is valid.
+- Forced recovery reconciliation may remove session, companion, or same-
+  principal cache state only from a non-null exact displaced snapshot; principal
+  equality alone is never cleanup authority. Recovery-owned S2 remains
+  maintenance-only until exact adoption succeeds.
 - The local guard contains only store version, principal-keyed monotonic
   revision/state, Auth subject ID, optional explicitly adopted Auth session ID,
   and pending predecessor state/session ID. Never store or expose a token,
@@ -126,7 +142,8 @@ NativeWind, Supabase JS/Auth/Functions 2.112.0, Supabase Edge Functions on Deno
 - Keep implementation, correction, commit, push, exact-head CI, deployment,
   hosted configuration, destructive staging proof, acceptance, readiness,
   merge, and production as separate gates. The current authorization covers
-  only the local non-destructive correction pass.
+  only this planning revision; product/test remediation requires a later
+  explicit authorization after human plan approval.
 - Re-read `AGENTS.md`, this plan, the human-reviewed revised spec,
   `docs/notes/handoff.md`, Task 19, and the two accepted account-deletion ADRs
   before edits.
@@ -166,10 +183,10 @@ NativeWind, Supabase JS/Auth/Functions 2.112.0, Supabase Edge Functions on Deno
 | `supabase/functions/delete-current-user/deno.json`, `deno.lock` | Pinned Deno dependencies/tooling |
 | `supabase/config.toml` | Explicit gateway JWT verification |
 | `package.json`, `tsconfig.json`, `eslint.config.js`, Database CI | Deno lane and narrow Expo-tool exclusion |
-| `src/features/auth/types.ts`, `errors.ts`, `api.ts`, `deletion.api.ts` | Token-free outcomes, guarded explicit sign-in/bootstrap cleanup, internal reauth/invoke boundary |
-| `src/features/auth/AuthProvider.tsx` | Principal binding, race arbitration, local settlement |
+| `src/features/auth/types.ts`, `errors.ts`, `api.ts`, `deletion.api.ts` | Token-free outcomes, injected-key precedence, exact recovery-predecessor capture/adoption, guarded explicit sign-in/bootstrap cleanup, internal reauth/invoke boundary |
+| `src/features/auth/AuthProvider.tsx` | Principal binding, lock-before-arm sequencing, recovery-event authority, exact-displacement reconciliation, local settlement |
 | `src/lib/supabase/authCoordination.ts` | Native/web non-stealing Auth-operation and storage locks |
-| `src/lib/supabase/authStorage.ts` | Locked adapter, preparing/pending/settled guard, exact cleanup, fresh-session adoption |
+| `src/lib/supabase/authStorage.ts` | Locked adapter, preparing/pending/settled guard, exact cleanup, settled/expired-pending predecessor capture, exact S2 adoption |
 | `src/lib/supabase/createClient.ts`, `client.ts` | Stable storage key, isolated Auth/Functions factories, provider access |
 | `src/lib/query/userScopedCache.ts` | Complete user-root cleanup plus deletion-safe principal-specific cleanup |
 | `src/lib/query/keys.ts` | User-key shapes and accurate full-vs-principal cleanup ownership comment |
@@ -768,8 +785,10 @@ git commit -m "feat: add account deletion client contract"
 
 - Create: `src/features/auth/AuthProvider.deletion.test.tsx`
 - Modify: `src/features/auth/AuthProvider.tsx`
+- Modify: `src/features/auth/AuthProvider.test.tsx`
 - Modify: `src/features/auth/api.ts`
 - Modify: `src/features/auth/api.test.ts`
+- Modify: `src/features/auth/recovery.api.test.ts`
 - Modify: `src/features/auth/deletion.api.ts`
 - Modify: `src/features/auth/deletion.api.test.ts`
 - Create: `src/lib/supabase/authCoordination.ts`
@@ -890,10 +909,85 @@ export function isSessionBlockedByDeletionGuard(
   storageKey: string,
   session: Session,
 ): Promise<boolean>;
+
+type ExactStoredSessionSnapshot = {
+  principalId: string;
+  accessToken: string;
+  refreshToken: string;
+  sessionId: string;
+};
+
+type ExactRecoveryGuardSnapshot = {
+  principalId: string;
+  revision: number;
+  state: 'settled' | 'pending';
+  leaseExpiresAt: number;
+  allowedSessionId: string | null;
+  predecessor:
+    | null
+    | { state: 'settled'; allowedSessionId: string | null };
+};
+
+export type RecoveryAdoptionPredecessor =
+  | {
+      kind: 'settled-allowed';
+      guard: ExactRecoveryGuardSnapshot & {
+        state: 'settled';
+        allowedSessionId: string;
+      };
+      raw: { kind: 'session'; snapshot: ExactStoredSessionSnapshot };
+    }
+  | {
+      kind: 'expired-pending';
+      guard: ExactRecoveryGuardSnapshot & {
+        state: 'pending';
+        allowedSessionId: null;
+      };
+      raw:
+        | { kind: 'empty' }
+        | { kind: 'session'; snapshot: ExactStoredSessionSnapshot };
+    };
+
+export type RecoveryPredecessorCapture =
+  | RecoveryAdoptionPredecessor
+  | { kind: 'not-guarded' }
+  | { kind: 'guard-busy' }
+  | { kind: 'superseded' }
+  | { kind: 'unavailable' };
+
+export async function captureRecoveryAdoptionPredecessor(
+  storageKey: string,
+): Promise<RecoveryPredecessorCapture>;
+
 export async function adoptExplicitSessionAfterDeletionGuard(
   storageKey: string,
   session: Session,
-): Promise<'not-guarded' | 'adopted' | 'guard-busy'>;
+): Promise<
+  'not-guarded' | 'adopted' | 'guard-busy' | 'superseded' | 'unconfirmed'
+>;
+export async function adoptRecoverySessionAfterDeletionGuard(
+  storageKey: string,
+  predecessor: RecoveryAdoptionPredecessor,
+  returnedSession: Session,
+): Promise<'adopted' | 'guard-busy' | 'superseded' | 'unconfirmed'>;
+
+export type GuardedAuthStorageReconciliation =
+  | { kind: 'empty'; guardedPrincipalIds: string[] }
+  | { kind: 'unavailable' }
+  | {
+      kind: 'blocked';
+      principalId: string;
+      guardRevision: number;
+      guardState: 'preparing' | 'pending' | 'settled';
+    }
+  | {
+      kind: 'allowed-session';
+      principalId: string;
+      session: Session;
+      sessionId: string | null;
+      guardRevision: number | null;
+    };
+
 export async function replaceDisplacedSessionIfExact(
   storageKey: string,
   expectedDisplaced: Session,
@@ -905,21 +999,14 @@ export async function runSupabaseAuthOperation<T>(
 ): Promise<T>;
 export async function reconcileGuardedSignedOutEvent(
   storageKey: string,
-): Promise<
-  | { kind: 'empty' | 'blocked' | 'unavailable' }
-  | { kind: 'allowed-session'; principalId: string; session: Session }
->;
+): Promise<GuardedAuthStorageReconciliation>;
 export function subscribePrincipalDeletionGuardChanges(
   storageKey: string,
   onChange: () => void,
 ): () => void;
 export async function reconcileGuardedAuthStorage(
   storageKey: string,
-): Promise<
-  | { kind: 'empty' | 'unavailable' }
-  | { kind: 'blocked'; principalId: string }
-  | { kind: 'allowed-session'; principalId: string; session: Session }
->;
+): Promise<GuardedAuthStorageReconciliation>;
 
 export type ExactLocalSignOutResult =
   | { kind: 'signed-out' }
@@ -964,17 +1051,37 @@ type ActiveDeletionAttempt = {
   winnerVersion: number;
   winner: DeletionWinner | undefined;
 };
+
+type RecoveryDisplacement =
+  | {
+      kind: 'exact';
+      principalId: string;
+      session: Session;
+      sessionId: string;
+      guardRevision: number | null;
+    }
+  | { kind: 'unknown'; principalId: string | null };
+
+type GuardReconciliationRequest =
+  | { kind?: 'ordinary' }
+  | {
+      kind: 'forced-recovery';
+      displacement: RecoveryDisplacement;
+    };
 ```
 
-- [ ] **Step 1: Write failing storage, cache, and provider tests**
+- [ ] **Step 1: Write failing storage, recovery, cache, and provider tests**
 
-Create a new focused provider file instead of expanding the recovery suite.
+Keep deletion-only provider coverage in `AuthProvider.deletion.test.tsx`. Add
+recovery-arbitration regressions to the existing `AuthProvider.test.tsx` and
+`recovery.api.test.ts`; add raw transaction coverage to `authStorage.test.ts`.
 Use deferred promises and seed `accountKeys`, `ratingKeys`, and `catalogKeys`.
 Cover:
 
 ```ts
 const storageCases = [
   'derives the explicit key already used by Supabase for local and hosted URLs',
+  'uses explicit storageKey then injected client then public singleton precedence',
   'acquires the real lock asynchronously before reauthentication',
   'serializes adapter get set remove and guard transactions with one injected lock',
   'arms and readbacks preparing A guard before reauthentication',
@@ -1008,8 +1115,16 @@ const storageCases = [
   'disarms owned preparing or pending guard only for unchanged A after pre-revocation failure',
   'keeps guard armed when B supersedes A before disarm',
   'adopts only the exact session_id from a later explicit A sign-in',
-  'adopts only the exact session_id from a verified A recovery callback',
-  'does not adopt sign-in or recovery while the principal guard is pending',
+  'adopts the returned non-empty session_id from verified A recovery only through an exact predecessor',
+  'captures exact settled allowed S1 plus guard revision before recovery exchange',
+  'adopts settled S2 by replacing exact raw S1',
+  'accepts same-session-ID S2 when raw already equals exact returned S2 without a redundant primary write',
+  'preserves A2 C empty malformed blocked changed and unavailable settled authority',
+  'captures exact lease-expired-pending session and empty predecessors',
+  'adopts expired-pending S2 only while exact guard and raw predecessor remain current or raw is already exact S2',
+  'preserves changed malformed unavailable or newly blocked expired-pending authority',
+  'never persists the operation-local recovery predecessor in guard JSON',
+  'does not adopt sign-in or recovery while the guard is unexpired preparing or pending',
   'retains A guard when later B guard is armed',
   'deduplicates repeated guard updates for one principal without dropping others',
   'returns guard-busy for a concurrent same-principal pending attempt',
@@ -1030,11 +1145,21 @@ const coordinationCases = [
   'uses process-wide serialization on native',
   'uses non-stealing Web Locks without positive-timeout recovery',
   'keeps nested order Auth operation then storage',
-  'releases standalone storage arm before waiting on Auth operation',
+  'releases storage capability preflight before waiting on Auth operation',
+  'queues guard arm behind earlier Auth work and nests its storage transaction under Auth operation',
   'broadcasts one payload-free guard change across web contexts',
   'uses one process emitter for native providers',
   'requires Web Locks and BroadcastChannel before web guard arm',
   'delivers native guard changes asynchronously after caller revision capture',
+] as const;
+
+const recoveryApiCases = [
+  'keeps unguarded recovery on the existing exact post-SDK adoption path',
+  'captures predecessor before PKCE exchange and adopts only after exchange returns',
+  'captures predecessor before token setSession and adopts only after setSession returns',
+  'passes exact settled S1 and returned S2 to the serialized recovery adoption boundary',
+  'accepts returned S2 whose session ID equals S1 while exact snapshot bytes differ',
+  'returns superseded busy or unconfirmed without claiming recovery success',
 ] as const;
 
 const providerCases = [
@@ -1044,14 +1169,18 @@ const providerCases = [
   'preserves A and A cache after wrong password offline and pre-revocation failure',
   'settles A signed out for deleted retained-account and unconfirmed outcomes',
   'settles A without calling shared-client auth signOut',
-  'arms preparing before reauth and readbacks pending before invocation',
+  'arms preparing inside a short Auth-operation section before reauth',
+  'preserves A2 persisted by an already-running refresh after confirmed pre-revocation rollback',
+  'keeps post-arm A writes and events quarantined',
+  'handles preserved-winner and quarantine arm outcomes only after the short Auth lock releases',
+  'readbacks pending before invocation',
   'does not invoke when guard arm or readback fails',
   'keeps A quarantined after a crash-shaped pending restart',
   'ignores late TOKEN_REFRESHED A after local settlement',
   'preserves B when stale A getUser fails immediately before SDK removal',
   'preserves B when stale A refresh fails immediately before SDK removal',
   'reconciles sessionless SIGNED_OUT against guarded storage before authority',
-  'clears A state and only A cache in a second tab after settled guard change',
+  'clears A state and only A cache in a second tab after a blocked settled guard change with no matching allowed lineage',
   'restores exact allowed A in a second tab after pre-revocation disarm',
   'reconciles guard authority on mount signal and foreground',
   'returns from Auth callback before deferred reconciliation acquires Auth lock',
@@ -1080,8 +1209,15 @@ const providerCases = [
   'post-finalization reconciliation clears initiating A after stale or unconfirmed disarm',
   'offline bootstrap never publishes guarded residual A',
   'online invalid bootstrap cleanup preserves B arriving after validation',
-  'later explicit A sign-in adopts only its fresh session lineage',
-  'later verified A recovery adopts only its fresh session lineage',
+  'later explicit A sign-in adopts only its returned non-empty session lineage',
+  'later verified A recovery adopts returned S2 only through an exact predecessor',
+  'prefers injected storage key over configured public Supabase environment',
+  'keeps recovery-owned S2 maintenance-only until exact adoption succeeds',
+  'adopts settled S2 from raw exact S1 or already exact S2 without transient publication',
+  'preserves valid S1 and its principal cache when forced recovery has no exact displaced snapshot',
+  'validates and exact-rechecks unknown-displacement S1 before republishing it',
+  'preserves A2 C empty malformed blocked and unavailable authority without cleanup',
+  'handles exact lease-expired-pending session and empty predecessors without relabeling the server outcome',
   'rejects mismatched reauth B before changing any guard record',
   'does not publish residual B when B is blocked by its own guard',
   'waits for recovery reconciliation before deletion',
@@ -1089,6 +1225,37 @@ const providerCases = [
   'exposes no password bearer session or raw error through context',
 ] as const;
 ```
+
+Use a non-reentrant mock Auth lock and assert exact guard-arm choreography:
+
+```txt
+earlier Auth start
+storage capability preflight start/end
+earlier Auth persists exact A2 and ends
+arm Auth section enters at lock depth 1
+arm storage transaction enters/exits
+arm Auth section exits
+isolated reauthentication begins at lock depth 0
+```
+
+While `preparing` is active, attempt A3 storage/event publication and prove both
+are quarantined. Force a confirmed pre-revocation failure and assert no
+destructive request, exact-revision disarm, exact raw/readable A2, signed-in A,
+retained A cache, and zero shared-sign-out calls. Exercise `preserved-winner`
+and `quarantine-unconfirmed` arm results and assert their provider reconciliation
+starts only at Auth-lock depth 0; the non-reentrant lock must fail any accidental
+depth-2 acquisition.
+
+For recovery, assert exact call order `capture predecessor -> PKCE exchange or
+token setSession -> adopt(predecessor, S2)`. Table-drive settled raw S1, already-
+exact S2, same-session-ID S2, A2, C, empty, malformed, blocked, changed guard,
+and unavailable storage. Separately table-drive lease-expired-pending captured
+session, captured empty, already-exact S2, changed, malformed, unavailable, and
+newly blocked states. Each non-success case must prove zero primary/guard/
+companion mutation. Force an `unknown` displacement with valid allowed S1 and
+assert exact S1 remains stored, is isolated-validated/rechecked, is republished
+as signed-in A with idle recovery, retains A cache, and never publishes a
+signed-out or recovery-verified intermediate state.
 
 Extend `userScopedCache.test.ts` with exact cases proving that A-only cleanup:
 
@@ -1118,14 +1285,18 @@ npm test -- --runInBand \
   src/lib/supabase/authStorage.test.ts \
   src/lib/supabase/client.test.ts \
   src/features/auth/api.test.ts \
+  src/features/auth/recovery.api.test.ts \
   src/features/auth/deletion.api.test.ts \
   src/features/auth/AuthProvider.deletion.test.tsx \
+  src/features/auth/AuthProvider.test.tsx \
   src/lib/query/userScopedCache.test.ts
 ```
 
-Expected: FAIL in executed assertions for absent principal-bound removal,
-absent `deleteAccount`, and retained A query state. Correct only compile/setup
-failures until those named behavioral assertions execute and fail.
+Expected: FAIL in executed assertions because provider resolution selects the
+ambient key, guard arm enters before the earlier Auth operation drains, settled
+S1 recovery does not adopt exact S2, and unknown displacement removes or signs
+out valid S1. Correct only compile/setup failures until those named behavioral
+assertions execute and fail.
 
 - [ ] **Step 3: Implement the locked two-phase deletion guard**
 
@@ -1140,13 +1311,15 @@ Lock request and reject before reauthentication if acquisition is unavailable.
 
 Add a distinct non-stealing Auth-operation lock and pass it to pinned Auth JS
 as `auth.lock` with `lockAcquireTimeout: -1`. `runSupabaseAuthOperation` uses
-the exact SDK name `lock:${storageKey}`. Deletion holds it from the final
-post-reauthentication check through pending transition, server result, guard
-transition/disarm, and local settlement.
-The storage lock has a different name; every combined path acquires
-`Auth operation -> storage` and never reverses that order. Standalone guard arm
-acquires/releases storage before waiting on Auth operation; it never holds both
-in reverse order.
+the exact SDK name `lock:${storageKey}`. Deletion uses it in two bounded
+critical sections. After storage capability preflight completes and releases
+storage, the first section acquires `Auth operation -> storage` for guard arm
+and readback, so earlier SDK Auth work settles before arm. That section returns
+the arm result and releases before provider reconciliation or isolated
+reauthentication. The second section begins at the final post-reauthentication
+check and covers pending transition, server result, guard transition/disarm,
+and local settlement. Every combined path uses `Auth operation -> storage`; no
+path waits for Auth operation while holding storage.
 
 Derive and explicitly pass the exact SDK-compatible key:
 
@@ -1161,6 +1334,21 @@ export function deriveSupabaseAuthStorageKey(supabaseUrl: string): string {
 the singleton. `createAppSupabaseClient` passes that key as `auth.storageKey`;
 the value is identical to the existing SDK default, so no migration or forced
 sign-out occurs.
+
+Provider resolution is injection-first:
+
+```ts
+function resolveProviderStorageKey(
+  clientProp: AppSupabaseClient | null | undefined,
+): string {
+  if (clientProp !== undefined) return 'sb-injected-auth-token';
+  return getSupabaseAuthStorageKey();
+}
+```
+
+Auth API uses the equivalent precedence: `options.storageKey`, then the
+injected-client key, then the singleton key. Ambient public environment never
+overrides injection.
 
 Use `${storageKey}-eazy-review-deletion-guard` for a local JSON record:
 
@@ -1196,25 +1384,24 @@ same lock:
 
 - `getItem`: return `null` for guarded A unless its `session_id` equals
   `allowedSessionId`; return B/allowed A unchanged;
-- `setItem`: no-op for blocked A, including a refresh that began before guard
-  arm; allow B/allowed A; and
+- `setItem`: no-op for blocked A writes that reach the adapter after guard arm,
+  including SDK methods that do not participate in the shared Auth-operation
+  lock; allow B/allowed A; and
 - `removeItem`: while any guard record exists, deny direct SDK removal of the
   primary session and companion user slot. Application-owned exact transactions
   use the raw store under lock; unrelated PKCE-key cleanup remains independent.
 
-`armPrincipalDeletionGuard` runs before waiting on the Auth-operation lock or
-isolated reauthentication. It acquires/releases only the storage lock, requires
-stored A, and writes a
-leased `preparing` guard with no allowed session, reads it back, and returns `armed` plus
-its monotonic revision only after exact readback. An unexpired preparing/pending
-A returns `guard-busy`. A prior settled A becomes the saved predecessor; disarm restores
-that state instead of deleting the record. Stored B returns `preserved-winner`
-only when B's own guard allows its session; blocked B returns
-`preserved-guarded`. Missing/malformed
-storage or a failure before marker write returns `unavailable`. If marker write
-was attempted but commit/readback cannot be proved, return
-`quarantine-unconfirmed`, clear the in-memory healthy-A presentation, and await
-the next guarded read. Neither failure permits the Edge call.
+After the separate storage capability preflight has completed and released,
+`armPrincipalDeletionGuard` runs inside the short Auth-operation critical
+section and before isolated reauthentication. It nests only the storage lock,
+reads the latest authority after earlier Auth work has drained, requires stored
+A, writes and exactly reads back a leased `preparing` guard, and returns its
+operation-local result. Provider reconciliation and arm-result settlement run
+only after the Auth-operation lock releases. An unexpired preparing/pending A
+returns `guard-busy`; prior settled, preserved-winner, preserved-guarded,
+unavailable, and quarantine-unconfirmed behavior remains unchanged. Neither a
+failed/unconfirmed arm nor an arm result other than `armed` permits the Edge
+call.
 
 After isolated reauthentication and the final winner check,
 `markPrincipalDeletionDispatched` changes the exact revision from `preparing`
@@ -1227,7 +1414,10 @@ revision equals this attempt. Failure leaves `pending` equally blocking.
 pre-revocation failure, restores the saved predecessor with a newly advanced
 revision; it removes the record only when no predecessor existed and unchanged
 A remains with no winner. A stale revision is a no-op. It keeps the guard when B
-is stored. A failed disarm is a safe local quarantine.
+is stored. A failed disarm is a safe local quarantine. Arm waits for earlier
+Auth work, so a refresh-held A1 may first persist exact A2; disarm mutates only
+the owned guard revision and leaves A2 raw/readable while A remains
+authoritative.
 
 Preflight rolls back an expired `preparing` record to its predecessor because
 dispatch was never authorized. An unexpired `preparing`/`pending` returns
@@ -1278,17 +1468,43 @@ call fails; this matches current local intent without touching another
 principal. Return `superseded` when the exact snapshot changed. Log only fixed
 outcome labels, never the remote error.
 
-`adoptExplicitSessionAfterDeletionGuard` supports a later human sign-in,
-or verified Task 18 recovery callback for retained A. The Auth API privately
-passes the returned session; inside the
-lock, store its exact `session_id` as allowed and persist that exact session.
-Future refreshes with the same session ID are allowed; stale A lineages remain
-blocked. An unexpired preparing/pending record returns `guard-busy` without
-changing storage; settled or lease-expired pending may adopt. Sign-in/recovery map `guard-busy` to fixed safe
-in-progress handling and do not publish success. Public Auth/callback results
-remain token/session-free. Adoption of lease-expired pending changes the local
-record to `settled`, allocates a new store-wide revision, and thereby makes the
-old attempt revision stale without claiming the prior server result was resolved.
+`adoptExplicitSessionAfterDeletionGuard` retains the exact later-human-sign-in
+path. Verified Task 18 recovery uses the separate predecessor-bound functions.
+Before the unabortable exchange, call
+`captureRecoveryAdoptionPredecessor(storageKey)` under storage. A usable capture
+is either exact guard-allowed settled S1 plus guard revision or exact lease-
+expired pending guard plus raw same-principal session/empty state. Keep the
+capture operation-local; never serialize it into guard JSON, React/context,
+logs, evidence, or a public callback result.
+
+Capture classifies `settled-allowed` only when guard principal matches raw S1
+and non-null `allowedSessionId === raw.sessionId`. It classifies
+`expired-pending` only when the matching guard is pending, has null allowed
+lineage, and `leaseExpiresAt <= now()` at capture. `not-guarded` continues the
+existing recovery flow: complete the SDK exchange, then call
+`adoptExplicitSessionAfterDeletionGuard(storageKey, S2)` for the exact post-SDK
+authority check. Only `settled-allowed` and `expired-pending` call
+`adoptRecoverySessionAfterDeletionGuard`. `guard-busy`, `superseded`, and
+`unavailable` stop before exchange with fixed safe non-success handling and
+never claim recovery success.
+
+After the callback SDK writer releases, pass the capture and returned S2 to
+`adoptRecoverySessionAfterDeletionGuard` under the provider writer FIFO and
+`Auth operation -> storage`. S2 must have the same subject and a non-empty
+session ID, but that ID may equal S1's. Settled adoption succeeds only when the
+guard remains exact and raw storage is exact captured S1 or already exact
+returned S2. Lease-expired-pending adoption succeeds only when its exact guard
+and captured session/empty raw state remain current, or raw is already exact
+S2. Every success allocates a new settled revision, allows S2, writes S2 only
+when needed, exact-readbacks guard plus primary storage, and emits the payload-
+free signal.
+
+Any nonmatching A2/C/empty/malformed/newly-blocked/changed/unavailable settled
+state, or changed/malformed/unavailable/newly-blocked expired-pending state,
+returns `superseded`, `guard-busy`, or `unconfirmed` without guard/session
+mutation. An unexpired preparing/pending record remains `guard-busy`. Public
+Auth/callback results stay token/session-free, stale lineages stay blocked, and
+adoption never resolves or relabels an older pending server outcome.
 
 `isSessionBlockedByDeletionGuard` reads the guard under the lock before the
 provider applies an Auth event. This prevents a quarantined
@@ -1307,8 +1523,9 @@ unsubscribe function.
 notification, and foreground. `reconcileGuardedAuthStorage` rereads exact guard
 and raw storage: clear only a displayed blocked/removed principal and its Query
 keys, or isolate-validate plus exact-recheck an allowed session before applying
-it. A disarm can therefore restore a predecessor in other tabs, while pending/
-settled A clears stale A UI/cache everywhere.
+it. A disarm can therefore restore a predecessor in other tabs. Pending or
+mismatched settled A clears blocked A UI/cache; exact guard-allowed settled S1
+is isolate-validated and exact-rechecked before publication.
 
 For sessionless `SIGNED_OUT` while guards exist,
 `reconcileGuardedSignedOutEvent` rereads raw storage under the lock. Empty means
@@ -1388,6 +1605,7 @@ moving their existing state/cache settlement into the critical section:
 ```txt
 signInWithPassword
 signUpWithPassword
+adoptRecoverySessionAfterDeletionGuard exact classified-predecessor transaction
 reconcileSupersededRecovery exact displaced-A CAS
 ```
 
@@ -1397,11 +1615,16 @@ write and reconciles the already-stored raw winner.
 Bounded implementation ruling (2026-08-21): keep the
 full unabortable `processAuthCallbackUrl` exchange outside this FIFO because
 wrapping it reproduced the accepted Task 18 recovery/explicit-auth cross-wait
-deadlock. After the SDK writer releases, adoption must reacquire
-`Auth operation -> storage` and exact-match principal, access token, refresh
-token, and `session_id` even when no deletion-guard record exists. B/C,
-same-principal newer authority, signed-out/empty storage, malformed storage,
-or a missing session ID cannot report callback success.
+deadlock. Capture the guarded recovery predecessor under storage before the
+exchange. After the SDK callback releases its Auth lock, enter the provider
+FIFO and `Auth operation -> storage`. Settled adoption accepts only unchanged
+guard plus raw exact S1 or already exact returned S2; lease-expired pending
+accepts only its exact classified predecessor or already exact S2. Same-session-
+ID S2 is supported. No recovery-owned S2 event may publish before transaction
+success. Every non-success outcome stays token-free and cannot claim recovery
+success. A `not-guarded` capture keeps Task 18's existing exchange plus exact
+post-SDK `adoptExplicitSessionAfterDeletionGuard` path; do not force ordinary
+recovery through the guarded-predecessor transaction.
 
 `reconcileSupersededRecovery` isolate-validates B, enters the provider FIFO and
 `Auth operation -> storage`, then may replace only the exact, guard-allowed
@@ -1419,14 +1642,16 @@ recovery callback adoption commit a fresh guarded session when needed; do not
 otherwise redesign bootstrap or Task 18 update-password behavior.
 
 Configure the shared client with the Step 3 non-stealing Auth-operation lock.
-The deletion operation arms first, performs isolated reauthentication without
-holding the shared lock, then calls `runSupabaseAuthOperation(storageKey, ...)`
-around the final winner/revision/raw-storage check, pending transition, one server
-invocation, guard transition/disarm, and guarded primary cleanup. Restoration
-of B/C after release performs no SDK write: it reconciles raw storage, validates
-that exact session in isolation, and exact-rechecks before publication. Ordinary
-sign-out and recovery cleanup use the isolated token-pinned/exact-remove
-boundary, not shared Auth sign-out.
+Deletion completes storage capability preflight, runs guard arm inside one
+short `runSupabaseAuthOperation(storageKey, ...)` section, handles the returned
+arm result after release, and performs isolated reauthentication without the
+shared lock. It then reacquires the Auth-operation lock around the final winner/
+revision/raw-storage check, pending transition, one server invocation, guard
+transition/disarm, and guarded primary cleanup. Restoration of B/C after
+release performs no SDK write: it reconciles raw storage, validates that exact
+session in isolation, and exact-rechecks before publication. Ordinary sign-out
+and recovery cleanup use the isolated token-pinned/exact-remove boundary, not
+shared Auth sign-out.
 If ordinary sign-out returns token-free `superseded`, AuthProvider preserves the
 replacement principal and skips signed-out publication/broad cache cleanup.
 The storage transaction that changes `preparing` to `pending` must still find
@@ -1469,12 +1694,13 @@ acquire `Auth operation -> storage`, reconcile, and apply ordinary Auth logic in
 this order:
 
 ```ts
+const storageKey = resolveProviderStorageKey(clientProp);
 let classifiedEvent = event;
 let classifiedSession = session;
 
 if (event === 'SIGNED_OUT') {
   const stored = await reconcileGuardedSignedOutEvent(
-    getSupabaseAuthStorageKey(),
+    storageKey,
   );
   if (stored.kind === 'allowed-session') {
     classifiedEvent = 'SIGNED_IN';
@@ -1487,7 +1713,7 @@ if (event === 'SIGNED_OUT') {
 if (
   classifiedSession != null &&
   (await isSessionBlockedByDeletionGuard(
-    getSupabaseAuthStorageKey(),
+    storageKey,
     classifiedSession,
   ))
 ) {
@@ -1528,11 +1754,29 @@ A-settlement `SIGNED_OUT` marker because principal-bound storage removal emits
 no SDK event. Feed `classifiedEvent`/`classifiedSession`—not the original
 sessionless event—into the ordinary listener path after classification.
 
+While a recovery generation is active, record recovery-owned S2 events as
+maintenance only. Do not update `latestAuthPrincipalRef`, React user/status,
+cache ownership, or recovery success from that event. Exact adoption and its
+post-write reconciliation own publication. Use this same resolved `storageKey`
+for recovery predecessor capture/adoption, guard signals, mount/foreground, and
+forced reconciliation; never re-derive from ambient environment.
+
+For `GuardReconciliationRequest.kind === 'forced-recovery'`, an `exact`
+displacement may call exact removal only after current principal/access/
+refresh/session-ID/guard revision matches that displacement. An `unknown`
+displacement never calls primary/companion removal or purges the same-principal
+cache. It reconciles current raw authority: allowed S1 is isolate-validated and
+exact-rechecked before publication; blocked/unavailable remains quarantined;
+A2/C/empty/malformed authority is preserved according to its current
+classification.
+
 Add one provider effect that subscribes to the payload-free guard channel,
 runs reconciliation on mount, and reruns when AppState/visibility returns to
 foreground by enqueueing on the same tail. Generation-check every completion.
-Blocked/empty clears only the displayed principal's cache/recovery/UI; allowed
-exact session uses isolated validation plus post-await storage/guard recheck.
+For ordinary reconciliation, blocked/empty clears only the displayed
+principal's cache/recovery/UI; allowed exact session uses isolated validation
+plus post-await storage/guard recheck. Forced recovery follows the exact/
+unknown displacement rule below and never inherits ordinary cleanup authority.
 
 Exempt only the initiating provider whose active attempt principal and exact
 `guardRevision` match the current `preparing`/`pending` record; it retains A's
@@ -1549,19 +1793,27 @@ and a non-empty `user.email`. Before password reauthentication, await
 `account-deletion-in-progress`, while lock-request rejection uses fixed
 `account-deletion-failed`. Neither performs an Auth or Functions call.
 
-Capture A/generation and arm/readback standalone `preparing` A, store the
-returned `guardRevision`, then perform isolated reauthentication without the
-shared lock. The isolated reauthentication accepts
-`expectedPrincipalId: A`, emits no shared Auth event/write, and returns only the
-token-free user plus operation-local bearer.
+Capture A/generation, then run the arm as:
 
-If a winner appears during isolated reauthentication, do not invoke; acquire
-the Auth-operation lock only to disarm/preserve quarantine by exact revision,
-then reconcile after release and return `superseded`. Otherwise acquire it for
-the final revision/winner check, pending transition, server call, and settlement.
+```ts
+const arm = await runSupabaseAuthOperation(storageKey, () =>
+  armPrincipalDeletionGuard(storageKey, A),
+);
+```
 
-For guard arm,
-`preserved-winner` is installed/reconciled after release;
+The callback only returns the arm result; store its revision and handle
+preserved/quarantine outcomes after the short Auth-operation section releases.
+Only `armed` permits isolated reauthentication, which runs without the shared
+lock. The isolated reauthentication accepts `expectedPrincipalId: A`, emits no
+shared Auth event/write, and returns only the token-free user plus operation-
+local bearer.
+
+If a winner appears during isolated reauthentication, do not invoke; reacquire
+the Auth-operation lock to disarm/preserve quarantine by exact revision, then
+reconcile after release and return `superseded`. Otherwise reacquire it for the
+final revision/winner check, pending transition, server call, and settlement.
+
+For guard arm, `preserved-winner` is installed/reconciled after release;
 `preserved-guarded` publishes no principal; `guard-busy` returns
 `account-deletion-in-progress`; `unavailable` rejects as a fixed
 pre-revocation failure; and `quarantine-unconfirmed` publishes the signed-out
@@ -1641,6 +1893,13 @@ guard reconciliation, so A cannot remain visually signed in. Every
 destructive/ambiguous outcome settles A locally, returning its original kind
 only if A still owns local state; otherwise return `superseded`.
 
+If an earlier refresh held the Auth lock with raw A1, arm must wait until that
+refresh persists exact A2. A confirmed pre-revocation failure then disarms only
+the exact guard revision: raw/readable storage remains exact A2, signed-in A and
+A's principal cache remain, no destructive request runs, and no shared sign-out
+is called. Any later A3 write/event reaching storage after arm stays
+quarantined.
+
 - [ ] **Step 9: Publish the context method and safely finalize**
 
 Add `deleteAccount` to `AuthContextValue`, `useMemo`, and dependencies. In
@@ -1649,13 +1908,20 @@ generation, then settle the explicit auth-operation promise. Any stale/
 unconfirmed pending transition/disarm queues one post-finalization reconciliation
 after that clear; do not rely on self-delivered guard notification.
 
-- [ ] **Step 10: Run storage, deletion, and existing auth/cache regressions**
+- [ ] **Step 10: Remove diagnostic labels and run auth/storage/cache regressions**
+
+After the new configured-environment/injected-client regression proves the
+corrected path, remove every temporary `[AuthRecoveryStage]` label added by
+diagnostic head `b843dc8`. Add no replacement session-bearing diagnostic.
 
 ```bash
+! rg -n 'AuthRecoveryStage' src/features/auth/AuthProvider.tsx
 npm test -- --runInBand \
+  src/lib/supabase/authCoordination.test.ts \
   src/lib/supabase/authStorage.test.ts \
   src/lib/supabase/client.test.ts \
   src/features/auth/api.test.ts \
+  src/features/auth/recovery.api.test.ts \
   src/features/auth/deletion.api.test.ts \
   src/features/auth/AuthProvider.deletion.test.tsx \
   src/features/auth/AuthProvider.test.tsx \
@@ -1665,19 +1931,23 @@ npm run typecheck
 npm run lint
 ```
 
-Expected: PASS, including Task 16–18 recovery, ordinary sign-out, explicit
-storage-key compatibility, guarded offline bootstrap, exact invalid-session
-cleanup, late-refresh rejection, fresh-session adoption, A->B cache isolation,
-B-before-event preservation, B->signed-out, B->C, and zero shared-sign-out calls
-during deletion settlement, ordinary local sign-out, recovery cleanup, or
-definitive-invalid bootstrap cleanup.
+Expected: PASS, including Task 16–18 recovery, injected-key precedence under
+configured public environment, guard-arm-after-refresh A2 rollback, settled and
+expired-pending exact predecessor adoption, same-session-ID/raw-exact-S2,
+unknown-displacement no-cleanup/cache preservation, maintenance-only S2 events,
+ordinary sign-out, guarded offline bootstrap, exact invalid-session cleanup,
+A->B cache isolation, B-before-event preservation, B->signed-out, B->C, and
+zero shared-sign-out calls during deletion settlement, ordinary local sign-out,
+recovery cleanup, or definitive-invalid bootstrap cleanup.
 
 - [ ] **Step 11: Commit checkpoint, only when authorized**
 
 ```bash
 git add src/features/auth/AuthProvider.tsx \
   src/features/auth/AuthProvider.deletion.test.tsx \
+  src/features/auth/AuthProvider.test.tsx \
   src/features/auth/api.ts src/features/auth/api.test.ts \
+  src/features/auth/recovery.api.test.ts \
   src/features/auth/deletion.api.ts src/features/auth/deletion.api.test.ts \
   src/lib/supabase/authCoordination.ts \
   src/lib/supabase/authCoordination.test.ts \
@@ -2066,6 +2336,14 @@ no access/refresh token, email, password, profile, rating, note, or provider
 response. Do not describe it as server retention or claim physical storage
 cleanup when only quarantine is proved.
 
+Document storage-key precedence (`storageKey` -> injected client -> singleton
+environment), the short Auth-lock-before-arm section, settled-allowed and
+expired-pending recovery predecessor classifications, raw-exact-S1/already-
+exact-S2 success, same-session-ID S2, maintenance-only recovery events, and the
+prohibition on unknown-snapshot session/companion/cache cleanup. Record that
+predecessor snapshots remain operation-local and absent from guard metadata,
+context, logs, and evidence.
+
 Document the payload-free web/native guard-change signal and mount/foreground
 reconciliation. The channel contains only fixed version/change labels; no
 principal, session, token, or outcome. Record the deferred Auth-event tail,
@@ -2084,6 +2362,8 @@ two catalog-only FK assertions and no migration in DATA_MODEL. Require honest
 partial/ambiguous handling and no destructive retry in RELEASE_CHECKLIST.
 Update SECURITY and its mirror with guard data minimization, guarded offline
 bootstrap, exact-session invalid cleanup, and the no-shared-sign-out rule.
+Include no-transient-S2 publication and exact-displacement-only cleanup as Auth
+authority invariants.
 Update Task 18/Flow 5 mechanism text from automatic shared `SIGNED_OUT` cleanup
 to isolated exact-bearer validation/revoke plus exact-session removal. Preserve
 Task 18's accepted status and evidence; this does not reopen its product gate.
@@ -2101,6 +2381,11 @@ Separate rows for:
 Mocked Edge Function tests
 Principal-bound Auth-storage race tests
 Preparing/pending/settled guard, offline bootstrap, and late Auth proof
+Injected-client key precedence under configured public environment
+Settled S1-to-S2 and same-session-ID/raw-exact-S2 recovery proof
+Lease-expired-pending exact predecessor proof
+Unknown-displacement no-session/no-cache-cleanup proof
+Recovery-owned S2 no-transient-publication proof
 Two-context guard notification, cache isolation, and foreground reconciliation
 Client/provider/UI Jest
 Read-only FK metadata proof
@@ -2155,8 +2440,10 @@ node scripts/check-agent-infrastructure.cjs --report \
   src/features/auth/errors.test.ts \
   src/features/auth/api.ts src/features/auth/deletion.api.ts \
   src/features/auth/AuthProvider.tsx \
-  src/features/auth/api.test.ts src/features/auth/deletion.api.test.ts \
+  src/features/auth/api.test.ts src/features/auth/recovery.api.test.ts \
+  src/features/auth/deletion.api.test.ts \
   src/features/auth/AuthProvider.deletion.test.tsx \
+  src/features/auth/AuthProvider.test.tsx \
   src/lib/supabase/authCoordination.ts \
   src/lib/supabase/authCoordination.test.ts \
   src/lib/supabase/authStorage.ts src/lib/supabase/createClient.ts \
@@ -2211,6 +2498,7 @@ npm test -- --runInBand \
   src/lib/supabase/authStorage.test.ts \
   src/lib/supabase/client.test.ts \
   src/features/auth/api.test.ts \
+  src/features/auth/recovery.api.test.ts \
   src/features/auth/deletion.api.test.ts \
   src/features/auth/AuthProvider.deletion.test.tsx \
   src/features/auth/AuthProvider.test.tsx \
@@ -2301,8 +2589,11 @@ separate authorization after exact-head review.
 Dispatch one read-only reviewer for spec/plan compliance, authority, secret
 isolation, no-retry behavior, the principal-bound storage transaction,
 B-before-event/B-between-compare-remove races, refresh-after-final-read,
-pending-restart/offline bootstrap, fresh-session adoption,
-A/B/signed-out/C arbitration, and deletion-first simplification;
+pending-restart/offline bootstrap, injection-first storage identity,
+Auth-lock-before-arm/A2 rollback, settled and expired-pending exact recovery
+predecessors, same-session-ID/raw-exact-S2 adoption, unknown-displacement no-
+cleanup, maintenance-only S2 publication, A/B/signed-out/C arbitration, and
+deletion-first simplification;
 one read-only verifier for final commands; and a security review before any
 deployment request. Remediate only validated findings in a stated scope.
 
@@ -2321,6 +2612,10 @@ a fresh session for the next authorized gate.
 | Password reauthentication and bearer binding | Tasks 2–3 |
 | Versioned latest-winner arbitration and Auth writer fence | Task 3 |
 | Shared Auth-operation lock, revision-bound guard, late write/removal blocking, isolated exact Auth APIs, and bootstrap quarantine | Tasks 2–3 |
+| Explicit/injected/singleton Auth storage-key precedence | Task 3 Steps 1, 3, 6; Task 7 |
+| Auth-lock-before-arm sequencing and A2-preserving rollback | Task 3 Steps 1, 3, 5, 7–8; Task 7 |
+| Settled and expired-pending exact recovery predecessors, same-session-ID S2, and raw S1/exact-S2 adoption | Task 3 Steps 1, 3, 5–6; Task 7 |
+| Unknown-displacement no-cleanup/cache preservation and maintenance-only S2 events | Task 3 Steps 1, 4, 6; Task 7 |
 | Principal-specific A cleanup and newer-principal cache preservation | Task 3 |
 | Public provider outcome and local settlement | Tasks 2–3 |
 | Inline Account UX and exact copy | Tasks 4–5 |
@@ -2354,9 +2649,20 @@ Stop for a separate decision if:
   cannot reconcile exact stored authority;
 - participating contexts cannot receive payload-free guard changes or reconcile
   missed changes on mount/foreground without exposing identity/session data;
-- the preparing/pending/settled local guard cannot be persisted/read back before dispatch,
-  cannot block late A writes/events and offline publication, or cannot adopt an
-  explicitly fresh session ID without exposing session material;
+- Auth API/provider cannot preserve `storageKey -> injected client -> singleton
+  environment` precedence;
+- guard arm cannot drain earlier Auth work under `Auth operation -> storage`
+  without holding storage while waiting or reconciling inside the held Auth
+  lock;
+- guarded recovery cannot capture an exact settled or lease-expired-pending
+  predecessor before exchange, accept same-session-ID S2 from raw exact S1/
+  already-exact S2, or preserve every nonmatching A2/C/empty/malformed/blocked
+  authority;
+- recovery-owned S2 cannot remain unpublished until exact adoption succeeds;
+- forced recovery reconciliation cannot forbid session, companion, and same-
+  principal cache cleanup when the displaced snapshot is unknown;
+- the exact predecessor cannot remain operation-local and absent from
+  persisted/public/logged state;
 - finite external Auth transitions cannot converge on the latest observed
   winner without publishing an older snapshot;
 - hosted JWT expiry exceeds 3,600 seconds;

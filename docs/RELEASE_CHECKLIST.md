@@ -87,9 +87,14 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
   uncertain deletion.
 - Retained-account and ambiguous outcomes sign A out locally without claiming
   deletion. Storage/readback uncertainty remains quarantined; a newer B/C and
-  its cache are preserved. Offline relaunch, late refresh/write/removal, false
-  `SIGNED_OUT`, missed notification/foreground, and fresh-session adoption
-  guard cases have exact non-destructive proof before staging.
+  its cache are preserved. Non-destructive proof covers injected storage-key
+  precedence under ambient public configuration, guard arm waiting behind an
+  earlier refresh with A2-preserving rollback, offline relaunch, late refresh/
+  write/removal, false `SIGNED_OUT`, and missed notification/foreground.
+- Guarded recovery proof covers exact settled and lease-expired-pending
+  predecessors, same-session-ID/already-exact S2, no transient S2 publication,
+  and no session/companion/same-principal-cache cleanup from unknown
+  displacement before staging.
 - Human-run deletion evidence covers a second pre-existing session failing to
   refresh, deleted credentials failing to sign in, profile/rating cascades,
   correct retained Community aggregates, local cache cleanup, and the

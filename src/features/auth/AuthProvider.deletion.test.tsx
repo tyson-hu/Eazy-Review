@@ -87,7 +87,9 @@ jest.mock('@/src/lib/supabase/client', () => {
   );
   return {
     ...actual,
-    getSupabaseAuthStorageKey: jest.fn(() => 'sb-test-auth-token'),
+    getSupabaseAuthStorageKey: jest.fn(
+      () => 'sb-configured-public-auth-token',
+    ),
   };
 });
 
@@ -356,6 +358,41 @@ describe('AuthProvider guarded account deletion', () => {
     await harness.rendered.cleanup();
   });
 
+  it('arms inside a short Auth-operation section and reauthenticates after release', async () => {
+    const armDepths: number[] = [];
+    const reauthenticationDepths: number[] = [];
+    mockArm.mockImplementationOnce(async () => {
+      armDepths.push(mockAuthOperationDepth);
+      return { kind: 'armed', guardRevision: 1 };
+    });
+    mockReauthenticate.mockImplementationOnce(async () => {
+      reauthenticationDepths.push(mockAuthOperationDepth);
+      return {
+        user: { id: 'principal-a', email: 'principal-a-email-label' },
+        accessToken: 'fresh-access-token-a',
+      };
+    });
+    const harness = await renderSignedIn();
+    const method = deletionMethod(harness.authRef.current);
+    if (!method) throw new Error('deleteAccount is missing');
+
+    await expect(invokeInAct(() => method('password-a'))).resolves.toEqual({
+      kind: 'deleted',
+    });
+
+    expect(armDepths).toEqual([1]);
+    expect(reauthenticationDepths).toEqual([0]);
+    expect(mockPreflight).toHaveBeenCalledWith(
+      'sb-injected-auth-token',
+      'principal-a',
+    );
+    expect(mockArm).toHaveBeenCalledWith(
+      'sb-injected-auth-token',
+      'principal-a',
+    );
+    await harness.rendered.cleanup();
+  });
+
   it('fails before reauthentication or dispatch when coordination preflight is unavailable', async () => {
     mockPreflight.mockRejectedValueOnce(new Error('coordination unavailable'));
     const harness = await renderSignedIn();
@@ -398,7 +435,7 @@ describe('AuthProvider guarded account deletion', () => {
       code: 'account-deletion-failed',
     });
     expect(mockDisarm).toHaveBeenCalledWith(
-      'sb-test-auth-token',
+      'sb-injected-auth-token',
       'principal-a',
       1,
     );
@@ -427,7 +464,7 @@ describe('AuthProvider guarded account deletion', () => {
       code: 'account-deletion-failed',
     });
     expect(mockDisarm).toHaveBeenCalledWith(
-      'sb-test-auth-token',
+      'sb-injected-auth-token',
       'principal-a',
       1,
     );
@@ -761,6 +798,10 @@ describe('AuthProvider guarded account deletion', () => {
       expect(harness.rendered.getByTestId('auth-probe').props.children).toContain(
         'signed-in|principal-b',
       ),
+    );
+    expect(mockReconcile).toHaveBeenCalledWith('sb-injected-auth-token');
+    expect(mockReconcile.mock.calls.map(([storageKey]) => storageKey)).not.toContain(
+      'sb-configured-public-auth-token',
     );
     expect(harness.mock.setSession).not.toHaveBeenCalled();
     expect(harness.mock.client.auth.getUser).toHaveBeenCalledWith(

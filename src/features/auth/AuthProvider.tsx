@@ -108,11 +108,21 @@ type DeletionWinner =
     }
   | { kind: 'signed-out'; version: number };
 
-type GuardReconciliationRequest = {
-  forceSettlement?: boolean;
-  displacedPrincipalId?: string | null;
-  displacedSession?: Session | null;
-};
+type RecoveryDisplacement =
+  | {
+      kind: 'exact';
+      principalId: string;
+      session: Session;
+      guardRevision: number | null;
+    }
+  | { kind: 'unknown'; principalId: string | null };
+
+type GuardReconciliationRequest =
+  | { forceSettlement?: false }
+  | {
+      forceSettlement: true;
+      displacement: RecoveryDisplacement;
+    };
 
 type GuardReconciliationOutcome =
   | { kind: 'published' }
@@ -174,6 +184,16 @@ function userIdFromSession(session: Session | null): string | null {
   return session?.user?.id ?? null;
 }
 
+function recoveryDisplacement(
+  principalId: string | null,
+  session: Session | null,
+  guardRevision: number | null | undefined,
+): RecoveryDisplacement {
+  return principalId != null && session != null && guardRevision !== undefined
+    ? { kind: 'exact', principalId, session, guardRevision }
+    : { kind: 'unknown', principalId };
+}
+
 function authUserFromSession(session: Session | null): AuthUser | null {
   if (!session?.user) {
     return null;
@@ -205,14 +225,10 @@ function resolveClient(
 function resolveProviderStorageKey(
   clientProp: AppSupabaseClient | null | undefined,
 ): string {
-  try {
-    return getSupabaseAuthStorageKey();
-  } catch (error) {
-    if (clientProp !== undefined) {
-      return 'sb-injected-auth-token';
-    }
-    throw error;
+  if (clientProp !== undefined) {
+    return 'sb-injected-auth-token';
   }
+  return getSupabaseAuthStorageKey();
 }
 
 /**
@@ -319,6 +335,8 @@ export function AuthProvider({
     passwordRecoveryPrincipalId: string | null;
     passwordRecoverySession: Session | null;
     adoptionSuperseded: boolean;
+    guardedRecoveryAdoption: boolean;
+    guardedRecoveryPrincipalId: string | null;
   } | null>(null);
   /** Serializes provider-owned writes to the shared Supabase Auth session. */
   const authSessionWriteTailRef = useRef<Promise<void>>(Promise.resolve());
@@ -333,9 +351,6 @@ export function AuthProvider({
       request?: GuardReconciliationRequest,
     ) => Promise<GuardReconciliationOutcome>
   >(async () => {
-    if (__DEV__) {
-      console.info('[AuthRecoveryStage] guard-ref-default-used');
-    }
     return { kind: 'unchanged' };
   });
 
@@ -467,7 +482,13 @@ export function AuthProvider({
       supersedingSession: Session | null,
       displacedPrincipalId: string | null,
       displacedSession: Session | null,
+      displacedGuardRevision: number | null | undefined,
     ) => {
+      const displacement = recoveryDisplacement(
+        displacedPrincipalId,
+        displacedSession,
+        displacedGuardRevision,
+      );
       recoveryGenerationRef.current += 1;
       recoveryAttemptRef.current = null;
       // Invalidate the stale SDK event's already-queued state application.
@@ -493,7 +514,10 @@ export function AuthProvider({
             if (authGenerationRef.current !== reconciliationGeneration) {
               return;
             }
-            if (supersedingSession != null && displacedSession != null) {
+            if (
+              supersedingSession != null &&
+              displacement.kind === 'exact'
+            ) {
               const storageKey = resolveProviderStorageKey(clientProp);
               const validation = await validateSessionSnapshotIsolated(
                 supersedingSession,
@@ -512,8 +536,9 @@ export function AuthProvider({
                   runSupabaseAuthOperation(storageKey, () =>
                     replaceDisplacedSessionIfExact(
                       storageKey,
-                      displacedSession,
+                      displacement.session,
                       supersedingSession,
+                      displacement.guardRevision,
                     ),
                   ),
                 );
@@ -524,8 +549,7 @@ export function AuthProvider({
             try {
               outcome = await requestGuardReconciliationRef.current({
                 forceSettlement: true,
-                displacedPrincipalId,
-                displacedSession,
+                displacement,
               });
             } catch {
               // Fall through to a token-free signed-out shell.
@@ -746,6 +770,15 @@ export function AuthProvider({
       if (isPendingInitialSession) {
         currentAttempt.pendingInitialSession = session;
       }
+      const isGuardedRecoverySessionMaintenance =
+        currentAttempt != null &&
+        recoveryGenerationRef.current === currentAttempt.generation &&
+        currentAttempt.guardedRecoveryAdoption &&
+        currentAttempt.guardedRecoveryPrincipalId === eventPrincipal &&
+        session != null &&
+        (event === 'SIGNED_IN' ||
+          event === 'TOKEN_REFRESHED' ||
+          event === 'PASSWORD_RECOVERY');
       const isNonSupersedingAttemptMaintenance =
         currentAttempt != null &&
         recoveryGenerationRef.current === currentAttempt.generation &&
@@ -756,7 +789,14 @@ export function AuthProvider({
             eventPrincipal === currentAttempt.authPrincipalAtStart) ||
           (event === 'SIGNED_OUT' &&
             invalidBootstrapCleanupInFlightRef.current &&
-            explicitAuthOperationSettlementsRef.current.size === 0));
+            explicitAuthOperationSettlementsRef.current.size === 0) ||
+          isGuardedRecoverySessionMaintenance);
+      if (
+        isGuardedRecoverySessionMaintenance &&
+        event !== 'PASSWORD_RECOVERY'
+      ) {
+        return;
+      }
       if (
         currentAttempt != null &&
         recoveryGenerationRef.current === currentAttempt.generation &&
@@ -804,6 +844,7 @@ export function AuthProvider({
             supersedingSession,
             eventPrincipal,
             session,
+            attempt?.guardedRecoveryAdoption ? undefined : null,
           );
           return;
         }
@@ -814,6 +855,12 @@ export function AuthProvider({
           attempt.passwordRecoveryObserved = true;
           attempt.passwordRecoveryPrincipalId = eventPrincipal;
           attempt.passwordRecoverySession = session;
+          // The exact guarded-adoption transaction owns publication. An SDK
+          // recovery event may arrive before that transaction settles,
+          // especially when S2 retains S1's allowed session_id.
+          if (attempt.guardedRecoveryAdoption) {
+            return;
+          }
         } else if (!attempt?.supersededByNewerCallback) {
           setRecoveryPhase('verified');
         }
@@ -934,25 +981,30 @@ export function AuthProvider({
     const reconcileGuardState = async (
       request: GuardReconciliationRequest = {},
     ): Promise<GuardReconciliationOutcome> => {
-      if (__DEV__ && request.forceSettlement) {
-        console.info('[AuthRecoveryStage] guard-reconcile-enter');
-        console.info('[AuthRecoveryStage] guard-snapshot-read-start');
-      }
+      const forcedDisplacement = request.forceSettlement === true
+        ? request.displacement
+        : null;
+      const isUnknownForcedRecovery =
+        forcedDisplacement?.kind === 'unknown';
+      const displacedPrincipalId = forcedDisplacement?.principalId ?? null;
+      const exactDisplacedPrincipal = forcedDisplacement?.kind === 'exact'
+        ? forcedDisplacement.principalId
+        : null;
+      let exactRemovedPrincipal: string | null = null;
       let snapshot = await runSupabaseAuthOperation(storageKey, () =>
         reconcileGuardedAuthStorage(storageKey),
       );
-      if (__DEV__ && request.forceSettlement) {
-        if (snapshot.kind === 'allowed-session') {
-          console.info('[AuthRecoveryStage] guard-snapshot-allowed');
-        } else if (snapshot.kind === 'empty') {
-          console.info('[AuthRecoveryStage] guard-snapshot-empty');
-        } else if (snapshot.kind === 'blocked') {
-          console.info('[AuthRecoveryStage] guard-snapshot-blocked');
-        } else {
-          console.info('[AuthRecoveryStage] guard-snapshot-unavailable');
-        }
-      }
       while (!cancelled) {
+        const recoveryAttempt = recoveryAttemptRef.current;
+        if (
+          snapshot.kind === 'allowed-session' &&
+          recoveryAttempt != null &&
+          recoveryGenerationRef.current === recoveryAttempt.generation &&
+          recoveryAttempt.guardedRecoveryAdoption &&
+          recoveryAttempt.guardedRecoveryPrincipalId === snapshot.principalId
+        ) {
+          return { kind: 'unchanged' };
+        }
         if (snapshot.kind === 'blocked') {
           const attempt = activeDeletionAttemptRef.current;
           if (
@@ -965,9 +1017,17 @@ export function AuthProvider({
           }
           const displayedPrincipal = latestAuthPrincipalRef.current;
           if (request.forceSettlement || displayedPrincipal != null) {
+            const nonmatchingDisplacedCachePrincipal =
+              exactDisplacedPrincipal != null &&
+                snapshot.principalId !== exactDisplacedPrincipal
+                ? exactDisplacedPrincipal
+                : null;
             return await settleSignedOut(
-              'signed-out',
-              request.displacedPrincipalId ?? displayedPrincipal,
+              isUnknownForcedRecovery ? 'quarantined' : 'signed-out',
+              request.forceSettlement
+                ? exactRemovedPrincipal ??
+                  nonmatchingDisplacedCachePrincipal
+                : displayedPrincipal,
             );
           }
           return { kind: 'unchanged' };
@@ -983,34 +1043,35 @@ export function AuthProvider({
           }
           return await settleSignedOut(
             'signed-out',
-            request.displacedPrincipalId ?? principalId,
+            request.forceSettlement ? exactRemovedPrincipal : principalId,
           );
         }
         if (snapshot.kind === 'unavailable') {
           return request.forceSettlement
             ? await settleSignedOut(
                 'quarantined',
-                request.displacedPrincipalId ?? latestAuthPrincipalRef.current,
+                exactRemovedPrincipal,
               )
             : { kind: 'unchanged' };
         }
 
         if (
-          request.displacedPrincipalId != null &&
-          snapshot.principalId === request.displacedPrincipalId &&
-          (request.displacedSession == null ||
-            (snapshot.session.access_token ===
-              request.displacedSession.access_token &&
-              snapshot.session.refresh_token ===
-                request.displacedSession.refresh_token))
+          forcedDisplacement?.kind === 'exact' &&
+          snapshot.principalId === forcedDisplacement.principalId &&
+          snapshot.session.access_token ===
+            forcedDisplacement.session.access_token &&
+          snapshot.session.refresh_token ===
+            forcedDisplacement.session.refresh_token &&
+          snapshot.guardRevision === forcedDisplacement.guardRevision
         ) {
-          snapshot = await removeExactCandidate(snapshot);
+          const afterExactRemoval = await removeExactCandidate(snapshot);
+          if (afterExactRemoval.kind === 'empty') {
+            exactRemovedPrincipal = forcedDisplacement.principalId;
+          }
+          snapshot = afterExactRemoval;
           continue;
         }
 
-        if (__DEV__ && request.forceSettlement) {
-          console.info('[AuthRecoveryStage] guard-isolated-validation-start');
-        }
         const validation = await validateSessionSnapshotIsolated(
           snapshot.session,
           {
@@ -1028,10 +1089,16 @@ export function AuthProvider({
             current.kind === 'allowed-session' &&
             sameAllowedGuardedSession(current, snapshot)
           ) {
+            const nonmatchingDisplacedCachePrincipal =
+              exactDisplacedPrincipal != null &&
+                snapshot.principalId !== exactDisplacedPrincipal
+                ? exactDisplacedPrincipal
+                : null;
             return request.forceSettlement
               ? await settleSignedOut(
                   'quarantined',
-                  request.displacedPrincipalId ?? null,
+                  exactRemovedPrincipal ??
+                    nonmatchingDisplacedCachePrincipal,
                 )
               : { kind: 'unchanged' };
           }
@@ -1039,6 +1106,20 @@ export function AuthProvider({
           continue;
         }
         if (validation.kind === 'invalid') {
+          if (request.forceSettlement) {
+            if (
+              exactDisplacedPrincipal == null ||
+              snapshot.principalId === exactDisplacedPrincipal
+            ) {
+              return await settleSignedOut('quarantined', null);
+            }
+            const afterInvalidRemoval = await removeExactCandidate(snapshot);
+            if (afterInvalidRemoval.kind === 'empty') {
+              exactRemovedPrincipal = exactDisplacedPrincipal;
+            }
+            snapshot = afterInvalidRemoval;
+            continue;
+          }
           snapshot = await removeExactCandidate(snapshot);
           continue;
         }
@@ -1057,17 +1138,18 @@ export function AuthProvider({
         if (
           displayedPrincipal != null &&
           displayedPrincipal !== rechecked.principalId &&
-          displayedPrincipal !== request.displacedPrincipalId
+          displayedPrincipal !== displacedPrincipalId
         ) {
           await removePrincipalScopedQueries(queryClient, displayedPrincipal);
         }
         if (
-          request.displacedPrincipalId != null &&
-          request.displacedPrincipalId !== rechecked.principalId
+          !isUnknownForcedRecovery &&
+          displacedPrincipalId != null &&
+          displacedPrincipalId !== rechecked.principalId
         ) {
           await removePrincipalScopedQueries(
             queryClient,
-            request.displacedPrincipalId,
+            displacedPrincipalId,
           );
         }
         await cacheTransitionTailRef.current.catch(() => undefined);
@@ -1104,15 +1186,9 @@ export function AuthProvider({
     };
 
     const schedule = (request: GuardReconciliationRequest = {}) => {
-      if (__DEV__ && request.forceSettlement) {
-        console.info('[AuthRecoveryStage] guard-schedule');
-      }
       return enqueueGuardedAuthWork(() => reconcileGuardState(request));
     };
     requestGuardReconciliationRef.current = schedule;
-    if (__DEV__) {
-      console.info('[AuthRecoveryStage] guard-ref-ready');
-    }
     const unsubscribe = subscribePrincipalDeletionGuardChanges(
       storageKey,
       () => {
@@ -1130,13 +1206,7 @@ export function AuthProvider({
     return () => {
       cancelled = true;
       if (requestGuardReconciliationRef.current === schedule) {
-        if (__DEV__) {
-          console.info('[AuthRecoveryStage] guard-ref-reset');
-        }
         requestGuardReconciliationRef.current = async () => {
-          if (__DEV__) {
-            console.info('[AuthRecoveryStage] guard-ref-reset-used');
-          }
           return { kind: 'unchanged' };
         };
       }
@@ -1214,6 +1284,8 @@ export function AuthProvider({
         passwordRecoveryPrincipalId: null,
         passwordRecoverySession: null,
         adoptionSuperseded: false,
+        guardedRecoveryAdoption: false,
+        guardedRecoveryPrincipalId: null,
       };
       setRecoveryPhase('processing');
 
@@ -1283,20 +1355,56 @@ export function AuthProvider({
         return;
       }
 
+      const releaseGuardedRecoveryQuarantine = async (
+        reconcileCurrentAuthority: boolean,
+      ): Promise<boolean> => {
+        const currentAttempt = recoveryAttemptRef.current;
+        if (
+          currentAttempt?.generation !== generation ||
+          !currentAttempt.guardedRecoveryAdoption
+        ) {
+          return false;
+        }
+        currentAttempt.guardedRecoveryAdoption = false;
+        currentAttempt.guardedRecoveryPrincipalId = null;
+        if (reconcileCurrentAuthority) {
+          await requestGuardReconciliationRef.current();
+        }
+        return true;
+      };
+
       try {
         const result = await processAuthCallbackUrl(url, {
           client,
           storageKey: resolveProviderStorageKey(clientProp),
           createIsolatedAuthClient:
             clientProp !== undefined ? () => client : undefined,
+          runAuthSessionWrite,
+          onRecoveryAdoptionPredecessor: (predecessor) => {
+            const currentAttempt = recoveryAttemptRef.current;
+            if (currentAttempt?.generation !== generation) return;
+            const guardedPredecessor =
+              predecessor.kind === 'settled-allowed' ||
+                predecessor.kind === 'expired-pending'
+                ? predecessor
+                : null;
+            currentAttempt.guardedRecoveryAdoption =
+              guardedPredecessor != null;
+            currentAttempt.guardedRecoveryPrincipalId =
+              guardedPredecessor?.guard.principalId ?? null;
+          },
+          onRecoverySession: (session) => {
+            const currentAttempt = recoveryAttemptRef.current;
+            if (currentAttempt?.generation !== generation) return;
+            currentAttempt.passwordRecoveryPrincipalId =
+              userIdFromSession(session);
+            currentAttempt.passwordRecoverySession = session;
+          },
         });
-        if (__DEV__ && result.kind === 'superseded') {
-          console.info('[AuthRecoveryStage] callback-superseded-tail-wait');
-        }
+        const wasGuardedRecovery = await releaseGuardedRecoveryQuarantine(
+          result.kind !== 'superseded',
+        );
         await guardedAuthReconciliationTailRef.current;
-        if (__DEV__ && result.kind === 'superseded') {
-          console.info('[AuthRecoveryStage] callback-superseded-tail-drained');
-        }
         if (cancelled || recoveryGenerationRef.current !== generation) {
           return;
         }
@@ -1313,19 +1421,8 @@ export function AuthProvider({
         if (result.kind === 'superseded') {
           const attempt = recoveryAttemptRef.current;
           const displacedPrincipalId =
-            attempt?.passwordRecoveryPrincipalId ??
-            latestAuthPrincipalRef.current;
-          let displacedSession = attempt?.passwordRecoverySession ?? null;
-          if (attempt?.generation === generation && displacedPrincipalId != null) {
-            for (const transition of attempt.authTransitions) {
-              if (
-                !transition.isExplicitAuthOperation &&
-                userIdFromSession(transition.session) === displacedPrincipalId
-              ) {
-                displacedSession = transition.session;
-              }
-            }
-          }
+            attempt?.passwordRecoveryPrincipalId ?? null;
+          const displacedSession = attempt?.passwordRecoverySession ?? null;
           if (attempt?.generation === generation) {
             attempt.adoptionSuperseded = true;
           }
@@ -1339,27 +1436,16 @@ export function AuthProvider({
           setStatus('initializing');
           let outcome: GuardReconciliationOutcome = { kind: 'unchanged' };
           try {
-            if (__DEV__) {
-              console.info('[AuthRecoveryStage] callback-superseded-request');
-            }
             outcome = await requestGuardReconciliationRef.current({
               forceSettlement: true,
-              displacedPrincipalId,
-              displacedSession,
+              displacement: recoveryDisplacement(
+                displacedPrincipalId,
+                displacedSession,
+                wasGuardedRecovery ? undefined : null,
+              ),
             });
           } catch {
             // Fall through to a token-free signed-out shell.
-          }
-          if (__DEV__) {
-            if (outcome.kind === 'published') {
-              console.info('[AuthRecoveryStage] callback-outcome-published');
-            } else if (outcome.kind === 'signed-out') {
-              console.info('[AuthRecoveryStage] callback-outcome-signed-out');
-            } else if (outcome.kind === 'quarantined') {
-              console.info('[AuthRecoveryStage] callback-outcome-quarantined');
-            } else {
-              console.info('[AuthRecoveryStage] callback-outcome-unchanged');
-            }
           }
           if (outcome.kind === 'unchanged') {
             authGenerationRef.current += 1;
@@ -1373,15 +1459,9 @@ export function AuthProvider({
         const attempt = recoveryAttemptRef.current;
         let foundSupersedingSession = false;
         let supersedingSession: Session | null = null;
-        let displacedSession = attempt?.passwordRecoverySession ?? null;
+        const displacedSession = attempt?.passwordRecoverySession ?? null;
         if (attempt?.generation === generation) {
           for (const transition of attempt.authTransitions) {
-            if (
-              !transition.isExplicitAuthOperation &&
-              userIdFromSession(transition.session) === result.user.id
-            ) {
-              displacedSession = transition.session;
-            }
             if (
               transition.isExplicitAuthOperation ||
               userIdFromSession(transition.session) !== result.user.id
@@ -1397,6 +1477,7 @@ export function AuthProvider({
             supersedingSession,
             result.user.id,
             displacedSession,
+            wasGuardedRecovery ? undefined : null,
           );
           return;
         }
@@ -1432,6 +1513,11 @@ export function AuthProvider({
         if (recoveryAttemptRef.current?.supersededByNewerCallback) {
           return;
         }
+        try {
+          await releaseGuardedRecoveryQuarantine(true);
+        } catch {
+          // Keep fixed retryable recovery state when reconciliation is unavailable.
+        }
         setRecoveryPhase(
           error instanceof AuthError && error.code === 'recovery-link-invalid'
             ? 'unavailable'
@@ -1458,6 +1544,7 @@ export function AuthProvider({
     enableSession,
     linking,
     reconcileSupersededRecovery,
+    runAuthSessionWrite,
   ]);
 
   /**
@@ -1541,7 +1628,7 @@ export function AuthProvider({
 
         const capturedVersion = winner.version;
         const capturedSession = winner.session;
-        const storageKey = getSupabaseAuthStorageKey();
+        const storageKey = resolveProviderStorageKey(clientProp);
         const candidate = await runSupabaseAuthOperation(storageKey, () =>
           reconcileGuardedAuthStorage(storageKey),
         );
@@ -1797,7 +1884,7 @@ export function AuthProvider({
       deletionGenerationRef.current += 1;
       const deletionGeneration = deletionGenerationRef.current;
       const finishExplicitAuthOperation = beginExplicitAuthOperation();
-      const storageKey = getSupabaseAuthStorageKey();
+      const storageKey = resolveProviderStorageKey(clientProp);
       let attempt: ActiveDeletionAttempt | null = null;
       let requiresPostFinalizationReconciliation = false;
       let destructiveOutcome: DeleteCurrentUserApiOutcome | null = null;
@@ -1852,7 +1939,9 @@ export function AuthProvider({
         };
         activeDeletionAttemptRef.current = attempt;
 
-        const arm = await armPrincipalDeletionGuard(storageKey, principal.id);
+        const arm = await runSupabaseAuthOperation(storageKey, () =>
+          armPrincipalDeletionGuard(storageKey, principal.id),
+        );
         if (arm.kind === 'guard-busy') {
           throw new AuthError(
             'account-deletion-in-progress',
