@@ -2,78 +2,80 @@
 
 ## Problem
 
-The physical iPhone successfully ran the freshly cleaned Eazy Review
-development build and displayed Browse through iPhone Mirroring, but Computer
-Use pointer actions failed before reaching the phone. The expected real
-Browse → Account tab navigation therefore cannot be driven by the agent, so
-the non-destructive H1 walk cannot continue safely.
+H1 against reviewed SHA `5171d0373f5414ad3f2bcda87653b9dd1577946c` cannot
+complete the required Browse → Account → confirmation → keyboard → transient
+input → Cancel walk. The physical Debug build for that SHA cleaned and
+compiled successfully, and `com.tysonhu.eazyreview.dev` is installed, but the
+device remained locked so launch failed. Separately, this Cursor session has
+no Computer Use / `@oai/sky` `node_repl` bridge, so even after unlock the
+agent cannot drive iPhone Mirroring pointer actions for the Account-tab path.
 
 ## Attempts so far
 
-1. Cleaned the generated Debug build, rebuilt the app, and attempted physical
-   install/launch. The first launch was blocked by the locked device; after the
-   phone was unlocked, the app was installed and launched.
-2. Confirmed the installed bundle through Xcode device information, launched it
-   with the Xcode device launcher, and observed Metro bundle the app. After the
-   phone was locked again, iPhone Mirroring showed anonymous Browse.
-3. Used Computer Use `sky.click` on the Account-tab coordinates with the
-   `iPhone Mirroring` display name. It returned the pipe error below and the
-   subsequent mirror screen remained Browse.
-4. Resolved the app identifier to `com.apple.ScreenContinuity`, refreshed its
-   state as required, and retried pointer and window-focus clicks. Each pointer
-   attempt returned the same pipe error. A refreshed `Tab` key action was
-   accepted but did not navigate the app.
-5. In a fresh continuation session, initialized a new Computer Use bridge,
-   refreshed the full `com.apple.ScreenContinuity` state, and confirmed that
-   iPhone Mirroring still displayed the physical anonymous Browse screen. The
-   first safe Account-tab coordinate click again returned `Sky Computer Use
-   native pipe closed before response` before reaching the mirrored phone.
+### Earlier preflight (historical head `f64cb3d`)
+
+1. Cleaned/rebuilt, installed, launched after unlock; Metro bundled; mirroring
+   showed anonymous Browse.
+2. Computer Use `sky.click` on Account returned
+   `Sky Computer Use native pipe closed before response`.
+3. Bundle-id refresh and keyboard `Tab` did not reach Account.
+
+### 2026-08-29 H1 attempt on `5171d03`
+
+1. Confirmed local/PR head `5171d0373f5414ad3f2bcda87653b9dd1577946c`.
+2. `xcodebuild … clean`: **CLEAN SUCCEEDED**.
+3. `npx expo run:ios --device "Tyson Hu’s iPhone" --port 8082`: **Build
+   Succeeded** (0 errors, one non-failing Expo Dev Launcher warning), then
+   `Cannot launch … because the device is locked`.
+4. Confirmed installed app id `com.tysonhu.eazyreview.dev` via `devicectl`.
+5. Polled `devicectl device process launch` for ~90s: every attempt returned
+   locked / request denied. No Account UI, sign-in, Cancel, or delete action.
+6. Started Metro `expo start --dev-client --port 8082` (waiting on
+   `http://localhost:8082`).
+7. Searched this Cursor session for Computer Use / Sky tools: none available
+   (`node_repl` / `@oai/sky` are Codex Computer Use only). Paper desktop MCP
+   discovery is in error. No silent substitute (deep link, AppleScript, or
+   invented device automation) was used.
 
 ## Ruled out
 
-- Native compilation is not the blocker: the clean and both Debug builds
-  reported success with 0 errors.
-- Physical installation and app launch are not the blocker: Xcode reported the
-  Eazy Review bundle installed, its device launcher reported the app launched,
-  and Metro served the physical bundle.
-- Device availability and mirroring are not the blocker: the physical iPhone
-  reported connected and iPhone Mirroring visibly showed Browse.
-- The Task 19 UI is not implicated: no Account or confirmation UI was reached.
-  No sign-in, credential entry, Cancel, Function invocation, or deletion action
-  occurred.
+- Wrong SHA: work ran on `5171d03`.
+- Native compile failure: clean and Debug build succeeded.
+- Missing install: `Eazy Review` / `com.tysonhu.eazyreview.dev` is present.
+- Product UI defect: Account/confirmation never reached.
 
 ## Evidence
 
 ```text
-Sky Computer Use native pipe closed before response
-
-Computer Use is not active for '/System/Applications/iPhone Mirroring.app'. You first must call `get_app_state` to get the latest state before doing other Computer Use actions.
-
-sent Tab
-```
-
-The state-refresh requirement was then satisfied with
-`get_app_state({ app: "com.apple.ScreenContinuity" })`; pointer clicks still
-returned the first error. The physical bundle observation was:
-
-```text
-iOS Bundled 607ms node_modules/expo-router/entry.js (1848 modules)
+** CLEAN SUCCEEDED **
+› Build Succeeded
+CommandError: Cannot launch EazyReview on Tyson Hu’s iPhone because the device is locked.
+Unable to launch com.tysonhu.eazyreview.dev because the device was not, or could not be, unlocked.
 ```
 
 ## Environment facts
 
 - Reviewed branch/head: `codex/task-19-guarded-account-deletion` at
-  `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`.
-- Physical target: paired iPhone 17 Pro Max, used through the pre-existing
-  macOS iPhone Mirroring app.
-- The local Debug build loaded `.env.local` and `.env`; no values were logged.
-- The generated `ios/` workspace is gitignored. Metro was stopped after the
-  blocked attempt so no agent-owned dev server remains running.
+  `5171d0373f5414ad3f2bcda87653b9dd1577946c`.
+- Physical target: paired iPhone 17 Pro Max (`available (paired)`).
+- iPhone Mirroring process was running on the Mac; pointer control was not
+  available to this agent session.
+- Metro may still be listening on port 8082 after the attempt.
 
 ## Next hypothesis
 
-The host's Computer Use input transport for `com.apple.ScreenContinuity` lacks
-a working pointer path. In a fresh session, repair/re-authorize that input
-bridge or use an explicitly available touch-capable device hub, then re-run the
-real H1 journey from Browse. Do not substitute a deep link, and never submit
-`Delete my account`.
+1. Unlock the physical iPhone (and keep it unlocked) so launch can succeed.
+2. Complete H1 either with a Computer Use-capable session that can drive
+   iPhone Mirroring, or by human-driving Browse → Account → confirmation →
+   keyboard → transient input → Cancel while the agent records evidence.
+3. Never substitute a deep link for Account, and never submit
+   `Delete my account`.
+
+## Resolution (2026-08-29)
+
+Human completed H1 after the Account keyboard remediation. Result:
+**tested-pass** (working tree). Historical keyboard-occlusion fail on
+`5171d03` remains in Task 19 evidence. Agent iPhone Mirroring pointer control
+is still unavailable in this Cursor session; that limitation no longer blocks
+H1. See
+`docs/evidence/task-19-protected-account-deletion/RESULT.md`.

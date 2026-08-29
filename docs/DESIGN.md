@@ -535,7 +535,10 @@ final `Delete my account` action. Only the final action uses the shared
 `destructive` button variant and the Negative / Risky color; `Delete Account`
 and `Cancel` remain secondary actions. An empty password disables final submit,
 and a nonempty password is passed through unchanged rather than trimmed or
-normalized.
+normalized. When the password field is focused, Account must keep the
+confirmation copy, field, and Cancel / Delete actions visible above the
+software keyboard (`Screen` scroll with keyboard insets, plus scroll-into-view
+when the deletion form opens or the field focuses).
 
 While deletion is pending, disable the password input, Cancel, Sign out, the
 Delete Account entry point, and the final action. Keep the final action's

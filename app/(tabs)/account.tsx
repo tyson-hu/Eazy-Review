@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Keyboard, ScrollView, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 import { Button } from '@/src/components/ui/Button';
@@ -11,7 +11,7 @@ import { LoadingState } from '@/src/components/ui/LoadingState';
 import { Screen } from '@/src/components/ui/Screen';
 import { formatMemberSince } from '@/src/features/account/api';
 import { useMyProfileQuery } from '@/src/features/account/queries';
-import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
+import { AUTH_USER_MESSAGES, AuthError } from '@/src/features/auth/errors';
 import { useAuth } from '@/src/features/auth/hooks';
 import type { DeleteAccountOutcome } from '@/src/features/auth/types';
 import { useUserRatedProductsQuery } from '@/src/features/ratings/queries';
@@ -46,6 +46,7 @@ export default function AccountScreen() {
   const [deletionNotice, setDeletionNotice] =
     useState<DeletionNotice | null>(null);
   const priorPrincipalRef = useRef<string | null>(user?.id ?? null);
+  const scrollRef = useRef<ScrollView>(null);
   const [deleteOwnerPrincipalId, setDeleteOwnerPrincipalId] = useState<
     string | null
   >(null);
@@ -63,6 +64,29 @@ export default function AccountScreen() {
       setDeleteOwnerPrincipalId(null);
     });
   }, [user?.id]);
+
+  const isDeletionFormVisible =
+    isSignedIn &&
+    user != null &&
+    deleteOpen &&
+    deleteOwnerPrincipalId === user.id;
+
+  const scrollDeletionFormIntoView = () => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
+
+  useEffect(() => {
+    if (!isDeletionFormVisible) return;
+    scrollDeletionFormIntoView();
+    // Wait until the keyboard has resized insets before scrolling so Cancel /
+    // Delete stay above the soft keyboard on physical devices.
+    const show = Keyboard.addListener('keyboardDidShow', scrollDeletionFormIntoView);
+    return () => {
+      show.remove();
+    };
+  }, [isDeletionFormVisible]);
 
   if (status === 'initializing') {
     return (
@@ -157,8 +181,6 @@ export default function AccountScreen() {
           ? '—'
           : '0'
       : String(ratedCount);
-  const isDeletionFormVisible =
-    deleteOpen && deleteOwnerPrincipalId === user.id;
 
   const onSignOut = async () => {
     if (signingOut || deletePending) {
@@ -207,7 +229,7 @@ export default function AccountScreen() {
   };
 
   return (
-    <Screen scroll>
+    <Screen scroll scrollRef={scrollRef}>
       <View className="pt-6">
         <AppText variant="title">Account</AppText>
         {avatarUrl ? (
@@ -357,6 +379,7 @@ export default function AccountScreen() {
             editable={!signingOut && !deletePending}
             invalid={deleteError != null}
             errorMessage={deleteError ?? undefined}
+            onFocus={scrollDeletionFormIntoView}
           />
           {deleteError ? (
             <AppText

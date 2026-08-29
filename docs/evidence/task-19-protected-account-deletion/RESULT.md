@@ -20,21 +20,21 @@ No agent or tool submitted account deletion, used a real deletion bearer,
 deployed/configured a hosted Function, marked the PR ready, accepted, merged,
 or touched production.
 
-H1 physical-device e2e remains **not-tested**. On 2026-08-29, the fresh
-Debug native build passed an Xcode clean, installed and launched on the paired
-physical iPhone, and served Browse through iPhone Mirroring. The local
-computer-control bridge then rejected every pointer action before it reached
-the phone, so the real Account-tab path could not be exercised. No
-physical-device Task 19 outcome is claimed until the full non-destructive
-Browse → Account → confirmation → software keyboard → Cancel walkthrough is
-completed against the reviewed head. No sign-in, password, bearer, or delete
-action was used.
+H1 physical-device e2e is **tested-pass** after the Account keyboard
+remediation (`Screen` scroll keyboard insets + deletion-form scroll-into-view).
+Human walk completed Browse → Account → sign-in → Delete Account → software
+keyboard → Cancel; confirmation copy, Current password, and Cancel / Delete
+actions remained visible and reachable above the keyboard. No deletion was
+submitted. Earlier **tested-fail** on `5171d03` (keyboard occlusion) is retained
+as historical proof:
+`screenshots/ios-physical-01-delete-keyboard-obscures.png`. Pass is against the
+local keyboard-fix working tree (not yet a published commit SHA).
 
 ## Verification board
 
 | Blocked / needs disposition | Backlog | In progress | Ready for human | Done |
 | --- | --- | --- | --- | --- |
-| **H1** Physical-device non-destructive walk — **not-tested**: clean build, install, launch, and mirrored Browse passed, but the local pointer-control bridge failed before Account; see `docs/notes/blocker-task-19-iphone-mirroring-control.md`.<br><br>**H2** Hosted staging deletion — deployment/configuration not authorized or verified. | **H3** Final human review and acceptance after all prior cards are closed. | — | — | **A1** Function + frontend tests.<br><br>**A2** Local database + unauthenticated gateway.<br><br>**A3** 393×852 mobile web.<br><br>**A4** iOS Simulator 26.5.<br><br>**A5** SDK 57 patch maintenance integrated (PR #44 / `8f2f2a9`).<br><br>**A6** Published exact-head CI on `8f2f2a9`. |
+| **H2** Hosted staging deletion — deployment/configuration not authorized or verified. | **H3** Final human review and acceptance after all prior cards are closed. | — | — | **A1** Function + frontend tests.<br><br>**A2** Local database + unauthenticated gateway.<br><br>**A3** 393×852 mobile web.<br><br>**A4** iOS Simulator 26.5.<br><br>**A5** SDK 57 patch maintenance integrated (PR #44 / `8f2f2a9`).<br><br>**A6** Published exact-head CI on `8f2f2a9`.<br><br>**H1** Physical-device non-destructive walk — **tested-pass** after keyboard fix (working tree; prior fail on `5171d03`). |
 
 Card evidence, command results, limitations, findings, and the human-only
 checklists live in
@@ -47,7 +47,7 @@ repeating the detailed matrix.
 | Part | Owner | Scope | Current result |
 | --- | --- | --- | --- |
 | 1 — safe verification | Agent | All non-destructive tests, local gateway checks, mobile web, and iOS Simulator | **Completed; A5 integrated and exact-head CI green on `8f2f2a9`** |
-| 2 — acceptance | Human | Physical device, hosted staging destructive matrix, and final review/acceptance | **H1 not-tested with a local input-control blocker; H2/H3 pending on `8f2f2a9`.** |
+| 2 — acceptance | Human | Physical device, hosted staging destructive matrix, and final review/acceptance | **H1 tested-pass after keyboard fix (working tree); H2/H3 pending.** |
 
 ## Current proof set
 
@@ -55,14 +55,17 @@ repeating the detailed matrix.
 - `screenshots/web-02-delete-confirmation.png`
 - `screenshots/ios-01-signed-out-account.png`
 - `screenshots/ios-02-delete-confirmation.png`
+- `screenshots/ios-physical-01-delete-keyboard-obscures.png` (historical H1 fail on `5171d03`; superseded by tested-pass after keyboard fix)
 
-All four captures are identity-free. Raw interactive state and disposable
-local credentials are not retained. The screenshots are local candidate proof
-until a later commit/push gate explicitly publishes them.
-
-No physical screenshot is included in this evidence folder or selected for
-GitHub proof.
+All five captures are identity-free. Raw interactive state and disposable
+local credentials are not retained.
 
 ## Remaining gate
 
-H1 remains a separate, non-destructive physical-device verification and is **not-tested**. The current local pointer-control blocker is recorded in `docs/notes/blocker-task-19-iphone-mirroring-control.md`; do not substitute a deep link for the real Browse → Account path. The full confirmation → software keyboard → transient input → Cancel walkthrough must still be completed against reviewed SHA `8f2f2a9` without submitting deletion. **H2** remains blocked until staging deployment/configuration and environment identity are separately authorized and verified. **H3** waits on H1 and H2 against that same SHA. Do not run H1/H2 against pre-integration `f64cb3d`. Green tests, simulator/web results, or CI do not establish destructive or human acceptance.
+H1 is **tested-pass** after the keyboard remediation. Publish the keyboard-fix
+commit and refresh exact-head CI before treating H3 provenance as closed on a
+reviewed SHA. **H2** remains blocked until staging deployment/configuration and
+environment identity are separately authorized and verified. **H3** waits on
+H2 against the reviewed SHA that includes the keyboard fix. Do not run H2
+against pre-integration `f64cb3d`. Green tests, simulator/web results, or CI
+do not establish destructive or human acceptance.

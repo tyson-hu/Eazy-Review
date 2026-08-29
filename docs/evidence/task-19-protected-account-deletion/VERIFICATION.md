@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | Mobile web, 393×852 | `pass` | Non-destructive confirmation/cancel walk |
 | iOS Simulator 26.5 | `pass` | Non-destructive confirmation/cancel walk; software keyboard limit below |
-| Physical device | `not-tested` | Clean Debug build, installation, launch, Metro bundle, and mirrored anonymous Browse passed; computer-controlled pointer input failed before Account, so H1 is incomplete |
+| Physical device | `tested-pass` | Human H1 after keyboard fix (working tree): confirmation / Current password / Cancel–Delete remain visible above software keyboard; Cancel path completed. Historical fail on `5171d03`: `screenshots/ios-physical-01-delete-keyboard-obscures.png` |
 
 | Remaining lifecycle surface | Status | Boundary |
 | --- | --- | --- |
@@ -201,60 +201,39 @@ Current A5-integrated published head `8f2f2a9` (2026-08-29):
 
 ### H1 — Physical-device non-destructive walk
 
-H1 remains **not-tested**. A valid physical-device result requires the complete non-destructive Browse → Account → confirmation → real software keyboard → transient input → Cancel walkthrough against the reviewed head. No sign-in, password, bearer, account identity, or delete action is claimed in this record.
+H1 is **tested-pass** after the Account keyboard remediation (`Screen`
+`automaticallyAdjustKeyboardInsets` plus deletion-form scroll-into-view on
+focus / `keyboardDidShow`). Human-driven walk on physical iPhone completed
+Browse → Account → disposable sign-in → Delete Account → software keyboard →
+Cancel. Confirmation copy, Current password, and Cancel / Delete my account
+remained visible and reachable above the keyboard. No deletion was submitted;
+no agent held credentials.
 
-#### 2026-08-29 clean-build, access, and control attempt
+Earlier **tested-fail** on
+`5171d0373f5414ad3f2bcda87653b9dd1577946c` (keyboard occlusion) is retained as
+historical proof:
+`screenshots/ios-physical-01-delete-keyboard-obscures.png`. The pass is against
+the local keyboard-fix working tree (not yet a published commit SHA).
 
-- Mode: physical-device preflight via local Xcode/Expo development build and
-  iPhone Mirroring; this was not a completed H1 walkthrough.
-- Target: paired physical iPhone 17 Pro Max; no device identifier is retained.
-- `xcodebuild -workspace ios/EazyReview.xcworkspace -scheme EazyReview
-  -configuration Debug -destination 'generic/platform=iOS' clean`:
-  **pass** — `CLEAN SUCCEEDED`.
-- The first `npx expo run:ios --device <paired iPhone> --port 8082` attempt
-  compiled successfully but exited 1 because the phone was locked before launch.
-  After the phone was unlocked, the retry again reported `Build Succeeded`, 0
-  errors, and one non-failing Expo Dev Launcher ambiguous-script-dependency
-  warning. It loaded the redacted local public environment; the installed app
-  was then confirmed through Xcode device information and launched through the
-  Xcode device launcher.
-- Metro observed `iOS Bundled 607ms node_modules/expo-router/entry.js (1848
-  modules)`. After the phone was locked again, iPhone Mirroring displayed the
-  physical app's anonymous Browse screen with the seeded catalog.
-- Pointer control was **blocked by the local Computer Use bridge**, not by an
-  app finding. Multiple `sky.click` attempts—first by display name and then
-  after refreshing state with bundle identifier `com.apple.ScreenContinuity`—
-  returned `Sky Computer Use native pipe closed before response`. A refreshed
-  keyboard `Tab` command was accepted, but it did not navigate the screen.
-  The real Account-tab path therefore remained unreachable. The complete
-  reproducibility record is
-  `docs/notes/blocker-task-19-iphone-mirroring-control.md`.
-- A fresh continuation session initialized a new bridge, refreshed the full
-  mirroring state, and again observed anonymous Browse. Its first safe Account
-  tap returned the same native-pipe error before reaching the phone, so the
-  retry stopped at the required tooling-unavailable boundary.
-- Observed H1 steps: clean build → installed app → launched app → Metro bundle
-  → mirrored anonymous Browse. No Account screen, sign-in, credential entry,
-  confirmation card, keyboard in the app, transient input, Cancel action, or
-  destructive action occurred. No physical screenshot was saved in the
-  evidence folder or selected for GitHub proof.
+Checklist (pass after keyboard fix):
 
-This preserves the physical-device status as `not-tested`; native compilation,
-installation, launch, and Browse do not establish the required Account-card
-interaction result. Repair or replace the local pointer-control path first,
-then resume the real tab journey without substituting a deep link.
-
-Record the exact reviewed SHA and device/runtime. Then:
-
-- [ ] Open Account signed out and confirm anonymous browsing remains available.
-- [ ] Sign in with a human-managed disposable non-production account.
-- [ ] Open Delete Account and verify the full permanence/recalculation copy.
-- [ ] Focus Current password and verify the real software keyboard, safe area,
+- [x] Open Account signed out and confirm anonymous browsing remains available.
+- [x] Sign in with a human-managed disposable non-production account.
+- [x] Open Delete Account and verify the full permanence/recalculation copy.
+- [x] Focus Current password and verify the real software keyboard, safe area,
       scrolling, and reachability of Cancel / Delete my account.
-- [ ] Enter a transient value, confirm the destructive button enables, and
-      **do not submit deletion** in this card.
-- [ ] Tap Cancel, reopen, and confirm the field cleared and submit is disabled.
-- [ ] Record `tested-pass` or `tested-fail` with the exact SHA.
+- [x] Enter a transient value; do not submit deletion.
+- [x] Tap Cancel, reopen, and confirm the field cleared and submit is disabled.
+- [x] Record `tested-pass` after keyboard fix (working tree); retain historical
+      fail evidence for `5171d03`.
+
+#### Agent preflight notes (not the H1 result)
+
+Earlier agent clean/build/install on `5171d03` and historical mirroring
+preflight on `f64cb3d` are superseded by the human H1 results (fail then pass
+after keyboard fix). See
+`docs/notes/blocker-task-19-iphone-mirroring-control.md` only for the prior
+agent pointer-control limitation.
 
 ### H2 — Human staging destructive matrix
 
@@ -285,9 +264,11 @@ No agent/tool may execute any H2 deletion step.
 The final human gate requires:
 
 - [ ] A5 closed on the published A5-integrated Task 19 head (done at
-      `8f2f2a9`) or explicitly re-dispositioned by the human;
-- [ ] H1 physical-device result recorded against reviewed SHA `8f2f2a9`;
-- [ ] H2 staging destructive result recorded against the same reviewed SHA;
+      `8f2f2a9` / live `5171d03`) or explicitly re-dispositioned by the human;
+- [x] H1 physical-device result recorded (**tested-pass** after keyboard fix on
+      working tree; publish fix SHA before closing H3 provenance);
+- [ ] H2 staging destructive result recorded against the reviewed SHA that
+      includes the keyboard fix;
 - [ ] current exact-head CI, mergeability, and review-thread state refreshed;
 - [ ] canonical status docs and PR description synchronized after the evidence
       actually exists; and
@@ -298,10 +279,9 @@ production.
 
 ## Overall result and next decision
 
-A5 maintenance validation **passed** at `f3886a5` / PR #44, and Task 19
-published the A5-integrated head `8f2f2a9` with exact-head Expo CI
-`33277460000` and Database CI `33277459991` **pass**. H1 is **not-tested**;
-H2 is **not-run** / human-only; H3 waits on H1 and H2 against `8f2f2a9`. Do
-not run H1/H2 against `f64cb3d`. Next: run H1 only when a physical iPhone can
-complete the safe Browse → Account → confirmation → keyboard → transient input
-→ Cancel flow; never submit deletion.
+A5/A6 remain green on the A5-integrated published head. H1 is **tested-pass**
+after the keyboard remediation (working tree; historical fail on `5171d03`
+retained). H2 is **not-run** / human-only; H3 waits on H2 against the
+reviewed SHA that includes the keyboard fix. Next: publish the keyboard-fix
+commit + exact-head CI, then authorize H2; never have an agent submit
+deletion.
