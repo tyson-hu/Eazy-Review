@@ -58,15 +58,16 @@
   / 483 assertions, both database concurrency races, generated-type parity,
   unauthenticated gateway checks, mobile web, and iOS Simulator. A5
   maintenance PR #44 aligned the ten expected SDK 57 patches at `f3886a5`
-  (merged to `master` as `33c66ee`); Task 19 is rebased locally onto that
-  `master` at `1647f58`, with publish and fresh exact-head CI still pending.
-  Physical H1 is **not-tested**; clean build, install/launch, Metro bundle, and
-  mirrored anonymous Browse passed, but the local pointer-control blocker in
+  (merged to `master` as `33c66ee`); Task 19 is published on that `master` at
+  `8f2f2a9` with exact-head Expo CI `33277460000` and Database CI
+  `33277459991` pass. Physical H1 is **not-tested**; clean build,
+  install/launch, Metro bundle, and mirrored anonymous Browse passed, but the
+  local pointer-control blocker in
   `docs/notes/blocker-task-19-iphone-mirroring-control.md` prevented the real
   Account-tab path. The complete non-destructive Browse → Account → confirmation
-  → software keyboard → Cancel walkthrough is pending against the final
-  integrated SHA. Hosted configuration/deployment, destructive staging proof,
-  human acceptance, readiness, merge, and production remain outstanding.
+  → software keyboard → Cancel walkthrough is pending against `8f2f2a9`. Hosted
+  configuration/deployment, destructive staging proof, human acceptance,
+  readiness, merge, and production remain outstanding.
   Dashboard:
   [`RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
   Detailed verification and human checklists:
@@ -935,16 +936,15 @@ on 2026-08-20. Local non-destructive implementation was authorized on
 2026-08-29 agent-owned Function, frontend, local database/gateway, web, and
 iOS Simulator verification is complete against that head. A5 maintenance PR
 #44 validated and merged the ten expected SDK 57 patches (`f3886a5` /
-`33c66ee`); Task 19 is rebased locally onto that `master` at `1647f58`, with
-publish and fresh exact-head CI still pending. Physical H1 is **not-tested**;
-clean build, install/launch, Metro bundle, and mirrored anonymous Browse
-passed, but the local pointer-control blocker in
+`33c66ee`); Task 19 is published on that `master` at `8f2f2a9` with
+exact-head Expo CI `33277460000` and Database CI `33277459991` pass.
+Physical H1 is **not-tested**; clean build, install/launch, Metro bundle, and
+mirrored anonymous Browse passed, but the local pointer-control blocker in
 `docs/notes/blocker-task-19-iphone-mirroring-control.md` prevented the real
 Account-tab path. The complete non-destructive Browse → Account → confirmation
-→ software keyboard → Cancel walkthrough is pending against the final
-integrated SHA. Hosted configuration/deployment, destructive staging
-verification, human acceptance, readiness, merge, and production remain
-separate gates.
+→ software keyboard → Cancel walkthrough is pending against `8f2f2a9`. Hosted
+configuration/deployment, destructive staging verification, human acceptance,
+readiness, merge, and production remain separate gates.
 
 Implementation evidence:
 [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).

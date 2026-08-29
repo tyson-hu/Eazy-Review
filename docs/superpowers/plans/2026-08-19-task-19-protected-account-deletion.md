@@ -20,9 +20,9 @@ run `32615974049` and Database CI run `32615974012`. The 2026-08-29 safe
 Function, frontend, local database/gateway, mobile-web, and iOS Simulator lanes
 passed with documented limits against that head. A5 maintenance PR #44
 validated and merged the ten expected SDK 57 patches (`f3886a5` / `33c66ee`);
-Task 19 is rebased locally onto that `master` at `1647f58`, with publish and
-fresh exact-head CI still pending. Physical-device review, hosted
-configuration/deployment, destructive acceptance, readiness, merge, and
+Task 19 is published on that `master` at `8f2f2a9` with exact-head Expo CI
+`33277460000` and Database CI `33277459991` pass. Physical-device review,
+hosted configuration/deployment, destructive acceptance, readiness, merge, and
 production remain separate gates. Current progress and detailed evidence live
 in `RESULT.md` and `VERIFICATION.md` under the Task 19 evidence folder.
 

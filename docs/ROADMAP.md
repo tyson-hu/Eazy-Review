@@ -52,10 +52,10 @@ Task detail, dependencies, acceptance, and current status live in
   Function, frontend, local database/gateway, mobile-web, and iOS Simulator
   verification passed on 2026-08-29 against that head. A5 maintenance PR #44
   merged the ten expected SDK 57 patches (`f3886a5` / `33c66ee`); Task 19 is
-  rebased locally onto that `master` at `1647f58`, with publish and fresh
-  exact-head CI still pending. Physical-device review, staging
-  deployment/configuration, destructive staging proof, human acceptance,
-  merge, and production remain outstanding. Dashboard:
+  published on that `master` at `8f2f2a9` with exact-head Expo CI
+  `33277460000` and Database CI `33277459991` pass. Physical-device review,
+  staging deployment/configuration, destructive staging proof, human
+  acceptance, merge, and production remain outstanding. Dashboard:
   `docs/evidence/task-19-protected-account-deletion/RESULT.md`; details:
   `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`.
 - Post–Task 12 review: **GO with roadmap revision**.

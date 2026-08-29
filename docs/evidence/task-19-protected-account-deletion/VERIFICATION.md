@@ -4,14 +4,14 @@
 
 - Date: 2026-08-29
 - Branch: `codex/task-19-guarded-account-deletion`
-- Prior published reviewed head: `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`
-  (safe verification and historical exact-head CI)
-- Local A5-integrated head (not yet published):
-  `1647f5800a9fe4ffa0f15b832bef839e3de23eb4` on `master`
+- Prior published head: `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`
+  (pre-A5 safe verification and historical exact-head CI)
+- A5-integrated published head:
+  `8f2f2a9e1f35f9b6cf70742e9d27092beb222367` on `master`
   `33c66ee56b825aa53df5c488e374886591275d25`
 - A5 maintenance candidate: `f3886a5160b00f3326281741dd002f17b5d8a6a3`
   (PR #44, merged)
-- Pull request: #43, draft/open; remote head still pre-rebase until publish
+- Pull request: #43, draft/open, mergeable
 - Safe run environments: local Supabase, 393×852 Expo web, and
   `Eazy-Review-iPhone-15` on iOS Simulator 26.5
 - Destructive boundary: no agent/tool account deletion on local, staging, or
@@ -155,8 +155,8 @@ Limitations:
 
 ### A5 — Fresh Expo compatibility gate
 
-Classification: **maintenance validation pass; Task 19 integration pending
-publish**.
+Classification: **pass — maintenance merged and integrated into published
+Task 19 head `8f2f2a9`**.
 
 On the pre-integration head `f64cb3d`, `npm ci` restored the committed lockfile
 and `npm run check` passed through tests before Expo Doctor reported ten
@@ -179,25 +179,24 @@ Separate maintenance PR #44 aligned those packages (plus an exact
 `react-test-renderer@19.2.3` pin for React peer compatibility), passed local
 `npm run check`, and obtained exact-head Expo CI `33276840502` and Database CI
 `33276840522` on `f3886a5160b00f3326281741dd002f17b5d8a6a3`. It merged to
-`master` as `33c66ee56b825aa53df5c488e374886591275d25`. Task 19 was then
-rebased locally onto that `master` at
-`1647f5800a9fe4ffa0f15b832bef839e3de23eb4`. Publishing that integrated head and
-refreshing Task 19 exact-head CI remain pending; A5 is not closed for Task 19
-until that publish completes.
+`master` as `33c66ee56b825aa53df5c488e374886591275d25`. Task 19 was rebased
+onto that `master` and published at
+`8f2f2a9e1f35f9b6cf70742e9d27092beb222367`.
 
 ### A6 — Published exact-head CI
 
-Historical GitHub state for prior published head `f64cb3d` (2026-08-29):
+Historical GitHub state for prior published head `f64cb3d`:
 
 - PR #43 head equaled `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`;
 - Expo CI `validate`, run `32615974049`: **pass**;
 - Database CI `database`, run `32615974012`: **pass**.
 
-Those runs prove only that SHA under its then-current dependency metadata.
-After the A5 rebase, remote PR #43 still points at the pre-integration head.
-Exact-head CI for local integrated head
-`1647f5800a9fe4ffa0f15b832bef839e3de23eb4` is **pending publish**.
+Current A5-integrated published head `8f2f2a9` (2026-08-29):
 
+- PR #43 head equals `8f2f2a9e1f35f9b6cf70742e9d27092beb222367`;
+- Expo CI `validate`, run `33277460000`: **pass**;
+- Database CI `database`, run `33277459991`: **pass**;
+- PR remains draft/open and mergeable.
 ## Part 2 — Human-owned gates
 
 ### H1 — Physical-device non-destructive walk
@@ -285,9 +284,9 @@ No agent/tool may execute any H2 deletion step.
 
 The final human gate requires:
 
-- [ ] A5 integration published on Task 19 with refreshed exact-head CI, or
-      explicitly dispositioned by the human;
-- [ ] H1 physical-device result recorded against the final integrated SHA;
+- [ ] A5 closed on the published A5-integrated Task 19 head (done at
+      `8f2f2a9`) or explicitly re-dispositioned by the human;
+- [ ] H1 physical-device result recorded against reviewed SHA `8f2f2a9`;
 - [ ] H2 staging destructive result recorded against the same reviewed SHA;
 - [ ] current exact-head CI, mergeability, and review-thread state refreshed;
 - [ ] canonical status docs and PR description synchronized after the evidence
@@ -299,10 +298,10 @@ production.
 
 ## Overall result and next decision
 
-A5 maintenance validation **passed** at `f3886a5` / PR #44 and is merged to
-`master`; Task 19 is rebased locally at `1647f58`, but published integration
-and fresh exact-head CI remain pending. Prior agent-owned lanes remain green on
-historical `f64cb3d`. H1 is **not-tested**; H2 is **not-run** / human-only;
-H3 waits on the final integrated SHA plus H1 and H2. Do not run H1/H2 against
-`f64cb3d`. Next authorized step: publish the rebased Task 19 head and obtain
-fresh exact-head Expo and Database CI; never submit deletion.
+A5 maintenance validation **passed** at `f3886a5` / PR #44, and Task 19
+published the A5-integrated head `8f2f2a9` with exact-head Expo CI
+`33277460000` and Database CI `33277459991` **pass**. H1 is **not-tested**;
+H2 is **not-run** / human-only; H3 waits on H1 and H2 against `8f2f2a9`. Do
+not run H1/H2 against `f64cb3d`. Next: run H1 only when a physical iPhone can
+complete the safe Browse → Account → confirmation → keyboard → transient input
+→ Cancel flow; never submit deletion.

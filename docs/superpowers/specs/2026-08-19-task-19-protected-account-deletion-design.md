@@ -33,9 +33,9 @@ follow-up was published at prior PR head
 agent-owned Function, frontend, local database/gateway, mobile-web, and iOS
 Simulator verification passed with documented limits against that head. A5
 maintenance PR #44 validated and merged the ten expected SDK 57 patches at
-`f3886a5` (`master` merge `33c66ee`); Task 19 is rebased locally onto that
-`master` at `1647f58`, with publish and fresh exact-head CI still pending.
-Physical-device review, hosted configuration/deployment, human staging
+`f3886a5` (`master` merge `33c66ee`); Task 19 is published on that `master` at
+`8f2f2a9` with exact-head Expo CI `33277460000` and Database CI `33277459991`
+pass. Physical-device review, hosted configuration/deployment, human staging
 deletion, human acceptance, readiness, merge, and production remain separate
 outstanding gates. Current dashboard and details live under
 `docs/evidence/task-19-protected-account-deletion/`.
@@ -67,10 +67,9 @@ The feature is intentionally narrow:
   remediation. Prior PR head `f64cb3d` passed exact-head Expo and Database
   CI. The 2026-08-29 safe Function/frontend/database/gateway/web/simulator
   rerun passed against that head. A5 maintenance PR #44 merged the ten expected
-  SDK 57 patches; Task 19 is rebased locally onto that `master` at `1647f58`,
-  with publish and fresh exact-head CI still pending. Later human and hosted
-  lifecycle gates remain outstanding. Task 19 remains parent-owned and not
-  parallel-safe.
+  SDK 57 patches; Task 19 is published on that `master` at `8f2f2a9` with
+  exact-head Expo and Database CI pass. Later human and hosted lifecycle gates
+  remain outstanding. Task 19 remains parent-owned and not parallel-safe.
 - Authentication is email/password only for the MVP.
 - The Account screen is the sole in-app location for the Delete Account action;
   there is no generic Settings route or separate deletion route.

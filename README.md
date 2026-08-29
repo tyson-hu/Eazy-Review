@@ -24,8 +24,8 @@ Score, and maintaining a personal My Rating.
   principal-specific local settlement. Fresh Function, frontend, local
   database/gateway, mobile-web, and iOS Simulator verification passed on
   2026-08-29 against prior head `f64cb3d`. A5 maintenance PR #44 merged the
-  ten expected SDK 57 patches; Task 19 is rebased locally onto that `master`
-  with publish and fresh exact-head CI still pending. No coding agent or
+  ten expected SDK 57 patches; Task 19 is published on that `master` at
+  `8f2f2a9` with fresh exact-head Expo and Database CI pass. No coding agent or
   tool executed deletion. See the
   [Task 19 dashboard](docs/evidence/task-19-protected-account-deletion/RESULT.md)
   and [verification details](docs/evidence/task-19-protected-account-deletion/VERIFICATION.md).
