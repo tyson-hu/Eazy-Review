@@ -9,6 +9,8 @@
 - A5-integrated published head:
   `8f2f2a9e1f35f9b6cf70742e9d27092beb222367` on `master`
   `33c66ee56b825aa53df5c488e374886591275d25`
+- Current published head (keyboard remediation):
+  `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75`
 - A5 maintenance candidate: `f3886a5160b00f3326281741dd002f17b5d8a6a3`
   (PR #44, merged)
 - Pull request: #43, draft/open, mergeable
@@ -23,7 +25,7 @@
 | --- | --- | --- |
 | Mobile web, 393×852 | `pass` | Non-destructive confirmation/cancel walk |
 | iOS Simulator 26.5 | `pass` | Non-destructive confirmation/cancel walk; software keyboard limit below |
-| Physical device | `tested-pass` | Human H1 after keyboard fix (working tree): confirmation / Current password / Cancel–Delete remain visible above software keyboard; Cancel path completed. Historical fail on `5171d03`: `screenshots/ios-physical-01-delete-keyboard-obscures.png` |
+| Physical device | `tested-pass` | Human H1 on `4c8ab7a`: confirmation / Current password / Cancel–Delete remain visible above software keyboard; Cancel path completed. Historical fail on `5171d03`: `screenshots/ios-physical-01-delete-keyboard-obscures.png` |
 
 | Remaining lifecycle surface | Status | Boundary |
 | --- | --- | --- |
@@ -34,11 +36,10 @@
 | Human acceptance | `not-run` | H3 has not occurred |
 | Production | `not-run` | Production untouched and forbidden to coding agents |
 
-The four identity-free PNGs named in `RESULT.md` are the selected candidate
-GitHub proof set because they establish distinct signed-out and confirmation
-states on both platforms. No duplicate, credential-bearing, or diagnostic raw
-capture is retained. The selected files remain local/untracked until a later
-commit/push authorization.
+The five identity-free PNGs named in `RESULT.md` are the selected candidate
+GitHub proof set (signed-out and confirmation on both platforms, plus
+historical physical keyboard-fail capture). No duplicate, credential-bearing,
+or diagnostic raw capture is retained.
 
 ## Part 1 — Agent-owned safe verification
 
@@ -191,31 +192,37 @@ Historical GitHub state for prior published head `f64cb3d`:
 - Expo CI `validate`, run `32615974049`: **pass**;
 - Database CI `database`, run `32615974012`: **pass**.
 
-Current A5-integrated published head `8f2f2a9` (2026-08-29):
+Current published head `4c8ab7a` (2026-08-29, keyboard remediation):
 
-- PR #43 head equals `8f2f2a9e1f35f9b6cf70742e9d27092beb222367`;
-- Expo CI `validate`, run `33277460000`: **pass**;
-- Database CI `database`, run `33277459991`: **pass**;
+- PR #43 head equals `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75`;
+- Expo CI `validate`, run `33279912599`: **pass**;
+- Database CI `database`, run `33279912602`: **pass**;
 - PR remains draft/open and mergeable.
+
+Prior A5-integrated published head `8f2f2a9` (2026-08-29):
+
+- PR #43 head equaled `8f2f2a9e1f35f9b6cf70742e9d27092beb222367`;
+- Expo CI `validate`, run `33277460000`: **pass**;
+- Database CI `database`, run `33277459991`: **pass**.
 ## Part 2 — Human-owned gates
 
 ### H1 — Physical-device non-destructive walk
 
-H1 is **tested-pass** after the Account keyboard remediation (`Screen`
-`automaticallyAdjustKeyboardInsets` plus deletion-form scroll-into-view on
-focus / `keyboardDidShow`). Human-driven walk on physical iPhone completed
-Browse → Account → disposable sign-in → Delete Account → software keyboard →
-Cancel. Confirmation copy, Current password, and Cancel / Delete my account
-remained visible and reachable above the keyboard. No deletion was submitted;
-no agent held credentials.
+H1 is **tested-pass** on reviewed SHA
+`4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75` after the Account keyboard
+remediation (`Screen` `automaticallyAdjustKeyboardInsets` plus deletion-form
+scroll-into-view on focus / `keyboardDidShow`). Human-driven walk on physical
+iPhone completed Browse → Account → disposable sign-in → Delete Account →
+software keyboard → Cancel. Confirmation copy, Current password, and Cancel /
+Delete my account remained visible and reachable above the keyboard. No
+deletion was submitted; no agent held credentials.
 
 Earlier **tested-fail** on
 `5171d0373f5414ad3f2bcda87653b9dd1577946c` (keyboard occlusion) is retained as
 historical proof:
-`screenshots/ios-physical-01-delete-keyboard-obscures.png`. The pass is against
-the local keyboard-fix working tree (not yet a published commit SHA).
+`screenshots/ios-physical-01-delete-keyboard-obscures.png`.
 
-Checklist (pass after keyboard fix):
+Checklist (pass on `4c8ab7a`):
 
 - [x] Open Account signed out and confirm anonymous browsing remains available.
 - [x] Sign in with a human-managed disposable non-production account.
@@ -224,8 +231,8 @@ Checklist (pass after keyboard fix):
       scrolling, and reachability of Cancel / Delete my account.
 - [x] Enter a transient value; do not submit deletion.
 - [x] Tap Cancel, reopen, and confirm the field cleared and submit is disabled.
-- [x] Record `tested-pass` after keyboard fix (working tree); retain historical
-      fail evidence for `5171d03`.
+- [x] Record `tested-pass` with exact SHA `4c8ab7a`; retain historical fail
+      evidence for `5171d03`.
 
 #### Agent preflight notes (not the H1 result)
 
@@ -263,13 +270,13 @@ No agent/tool may execute any H2 deletion step.
 
 The final human gate requires:
 
-- [ ] A5 closed on the published A5-integrated Task 19 head (done at
-      `8f2f2a9` / live `5171d03`) or explicitly re-dispositioned by the human;
-- [x] H1 physical-device result recorded (**tested-pass** after keyboard fix on
-      working tree; publish fix SHA before closing H3 provenance);
-- [ ] H2 staging destructive result recorded against the reviewed SHA that
-      includes the keyboard fix;
-- [ ] current exact-head CI, mergeability, and review-thread state refreshed;
+- [x] A5 closed on the published A5-integrated Task 19 head (done at
+      `8f2f2a9`; live reviewed head `4c8ab7a`) or explicitly re-dispositioned
+      by the human;
+- [x] H1 physical-device result recorded (**tested-pass** on `4c8ab7a`);
+- [ ] H2 staging destructive result recorded against reviewed SHA `4c8ab7a`;
+- [x] current exact-head CI, mergeability, and review-thread state refreshed
+      (Expo `33279912599`, Database `33279912602` on `4c8ab7a`);
 - [ ] canonical status docs and PR description synchronized after the evidence
       actually exists; and
 - [ ] explicit human accept/reject decision.
@@ -279,9 +286,8 @@ production.
 
 ## Overall result and next decision
 
-A5/A6 remain green on the A5-integrated published head. H1 is **tested-pass**
-after the keyboard remediation (working tree; historical fail on `5171d03`
-retained). H2 is **not-run** / human-only; H3 waits on H2 against the
-reviewed SHA that includes the keyboard fix. Next: publish the keyboard-fix
-commit + exact-head CI, then authorize H2; never have an agent submit
-deletion.
+A5/A6 remain green on published head `4c8ab7a` (Expo `33279912599`, Database
+`33279912602`). H1 is **tested-pass** on `4c8ab7a` (historical fail on
+`5171d03` retained). H2 is **not-run** / human-only; H3 waits on H2 against
+`4c8ab7a`. Next: authorize H2 when staging is ready; never have an agent
+submit deletion.

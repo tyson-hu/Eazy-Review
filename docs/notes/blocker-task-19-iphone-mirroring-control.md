@@ -74,8 +74,9 @@ Unable to launch com.tysonhu.eazyreview.dev because the device was not, or could
 ## Resolution (2026-08-29)
 
 Human completed H1 after the Account keyboard remediation. Result:
-**tested-pass** (working tree). Historical keyboard-occlusion fail on
-`5171d03` remains in Task 19 evidence. Agent iPhone Mirroring pointer control
-is still unavailable in this Cursor session; that limitation no longer blocks
-H1. See
+**tested-pass** on published SHA `4c8ab7a` (exact-head Expo CI
+`33279912599`, Database CI `33279912602`). Historical keyboard-occlusion fail
+on `5171d03` remains in Task 19 evidence. Agent iPhone Mirroring pointer
+control is still unavailable in this Cursor session; that limitation no longer
+blocks H1. See
 `docs/evidence/task-19-protected-account-deletion/RESULT.md`.

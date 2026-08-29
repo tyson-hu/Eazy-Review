@@ -59,9 +59,9 @@
   unauthenticated gateway checks, mobile web, and iOS Simulator. A5
   maintenance PR #44 aligned the ten expected SDK 57 patches at `f3886a5`
   (merged to `master` as `33c66ee`); Task 19 is published on that `master` at
-  `8f2f2a9` with exact-head Expo CI `33277460000` and Database CI
-  `33277459991` pass. Physical H1 is **tested-pass** after the Account
-  keyboard remediation (working tree; historical fail on `5171d03` retained as
+  `4c8ab7a` (Account keyboard remediation) with exact-head Expo CI
+  `33279912599` and Database CI `33279912602` pass. Physical H1 is
+  **tested-pass** on `4c8ab7a` (historical fail on `5171d03` retained as
   `screenshots/ios-physical-01-delete-keyboard-obscures.png`). No deletion was
   submitted. Hosted configuration/deployment, destructive staging proof, human
   acceptance, readiness, merge, and production remain outstanding.
@@ -933,10 +933,10 @@ on 2026-08-20. Local non-destructive implementation was authorized on
 2026-08-29 agent-owned Function, frontend, local database/gateway, web, and
 iOS Simulator verification is complete against that head. A5 maintenance PR
 #44 validated and merged the ten expected SDK 57 patches (`f3886a5` /
-`33c66ee`); Task 19 is published on that `master` at `8f2f2a9` with
-exact-head Expo CI `33277460000` and Database CI `33277459991` pass.
-Physical H1 is **tested-pass** after the Account keyboard remediation
-(working tree; historical fail on `5171d03` retained as evidence screenshot
+`33c66ee`); Task 19 is published on that `master` at `4c8ab7a` (Account
+keyboard remediation) with exact-head Expo CI `33279912599` and Database CI
+`33279912602` pass. Physical H1 is **tested-pass** on `4c8ab7a` (historical
+fail on `5171d03` retained as evidence screenshot
 `ios-physical-01-delete-keyboard-obscures.png`). No deletion was submitted.
 Hosted configuration/deployment, destructive staging verification, human
 acceptance, readiness, merge, and production remain separate gates.
