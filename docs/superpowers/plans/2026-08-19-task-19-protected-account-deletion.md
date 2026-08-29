@@ -14,9 +14,17 @@ full 41-suite / 495-test frontend runs, `check:readonly`, `check:expo`, and
 25/25 Deno Function tests passed in disposable credential-free validation.
 The remediation and initial documentation sync are committed/pushed at
 `28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
-`32615690386` and Database CI run `32615690393` passed. Deployment/
-configuration, destructive acceptance, readiness, merge, and production remain
-separate gates. The live PR records current exact-head CI.
+`32615690386` and Database CI run `32615690393` passed. Prior PR head
+`f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e` also passed exact-head Expo CI
+run `32615974049` and Database CI run `32615974012`. The 2026-08-29 safe
+Function, frontend, local database/gateway, mobile-web, and iOS Simulator lanes
+passed with documented limits against that head. A5 maintenance PR #44
+validated and merged the ten expected SDK 57 patches (`f3886a5` / `33c66ee`);
+Task 19 is rebased locally onto that `master` at `1647f58`, with publish and
+fresh exact-head CI still pending. Physical-device review, hosted
+configuration/deployment, destructive acceptance, readiness, merge, and
+production remain separate gates. Current progress and detailed evidence live
+in `RESULT.md` and `VERIFICATION.md` under the Task 19 evidence folder.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` only for explicitly bounded,
@@ -2303,6 +2311,7 @@ git commit -m "test: prove account deletion cascade metadata"
   `docs/decisions/2026-07-26-caller-derived-session-aware-self-deletion.md`
 - Regenerate: `docs/DECISIONS.md`
 - Create: `docs/evidence/task-19-protected-account-deletion/RESULT.md`
+- Create: `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`
 - Modify status only when the corresponding gate occurs:
   `docs/superpowers/specs/2026-08-19-task-19-protected-account-deletion-design.md`
 - Preserve: `docs/superpowers/plans/2026-08-19-task-19-protected-account-deletion.md`
@@ -2472,6 +2481,7 @@ git add AGENTS.md README.md .cursor/rules/security.mdc \
   docs/USER_FLOWS.md \
   docs/decisions/2026-07-26-caller-derived-session-aware-self-deletion.md \
   docs/evidence/task-19-protected-account-deletion/RESULT.md \
+  docs/evidence/task-19-protected-account-deletion/VERIFICATION.md \
   docs/superpowers/specs/2026-08-19-task-19-protected-account-deletion-design.md \
   docs/superpowers/plans/2026-08-19-task-19-protected-account-deletion.md
 git commit -m "docs: record Task 19 implementation state"
@@ -2483,6 +2493,8 @@ git commit -m "docs: record Task 19 implementation state"
 
 - Update with real results:
   `docs/evidence/task-19-protected-account-deletion/RESULT.md`
+- Update with command and checklist detail:
+  `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`
 - Update ignored session state: `docs/notes/handoff.md`
 
 **Interfaces:**

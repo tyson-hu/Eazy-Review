@@ -26,10 +26,19 @@ full 41-suite / 495-test frontend runs, `check:readonly`, `check:expo`, and
 25/25 Deno Function tests passed in disposable credential-free validation.
 The remediation and initial documentation sync are published at
 `28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
-`32615690386` and Database CI run `32615690393` passed. Deployment/
-configuration, interactive review, human
-staging deletion, human acceptance, readiness, merge, and production remain
-separate outstanding gates.
+`32615690386` and Database CI run `32615690393` passed. The status-only
+follow-up was published at prior PR head
+`f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`; exact-head Expo CI run
+`32615974049` and Database CI run `32615974012` passed. On 2026-08-29 the
+agent-owned Function, frontend, local database/gateway, mobile-web, and iOS
+Simulator verification passed with documented limits against that head. A5
+maintenance PR #44 validated and merged the ten expected SDK 57 patches at
+`f3886a5` (`master` merge `33c66ee`); Task 19 is rebased locally onto that
+`master` at `1647f58`, with publish and fresh exact-head CI still pending.
+Physical-device review, hosted configuration/deployment, human staging
+deletion, human acceptance, readiness, merge, and production remain separate
+outstanding gates. Current dashboard and details live under
+`docs/evidence/task-19-protected-account-deletion/`.
 
 ## Purpose
 
@@ -55,9 +64,13 @@ The feature is intentionally narrow:
 - Task 19's canonical status remains **Partial — implementation complete; human
   staging deletion pending.** Draft PR #43 contains the implementation, and the
   three accepted blockers below are corrected in the locally validated
-  remediation published at `28ac202`; exact-head Expo and Database CI passed.
-  Later lifecycle gates remain outstanding. Task 19 remains parent-owned and
-  not parallel-safe.
+  remediation. Prior PR head `f64cb3d` passed exact-head Expo and Database
+  CI. The 2026-08-29 safe Function/frontend/database/gateway/web/simulator
+  rerun passed against that head. A5 maintenance PR #44 merged the ten expected
+  SDK 57 patches; Task 19 is rebased locally onto that `master` at `1647f58`,
+  with publish and fresh exact-head CI still pending. Later human and hosted
+  lifecycle gates remain outstanding. Task 19 remains parent-owned and not
+  parallel-safe.
 - Authentication is email/password only for the MVP.
 - The Account screen is the sole in-app location for the Delete Account action;
   there is no generic Settings route or separate deletion route.
@@ -71,8 +84,10 @@ The feature is intentionally narrow:
   Database-CI-owned `npm run check:functions` Deno lane.
 - Diagnostic head `b843dc8` has green Database CI and red Expo CI. The corrected
   product/test tree is `3d8bf2be5cfadab6197c95b4f4036006df4caab4`;
-  implementation head `28ac202` passed exact-head Expo and Database CI. The
-  live PR head and checks remain the source of current exact-head truth.
+  implementation head `28ac202` and prior status head `f64cb3d` passed their
+  exact-head Expo and Database CI runs. A5 maintenance is merged on `master`;
+  the live PR head still needs the A5-integrated publish before it is again the
+  source of exact-head truth.
 
 ## Goals
 
@@ -1096,7 +1111,8 @@ branch:
 - `docs/RELEASE_CHECKLIST.md`;
 - the accepted caller-derived self-deletion ADR and generated
   `docs/DECISIONS.md` index; and
-- `docs/evidence/task-19-protected-account-deletion/RESULT.md`.
+- `docs/evidence/task-19-protected-account-deletion/RESULT.md` dashboard and
+  `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md` details.
 
 The API contract and ADR must explicitly distinguish account deletion from
 local cleanup after confirmed revocation or an unresolved destructive outcome.

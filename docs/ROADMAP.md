@@ -48,10 +48,16 @@ Task detail, dependencies, acceptance, and current status live in
   reauthentication, caller-derived Edge Function validation, global refresh-
   session revocation before hard deletion, honest non-atomic outcomes, and a
   revision-bound principal guard that preserves newer Auth/cache authority.
-  Implementation head `28ac202` passed exact-head Expo and Database CI.
-  Staging deployment/configuration, device review, destructive staging proof,
-  human acceptance, merge, and production remain outstanding.
-  Evidence: `docs/evidence/task-19-protected-account-deletion/RESULT.md`.
+  Prior PR head `f64cb3d` passed exact-head Expo and Database CI. Fresh
+  Function, frontend, local database/gateway, mobile-web, and iOS Simulator
+  verification passed on 2026-08-29 against that head. A5 maintenance PR #44
+  merged the ten expected SDK 57 patches (`f3886a5` / `33c66ee`); Task 19 is
+  rebased locally onto that `master` at `1647f58`, with publish and fresh
+  exact-head CI still pending. Physical-device review, staging
+  deployment/configuration, destructive staging proof, human acceptance,
+  merge, and production remain outstanding. Dashboard:
+  `docs/evidence/task-19-protected-account-deletion/RESULT.md`; details:
+  `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`.
 - Post–Task 12 review: **GO with roadmap revision**.
 
 The schema, aggregate mechanism, RLS/grants, score terminology, core journey,

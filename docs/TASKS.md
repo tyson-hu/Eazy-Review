@@ -50,28 +50,27 @@
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
 - Task 19 is **Partial — implementation complete; human staging deletion
   pending.**
-  Draft PR #43 contains the non-destructive implementation. Diagnostic head
-  `b843dc8` isolated the injected-client Auth storage-key mismatch, and its
-  required integrated review found two additional auth-preservation blockers:
-  deletion guard arm racing an earlier refresh, and same-principal recovery
-  removing valid S1 without an exact displaced snapshot. The bounded local
-  remediation now resolves all three: injected-client storage identity wins
-  over ambient public configuration; guard arm drains earlier Auth work before
-  isolated reauthentication; and guarded recovery publishes S2 only through an
-  exact predecessor-bound transaction while unknown displacement grants no
-  session, companion, or same-principal cache cleanup authority. Temporary
-  diagnostics are removed. The product/test candidate is frozen at Git tree
-  `3d8bf2be5cfadab6197c95b4f4036006df4caab4`; 6 affected suites / 205 tests,
-  the full 41-suite / 495-test frontend run, `check:readonly`, `check:expo`, and
-  25/25 Deno Function tests passed in disposable credential-free validation.
-  The remediation and first documentation sync are published at
-  `28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
-  `32615690386` and Database CI run `32615690393` passed. Diagnostic and
-  remediation record:
-  [`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
-  Deployment/configuration, device review, destructive staging proof, human
-  acceptance, readiness, merge, and production remain outstanding. Evidence:
-  [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
+  Draft PR #43 previously published the non-destructive implementation at
+  `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`; exact-head Expo CI run
+  `32615974049` and Database CI run `32615974012` passed on that SHA. The
+  2026-08-29 safe verification rerun passed 25 Function tests, 11 focused
+  suites / 270 tests, the full 41-suite / 495-test frontend run, 8 pgTAP files
+  / 483 assertions, both database concurrency races, generated-type parity,
+  unauthenticated gateway checks, mobile web, and iOS Simulator. A5
+  maintenance PR #44 aligned the ten expected SDK 57 patches at `f3886a5`
+  (merged to `master` as `33c66ee`); Task 19 is rebased locally onto that
+  `master` at `1647f58`, with publish and fresh exact-head CI still pending.
+  Physical H1 is **not-tested**; clean build, install/launch, Metro bundle, and
+  mirrored anonymous Browse passed, but the local pointer-control blocker in
+  `docs/notes/blocker-task-19-iphone-mirroring-control.md` prevented the real
+  Account-tab path. The complete non-destructive Browse → Account → confirmation
+  → software keyboard → Cancel walkthrough is pending against the final
+  integrated SHA. Hosted configuration/deployment, destructive staging proof,
+  human acceptance, readiness, merge, and production remain outstanding.
+  Dashboard:
+  [`RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
+  Detailed verification and human checklists:
+  [`VERIFICATION.md`](evidence/task-19-protected-account-deletion/VERIFICATION.md).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -930,31 +929,27 @@ boundary.
 
 Planning state: the revised design and implementation plan were human-approved
 on 2026-08-20. Local non-destructive implementation was authorized on
-2026-08-21 and committed/pushed in draft PR #43. The first validation
-remediation is published at `1a515e1`; Database CI passed and Expo CI repeated
-the recovery-test timeout. The final test-orchestration repair is locally
-complete and published at `9576555`. Diagnostic commit `b843dc8` proved
-exact-head Expo CI resolves an environment-derived Auth storage key for the
-injected test client while the regression writes B to the injected-client key;
-guarded reconciliation therefore reads an empty slot before isolated
-validation. Database CI passes. The required `b843dc8` integrated baseline
-review also found two distinct auth-preservation blockers before any
-remediation edit: standalone guard arm can strand stale raw A after an
-in-flight refresh and pre-revocation rollback, and settled same-principal
-recovery can reject S2 then remove valid S1 without an exact displaced
-snapshot. The bounded local remediation resolves the storage identity,
-Auth-lock-before-arm, and exact recovery-predecessor/unknown-displacement
-invariants, removes the diagnostic labels, and passes the non-destructive local
-matrix on product/test tree `3d8bf2be5cfadab6197c95b4f4036006df4caab4`.
-The remediation and initial documentation sync are published at
-`28ac20204ef4c2386b0aa041f805ee2aea520780`; exact-head Expo CI run
-`32615690386` and Database CI run `32615690393` passed. Remediation record:
-[`docs/notes/blocker-task-19-expo-ci-recovery-reconciliation.md`](notes/blocker-task-19-expo-ci-recovery-reconciliation.md).
-Hosted configuration, deployment, destructive verification, acceptance,
-readiness, merge, and production remain separate gates.
+2026-08-21 and was published in draft PR #43 at prior head
+`f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`. Exact-head Expo CI run
+`32615974049` and Database CI run `32615974012` passed on that SHA. The
+2026-08-29 agent-owned Function, frontend, local database/gateway, web, and
+iOS Simulator verification is complete against that head. A5 maintenance PR
+#44 validated and merged the ten expected SDK 57 patches (`f3886a5` /
+`33c66ee`); Task 19 is rebased locally onto that `master` at `1647f58`, with
+publish and fresh exact-head CI still pending. Physical H1 is **not-tested**;
+clean build, install/launch, Metro bundle, and mirrored anonymous Browse
+passed, but the local pointer-control blocker in
+`docs/notes/blocker-task-19-iphone-mirroring-control.md` prevented the real
+Account-tab path. The complete non-destructive Browse → Account → confirmation
+→ software keyboard → Cancel walkthrough is pending against the final
+integrated SHA. Hosted configuration/deployment, destructive staging
+verification, human acceptance, readiness, merge, and production remain
+separate gates.
 
 Implementation evidence:
 [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
+Detailed verification and human-only checklists:
+[`docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`](evidence/task-19-protected-account-deletion/VERIFICATION.md).
 
 Correction state: superseded recovery now isolate-validates B and may replace
 only exact guard-allowed displaced A through an application-owned CAS. Raw C,

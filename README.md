@@ -21,9 +21,14 @@ Score, and maintaining a personal My Rating.
 - Task 19 protected account deletion is **Partial — implementation complete;
   human staging deletion pending.** The local packet adds a reauthenticated
   inline confirmation, caller-derived Edge Function boundary, and guarded
-  principal-specific local settlement. No coding agent or tool executed
-  deletion. See
-  [Task 19 evidence](docs/evidence/task-19-protected-account-deletion/RESULT.md).
+  principal-specific local settlement. Fresh Function, frontend, local
+  database/gateway, mobile-web, and iOS Simulator verification passed on
+  2026-08-29 against prior head `f64cb3d`. A5 maintenance PR #44 merged the
+  ten expected SDK 57 patches; Task 19 is rebased locally onto that `master`
+  with publish and fresh exact-head CI still pending. No coding agent or
+  tool executed deletion. See the
+  [Task 19 dashboard](docs/evidence/task-19-protected-account-deletion/RESULT.md)
+  and [verification details](docs/evidence/task-19-protected-account-deletion/VERIFICATION.md).
 
 Feed remains a placeholder, and Task 19 human staging acceptance plus release
 work remain pending. Current task status and implementation order live in
