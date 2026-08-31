@@ -9,7 +9,7 @@
 - A5-integrated published head:
   `8f2f2a9e1f35f9b6cf70742e9d27092beb222367` on `master`
   `33c66ee56b825aa53df5c488e374886591275d25`
-- Current published head (keyboard remediation / H1–H2 reviewed):
+- H1–H2 reviewed published head (keyboard remediation):
   `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75`
 - Human acceptance + confirmation-clarity head:
   `e7e3f2876ed8b5c90adc87d8710a1a1af485b0e0`
@@ -20,11 +20,11 @@
 - Post-acceptance code closeout: `39c3927` (signup confirmation exact
   two-slash app URL; no deletion-behavior change; focused 5-suite / 96-test
   and full 42-suite / 496-test frontend gates plus 25/25 Function tests pass
-  locally; live exact-head CI is tracked on PR #43)
+  locally; included in final reviewed head `d0465fb`, with exact-head CI below)
 - A5 maintenance candidate: `f3886a5160b00f3326281741dd002f17b5d8a6a3`
   (PR #44, merged)
-- Pull request: #43, open and unmerged; live readiness, mergeability, and
-  exact-head CI are tracked on GitHub
+- Pull request: #43, merged on 2026-08-30 as `ce2f6ec`; reviewed head
+  `d0465fb` passed Expo CI `33351392639` and Database CI `33351392818`
 - Safe run environments: local Supabase, 393×852 Expo web, and
   `Eazy-Review-iPhone-15` on iOS Simulator 26.5
 - Destructive boundary: no agent/tool account deletion on local, staging, or
@@ -44,7 +44,7 @@
 | Human staging deletion | `tested-pass` | Human H2 on `4c8ab7a` / `eazy-review-staging` (2026-08-30); agent did not submit deletion |
 | Second-session refresh rejection | `tested-pass` | Human H2: second session could not refresh after deletion |
 | Residual access-token observation through `exp` | `tested-pass` | Second client still showed account A UI but had no rating access through JWT `exp` (expected residual-token / non-immediate access invalidation) |
-| Human acceptance | `accepted` | H3 human-accepted on 2026-08-30; confirmation-clarity fix included; readiness/merge/production remain separate |
+| Human acceptance | `accepted` | H3 human-accepted on 2026-08-30; confirmation-clarity fix included; PR readiness/merge later completed under separate authorization; production remains separate |
 | Production | `not-run` | Production untouched and forbidden to coding agents |
 
 The five identity-free PNGs named in `RESULT.md` are the selected candidate
@@ -207,7 +207,7 @@ Historical GitHub state for prior published head `f64cb3d`:
 
 H1/H2 reviewed head `4c8ab7a` (2026-08-29, keyboard remediation):
 
-- PR #43 head equals `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75`;
+- PR #43 head equaled `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75`;
 - Expo CI `validate`, run `33279912599`: **pass**;
 - Database CI `database`, run `33279912602`: **pass**;
 - PR was draft/open and mergeable at that review point.
@@ -218,7 +218,8 @@ Post-acceptance code closeout `39c3927`:
   than the three-slash variant;
 - focused 5-suite / 96-test and full 42-suite / 496-test frontend gates pass;
 - `npm run check:functions` passes 25/25; and
-- live exact-head GitHub CI is tracked on PR #43 before merge.
+- the final reviewed head `d0465fb` passed Expo CI `33351392639` and Database
+  CI `33351392818` before merge.
 
 Prior A5-integrated published head `8f2f2a9` (2026-08-29):
 
@@ -307,7 +308,7 @@ The final human gate requires:
 - [x] H2 staging destructive result recorded against reviewed SHA `4c8ab7a`
       (**tested-pass**; residual second-client UI / no rating access through
       JWT `exp` noted);
-- [x] current exact-head CI, mergeability, and review-thread state refreshed
+- [x] H1/H2 exact-head CI, mergeability, and review-thread state refreshed
       (Expo `33279912599`, Database `33279912602` on `4c8ab7a`);
 - [x] canonical status docs and PR description synchronized after the evidence
       actually exists; and
@@ -329,6 +330,6 @@ enter the current password, then tap Delete my account. Acceptance tip
 `5674bd0` aligned Revised Sequence with Status metadata and refreshed
 exact-head Expo CI `33347696741` / Database CI `33347696723`. Post-acceptance
 code closeout `39c3927` fixes the signup confirmation URL without changing
-deletion behavior or H1/H2 provenance; PR #43 remains open and unmerged, with
-live readiness and exact-head CI tracked on GitHub. Never have an agent submit
-deletion.
+deletion behavior or H1/H2 provenance. Reviewed head `d0465fb` passed Expo CI
+`33351392639` and Database CI `33351392818`; PR #43 merged on 2026-08-30 as
+`ce2f6ec`. Never have an agent submit deletion.
