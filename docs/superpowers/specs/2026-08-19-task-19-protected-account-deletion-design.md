@@ -60,6 +60,11 @@ The feature is intentionally narrow:
 
 ## Current Baseline
 
+> **Status supersession (2026-08-30):** Task 19 is **Done — human accepted.**
+> Canonical current status lives only in `docs/TASKS.md` (and the linked
+> evidence dashboard). Text below that still says Partial / staging pending is
+> frozen planning history, not live ledger state.
+
 - Tasks 16–18 are accepted and merged.
 - Task 19's canonical status remains **Partial — implementation complete; human
   staging deletion pending.** Draft PR #43 contains the implementation, and the
@@ -1128,7 +1133,9 @@ from shared automatic sign-out to exact isolated cleanup without reopening the
 already accepted Task 18 status/evidence.
 After local code is complete but before human destructive proof, canonical
 status is exactly **Partial — implementation complete; human staging deletion
-pending.**
+pending.** That interim gate wording is historical; live status after H1/H2/H3
+is **Done — human accepted** in `docs/TASKS.md` (see Current Baseline
+supersession note).
 
 ## Lifecycle Gates
 

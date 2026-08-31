@@ -1,5 +1,10 @@
 # Task 19 Protected Account Deletion Implementation Plan
 
+> **Status supersession (2026-08-30):** Task 19 is **Done — human accepted.**
+> Canonical current status lives only in `docs/TASKS.md` (and the linked
+> evidence dashboard). Interim Partial / staging-pending strings later in this
+> plan are frozen history.
+
 Status: Diagnostic head `b843dc8` proved the injected-client storage-key
 mismatch; Database CI passed and Expo CI remained red. Its integrated review
 also accepted guard-arm ordering and settled same-principal recovery defects.
@@ -2426,6 +2431,11 @@ Partial — implementation complete; human staging deletion pending.
 
 Use the same state in TASKS, ROADMAP, and README and link the evidence. Do not
 mark Done, accepted, deployed, ready, or merged.
+
+> **Status supersession (2026-08-30):** That Partial string was the correct
+> interim after implementation and before human staging. Live Task 19 status is
+> now **Done — human accepted** in `docs/TASKS.md` only; do not re-apply this
+> Partial wording to the ledger.
 
 Update the design-spec status only with the gate that actually occurred: plan
 approval may be recorded after human review; implementation authorization and
