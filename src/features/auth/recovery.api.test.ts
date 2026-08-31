@@ -3,8 +3,11 @@ import {
   requestPasswordReset,
   updatePasswordFromRecovery,
 } from '@/src/features/auth/api';
+import type { AuthApiOptions } from '@/src/features/auth/api';
 import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
+import { createPrincipalBoundAuthStorage } from '@/src/lib/supabase/authStorage';
+import type { Session } from '@supabase/supabase-js';
 
 jest.mock('@/src/features/auth/recoveryRedirect', () => ({
   getPasswordRecoveryRedirectTo: () =>
@@ -38,6 +41,34 @@ function mockClient(auth: {
         jest.fn(async () => ({ data: { session: null }, error: null })),
     },
   } as unknown as AppSupabaseClient;
+}
+
+function base64Url(value: unknown): string {
+  return btoa(JSON.stringify(value))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/u, '');
+}
+
+function authSession(
+  principalId: string,
+  sessionId: string,
+  label: string,
+): Session {
+  return {
+    access_token: `${base64Url({ alg: 'none' })}.${base64Url({
+      sub: principalId,
+      session_id: sessionId,
+    })}.${label}`,
+    refresh_token: `refresh-${label}`,
+    token_type: 'bearer',
+    expires_in: 3600,
+    user: {
+      id: principalId,
+      email: `${principalId}@example.com`,
+      aud: 'authenticated',
+    },
+  } as unknown as Session;
 }
 
 describe('password recovery api', () => {
@@ -192,10 +223,16 @@ describe('password recovery api', () => {
       error: null,
     }));
     const client = mockClient({ exchangeCodeForSession });
+    const adoptExplicitSession = jest.fn(async () => 'adopted' as const);
 
     const result = await processAuthCallbackUrl(
       'eazyreview://auth/reset-password?code=AUTH_CODE_VALUE',
-      { client, isOnline: () => true },
+      {
+        client,
+        isOnline: () => true,
+        storageKey: 'sb-test-auth-token',
+        adoptExplicitSession,
+      },
     );
 
     expect(result).toEqual({
@@ -203,6 +240,135 @@ describe('password recovery api', () => {
       user: { id: 'u1', email: 'a@example.com' },
     });
     expect(exchangeCodeForSession).toHaveBeenCalledWith('AUTH_CODE_VALUE');
+    expect(adoptExplicitSession).toHaveBeenCalledWith(
+      'sb-test-auth-token',
+      expect.objectContaining({ user: { id: 'u1', email: 'a@example.com' } }),
+    );
+  });
+
+  it('captures settled S1 before exchange and adopts same-session-ID S2 through the guarded boundary', async () => {
+    const storageKey = 'sb-test-auth-token';
+    const settledS1 = authSession('principal-a', 'session-a', 'settled-s1');
+    const returnedS2 = authSession('principal-a', 'session-a', 'returned-s2');
+    const order: string[] = [];
+    const predecessor = {
+      kind: 'settled-allowed' as const,
+      guard: {
+        principalId: 'principal-a',
+        revision: 7,
+        state: 'settled' as const,
+        leaseExpiresAt: 0,
+        allowedSessionId: 'session-a',
+        predecessor: null,
+      },
+      raw: {
+        kind: 'session' as const,
+        snapshot: {
+          principalId: 'principal-a',
+          accessToken: settledS1.access_token,
+          refreshToken: settledS1.refresh_token,
+          sessionId: 'session-a',
+        },
+      },
+    };
+    const captureRecoveryAdoptionPredecessor = jest.fn(async () => {
+      order.push('capture');
+      return predecessor;
+    });
+    const exchangeCodeForSession = jest.fn(async () => {
+      order.push('exchange');
+      return {
+        data: {
+          session: returnedS2,
+          user: returnedS2.user,
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    const adoptRecoverySession = jest.fn(async () => {
+      order.push('adopt');
+      return 'adopted' as const;
+    });
+    const onRecoverySession = jest.fn(() => {
+      order.push('session');
+    });
+    const adoptExplicitSession = jest.fn(async () => 'superseded' as const);
+    const options = {
+      client: mockClient({ exchangeCodeForSession }),
+      isOnline: () => true,
+      storageKey,
+      captureRecoveryAdoptionPredecessor,
+      adoptRecoverySession,
+      adoptExplicitSession,
+      onRecoverySession,
+    } as unknown as AuthApiOptions;
+
+    await expect(
+      processAuthCallbackUrl(
+        'eazyreview://auth/reset-password?code=GUARDED_RECOVERY_CODE',
+        options,
+      ),
+    ).resolves.toEqual({
+      kind: 'password-recovery',
+      user: { id: 'principal-a', email: 'principal-a@example.com' },
+    });
+    expect(order).toEqual(['capture', 'exchange', 'session', 'adopt']);
+    expect(onRecoverySession).toHaveBeenCalledWith(returnedS2);
+    expect(adoptRecoverySession).toHaveBeenCalledWith(
+      storageKey,
+      predecessor,
+      returnedS2,
+    );
+    expect(adoptExplicitSession).not.toHaveBeenCalled();
+  });
+
+  it('keeps unguarded recovery on the exact post-SDK adoption path', async () => {
+    const returnedSession = authSession(
+      'principal-a',
+      'session-a',
+      'unguarded-recovery',
+    );
+    const order: string[] = [];
+    const captureRecoveryAdoptionPredecessor = jest.fn(async () => {
+      order.push('capture');
+      return { kind: 'not-guarded' as const };
+    });
+    const exchangeCodeForSession = jest.fn(async () => {
+      order.push('exchange');
+      return {
+        data: {
+          session: returnedSession,
+          user: returnedSession.user,
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    const adoptExplicitSession = jest.fn(async () => {
+      order.push('adopt-explicit');
+      return 'not-guarded' as const;
+    });
+    const adoptRecoverySession = jest.fn(async () => 'adopted' as const);
+
+    await expect(
+      processAuthCallbackUrl(
+        'eazyreview://auth/reset-password?code=UNGUARDED_RECOVERY_CODE',
+        {
+          client: mockClient({ exchangeCodeForSession }),
+          isOnline: () => true,
+          storageKey: 'sb-test-auth-token',
+          captureRecoveryAdoptionPredecessor,
+          adoptExplicitSession,
+          adoptRecoverySession,
+        },
+      ),
+    ).resolves.toEqual({
+      kind: 'password-recovery',
+      user: { id: 'principal-a', email: 'principal-a@example.com' },
+    });
+    expect(order).toEqual(['capture', 'exchange', 'adopt-explicit']);
+    expect(adoptRecoverySession).not.toHaveBeenCalled();
   });
 
   it('applies recovery tokens and reports password-recovery kind', async () => {
@@ -213,10 +379,16 @@ describe('password recovery api', () => {
       error: null,
     }));
     const client = mockClient({ setSession });
+    const adoptExplicitSession = jest.fn(async () => 'adopted' as const);
 
     const result = await processAuthCallbackUrl(
       'eazyreview://auth/reset-password#access_token=tok&refresh_token=ref&type=recovery',
-      { client, isOnline: () => true },
+      {
+        client,
+        isOnline: () => true,
+        storageKey: 'sb-test-auth-token',
+        adoptExplicitSession,
+      },
     );
 
     expect(result.kind).toBe('password-recovery');
@@ -224,6 +396,72 @@ describe('password recovery api', () => {
       access_token: 'tok',
       refresh_token: 'ref',
     });
+    expect(adoptExplicitSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns superseded when guarded recovery adoption observes a newer winner', async () => {
+    const setSession = jest.fn(async () => ({
+      data: {
+        session: { user: { id: 'u1', email: 'a@example.com' } },
+      },
+      error: null,
+    }));
+    const client = mockClient({ setSession });
+
+    await expect(
+      processAuthCallbackUrl(
+        'eazyreview://auth/reset-password#access_token=tok&refresh_token=ref&type=recovery',
+        {
+          client,
+          isOnline: () => true,
+          storageKey: 'sb-test-auth-token',
+          adoptExplicitSession: jest.fn(async () => 'superseded' as const),
+        },
+      ),
+    ).resolves.toEqual({ kind: 'superseded' });
+  });
+
+  it('returns superseded when B wins storage after callback exchange but before adoption', async () => {
+    const storageKey = 'sb-test-auth-token';
+    const callbackA = authSession('principal-a', 'session-a', 'callback-a');
+    const storedB = authSession('principal-b', 'session-b', 'winner-b');
+    const values = new Map<string, string>();
+    const store = {
+      getItem: jest.fn(async (key: string) => values.get(key) ?? null),
+      setItem: jest.fn(async (key: string, value: string) => {
+        values.set(key, value);
+      }),
+      removeItem: jest.fn(async (key: string) => {
+        values.delete(key);
+      }),
+    };
+    const controlled = createPrincipalBoundAuthStorage(store, {
+      runStorageOperation: async (_key, operation) => await operation(),
+    });
+    const exchangeCodeForSession = jest.fn(async () => {
+      values.set(storageKey, JSON.stringify(storedB));
+      return {
+        data: {
+          session: callbackA,
+          user: callbackA.user,
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+
+    await expect(
+      processAuthCallbackUrl(
+        'eazyreview://auth/reset-password?code=AUTH_CODE_VALUE',
+        {
+          client: mockClient({ exchangeCodeForSession }),
+          isOnline: () => true,
+          storageKey,
+          adoptExplicitSession: controlled.adopt,
+        },
+      ),
+    ).resolves.toEqual({ kind: 'superseded' });
+    expect(values.get(storageKey)).toBe(JSON.stringify(storedB));
   });
 
   it('keeps a URL-encoded callback server failure temporary', async () => {

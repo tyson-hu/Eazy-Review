@@ -1,18 +1,115 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { Session } from '@supabase/supabase-js';
+import { onlineManager } from '@tanstack/react-query';
 import { act, waitFor } from '@testing-library/react-native';
 import { useEffect, type MutableRefObject } from 'react';
 import { Text } from 'react-native';
 
 import {
-  AuthProvider,
-  useAuth,
-  type AuthContextValue,
+    AuthProvider,
+    useAuth,
+    type AuthContextValue,
 } from '@/src/features/auth/AuthProvider';
 import type { SignInResult, SignUpResult } from '@/src/features/auth/types';
-import { accountKeys, catalogKeys, ratingKeys } from '@/src/lib/query/keys';
 import { createAppQueryClient } from '@/src/lib/query/client';
+import { accountKeys, catalogKeys, ratingKeys } from '@/src/lib/query/keys';
 import * as userScopedCache from '@/src/lib/query/userScopedCache';
+import { emitPrincipalDeletionGuardChange } from '@/src/lib/supabase/authCoordination';
+import type {
+    RecoveryAdoptionResult,
+    RecoveryPredecessorCapture,
+} from '@/src/lib/supabase/authStorage';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
+
+jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
+  getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
+}));
+
+const mockAdoptExplicitSession = jest.fn(
+  async (
+    _storageKey: string,
+    _session: Session,
+  ): Promise<'not-guarded' | 'adopted' | 'guard-busy' | 'superseded'> =>
+    'not-guarded',
+);
+const mockReplaceDisplacedSession = jest.fn(
+  (
+    storageKey: string,
+    expectedDisplaced: Session,
+    validatedReplacement: Session,
+    expectedGuardRevision: number | null,
+  ) =>
+    jest.requireActual<typeof import('@/src/lib/supabase/authStorage')>(
+      '@/src/lib/supabase/authStorage',
+    ).replaceDisplacedSessionIfExact(
+      storageKey,
+      expectedDisplaced,
+      validatedReplacement,
+      expectedGuardRevision,
+    ),
+);
+const mockGetSupabaseAuthStorageKey = jest.fn(
+  () => 'sb-injected-auth-token',
+);
+const mockCaptureRecoveryPredecessor = jest.fn<
+  Promise<RecoveryPredecessorCapture>,
+  [string]
+>(
+  async () => ({ kind: 'not-guarded' as const }),
+);
+const mockAdoptRecoverySession = jest.fn<
+  Promise<RecoveryAdoptionResult>,
+  [string, unknown, Session]
+>(
+  async () => 'adopted' as const,
+);
+
+jest.mock('@/src/lib/supabase/authStorage', () => {
+  const actual = jest.requireActual<
+    typeof import('@/src/lib/supabase/authStorage')
+  >('@/src/lib/supabase/authStorage');
+  return {
+    ...actual,
+    // Provider arbitration tests inject an Auth SDK double that does not own
+    // AsyncStorage. Exact post-SDK adoption is exercised with real storage in
+    // authStorage.test.ts and recovery.api.test.ts.
+    adoptExplicitSessionAfterDeletionGuard: (
+      storageKey: string,
+      session: Session,
+    ) => mockAdoptExplicitSession(storageKey, session),
+    captureRecoveryAdoptionPredecessor: (storageKey: string) =>
+      mockCaptureRecoveryPredecessor(storageKey),
+    adoptRecoverySessionAfterDeletionGuard: (
+      storageKey: string,
+      predecessor: unknown,
+      returnedSession: Session,
+    ) =>
+      mockAdoptRecoverySession(storageKey, predecessor, returnedSession),
+    replaceDisplacedSessionIfExact: (
+      storageKey: string,
+      expectedDisplaced: Session,
+      validatedReplacement: Session,
+      expectedGuardRevision: number | null,
+    ) =>
+      mockReplaceDisplacedSession(
+        storageKey,
+        expectedDisplaced,
+        validatedReplacement,
+        expectedGuardRevision,
+      ),
+  };
+});
+
+jest.mock('@/src/lib/supabase/client', () => {
+  const actual = jest.requireActual<
+    typeof import('@/src/lib/supabase/client')
+  >('@/src/lib/supabase/client');
+  return {
+    ...actual,
+    getSupabaseAuthStorageKey: () => mockGetSupabaseAuthStorageKey(),
+  };
+});
 
 type MockSession = {
   access_token: string;
@@ -21,6 +118,29 @@ type MockSession = {
 };
 
 type Listener = (event: string, session: MockSession | null) => void;
+
+function base64Url(value: unknown): string {
+  return btoa(JSON.stringify(value))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/u, '');
+}
+
+function storedSession(
+  principalId: string,
+  email: string,
+  sessionId: string,
+  label: string,
+): MockSession {
+  return {
+    access_token: `${base64Url({ alg: 'none' })}.${base64Url({
+      sub: principalId,
+      session_id: sessionId,
+    })}.${label}`,
+    refresh_token: `refresh-${label}`,
+    user: { id: principalId, email },
+  };
+}
 
 function createMockAuthClient(options: {
   initialUser?: { id: string; email: string } | null;
@@ -36,15 +156,19 @@ function createMockAuthClient(options: {
   let listeners: Listener[] = [];
   let sessionUser = options.initialUser ?? null;
   const sessionsByAccessToken = new Map<string, MockSession>();
+  let sessionSequence = 0;
   const sessionForUser = (user: { id: string; email: string }): MockSession => {
-    const session = {
-      access_token: `access-${user.id}`,
-      refresh_token: `refresh-${user.id}`,
-      user,
-    };
+    sessionSequence += 1;
+    const session = storedSession(
+      user.id,
+      user.email,
+      `session-${user.id}-${sessionSequence}`,
+      `mock-${user.id}-${sessionSequence}`,
+    );
     sessionsByAccessToken.set(session.access_token, session);
     return session;
   };
+  let currentSession = sessionUser ? sessionForUser(sessionUser) : null;
   let resolveRestore:
     | ((user: { id: string; email: string } | null) => void)
     | null = null;
@@ -59,9 +183,10 @@ function createMockAuthClient(options: {
             resolveRestore = (user) => {
               // Keep getUser principal in sync with the restored session shape.
               sessionUser = user;
+              currentSession = user ? sessionForUser(user) : null;
               resolve({
                 data: {
-                  session: user ? sessionForUser(user) : null,
+                  session: currentSession,
                 },
                 error: null,
               });
@@ -70,15 +195,18 @@ function createMockAuthClient(options: {
       )
     : jest.fn(async () => ({
         data: {
-          session: sessionUser ? sessionForUser(sessionUser) : null,
+          session: currentSession,
         },
         error: null,
       }));
 
   const getUser =
     options.getUser ??
-    jest.fn(async () => {
-      if (!sessionUser) {
+    jest.fn(async (accessToken?: string) => {
+      const requestedUser = typeof accessToken === 'string'
+        ? sessionsByAccessToken.get(accessToken)?.user ?? null
+        : sessionUser;
+      if (!requestedUser) {
         return {
           data: { user: null },
           error: {
@@ -88,8 +216,19 @@ function createMockAuthClient(options: {
           },
         };
       }
-      return { data: { user: sessionUser }, error: null };
+      return { data: { user: requestedUser }, error: null };
     });
+
+  const emitSession = (event: string, session: MockSession | null) => {
+    sessionUser = session?.user ?? null;
+    currentSession = session;
+    if (session != null) {
+      sessionsByAccessToken.set(session.access_token, session);
+    }
+    for (const listener of listeners) {
+      listener(event, session);
+    }
+  };
 
   const client = {
     auth: {
@@ -110,21 +249,26 @@ function createMockAuthClient(options: {
       signInWithPassword: jest.fn(async ({ email }: { email: string }) => {
         sessionUser = { id: `id-${email}`, email };
         const session = sessionForUser(sessionUser);
-        for (const listener of listeners) {
-          listener('SIGNED_IN', session);
-        }
+        await AsyncStorage.setItem(
+          'sb-injected-auth-token',
+          JSON.stringify(session),
+        );
+        emitSession('SIGNED_IN', session);
         return { data: { session, user: sessionUser }, error: null };
       }),
       signUp: jest.fn(async ({ email }: { email: string }) => {
         sessionUser = { id: `id-${email}`, email };
         const session = sessionForUser(sessionUser);
-        for (const listener of listeners) {
-          listener('SIGNED_IN', session);
-        }
+        await AsyncStorage.setItem(
+          'sb-injected-auth-token',
+          JSON.stringify(session),
+        );
+        emitSession('SIGNED_IN', session);
         return { data: { session, user: sessionUser }, error: null };
       }),
       signOut: jest.fn(async () => {
         sessionUser = null;
+        currentSession = null;
         for (const listener of listeners) {
           listener('SIGNED_OUT', null);
         }
@@ -140,9 +284,11 @@ function createMockAuthClient(options: {
             };
           }
           sessionUser = session.user;
-          for (const listener of listeners) {
-            listener('SIGNED_IN', session);
-          }
+          await AsyncStorage.setItem(
+            'sb-injected-auth-token',
+            JSON.stringify(session),
+          );
+          emitSession('SIGNED_IN', session);
           return { data: { session, user: session.user }, error: null };
         },
       ),
@@ -152,12 +298,10 @@ function createMockAuthClient(options: {
   return {
     client,
     emit(event: string, user: { id: string; email: string } | null) {
-      sessionUser = user;
       const session = user ? sessionForUser(user) : null;
-      for (const listener of listeners) {
-        listener(event, session);
-      }
+      emitSession(event, session);
     },
+    emitSession,
     completeRestore(user: { id: string; email: string } | null) {
       if (!resolveRestore) {
         throw new Error('Restore was not delayed or already completed.');
@@ -169,6 +313,36 @@ function createMockAuthClient(options: {
   };
 }
 
+beforeEach(async () => {
+  onlineManager.setOnline(true);
+  await AsyncStorage.clear();
+  mockAdoptExplicitSession.mockReset();
+  mockAdoptExplicitSession.mockResolvedValue('not-guarded');
+  mockReplaceDisplacedSession.mockReset();
+  mockReplaceDisplacedSession.mockImplementation(
+    (
+      storageKey: string,
+      expectedDisplaced: Session,
+      validatedReplacement: Session,
+      expectedGuardRevision: number | null,
+    ) =>
+      jest.requireActual<typeof import('@/src/lib/supabase/authStorage')>(
+        '@/src/lib/supabase/authStorage',
+      ).replaceDisplacedSessionIfExact(
+        storageKey,
+        expectedDisplaced,
+        validatedReplacement,
+        expectedGuardRevision,
+      ),
+  );
+  mockGetSupabaseAuthStorageKey.mockReset();
+  mockGetSupabaseAuthStorageKey.mockReturnValue('sb-injected-auth-token');
+  mockCaptureRecoveryPredecessor.mockReset();
+  mockCaptureRecoveryPredecessor.mockResolvedValue({ kind: 'not-guarded' });
+  mockAdoptRecoverySession.mockReset();
+  mockAdoptRecoverySession.mockResolvedValue('adopted');
+});
+
 function AuthProbe() {
   const auth = useAuth();
   return (
@@ -176,6 +350,24 @@ function AuthProbe() {
       {`${auth.status}|${auth.user?.id ?? 'none'}|${auth.user?.email ?? ''}|${auth.recoveryPhase}`}
     </Text>
   );
+}
+
+function RecordingAuthProbe({ states }: { states: string[] }) {
+  const auth = useAuth();
+  const snapshot = `${auth.status}|${auth.user?.id ?? 'none'}|${auth.recoveryPhase}`;
+  useEffect(() => {
+    states.push(snapshot);
+  }, [snapshot, states]);
+  return <Text testID="auth-probe">{snapshot}</Text>;
+}
+
+function RecordingDetailedAuthProbe({ states }: { states: string[] }) {
+  const auth = useAuth();
+  const snapshot = `${auth.status}|${auth.user?.id ?? 'none'}|${auth.user?.email ?? ''}|${auth.recoveryPhase}`;
+  useEffect(() => {
+    states.push(snapshot);
+  }, [snapshot, states]);
+  return <Text testID="auth-probe">{snapshot}</Text>;
 }
 
 function AuthControllerProbe({
@@ -250,6 +442,28 @@ describe('AuthProvider', () => {
     await rendered.cleanup();
   });
 
+  it('does not claim signed-out when bootstrap storage access is unavailable', async () => {
+    const mock = createMockAuthClient({ initialUser: null });
+    (mock.client.auth.getSession as jest.Mock).mockResolvedValue({
+      data: { session: null },
+      error: { status: 500, code: 'storage_unavailable' },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={null}>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(rendered.getByTestId('auth-probe').props.children).toContain(
+      'initializing|none',
+    );
+    await rendered.cleanup();
+  });
+
   it('clears zombie restored session online and removes user-scoped cache', async () => {
     const zombie = { id: 'user-zombie', email: 'zombie@example.com' };
     const getUser = jest.fn(async () => ({
@@ -289,7 +503,7 @@ describe('AuthProvider', () => {
         'signed-out|none||idle',
       ),
     );
-    expect(mock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(mock.client.auth.signOut).not.toHaveBeenCalled();
     expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
       { id: 'p1' },
     ]);
@@ -609,7 +823,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -683,7 +897,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -759,7 +973,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -827,7 +1041,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -895,7 +1109,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -972,7 +1186,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -1046,7 +1260,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -1136,7 +1350,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -1217,7 +1431,7 @@ describe('AuthProvider', () => {
 
     const cleanupHolds: (() => void)[] = [];
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(
         () =>
           new Promise<void>((resolve) => {
@@ -1327,7 +1541,7 @@ describe('AuthProvider', () => {
       releaseCleanup = resolve;
     });
     const removeSpy = jest
-      .spyOn(userScopedCache, 'removeUserScopedQueries')
+      .spyOn(userScopedCache, 'removePrincipalScopedQueries')
       .mockImplementation(async () => {
         await cleanupHold;
       });
@@ -1421,6 +1635,1290 @@ describe('AuthProvider password recovery', () => {
       ),
     );
 
+    await rendered.cleanup();
+  });
+
+  it('prefers injected storage over configured public storage when superseded recovery reconciles B', async () => {
+    await AsyncStorage.clear();
+    const storageKey = 'sb-injected-auth-token';
+    const configuredStorageKey = 'sb-configured-public-auth-token';
+    mockGetSupabaseAuthStorageKey.mockReturnValue(configuredStorageKey);
+    const winnerB = storedSession(
+      'principal-b',
+      'b@example.com',
+      'session-b',
+      'winner-b',
+    );
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const validateStoredSession = jest.fn(async (accessToken: string) => {
+      if (accessToken === winnerB.access_token) {
+        return { data: { user: winnerB.user }, error: null };
+      }
+      return {
+        data: { user: null },
+        error: { status: 401, code: 'session_not_found' },
+      };
+    });
+    const mock = createMockAuthClient({
+      initialUser: null,
+      getUser: validateStoredSession,
+    });
+    mockAdoptExplicitSession.mockResolvedValueOnce('superseded');
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'principal-a',
+        email: 'a@example.com',
+      });
+      await AsyncStorage.setItem(storageKey, JSON.stringify(winnerB));
+      return {
+        data: {
+          session: { user: { id: 'principal-a', email: 'a@example.com' } },
+          user: { id: 'principal-a', email: 'a@example.com' },
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    let emitRecoveryLink: (url: string) => void = () => {
+      throw new Error('Recovery link listener is not ready.');
+    };
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (
+          _type: 'url',
+          listener: (event: { url: string }) => void,
+        ) => {
+          emitRecoveryLink = (url) => listener({ url });
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const states: string[] = [];
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <RecordingAuthProbe states={states} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    try {
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-out|none|idle',
+        ),
+      );
+      queryClient.setQueryData(accountKeys.profile('principal-a'), { id: 'a' });
+      queryClient.setQueryData(accountKeys.profile('principal-b'), { id: 'b' });
+      await act(async () => {
+        emitRecoveryLink(
+          'eazyreview://auth/reset-password?code=SUPERSEDED_ADOPTION_CODE',
+        );
+        await Promise.resolve();
+      });
+      await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+      await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+        JSON.stringify(winnerB),
+      );
+      await expect(AsyncStorage.getItem(configuredStorageKey)).resolves.toBeNull();
+      await waitFor(() =>
+        expect(validateStoredSession).toHaveBeenCalledWith(winnerB.access_token),
+      );
+      await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+        JSON.stringify(winnerB),
+      );
+      await expect(AsyncStorage.getItem(configuredStorageKey)).resolves.toBeNull();
+      await waitFor(() =>
+        expect(
+          queryClient.getQueryData(accountKeys.profile('principal-a')),
+        ).toBeUndefined(),
+      );
+      await waitFor(() =>
+        expect(states).toContain('signed-in|principal-b|idle'),
+      );
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|principal-b|idle',
+      );
+      expect(states).not.toContain('signed-in|principal-a|idle');
+      expect(states).not.toContain('signed-in|principal-a|verified');
+      expect(
+        queryClient.getQueryData(accountKeys.profile('principal-a')),
+      ).toBeUndefined();
+      expect(
+        queryClient.getQueryData(accountKeys.profile('principal-b')),
+      ).toEqual({ id: 'b' });
+    } finally {
+      await rendered.cleanup();
+      await AsyncStorage.clear();
+    }
+  });
+
+  it('never promotes cross-context B into exact displacement for unguarded recovery A', async () => {
+    await AsyncStorage.clear();
+    const storageKey = 'sb-injected-auth-token';
+    const recoveryA = storedSession(
+      'principal-a',
+      'a@example.com',
+      'session-a',
+      'ordinary-recovery-a',
+    );
+    const winnerB = storedSession(
+      'principal-b',
+      'b@example.com',
+      'session-b',
+      'cross-context-b',
+    );
+    const validateStoredSession = jest.fn(async (accessToken: string) => ({
+      data: {
+        user: accessToken === winnerB.access_token ? winnerB.user : recoveryA.user,
+      },
+      error: null,
+    }));
+    const mock = createMockAuthClient({
+      initialUser: null,
+      getUser: validateStoredSession,
+    });
+    mockAdoptExplicitSession.mockResolvedValueOnce('superseded');
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => {
+      mock.emitSession('SIGNED_IN', recoveryA);
+      await AsyncStorage.setItem(storageKey, JSON.stringify(winnerB));
+      mock.emitSession('SIGNED_IN', winnerB);
+      return {
+        data: {
+          session: recoveryA,
+          user: recoveryA.user,
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    let emitRecoveryLink: (url: string) => void = () => {
+      throw new Error('Recovery link listener is not ready.');
+    };
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (
+          _type: 'url',
+          listener: (event: { url: string }) => void,
+        ) => {
+          emitRecoveryLink = (url) => listener({ url });
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    try {
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toContain(
+          'signed-out|none',
+        ),
+      );
+      queryClient.setQueryData(accountKeys.profile('principal-b'), { id: 'b' });
+      await act(async () => {
+        emitRecoveryLink(
+          'eazyreview://auth/reset-password?code=CROSS_CONTEXT_B_CODE',
+        );
+      });
+      await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|principal-b|b@example.com|idle',
+        ),
+      );
+      await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+        JSON.stringify(winnerB),
+      );
+      expect(queryClient.getQueryData(accountKeys.profile('principal-b'))).toEqual({
+        id: 'b',
+      });
+      expect(validateStoredSession).toHaveBeenCalledWith(winnerB.access_token);
+    } finally {
+      await rendered.cleanup();
+      await AsyncStorage.clear();
+    }
+  });
+
+  it('preserves valid S1 and its cache when superseded recovery has no exact displaced session', async () => {
+    await AsyncStorage.clear();
+    const storageKey = 'sb-injected-auth-token';
+    const principalA = { id: 'principal-a', email: 'a@example.com' };
+    const validS1 = storedSession(
+      principalA.id,
+      principalA.email,
+      'session-s1',
+      'valid-s1',
+    );
+    const returnedS2 = storedSession(
+      principalA.id,
+      principalA.email,
+      'session-s2',
+      'returned-s2',
+    );
+    const validateStoredSession = jest.fn(async () => ({
+      data: { user: principalA },
+      error: null,
+    }));
+    const mock = createMockAuthClient({
+      initialUser: principalA,
+      getUser: validateStoredSession,
+    });
+    mockAdoptExplicitSession.mockResolvedValueOnce('superseded');
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => ({
+      data: {
+        session: returnedS2,
+        user: returnedS2.user,
+        redirectType: 'recovery' as const,
+      },
+      error: null,
+    }));
+    let emitRecoveryLink: (url: string) => void = () => {
+      throw new Error('Recovery link listener is not ready.');
+    };
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (
+          _type: 'url',
+          listener: (event: { url: string }) => void,
+        ) => {
+          emitRecoveryLink = (url) => listener({ url });
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const states: string[] = [];
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <RecordingAuthProbe states={states} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    try {
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|principal-a|idle',
+        ),
+      );
+      await AsyncStorage.setItem(storageKey, JSON.stringify(validS1));
+      queryClient.setQueryData(accountKeys.profile(principalA.id), { id: 'a' });
+      const statesBeforeRecovery = states.length;
+
+      await act(async () => {
+        emitRecoveryLink(
+          'eazyreview://auth/reset-password?code=UNKNOWN_DISPLACEMENT_CODE',
+        );
+        await Promise.resolve();
+      });
+
+      await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+      await waitFor(() =>
+        expect(validateStoredSession).toHaveBeenCalledWith(validS1.access_token),
+      );
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|principal-a|idle',
+        ),
+      );
+      await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+        JSON.stringify(validS1),
+      );
+      expect(queryClient.getQueryData(accountKeys.profile(principalA.id))).toEqual({
+        id: 'a',
+      });
+      expect(states.slice(statesBeforeRecovery)).not.toContain(
+        'signed-out|none|idle',
+      );
+      expect(states.slice(statesBeforeRecovery)).not.toContain(
+        'signed-in|principal-a|verified',
+      );
+    } finally {
+      await rendered.cleanup();
+      await AsyncStorage.clear();
+    }
+  });
+
+  it.each(['invalid-s1', 'empty'] as const)(
+    'preserves same-principal cache and raw authority for unknown displacement: %s',
+    async (authority) => {
+      await AsyncStorage.clear();
+      const storageKey = 'sb-injected-auth-token';
+      const principalA = { id: 'principal-a', email: 'a@example.com' };
+      const storedS1 = storedSession(
+        principalA.id,
+        principalA.email,
+        'session-s1',
+        'stored-s1',
+      );
+      const returnedS2 = storedSession(
+        principalA.id,
+        principalA.email,
+        'session-s2',
+        'returned-s2',
+      );
+      const validateStoredSession = jest.fn(async (accessToken?: string) => {
+        if (
+          authority === 'invalid-s1' &&
+          accessToken === storedS1.access_token
+        ) {
+          return {
+            data: { user: null },
+            error: { status: 401, code: 'session_not_found' },
+          };
+        }
+        return { data: { user: principalA }, error: null };
+      });
+      const mock = createMockAuthClient({
+        initialUser: principalA,
+        getUser: validateStoredSession,
+      });
+      mockAdoptExplicitSession.mockResolvedValueOnce('superseded');
+      (
+        mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+      ).exchangeCodeForSession = jest.fn(async () => {
+        if (authority === 'empty') {
+          await AsyncStorage.removeItem(storageKey);
+        }
+        return {
+          data: {
+            session: returnedS2,
+            user: returnedS2.user,
+            redirectType: 'recovery' as const,
+          },
+          error: null,
+        };
+      });
+      let emitRecoveryLink: (url: string) => void = () => {
+        throw new Error('Recovery link listener is not ready.');
+      };
+      const linking = {
+        getInitialURL: jest.fn(async () => null),
+        addEventListener: jest.fn(
+          (
+            _type: 'url',
+            listener: (event: { url: string }) => void,
+          ) => {
+            emitRecoveryLink = (url) => listener({ url });
+            return { remove: jest.fn() };
+          },
+        ),
+      };
+      const queryClient = createAppQueryClient({
+        defaultOptions: { queries: { gcTime: Infinity } },
+      });
+      const rendered = await renderWithProviders(
+        <AuthProvider client={mock.client} enableSession linking={linking}>
+          <AuthProbe />
+        </AuthProvider>,
+        { queryClient },
+      );
+
+      try {
+        await waitFor(() =>
+          expect(rendered.getByTestId('auth-probe').props.children).toBe(
+            'signed-in|principal-a|a@example.com|idle',
+          ),
+        );
+        await AsyncStorage.setItem(storageKey, JSON.stringify(storedS1));
+        queryClient.setQueryData(accountKeys.profile(principalA.id), { id: 'a' });
+
+        await act(async () => {
+          emitRecoveryLink(
+            `eazyreview://auth/reset-password?code=UNKNOWN_${authority.toUpperCase()}`,
+          );
+          await Promise.resolve();
+        });
+        await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+        if (authority === 'invalid-s1') {
+          await waitFor(() =>
+            expect(validateStoredSession).toHaveBeenCalledWith(
+              storedS1.access_token,
+            ),
+          );
+        }
+        await waitFor(() =>
+          expect(rendered.getByTestId('auth-probe').props.children).toBe(
+            'signed-out|none||idle',
+          ),
+        );
+
+        await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+          authority === 'empty' ? null : JSON.stringify(storedS1),
+        );
+        expect(
+          queryClient.getQueryData(accountKeys.profile(principalA.id)),
+        ).toEqual({ id: 'a' });
+      } finally {
+        await rendered.cleanup();
+        await AsyncStorage.clear();
+      }
+    },
+  );
+
+  it('keeps newer sign-out authoritative and exact-removes later unguarded recovery A', async () => {
+    await AsyncStorage.clear();
+    const storageKey = 'sb-injected-auth-token';
+    const recoveryA = storedSession(
+      'principal-a',
+      'a@example.com',
+      'session-recovery-a',
+      'late-recovery-a',
+    );
+    type ExchangeResult = {
+      data: {
+        session: MockSession;
+        user: MockSession['user'];
+        redirectType: 'recovery';
+      };
+      error: null;
+    };
+    let resolveExchange!: (result: ExchangeResult) => void;
+    const mock = createMockAuthClient({ initialUser: null });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise<ExchangeResult>((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+    let emitRecoveryLink: (url: string) => void = () => {
+      throw new Error('Recovery link listener is not ready.');
+    };
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (
+          _type: 'url',
+          listener: (event: { url: string }) => void,
+        ) => {
+          emitRecoveryLink = (url) => listener({ url });
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const states: string[] = [];
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <RecordingAuthProbe states={states} />
+      </AuthProvider>,
+    );
+
+    try {
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-out|none|idle',
+        ),
+      );
+      await act(async () => {
+        emitRecoveryLink(
+          'eazyreview://auth/reset-password?code=LATE_AFTER_SIGN_OUT_CODE',
+        );
+      });
+      await waitFor(() =>
+        expect(
+          (
+            mock.client.auth as unknown as {
+              exchangeCodeForSession: jest.Mock;
+            }
+          ).exchangeCodeForSession,
+        ).toHaveBeenCalledTimes(1),
+      );
+      await act(async () => {
+        mock.emitSession('SIGNED_OUT', null);
+      });
+      const statesAfterSignOut = states.length;
+      await AsyncStorage.setItem(storageKey, JSON.stringify(recoveryA));
+      await act(async () => {
+        mock.emitSession('PASSWORD_RECOVERY', recoveryA);
+        resolveExchange({
+          data: {
+            session: recoveryA,
+            user: recoveryA.user,
+            redirectType: 'recovery',
+          },
+          error: null,
+        });
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+      await waitFor(() => expect(AsyncStorage.getItem(storageKey)).resolves.toBeNull());
+      expect(states.slice(statesAfterSignOut)).not.toContain(
+        'signed-in|principal-a|idle',
+      );
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none|idle',
+      );
+    } finally {
+      await rendered.cleanup();
+      await AsyncStorage.clear();
+    }
+  });
+
+  it.each([
+    ['adopted', 'verified'],
+    ['unconfirmed', 'temporary-failure'],
+  ] as const)(
+    'does not publish guarded same-session-ID S2 before %s, then reconciles terminal authority',
+    async (adoptionOutcome, recoveryPhase) => {
+    const principalA = { id: 'principal-a', email: 's1@example.com' };
+    const returnedS2 = storedSession(
+      principalA.id,
+      's2@example.com',
+      'session-principal-a-1',
+      'returned-s2',
+    );
+    const predecessor = {
+      kind: 'settled-allowed' as const,
+      guard: {
+        principalId: principalA.id,
+        revision: 7,
+        state: 'settled' as const,
+        leaseExpiresAt: 0,
+        allowedSessionId: 'session-principal-a-1',
+        predecessor: null,
+      },
+      raw: {
+        kind: 'session' as const,
+        snapshot: {
+          principalId: principalA.id,
+          accessToken: 'operation-local-s1-access',
+          refreshToken: 'operation-local-s1-refresh',
+          sessionId: 'session-principal-a-1',
+        },
+      },
+    };
+    mockCaptureRecoveryPredecessor.mockResolvedValueOnce(predecessor);
+    let resolveAdoption!: (result: RecoveryAdoptionResult) => void;
+    mockAdoptRecoverySession.mockImplementationOnce(
+      () =>
+        new Promise<RecoveryAdoptionResult>((resolve) => {
+          resolveAdoption = resolve;
+        }),
+    );
+    const mock = createMockAuthClient({ initialUser: principalA });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => {
+      await AsyncStorage.setItem(
+        'sb-injected-auth-token',
+        JSON.stringify(returnedS2),
+      );
+      mock.emitSession('SIGNED_IN', returnedS2);
+      return {
+        data: {
+          session: returnedS2,
+          user: returnedS2.user,
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    let emitRecoveryLink: (url: string) => void = () => {
+      throw new Error('Recovery link listener is not ready.');
+    };
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (
+          _type: 'url',
+          listener: (event: { url: string }) => void,
+        ) => {
+          emitRecoveryLink = (url) => listener({ url });
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const states: string[] = [];
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <RecordingDetailedAuthProbe states={states} />
+      </AuthProvider>,
+    );
+
+    try {
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|principal-a|s1@example.com|idle',
+        ),
+      );
+      const statesBeforeRecovery = states.length;
+      await act(async () => {
+        emitRecoveryLink(
+          'eazyreview://auth/reset-password?code=GUARDED_SAME_ID_CODE',
+        );
+        await Promise.resolve();
+      });
+      await waitFor(() =>
+        expect(mockAdoptRecoverySession).toHaveBeenCalledTimes(1),
+      );
+
+      await act(async () => {
+        emitPrincipalDeletionGuardChange('sb-injected-auth-token');
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(states.slice(statesBeforeRecovery).join('\n')).not.toContain(
+        's2@example.com',
+      );
+      expect(rendered.getByTestId('auth-probe').props.children).not.toContain(
+        's2@example.com',
+      );
+
+      await act(async () => {
+        resolveAdoption(adoptionOutcome);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          `signed-in|principal-a|s2@example.com|${recoveryPhase}`,
+        ),
+      );
+    } finally {
+      resolveAdoption(adoptionOutcome);
+      await rendered.cleanup();
+      await AsyncStorage.clear();
+    }
+    },
+  );
+
+  it('releases guarded recovery quarantine and publishes preserved A2 after superseded adoption', async () => {
+    await AsyncStorage.clear();
+    const storageKey = 'sb-injected-auth-token';
+    const principalA = { id: 'principal-a', email: 's1@example.com' };
+    const preservedA2 = storedSession(
+      principalA.id,
+      'a2@example.com',
+      'session-principal-a-1',
+      'preserved-a2',
+    );
+    const returnedS2 = storedSession(
+      principalA.id,
+      's2@example.com',
+      'session-principal-a-2',
+      'returned-s2',
+    );
+    mockCaptureRecoveryPredecessor.mockResolvedValueOnce({
+      kind: 'settled-allowed',
+      guard: {
+        principalId: principalA.id,
+        revision: 7,
+        state: 'settled',
+        leaseExpiresAt: 0,
+        allowedSessionId: 'session-principal-a-1',
+        predecessor: null,
+      },
+      raw: {
+        kind: 'session',
+        snapshot: {
+          principalId: principalA.id,
+          accessToken: 'operation-local-s1-access',
+          refreshToken: 'operation-local-s1-refresh',
+          sessionId: 'session-principal-a-1',
+        },
+      },
+    });
+    mockAdoptRecoverySession.mockResolvedValueOnce('superseded');
+    const validateStoredSession = jest.fn(async (accessToken?: string) => ({
+      data: {
+        user: accessToken === preservedA2.access_token
+          ? preservedA2.user
+          : principalA,
+      },
+      error: null,
+    }));
+    const mock = createMockAuthClient({
+      initialUser: principalA,
+      getUser: validateStoredSession,
+    });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => {
+      await AsyncStorage.setItem(storageKey, JSON.stringify(preservedA2));
+      mock.emitSession('SIGNED_IN', preservedA2);
+      return {
+        data: {
+          session: returnedS2,
+          user: returnedS2.user,
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    let emitRecoveryLink: (url: string) => void = () => {
+      throw new Error('Recovery link listener is not ready.');
+    };
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (
+          _type: 'url',
+          listener: (event: { url: string }) => void,
+        ) => {
+          emitRecoveryLink = (url) => listener({ url });
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    try {
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|principal-a|s1@example.com|idle',
+        ),
+      );
+      queryClient.setQueryData(accountKeys.profile(principalA.id), { id: 'a' });
+      await act(async () => {
+        emitRecoveryLink(
+          'eazyreview://auth/reset-password?code=GUARDED_A2_CODE',
+        );
+      });
+      await waitFor(() =>
+        expect(mockAdoptRecoverySession).toHaveBeenCalledTimes(1),
+      );
+      await waitFor(() =>
+        expect(rendered.getByTestId('auth-probe').props.children).toBe(
+          'signed-in|principal-a|a2@example.com|idle',
+        ),
+      );
+      await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+        JSON.stringify(preservedA2),
+      );
+      expect(queryClient.getQueryData(accountKeys.profile(principalA.id))).toEqual({
+        id: 'a',
+      });
+      expect(validateStoredSession).toHaveBeenCalledWith(
+        preservedA2.access_token,
+      );
+    } finally {
+      await rendered.cleanup();
+      await AsyncStorage.clear();
+    }
+  });
+
+  it('settles non-A signed out on unavailable superseded adoption and later converges to stored B', async () => {
+    const storageKey = 'sb-injected-auth-token';
+    const winnerB = storedSession(
+      'principal-b',
+      'b@example.com',
+      'session-b',
+      'unavailable-winner-b',
+    );
+    let validationAvailable = false;
+    const validateStoredSession = jest.fn(async (accessToken: string) => {
+      if (accessToken !== winnerB.access_token) {
+        return {
+          data: { user: null },
+          error: { status: 401, code: 'session_not_found' },
+        };
+      }
+      return validationAvailable
+        ? { data: { user: winnerB.user }, error: null }
+        : {
+            data: { user: null },
+            error: { status: 503, code: 'validation_unavailable' },
+          };
+    });
+    const mock = createMockAuthClient({
+      initialUser: null,
+      getUser: validateStoredSession,
+    });
+    mockAdoptExplicitSession.mockResolvedValueOnce('superseded');
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'principal-a',
+        email: 'a@example.com',
+      });
+      await AsyncStorage.setItem(storageKey, JSON.stringify(winnerB));
+      return {
+        data: {
+          session: { user: { id: 'principal-a', email: 'a@example.com' } },
+          user: { id: 'principal-a', email: 'a@example.com' },
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    const linkListeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          linkListeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const states: string[] = [];
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <RecordingAuthProbe states={states} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none|idle',
+      ),
+    );
+    queryClient.setQueryData(accountKeys.profile('principal-a'), { id: 'a' });
+    queryClient.setQueryData(accountKeys.profile('principal-b'), { id: 'b' });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'catalog' }]);
+    await act(async () => {
+      for (const listener of linkListeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=UNAVAILABLE_ADOPTION_CODE',
+        });
+      }
+    });
+
+    await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none|idle',
+      ),
+    );
+    expect(
+      queryClient.getQueryData(accountKeys.profile('principal-a')),
+    ).toBeUndefined();
+    expect(queryClient.getQueryData(accountKeys.profile('principal-b'))).toEqual({
+      id: 'b',
+    });
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'catalog' },
+    ]);
+
+    validationAvailable = true;
+    await act(async () => {
+      emitPrincipalDeletionGuardChange(storageKey);
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|principal-b|idle',
+      ),
+    );
+    expect(states).not.toContain('signed-in|principal-a|verified');
+    expect(queryClient.getQueryData(accountKeys.profile('principal-b'))).toEqual({
+      id: 'b',
+    });
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'catalog' },
+    ]);
+    await rendered.cleanup();
+  });
+
+  it('exact-removes an invalid stored replacement after superseded adoption', async () => {
+    const storageKey = 'sb-injected-auth-token';
+    const invalidB = storedSession(
+      'principal-b',
+      'b@example.com',
+      'session-b',
+      'invalid-winner-b',
+    );
+    const mock = createMockAuthClient({
+      initialUser: null,
+      getUser: jest.fn(async () => ({
+        data: { user: null },
+        error: { status: 401, code: 'session_not_found' },
+      })),
+    });
+    mockAdoptExplicitSession.mockResolvedValueOnce('superseded');
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(async () => {
+      mock.emit('PASSWORD_RECOVERY', {
+        id: 'principal-a',
+        email: 'a@example.com',
+      });
+      await AsyncStorage.setItem(storageKey, JSON.stringify(invalidB));
+      return {
+        data: {
+          session: { user: { id: 'principal-a', email: 'a@example.com' } },
+          user: { id: 'principal-a', email: 'a@example.com' },
+          redirectType: 'recovery' as const,
+        },
+        error: null,
+      };
+    });
+    const linkListeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          linkListeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-out|none',
+      ),
+    );
+    queryClient.setQueryData(accountKeys.profile('principal-a'), { id: 'a' });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'catalog' }]);
+    await act(async () => {
+      for (const listener of linkListeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=INVALID_ADOPTION_CODE',
+        });
+      }
+    });
+
+    await waitFor(() => expect(mockAdoptExplicitSession).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-out|none||idle',
+      ),
+    );
+    await expect(AsyncStorage.getItem(storageKey)).resolves.toBeNull();
+    expect(
+      queryClient.getQueryData(accountKeys.profile('principal-a')),
+    ).toBeUndefined();
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'catalog' },
+    ]);
+    await rendered.cleanup();
+  });
+
+  it('suppresses recovery restoration B and publishes raw C after the final exact recheck', async () => {
+    const storageKey = 'sb-injected-auth-token';
+    const winnerB = storedSession(
+      'principal-b',
+      'b@example.com',
+      'session-b',
+      'restore-winner-b',
+    );
+    const winnerC = storedSession(
+      'principal-c',
+      'c@example.com',
+      'session-c',
+      'replacement-winner-c',
+    );
+    const recoveryA = storedSession(
+      'principal-a',
+      'a@example.com',
+      'session-a',
+      'stale-recovery-a',
+    );
+    let resolveExchange:
+      | ((result: {
+          data: {
+            session: MockSession;
+            user: MockSession['user'];
+            redirectType: 'recovery';
+          };
+          error: null;
+        }) => void)
+      | null = null;
+    let replacementStored = false;
+    const validateStoredSession = jest.fn(async (accessToken: string) => {
+      if (accessToken === winnerB.access_token) {
+        if (!replacementStored) {
+          replacementStored = true;
+          await AsyncStorage.setItem(storageKey, JSON.stringify(winnerC));
+        }
+        return { data: { user: winnerB.user }, error: null };
+      }
+      if (accessToken === winnerC.access_token) {
+        return { data: { user: winnerC.user }, error: null };
+      }
+      return {
+        data: { user: null },
+        error: { status: 401, code: 'session_not_found' },
+      };
+    });
+    const mock = createMockAuthClient({
+      initialUser: null,
+      getUser: validateStoredSession,
+    });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+    const linkListeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          linkListeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <AuthProbe />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-out|none',
+      ),
+    );
+    queryClient.setQueryData(accountKeys.profile('principal-a'), { id: 'a' });
+    queryClient.setQueryData(accountKeys.profile('principal-b'), { id: 'b' });
+    queryClient.setQueryData(accountKeys.profile('principal-c'), { id: 'c' });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'catalog' }]);
+    await act(async () => {
+      for (const listener of linkListeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=RESTORE_B_TO_C_CODE',
+        });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|processing',
+      ),
+    );
+    await AsyncStorage.setItem(storageKey, JSON.stringify(winnerB));
+    await act(async () => {
+      mock.emitSession('SIGNED_IN', winnerB);
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|principal-b',
+      ),
+    );
+
+    await act(async () => {
+      mock.emitSession('PASSWORD_RECOVERY', recoveryA);
+      resolveExchange?.({
+        data: {
+          session: recoveryA,
+          user: recoveryA.user,
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|principal-c|c@example.com|idle',
+      ),
+    );
+    await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+      JSON.stringify(winnerC),
+    );
+    expect(
+      queryClient.getQueryData(accountKeys.profile('principal-a')),
+    ).toBeUndefined();
+    expect(queryClient.getQueryData(accountKeys.profile('principal-b'))).toEqual({
+      id: 'b',
+    });
+    expect(queryClient.getQueryData(accountKeys.profile('principal-c'))).toEqual({
+      id: 'c',
+    });
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'catalog' },
+    ]);
+    await rendered.cleanup();
+  });
+
+  it('preserves raw C stored before stale recovery restoration can rewrite B', async () => {
+    const storageKey = 'sb-injected-auth-token';
+    const winnerB = storedSession(
+      'principal-b',
+      'b@example.com',
+      'session-b',
+      'restore-winner-b-before-c',
+    );
+    const winnerC = storedSession(
+      'principal-c',
+      'c@example.com',
+      'session-c',
+      'already-stored-winner-c',
+    );
+    const recoveryA = storedSession(
+      'principal-a',
+      'a@example.com',
+      'session-a',
+      'stale-recovery-before-c',
+    );
+    let resolveExchange:
+      | ((result: {
+          data: {
+            session: MockSession;
+            user: MockSession['user'];
+            redirectType: 'recovery';
+          };
+          error: null;
+        }) => void)
+      | null = null;
+    const validateStoredSession = jest.fn(async (accessToken: string) => {
+      if (accessToken === winnerB.access_token) {
+        return { data: { user: winnerB.user }, error: null };
+      }
+      if (accessToken === winnerC.access_token) {
+        return { data: { user: winnerC.user }, error: null };
+      }
+      return {
+        data: { user: null },
+        error: { status: 401, code: 'session_not_found' },
+      };
+    });
+    const mock = createMockAuthClient({
+      initialUser: null,
+      getUser: validateStoredSession,
+    });
+    (
+      mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
+    ).exchangeCodeForSession = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveExchange = resolve;
+        }),
+    );
+    const linkListeners: ((event: { url: string }) => void)[] = [];
+    const linking = {
+      getInitialURL: jest.fn(async () => null),
+      addEventListener: jest.fn(
+        (_type: 'url', listener: (event: { url: string }) => void) => {
+          linkListeners.push(listener);
+          return { remove: jest.fn() };
+        },
+      ),
+    };
+    const queryClient = createAppQueryClient({
+      defaultOptions: { queries: { gcTime: Infinity } },
+    });
+    const states: string[] = [];
+    const rendered = await renderWithProviders(
+      <AuthProvider client={mock.client} enableSession linking={linking}>
+        <RecordingAuthProbe states={states} />
+      </AuthProvider>,
+      { queryClient },
+    );
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-out|none',
+      ),
+    );
+    queryClient.setQueryData(accountKeys.profile('principal-a'), { id: 'a' });
+    queryClient.setQueryData(accountKeys.profile('principal-b'), { id: 'b' });
+    queryClient.setQueryData(accountKeys.profile('principal-c'), { id: 'c' });
+    queryClient.setQueryData(catalogKeys.products(), [{ id: 'catalog' }]);
+    await act(async () => {
+      for (const listener of linkListeners) {
+        listener({
+          url: 'eazyreview://auth/reset-password?code=C_BEFORE_RESTORE_B_CODE',
+        });
+      }
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        '|processing',
+      ),
+    );
+    await AsyncStorage.setItem(storageKey, JSON.stringify(winnerB));
+    await act(async () => {
+      mock.emitSession('SIGNED_IN', winnerB);
+    });
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toContain(
+        'signed-in|principal-b',
+      ),
+    );
+
+    states.length = 0;
+    await AsyncStorage.setItem(storageKey, JSON.stringify(winnerC));
+    await act(async () => {
+      mock.emitSession('PASSWORD_RECOVERY', recoveryA);
+      resolveExchange?.({
+        data: {
+          session: recoveryA,
+          user: recoveryA.user,
+          redirectType: 'recovery',
+        },
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByTestId('auth-probe').props.children).toBe(
+        'signed-in|principal-c|idle',
+      ),
+    );
+    expect(states).not.toContain('signed-in|principal-b|idle');
+    await expect(AsyncStorage.getItem(storageKey)).resolves.toBe(
+      JSON.stringify(winnerC),
+    );
+    expect(
+      queryClient.getQueryData(accountKeys.profile('principal-a')),
+    ).toBeUndefined();
+    expect(queryClient.getQueryData(accountKeys.profile('principal-b'))).toEqual({
+      id: 'b',
+    });
+    expect(queryClient.getQueryData(accountKeys.profile('principal-c'))).toEqual({
+      id: 'c',
+    });
+    expect(queryClient.getQueryData(catalogKeys.products())).toEqual([
+      { id: 'catalog' },
+    ]);
     await rendered.cleanup();
   });
 
@@ -1692,8 +3190,10 @@ describe('AuthProvider password recovery', () => {
         'signed-in|id-c@example.com|c@example.com|idle',
       ),
     );
-    const { data: sessionData } = await mock.client.auth.getSession();
-    expect(sessionData.session?.user).toEqual({
+    const storedSessionAfterRecovery = JSON.parse(
+      (await AsyncStorage.getItem('sb-injected-auth-token')) ?? 'null',
+    ) as MockSession | null;
+    expect(storedSessionAfterRecovery?.user).toEqual({
       id: 'id-c@example.com',
       email: 'c@example.com',
     });
@@ -1969,9 +3469,7 @@ describe('AuthProvider password recovery', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    await waitFor(() =>
-      expect(mock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' }),
-    );
+    expect(mock.client.auth.signOut).not.toHaveBeenCalled();
     await waitFor(() =>
       expect(mock.client.auth.exchangeCodeForSession).toHaveBeenCalledWith(
         'BOOTSTRAP_CLEANUP_CODE',
@@ -2339,8 +3837,18 @@ describe('AuthProvider password recovery', () => {
       ),
     );
 
+    const winnerB = storedSession(
+      'user-b',
+      'b@example.com',
+      'session-user-b',
+      'late-recovery-winner-b',
+    );
+    await AsyncStorage.setItem(
+      'sb-injected-auth-token',
+      JSON.stringify(winnerB),
+    );
     await act(async () => {
-      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      mock.emitSession('SIGNED_IN', winnerB);
     });
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
@@ -2348,17 +3856,18 @@ describe('AuthProvider password recovery', () => {
       ),
     );
 
+    const recoveryA = storedSession(
+      'user-a',
+      'a@example.com',
+      'session-user-a',
+      'late-recovery-a',
+    );
     await act(async () => {
-      mock.emit('PASSWORD_RECOVERY', {
-        id: 'user-a',
-        email: 'a@example.com',
-      });
+      mock.emitSession('PASSWORD_RECOVERY', recoveryA);
       resolveExchange?.({
         data: {
-          session: {
-            user: { id: 'user-a', email: 'a@example.com' },
-          },
-          user: { id: 'user-a', email: 'a@example.com' },
+          session: recoveryA,
+          user: recoveryA.user,
           redirectType: 'recovery',
         },
         error: null,
@@ -2369,8 +3878,10 @@ describe('AuthProvider password recovery', () => {
     expect(rendered.getByTestId('auth-probe').props.children).toBe(
       'signed-in|user-b|b@example.com|idle',
     );
-    const { data: sessionData } = await mock.client.auth.getSession();
-    expect(sessionData.session?.user).toEqual({
+    const storedWinner = JSON.parse(
+      (await AsyncStorage.getItem('sb-injected-auth-token')) ?? 'null',
+    ) as MockSession | null;
+    expect(storedWinner?.user).toEqual({
       id: 'user-b',
       email: 'b@example.com',
     });
@@ -2473,7 +3984,7 @@ describe('AuthProvider password recovery', () => {
         'signed-in|id-a@example.com|a@example.com|idle',
       ),
     );
-    expect(mock.client.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(mock.client.auth.signOut).not.toHaveBeenCalled();
     const { data: sessionData } = await mock.client.auth.getSession();
     expect(sessionData.session?.user).toEqual({
       id: 'id-a@example.com',
@@ -2542,8 +4053,18 @@ describe('AuthProvider password recovery', () => {
       ),
     );
 
+    const winnerB = storedSession(
+      'user-b',
+      'b@example.com',
+      'session-user-b',
+      'late-signed-in-winner-b',
+    );
+    await AsyncStorage.setItem(
+      'sb-injected-auth-token',
+      JSON.stringify(winnerB),
+    );
     await act(async () => {
-      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      mock.emitSession('SIGNED_IN', winnerB);
     });
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
@@ -2551,14 +4072,18 @@ describe('AuthProvider password recovery', () => {
       ),
     );
 
+    const recoveryA = storedSession(
+      'user-a',
+      'a@example.com',
+      'session-user-a',
+      'late-signed-in-recovery-a',
+    );
     await act(async () => {
-      mock.emit('SIGNED_IN', { id: 'user-a', email: 'a@example.com' });
+      mock.emitSession('SIGNED_IN', recoveryA);
       resolveExchange?.({
         data: {
-          session: {
-            user: { id: 'user-a', email: 'a@example.com' },
-          },
-          user: { id: 'user-a', email: 'a@example.com' },
+          session: recoveryA,
+          user: recoveryA.user,
           redirectType: 'recovery',
         },
         error: null,
@@ -2571,8 +4096,10 @@ describe('AuthProvider password recovery', () => {
         'signed-in|user-b|b@example.com|idle',
       ),
     );
-    const { data: sessionData } = await mock.client.auth.getSession();
-    expect(sessionData.session?.user).toEqual({
+    const storedWinner = JSON.parse(
+      (await AsyncStorage.getItem('sb-injected-auth-token')) ?? 'null',
+    ) as MockSession | null;
+    expect(storedWinner?.user).toEqual({
       id: 'user-b',
       email: 'b@example.com',
     });
@@ -2580,7 +4107,7 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
-  it('fails closed with local sign-out when recovery reconciliation cannot restore the winner', async () => {
+  it('fails closed without retry when recovery CAS is unconfirmed', async () => {
     type ExchangeResult = {
       data: {
         session: { user: { id: string; email: string } };
@@ -2599,17 +4126,7 @@ describe('AuthProvider password recovery', () => {
           resolveExchange = resolve;
         }),
     );
-    (
-      mock.client.auth as unknown as { setSession: jest.Mock }
-    ).setSession = jest.fn(async () => ({
-      data: { session: null, user: null },
-      error: { message: 'Session restore unavailable', status: 503 },
-    }));
-    (
-      mock.client.auth as unknown as { signOut: jest.Mock }
-    ).signOut = jest.fn(async () => ({
-      error: { message: 'Sign-out unavailable', status: 503 },
-    }));
+    mockReplaceDisplacedSession.mockResolvedValueOnce({ kind: 'unavailable' });
 
     const listeners: ((event: { url: string }) => void)[] = [];
     const linking = {
@@ -2677,7 +4194,9 @@ describe('AuthProvider password recovery', () => {
         'signed-out|none||idle',
       ),
     );
-    expect(mock.client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(mockReplaceDisplacedSession).toHaveBeenCalledTimes(1);
+    expect(mock.client.auth.setSession).not.toHaveBeenCalled();
+    expect(mock.client.auth.signOut).not.toHaveBeenCalled();
 
     await rendered.cleanup();
   });
@@ -2902,7 +4421,7 @@ describe('AuthProvider password recovery', () => {
       error: null;
     };
     let resolveFirstExchange: ((result: ExchangeResult) => void) | null = null;
-    let resolveRestore: (() => void) | null = null;
+    let resolveRestore: (() => Promise<void>) | null = null;
     const exchangeCodeForSession = jest
       .fn()
       .mockImplementationOnce(
@@ -2923,19 +4442,24 @@ describe('AuthProvider password recovery', () => {
     (
       mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
     ).exchangeCodeForSession = exchangeCodeForSession;
-    (mock.client.auth as unknown as { setSession: jest.Mock }).setSession =
-      jest.fn(
-        () =>
-          new Promise((resolve) => {
-            resolveRestore = () => {
-              mock.emit('SIGNED_IN', {
-                id: 'user-b',
-                email: 'b@example.com',
-              });
-              resolve({ data: { session: null, user: null }, error: null });
-            };
-          }),
-      );
+    mockReplaceDisplacedSession.mockImplementationOnce(
+      (_storageKey, _expectedDisplaced, replacement) =>
+        new Promise((resolve) => {
+          resolveRestore = async () => {
+            await AsyncStorage.setItem(
+              'sb-injected-auth-token',
+              JSON.stringify(replacement),
+            );
+            resolve({
+              kind: 'allowed-session',
+              principalId: replacement.user.id,
+              session: replacement,
+              sessionId: null,
+              guardRevision: null,
+            });
+          };
+        }),
+    );
 
     const listeners: ((event: { url: string }) => void)[] = [];
     const linking = {
@@ -2982,7 +4506,7 @@ describe('AuthProvider password recovery', () => {
       });
       await Promise.resolve();
     });
-    await waitFor(() => expect(mock.client.auth.setSession).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplaceDisplacedSession).toHaveBeenCalled());
 
     await act(async () => {
       for (const listener of listeners) {
@@ -2995,7 +4519,7 @@ describe('AuthProvider password recovery', () => {
     expect(exchangeCodeForSession).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      resolveRestore?.();
+      await resolveRestore?.();
     });
     await waitFor(() =>
       expect(rendered.getByTestId('auth-probe').props.children).toBe(
@@ -3020,7 +4544,7 @@ describe('AuthProvider password recovery', () => {
       error: null;
     };
     let resolveExchange: ((result: ExchangeResult) => void) | null = null;
-    let resolveRestore: (() => void) | null = null;
+    let resolveRestore: (() => Promise<void>) | null = null;
     const mock = createMockAuthClient({ initialUser: null });
     (
       mock.client.auth as unknown as { exchangeCodeForSession?: jest.Mock }
@@ -3030,17 +4554,21 @@ describe('AuthProvider password recovery', () => {
           resolveExchange = resolve;
         }),
     );
-    (
-      mock.client.auth as unknown as { setSession: jest.Mock }
-    ).setSession = jest.fn(
-      () =>
+    mockReplaceDisplacedSession.mockImplementationOnce(
+      (_storageKey, _expectedDisplaced, replacement) =>
         new Promise((resolve) => {
-          resolveRestore = () => {
-            mock.emit('SIGNED_IN', {
-              id: 'user-b',
-              email: 'b@example.com',
+          resolveRestore = async () => {
+            await AsyncStorage.setItem(
+              'sb-injected-auth-token',
+              JSON.stringify(replacement),
+            );
+            resolve({
+              kind: 'allowed-session',
+              principalId: replacement.user.id,
+              session: replacement,
+              sessionId: null,
+              guardRevision: null,
             });
-            resolve({ data: { session: null, user: null }, error: null });
           };
         }),
     );
@@ -3095,7 +4623,7 @@ describe('AuthProvider password recovery', () => {
       });
       await Promise.resolve();
     });
-    await waitFor(() => expect(mock.client.auth.setSession).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplaceDisplacedSession).toHaveBeenCalled());
 
     await act(async () => {
       const signInPromise = authRef.current?.signIn({
@@ -3103,7 +4631,7 @@ describe('AuthProvider password recovery', () => {
         password: 'correct horse battery staple',
       });
       await Promise.resolve();
-      resolveRestore?.();
+      await resolveRestore?.();
       await signInPromise;
     });
 
@@ -3612,7 +5140,7 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
-  it('settles an ordinary PKCE callback unavailable without authorizing recovery', async () => {
+  it('settles an ordinary PKCE session callback idle without authorizing recovery', async () => {
     jest.useFakeTimers();
     try {
       const exchangeCodeForSession = jest.fn(async () => ({
@@ -3672,7 +5200,7 @@ describe('AuthProvider password recovery', () => {
       });
       await waitFor(() =>
         expect(rendered.getByTestId('auth-probe').props.children).toContain(
-          '|unavailable',
+          '|idle',
         ),
       );
       expect(exchangeCodeForSession).toHaveBeenCalledWith('AUTH_CODE_VALUE');
@@ -3683,7 +5211,7 @@ describe('AuthProvider password recovery', () => {
       });
       await waitFor(() =>
         expect(rendered.getByTestId('auth-probe').props.children).toBe(
-          'signed-in|user-p|p@example.com|unavailable',
+          'signed-in|user-p|p@example.com|idle',
         ),
       );
 

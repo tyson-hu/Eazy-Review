@@ -1,38 +1,82 @@
+import type { Session } from '@supabase/supabase-js';
 import { onlineManager } from '@tanstack/react-query';
 
 import {
-  isValidEmailFormat,
-  normalizeEmail,
+    isValidEmailFormat,
+    normalizeEmail,
 } from '@/src/features/auth/email';
+import { getEmailConfirmationRedirectTo } from '@/src/features/auth/emailConfirmationRedirect';
 import {
-  AuthError,
-  AUTH_USER_MESSAGES,
-  isAccountExistenceError,
-  isDefinitiveInvalidSessionError,
-  normalizeAuthError,
+    AUTH_USER_MESSAGES,
+    AuthError,
+    isAccountExistenceError,
+    isDefinitiveInvalidSessionError,
+    normalizeAuthError,
 } from '@/src/features/auth/errors';
 import { getPasswordRecoveryRedirectTo } from '@/src/features/auth/recoveryRedirect';
 import {
-  classifyAuthCallback,
-  isAuthCallbackUrl,
-  parseAuthCallbackParams,
+    classifyAuthCallback,
+    isAuthCallbackUrl,
+    parseAuthCallbackParams,
 } from '@/src/features/auth/recoveryUrl';
 import type {
-  AuthCallbackProcessResult,
-  AuthUser,
-  PasswordResetRequestResult,
-  PasswordUpdateSuccess,
-  SignInCredentials,
-  SignInSuccess,
-  SignUpCredentials,
-  SignUpResult,
+    AuthCallbackProcessResult,
+    AuthUser,
+    ExactLocalSignOutResult,
+    PasswordResetRequestResult,
+    PasswordUpdateSuccess,
+    SignInCredentials,
+    SignInResult,
+    SignUpCredentials,
+    SignUpResult,
 } from '@/src/features/auth/types';
-import { getSupabase } from '@/src/lib/supabase/client';
+import { runSupabaseAuthOperation } from '@/src/lib/supabase/authCoordination';
+import {
+    adoptExplicitSessionAfterDeletionGuard,
+    adoptRecoverySessionAfterDeletionGuard,
+    captureRecoveryAdoptionPredecessor,
+    removeStoredSessionIfExact,
+    type RecoveryAdoptionPredecessor,
+    type RecoveryAdoptionResult,
+    type RecoveryPredecessorCapture,
+} from '@/src/lib/supabase/authStorage';
+import {
+    createIsolatedAuthClient,
+    getSupabase,
+    getSupabaseAuthStorageKey,
+} from '@/src/lib/supabase/client';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 
 export type AuthApiOptions = {
   client?: AppSupabaseClient;
   isOnline?: () => boolean;
+  createIsolatedAuthClient?: () => AppSupabaseClient;
+  storageKey?: string;
+  removeStoredSessionIfExact?: (
+    storageKey: string,
+    expected: {
+      principalId: string;
+      accessToken: string;
+      refreshToken: string;
+    },
+  ) => Promise<'removed' | 'changed' | 'already-empty' | 'unavailable'>;
+  adoptExplicitSession?: (
+    storageKey: string,
+    session: Session,
+  ) => Promise<'not-guarded' | 'adopted' | 'guard-busy' | 'superseded'>;
+  captureRecoveryAdoptionPredecessor?: (
+    storageKey: string,
+  ) => Promise<RecoveryPredecessorCapture>;
+  adoptRecoverySession?: (
+    storageKey: string,
+    predecessor: RecoveryAdoptionPredecessor,
+    returnedSession: Session,
+  ) => Promise<RecoveryAdoptionResult>;
+  runAuthSessionWrite?: <T>(write: () => Promise<T>) => Promise<T>;
+  onRecoveryAdoptionPredecessor?: (
+    predecessor: RecoveryPredecessorCapture,
+  ) => void;
+  onRecoverySession?: (session: Session) => void;
 };
 
 type RestoreSessionOptions = AuthApiOptions & {
@@ -48,6 +92,57 @@ function isOnline(options?: AuthApiOptions): boolean {
     return options.isOnline();
   }
   return onlineManager.isOnline();
+}
+
+function isolatedAuthClient(options?: AuthApiOptions): AppSupabaseClient {
+  return options?.createIsolatedAuthClient?.() ?? createIsolatedAuthClient();
+}
+
+function authStorageKey(options?: AuthApiOptions): string {
+  if (options?.storageKey != null) return options.storageKey;
+  if (options?.client != null) return 'sb-injected-auth-token';
+  return getSupabaseAuthStorageKey();
+}
+
+async function adoptAuthenticatedSession(
+  session: Session,
+  options?: AuthApiOptions,
+  predecessor: RecoveryPredecessorCapture = { kind: 'not-guarded' },
+): Promise<'adopted' | 'superseded'> {
+  const storageKey = authStorageKey(options);
+  const guardedPredecessor =
+    predecessor.kind === 'settled-allowed' ||
+      predecessor.kind === 'expired-pending'
+      ? predecessor
+      : null;
+  const runAdoption = () =>
+    runSupabaseAuthOperation(storageKey, () => {
+      if (guardedPredecessor != null) {
+        const adoptRecovery = options?.adoptRecoverySession ??
+          adoptRecoverySessionAfterDeletionGuard;
+        return adoptRecovery(storageKey, guardedPredecessor, session);
+      }
+      const adopt = options?.adoptExplicitSession ??
+        adoptExplicitSessionAfterDeletionGuard;
+      return adopt(storageKey, session);
+    });
+  const result = guardedPredecessor != null
+    ? await (options?.runAuthSessionWrite ??
+      (<T,>(write: () => Promise<T>) => write()))(runAdoption)
+    : await runAdoption();
+  if (result === 'guard-busy') {
+    throw new AuthError(
+      'account-deletion-in-progress',
+      AUTH_USER_MESSAGES.accountDeletionInProgress,
+    );
+  }
+  if (result === 'unconfirmed') {
+    throw new AuthError(
+      'temporary-failure',
+      AUTH_USER_MESSAGES.recoveryTemporaryFailure,
+    );
+  }
+  return result === 'superseded' ? 'superseded' : 'adopted';
 }
 
 function toAuthUser(user: {
@@ -66,7 +161,7 @@ function toAuthUser(user: {
 export async function signInWithPassword(
   credentials: SignInCredentials,
   options?: AuthApiOptions,
-): Promise<SignInSuccess> {
+): Promise<SignInResult> {
   if (!isOnline(options)) {
     throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
       source: 'transport',
@@ -94,6 +189,10 @@ export async function signInWithPassword(
       );
     }
 
+    if (await adoptAuthenticatedSession(data.session, options) === 'superseded') {
+      return { kind: 'superseded' };
+    }
+
     return {
       kind: 'signed-in',
       user: toAuthUser(data.session.user),
@@ -112,10 +211,14 @@ export async function signInWithPassword(
 /**
  * Email/password sign-up. Handles immediate session and confirmation-required.
  * Does not retry. Never claims signed-in without a session.
+ *
+ * When confirmation is required, emails use the app-scheme `emailRedirectTo`
+ * so a physical device opens Eazy Review instead of an unreachable localhost
+ * Site URL. The redirect must also be allowlisted in Auth redirect URLs.
  */
 export async function signUpWithPassword(
   credentials: SignUpCredentials,
-  options?: AuthApiOptions,
+  options?: AuthApiOptions & { emailRedirectTo?: string },
 ): Promise<SignUpResult> {
   if (!isOnline(options)) {
     throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
@@ -124,12 +227,17 @@ export async function signUpWithPassword(
   }
 
   const email = credentials.email.trim();
+  const emailRedirectTo =
+    options?.emailRedirectTo ?? getEmailConfirmationRedirectTo();
 
   try {
     const client = resolveClient(options);
     const { data, error } = await client.auth.signUp({
       email,
       password: credentials.password,
+      options: {
+        emailRedirectTo,
+      },
     });
 
     if (error) {
@@ -140,6 +248,9 @@ export async function signUpWithPassword(
     }
 
     if (data.session?.user) {
+      if (await adoptAuthenticatedSession(data.session, options) === 'superseded') {
+        return { kind: 'superseded' };
+      }
       return {
         kind: 'signed-in',
         user: toAuthUser(data.session.user),
@@ -174,16 +285,69 @@ export async function signUpWithPassword(
  * device sessions intact; Task 16 does not implement global revocation.
  * Does not perform account deletion.
  */
-export async function signOut(options?: AuthApiOptions): Promise<void> {
+export async function signOut(
+  options?: AuthApiOptions,
+): Promise<ExactLocalSignOutResult> {
   try {
     const client = resolveClient(options);
-    const { error } = await client.auth.signOut({ scope: 'local' });
+    const { data, error } = await client.auth.getSession();
     if (error) {
-      throw normalizeAuthError(error, {
-        operation: 'sign-out',
-        isOffline: !isOnline(options),
-      });
+      throw new AuthError(
+        'temporary-failure',
+        AUTH_USER_MESSAGES.signOutFailed,
+        { source: 'server' },
+      );
     }
+    if (data.session == null) {
+      return { kind: 'signed-out' };
+    }
+    const session = data.session;
+    const removeExact = options?.removeStoredSessionIfExact ??
+      removeStoredSessionIfExact;
+    const storageKey = authStorageKey(options);
+    const cleanup = await runSupabaseAuthOperation(storageKey, async () => {
+      const isolatedClient = isolatedAuthClient(options);
+      try {
+        await isolatedClient.auth.admin.signOut(session.access_token, 'local');
+      } catch {
+        // Local user intent still exact-removes the unchanged captured snapshot.
+      } finally {
+        try {
+          isolatedClient.auth.stopAutoRefresh();
+        } catch {
+          // The isolated client owns memory only.
+        }
+      }
+      return await removeExact(storageKey, {
+        principalId: session.user.id,
+        accessToken: session.access_token,
+        refreshToken: session.refresh_token,
+      });
+    });
+    if (cleanup === 'changed') {
+      const current = await client.auth.getSession();
+      if (current.error) {
+        throw new AuthError(
+          'temporary-failure',
+          AUTH_USER_MESSAGES.signOutFailed,
+          { source: 'server' },
+        );
+      }
+      if (current.data.session?.user != null) {
+        return {
+          kind: 'superseded',
+          user: toAuthUser(current.data.session.user),
+        };
+      }
+    }
+    if (cleanup === 'unavailable') {
+      throw new AuthError(
+        'temporary-failure',
+        AUTH_USER_MESSAGES.signOutFailed,
+        { source: 'server' },
+      );
+    }
+    return { kind: 'signed-out' };
   } catch (error) {
     if (error instanceof AuthError) {
       throw error;
@@ -195,20 +359,42 @@ export async function signOut(options?: AuthApiOptions): Promise<void> {
   }
 }
 
-/**
- * Best-effort local session wipe (current device only). Used when Auth
- * definitively rejects a restored principal. Does not require a successful
- * remote revoke — supabase-js still clears storage for 401/403/404 / missing
- * session and on many network failures (`scope: 'local'` only).
- */
-async function clearInvalidLocalSession(
-  client: AppSupabaseClient,
-): Promise<void> {
+export async function validateSessionSnapshotIsolated(
+  session: Session,
+  options?: AuthApiOptions,
+): Promise<
+  | { kind: 'valid'; user: AuthUser }
+  | { kind: 'invalid' }
+  | { kind: 'unavailable' }
+> {
+  if (
+    typeof session.access_token !== 'string' ||
+    session.access_token.length === 0 ||
+    session.user?.id == null
+  ) {
+    return { kind: 'invalid' };
+  }
+  const isolatedClient = isolatedAuthClient(options);
   try {
-    await client.auth.signOut({ scope: 'local' });
+    const { data, error } = await isolatedClient.auth.getUser(
+      session.access_token,
+    );
+    if (data.user != null) {
+      return data.user.id === session.user.id
+        ? { kind: 'valid', user: toAuthUser(data.user) }
+        : { kind: 'invalid' };
+    }
+    return isDefinitiveInvalidSessionError(error)
+      ? { kind: 'invalid' }
+      : { kind: 'unavailable' };
   } catch {
-    // Best-effort. The restore path still returns signed-out so the UI does
-    // not publish a known-invalid principal even if storage wipe fails once.
+    return { kind: 'unavailable' };
+  } finally {
+    try {
+      isolatedClient.auth.stopAutoRefresh();
+    } catch {
+      // The isolated client owns memory only.
+    }
   }
 }
 
@@ -230,7 +416,14 @@ export async function restoreSession(
   try {
     const client = resolveClient(options);
     const { data, error } = await client.auth.getSession();
-    if (error || !data.session?.user) {
+    if (error) {
+      throw new AuthError(
+        'temporary-failure',
+        AUTH_USER_MESSAGES.temporaryFailure,
+        { source: 'server' },
+      );
+    }
+    if (!data.session?.user) {
       return null;
     }
 
@@ -242,55 +435,56 @@ export async function restoreSession(
       return localUser;
     }
 
-    let userData: { user: { id: string; email?: string | null } | null } | null =
-      null;
-    let userError: unknown = null;
+    const validation = await validateSessionSnapshotIsolated(
+      restoredSession,
+      options,
+    );
+    if (validation.kind === 'valid') return validation.user;
+    if (validation.kind === 'unavailable') return localUser;
+
+    options?.onInvalidLocalSessionCleanupChange?.(true);
     try {
-      const result = await client.auth.getUser();
-      userData = result.data;
-      userError = result.error;
-    } catch {
-      // Network throws (TypeError, etc.) — preserve local session.
-      return localUser;
-    }
-
-    if (userData?.user) {
-      return toAuthUser(userData.user);
-    }
-
-    // Definitive invalid principal/session — clear only if the exact session
-    // is still restored. A newer sign-in or same-user recovery session while
-    // getUser was in flight must not be wiped by stale zombie cleanup.
-    if (isDefinitiveInvalidSessionError(userError)) {
-      try {
+      const removeExact = options?.removeStoredSessionIfExact ??
+        removeStoredSessionIfExact;
+      const storageKey = authStorageKey(options);
+      const cleanup = await runSupabaseAuthOperation(storageKey, () =>
+        removeExact(storageKey, {
+          principalId: restoredSession.user.id,
+          accessToken: restoredSession.access_token,
+          refreshToken: restoredSession.refresh_token,
+        }),
+      );
+      if (cleanup === 'changed') {
         const current = await client.auth.getSession();
-        const currentSession = current.data.session;
-        if (
-          currentSession &&
-          (currentSession.user.id !== restoredSession.user.id ||
-            currentSession.access_token !== restoredSession.access_token ||
-            currentSession.refresh_token !== restoredSession.refresh_token)
-        ) {
-          // Session changed during validation; keep the newer local session.
-          return toAuthUser(currentSession.user);
+        if (current.error) {
+          throw new AuthError(
+            'temporary-failure',
+            AUTH_USER_MESSAGES.temporaryFailure,
+            { source: 'server' },
+          );
         }
-      } catch {
-        // Fall through to cleanup of the known-invalid principal.
+        return current.data.session?.user
+          ? toAuthUser(current.data.session.user)
+          : null;
       }
-
-      options?.onInvalidLocalSessionCleanupChange?.(true);
-      try {
-        await clearInvalidLocalSession(client);
-      } finally {
-        options?.onInvalidLocalSessionCleanupChange?.(false);
+      if (cleanup === 'unavailable') {
+        throw new AuthError(
+          'temporary-failure',
+          AUTH_USER_MESSAGES.temporaryFailure,
+          { source: 'server' },
+        );
       }
       return null;
+    } finally {
+      options?.onInvalidLocalSessionCleanupChange?.(false);
     }
-
-    // Transient / unclassifiable: preserve local restored principal.
-    return localUser;
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof AuthError) throw error;
+    throw new AuthError(
+      'temporary-failure',
+      AUTH_USER_MESSAGES.temporaryFailure,
+      { source: 'server' },
+    );
   }
 }
 
@@ -448,6 +642,26 @@ export async function processAuthCallbackUrl(
   }
 
   try {
+    const storageKey = authStorageKey(options);
+    const capture = options?.captureRecoveryAdoptionPredecessor ??
+      captureRecoveryAdoptionPredecessor;
+    const predecessor = await capture(storageKey);
+    options?.onRecoveryAdoptionPredecessor?.(predecessor);
+    if (predecessor.kind === 'guard-busy') {
+      throw new AuthError(
+        'account-deletion-in-progress',
+        AUTH_USER_MESSAGES.accountDeletionInProgress,
+      );
+    }
+    if (predecessor.kind === 'superseded') {
+      return { kind: 'superseded' };
+    }
+    if (predecessor.kind === 'unavailable') {
+      throw new AuthError(
+        'temporary-failure',
+        AUTH_USER_MESSAGES.recoveryTemporaryFailure,
+      );
+    }
     const client = resolveClient(options);
 
     if (classified.kind === 'pkce') {
@@ -465,6 +679,13 @@ export async function processAuthCallbackUrl(
           'recovery-link-invalid',
           AUTH_USER_MESSAGES.recoveryLinkInvalid,
         );
+      }
+      options?.onRecoverySession?.(data.session);
+      if (
+        await adoptAuthenticatedSession(data.session, options, predecessor) ===
+          'superseded'
+      ) {
+        return { kind: 'superseded' };
       }
       // auth-js 2.112 returns `redirectType` here at runtime, but its public
       // AuthTokenResponse type omits the field. Read it through a narrow
@@ -498,6 +719,15 @@ export async function processAuthCallbackUrl(
         'recovery-link-invalid',
         AUTH_USER_MESSAGES.recoveryLinkInvalid,
       );
+    }
+
+    options?.onRecoverySession?.(data.session);
+
+    if (
+      await adoptAuthenticatedSession(data.session, options, predecessor) ===
+        'superseded'
+    ) {
+      return { kind: 'superseded' };
     }
 
     return {

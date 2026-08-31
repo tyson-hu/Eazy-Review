@@ -253,11 +253,12 @@ src/
       mockProductDetails.ts     # isolated legacy fixtures; not runtime Detail
 
     auth/
-      api.ts                    # Task 16 email/password sign-in, sign-up, sign-out
+      api.ts                    # Tasks 16–19 auth, recovery, guarded adoption
+      deletion.api.ts           # Task 19 isolated bearer + Function boundary
       errors.ts                 # Normalized auth errors (no raw SDK text)
       types.ts
       returnPath.ts             # Safe internal returnTo allowlist
-      AuthProvider.tsx          # Session state + user-scoped cache isolation
+      AuthProvider.tsx          # Tasks 16–19 session/recovery/deletion authority
       hooks.ts
 
     account/
@@ -273,7 +274,8 @@ src/
     supabase/
       client.ts                # Task 14 singleton
       createClient.ts
-      authStorage.ts           # Task 14/16 AsyncStorage session adapter (HUMAN ACCEPTED MVP; SecureStore waived for Task 16)
+      authCoordination.ts      # Tasks 18–19 non-stealing Auth/storage ordering
+      authStorage.ts           # Tasks 14–19 guarded AsyncStorage adapter (HUMAN ACCEPTED MVP; SecureStore waived for Task 16)
     query/
       client.ts                # Task 14 QueryClient factory
       keys.ts                  # public catalog vs user-scoped key factories
@@ -369,19 +371,29 @@ File: `src/features/auth/api.ts`
 Task 16 functions (email/password only):
 - `signInWithPassword({ email, password })`
 - `signUpWithPassword({ email, password })` — may return
-  `confirmation-required` when the provider creates a user without a session
-- `signOut()` — current-device local sign-out via
-  `client.auth.signOut({ scope: 'local' })` (explicit; not global revocation)
+  `confirmation-required` when the provider creates a user without a session.
+  Confirmation emails use
+  `emailRedirectTo = Linking.createURL('auth/sign-in')`, which yields the exact
+  native URL `eazyreview://auth/sign-in`, so a physical device opens the app
+  instead of an unreachable localhost Site URL. The redirect must be
+  allowlisted in Auth redirect URLs (local `supabase/config.toml`;
+  staging/production are human-applied).
+- `signOut()` — captures one exact shared session, attempts current-device
+  revocation with that bearer on an isolated non-persisting Auth client, then
+  exact-removes shared storage only if principal/access/refresh still match.
+  It never calls shared-client `auth.signOut`; a replacement returns token-free
+  `superseded` and storage unavailability does not claim signed-out.
 - `restoreSession()` — best-effort session restoration on launch. Reads the
   local persisted session with `getSession()`, then when the device is online
-  validates the principal with Auth `getUser()` (server-backed). Definitive
-  invalid identity/session errors clear the local session only (scope
-  `local`) after rechecking the access/refresh-token session being validated.
+  validates the captured bearer through an isolated non-persisting Auth client.
+  Definitive invalid identity/session errors exact-remove the captured shared
+  principal/access/refresh snapshot; no shared-client sign-out is used.
   Recovery callback exchange waits for bootstrap restoration and any cleanup
   to settle, so it cannot replace that session between the recheck and local
   sign-out. A replacement session already present at the recheck is preserved;
   offline and transient transport/5xx validation failures preserve the local
-  principal. Profile rows are not the identity validity check.
+  principal. Storage/cleanup unavailability remains non-authoritative rather
+  than publishing signed-out. Profile rows are not the identity validity check.
 
 Task 16 routes:
 - `app/auth/sign-in.tsx`
@@ -392,9 +404,9 @@ external URLs and schemes are rejected. Post-auth navigation uses
 `router.dismissTo(returnTo)` so existing destinations are revealed rather than
 duplicated via forward `replace`.
 
-Task 16 does **not** implement:
-- account deletion (Task 19)
-- social login / MFA / passkeys (deferred unless roadmap promotes)
+Task 16 does **not** implement social login / MFA / passkeys (deferred unless
+the roadmap promotes them). Task 19 extends, but does not reopen, Task 16's
+accepted Auth surface.
 
 Task 17 rating writes are separate from auth.
 
@@ -423,7 +435,12 @@ Functions (file: `src/features/auth/api.ts`):
   tokens. Provider errors encoded directly in the callback URL use the same
   normalization as SDK exchange errors: transport/server failures are
   temporary, while definitive expired, replayed, or unusable-verifier failures
-  make the link unavailable.
+  make the link unavailable. When Task 19 guard state is present, it first
+  captures an operation-local exact settled or lease-expired-pending
+  predecessor. After the unabortable SDK exchange releases, it adopts the
+  returned same-principal session only through the exact serialized transaction
+  described below; a changed/unknown predecessor returns token-free
+  `superseded` without removing or replacing current authority.
 
 AuthProvider recovery phase (not ordinary session status):
 
@@ -439,7 +456,10 @@ Recovery-link processing is also bound to the authoritative auth generation and
 principal. If sign-out or a different-account auth transition supersedes an
 in-flight callback, neither its late SDK `PASSWORD_RECOVERY` event nor its result
 can promote the phase to `verified`. Same-principal SDK transitions emitted by
-the recovery exchange remain valid. Background `INITIAL_SESSION` or
+an unguarded recovery exchange remain valid. During guarded recovery, S2
+`SIGNED_IN`/`TOKEN_REFRESHED`/`PASSWORD_RECOVERY` events are maintenance-only:
+they cannot publish S2 or verify recovery until exact predecessor-bound adoption
+succeeds and releases the quarantine. Background `INITIAL_SESSION` or
 `TOKEN_REFRESHED` events for the principal present before the callback started
 are maintenance, not superseding user transitions. A matching `USER_UPDATED`
 event is also maintenance, so a password update from the preceding recovery
@@ -459,9 +479,11 @@ recovery session before emitting its SDK event, rejecting a stale event also
 gates authenticated UI and restores the superseding full session outside the
 auth callback, including when the exchange reports the stale session through
 ordinary `SIGNED_IN`. If that session cannot be restored, the provider signs
-out the current device only rather than expose an identity/bearer mismatch or
-revoke other-device sessions. A failed or throwing local sign-out still
-settles provider state to signed-out instead of leaving auth initializing. All
+out the captured current-device bearer through an isolated non-persisting Auth
+client and exact-removes shared storage only while the captured principal/
+access/refresh snapshot is unchanged; it never calls shared-client
+`auth.signOut`. A replacement is preserved, and cleanup uncertainty does not
+authorize principal-only removal or a healthy signed-out authority claim. All
 recovery callback exchanges are serialized through any stale-session
 reconciliation they start, so an exchange cannot race a prior session restore.
 Duplicate delivery of the active or already-pending callback is ignored. A
@@ -507,11 +529,6 @@ Successful recovery keeps the authenticated session and dismisses to Account;
 it does not reuse Rate `returnTo` routing. Physical proof that the new password
 works and the old password fails remains on the human iPhone checklist.
 
-Still deferred (Task 19):
-
-- `deleteCurrentUser()` — calls a protected server endpoint; no user id
-  parameter
-
 ### Password-recovery completion (Task 18)
 
 Tests cover a valid recovery session, direct navigation, an ordinary session,
@@ -519,44 +536,160 @@ expired/invalid recovery state, and warm same-route recovery callbacks after a
 completed, failed, or still-pending attempt. Human physical deep-link matrix is
 separate evidence.
 
-### Delete-current-user server contract (required for Task 19)
+### Protected account deletion (Task 19)
 
-The client sends its current bearer session to a protected server endpoint and
-never sends an authoritative target user id. The server:
+Files: `src/features/auth/deletion.api.ts`,
+`supabase/functions/delete-current-user/`, and the principal-bound helpers in
+`src/lib/supabase/authStorage.ts` / `authCoordination.ts`.
 
-1. verifies the caller with the Auth server and derives the target id only from
-   that verified user;
-2. enforces recent reauthentication when the selected provider flow requires
-   it;
-3. calls Supabase Auth Admin
-   [`signOut(callerJwt, 'global')`](https://supabase.com/docs/reference/javascript/auth-admin-signout)
-   with the verified caller JWT to revoke every refresh session; never write
-   directly to the managed `auth.sessions` table, and abort without deleting
-   the user if global revocation fails;
-4. uses a server-only secret/service-role client to hard-delete that same
-   `auth.users` row; and
-5. returns an honest success/error result so the client clears its local auth
-   state and all user-scoped cache only after confirmed deletion.
+Public provider interface:
 
-Reject missing/invalid auth, any attempt to target another id, and any request
-whose verified caller no longer has a live session. The service-role secret
-never enters Expo.
+```ts
+export type DeleteAccountOutcome =
+  | { kind: 'deleted' }
+  | { kind: 'not-deleted-signed-out' }
+  | { kind: 'unconfirmed-signed-out' }
+  | { kind: 'superseded' };
 
-Non-destructive orchestration tests use mocked Auth Admin boundaries to prove
-the verified caller JWT is passed with `global` scope and `deleteUser` is not
-called when sign-out fails. They do not delete an account.
+deleteAccount(password: string): Promise<DeleteAccountOutcome>;
+```
 
-Hard deletion cascades the user's `profiles` and `user_ratings` rows. Those
-rows, including `private_note`, have no MVP retention/anonymization copy.
-Affected products and `rating_aggregates` remain; the rating-delete trigger
-must recompute each aggregate, including the zero-count/null state when the
-deleted user was the last rater.
+The UI supplies only current-password bytes. The provider fixes the email to
+initiating principal A, uses an isolated non-persisting Auth client, requires
+the returned principal to equal A, and keeps the returned bearer private. No
+component/public context receives a token, session, session ID, target user ID,
+or server credential. Credential rejection, including email-not-confirmed,
+uses fixed `invalid-credentials` / Current password copy.
 
-Revoking sessions invalidates refresh tokens, but an already-issued JWT can
-remain cryptographically valid until its configured expiry. Record the
-project's configured JWT lifetime (MVP maximum: one hour) as the residual
-window. Sensitive server endpoints must validate the JWT `session_id` against
-a live Auth session when immediate post-revocation rejection is required.
+The exact fresh bearer is pinned once to a zero-semantic-body invocation:
+
+```txt
+POST /functions/v1/delete-current-user
+Authorization: Bearer <fresh operation-local bearer>
+body: zero bytes
+```
+
+Any non-whitespace body is `400 invalid-request`. Runtime validation orders
+method, body, and Bearer before configuration/secret access. The endpoint has
+`verify_jwt = true`, accepts unauthenticated `OPTIONS`, then calls
+`auth.getUser(jwt)` and `auth.getClaims(jwt)` with that exact bearer. It
+requires matching `sub`, role `authenticated`, non-empty live `session_id`,
+and the newest detailed password `amr` timestamp no older than 300 seconds and
+no more than 60 seconds in the future. JWT `iat` is not reauthentication proof.
+
+After validation, the server calls exactly in order:
+
+1. `auth.admin.signOut(jwt, 'global')`;
+2. only after confirmed revocation,
+   `auth.admin.deleteUser(verifiedUser.id, false)` once; and
+3. at most one non-destructive `getUserById(verifiedUser.id)` after uncertain
+   deletion.
+
+Only stable `user_not_found` proves absence. The server never writes managed
+`auth.sessions`, retries revocation/deletion, accepts a target ID, or relabels
+a post-dispatch exception as pre-operation configuration failure. The
+server-only credential remains inside the Edge runtime.
+
+| HTTP | Outcome/code |
+| --- | --- |
+| `200` | `deleted` (or CORS preflight) |
+| `400` | `invalid-request` |
+| `401` | `unauthorized` |
+| `403` | `reauthentication-required` |
+| `405` | `method-not-allowed` |
+| `409` | `revoked-not-deleted` |
+| `500` | `configuration-failure` |
+| `502` | `revocation-failed` |
+| `503` | `validation-unavailable`, `revocation-unconfirmed`, or `revoked-delete-unconfirmed` |
+
+Exact pre-revocation failures preserve A for manual retry. A gateway bodyless
+or malformed `401` is also pre-revocation. Confirmed retained-after-revocation
+maps to `not-deleted-signed-out`; response loss, malformed/unknown responses,
+unconfirmed revocation, and unresolved post-delete state map to
+`unconfirmed-signed-out`. No destructive result is automatically retried.
+
+Local safety uses one non-stealing shared Auth-operation lock and one distinct
+storage lock with fixed `Auth operation -> storage` ordering. A minimized,
+versioned local guard store holds only store version/counter and principal-keyed
+subject ID, monotonic revision, `preparing`/`pending`/`settled` state, lease,
+optional explicitly adopted `session_id`, and predecessor state. It holds no
+access/refresh token, email, password, profile, rating, note, or server outcome.
+Exact write/readback is required before reauthentication and dispatch.
+Auth storage identity resolves in fixed order: an explicit `storageKey`, then
+the explicitly injected client contract, then the singleton key derived from
+the public Supabase URL. Ambient public configuration cannot redirect an
+injected provider/API instance to a different Auth storage namespace.
+
+After storage capability preflight releases, deletion arms `preparing` inside
+one short `Auth operation -> storage` section. This drains and persists earlier
+Auth work before the guard reads raw authority. The locks release before
+isolated reauthentication, then the provider reacquires the Auth-operation lock
+for its final winner/revision check and destructive boundary. A confirmed
+pre-revocation rollback changes only the owned guard revision; it never rewinds
+raw storage, so a rotated A2 persisted before arm remains authoritative.
+
+The guarded adapter hides blocked A reads, rejects late A writes/removals and A
+events, and allows only explicitly adopted fresh session lineage. Exact cleanup
+removes primary A only while principal/access/refresh/revision still match;
+storage B/C and newer same-principal sessions are preserved. Payload-free
+native/web notifications contain only `{ version: 1, kind: 'changed' }`.
+Provider reconciliation runs on Auth event, notification, mount, and foreground
+through one deferred tail, isolated-validates allowed authority, then rechecks
+the exact stored principal/access/refresh/session ID/guard revision under
+`Auth operation -> storage` before publication. Stale/unconfirmed finalization
+clears the owner exemption before mandatory reconciliation.
+
+Explicit sign-in adopts a fresh `session_id` only under the shared Auth/storage
+boundary and preserves a B/C that won before adoption. Verified recovery first
+captures one operation-local exact predecessor: either guard-allowed settled S1
+plus its guard revision, or an exact lease-expired-pending guard plus its raw
+session/empty state. The returned same-principal S2 remains maintenance-only
+and cannot update provider authority before the serialized adoption succeeds.
+Under provider FIFO and `Auth operation -> storage`, adoption writes S2 only
+when guard/raw authority still matches the captured predecessor or is already
+exact S2, accepts a same-session-ID S2, advances the guard revision, and reads
+back both guard and storage. Newer A2, C, empty, malformed, blocked, changed, or
+unavailable authority is preserved without a session removal or replacement;
+the predecessor is never persisted or exposed through context, logs, or
+evidence.
+
+Provider-owned session writers use a FIFO fence. The unabortable
+`processAuthCallbackUrl` exchange is the bounded Task 18 exception: wrapping
+the entire exchange reproduced an accepted recovery/explicit-auth deadlock, so
+the exchange remains outside that provider FIFO while its post-SDK adoption is
+Auth-locked, exact-storage-checked, and supersession-aware. This deviation
+does not weaken the no-shared-sign-out rule. Superseded recovery validates B in
+isolation, then one provider-FIFO, `Auth operation -> storage` transaction may
+replace only the exact guard-allowed displaced A snapshot. Raw C, newer A2,
+empty, malformed, blocked, or uncertain authority is preserved; the transaction
+never retries or emits an SDK Auth event and signals only the payload-free
+change channel. Deletion-winner restoration performs no session write at all:
+it reconciles, validates, and exact-rechecks raw B/C before publication. Only
+the displaced recovery principal's cache is removed; newer-principal and public
+cache remain eligible authority.
+
+Forced recovery reconciliation distinguishes an exact displaced snapshot from
+unknown displacement. Exact cleanup additionally requires unchanged principal,
+access/refresh tokens, session ID, and guard revision. Unknown displacement
+never authorizes primary/companion storage removal or same-principal cache
+removal: current allowed S1 is isolate-validated and exact-rechecked before
+publication, while blocked/unavailable authority remains quarantined and every
+nonmatching authority is preserved according to its current classification.
+
+Local settlement is not a deletion claim. Removed/empty A returns the original
+server outcome even when companion cleanup is unconfirmed. A newer
+session/signed-out winner returns `superseded`, removes only A's documented
+account/rating cache, and preserves newer/public cache. B→signed-out, B→C,
+B-becoming-guarded, and delayed B1-after-B2 are generation/exact-snapshot
+fenced.
+
+Hard deletion cascades `profiles` and `user_ratings`, including
+`private_note`, with no MVP retention copy. Products and
+`rating_aggregates` remain and triggers recompute shared and last-rater
+zero-count/null states. Global sign-out destroys refresh capability, but an
+already-issued JWT may remain cryptographically valid until `exp`; the MVP
+configured lifetime must be no more than one hour. Automated tests are
+mock-only and never delete an account; a human owns destructive staging proof.
 
 ## Ratings API
 
@@ -631,9 +764,11 @@ User-scoped keys must include the account id (factories in
 - `ratingKeys.ratedProducts(userId)` → `['rating','ratedProducts', userId]`
 - `accountKeys.profile(userId)` → `['account','profile', userId]`
 
-On sign-out or account switch, call `removeUserScopedQueries(queryClient)` so
-prior user profile/rating cache cannot leak. Do not enable user-scoped queries
-until `userId` is known. Product Detail composes `ProductDetailData` from the
+On complete sign-out or known-invalid cleanup, remove the full account/rating
+roots. On A→B account switch or superseded deletion, remove only A-owned
+`account.profile`, `rating.mine`, and `rating.ratedProducts` keys so B/C cache
+cannot be deleted. Do not enable user-scoped queries until `userId` is known.
+Product Detail composes `ProductDetailData` from the
 public product query plus My Rating; `myRating` must never be stored under a
 public catalog key.
 

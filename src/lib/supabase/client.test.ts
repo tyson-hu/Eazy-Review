@@ -1,4 +1,4 @@
-import { createClient, processLock } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 import {
   PUBLIC_SUPABASE_PUBLISHABLE_KEY_VAR,
@@ -8,12 +8,17 @@ import {
 } from '@/src/lib/env/publicEnv';
 import {
   getSupabase,
+  getSupabaseAuthStorageKey,
   resetSupabaseClientForTests,
 } from '@/src/lib/supabase/client';
 import {
   createAppSupabaseClient,
+  createIsolatedAuthSupabaseClient,
+  createIsolatedFunctionsSupabaseClient,
+  deriveSupabaseAuthStorageKey,
   type AppSupabaseClient,
 } from '@/src/lib/supabase/createClient';
+import { appSupabaseAuthLock } from '@/src/lib/supabase/authCoordination';
 import { authStorage } from '@/src/lib/supabase/authStorage';
 import type { Database } from '@/src/types/database.generated';
 
@@ -60,7 +65,7 @@ describe('createAppSupabaseClient', () => {
     mockedCreateClient.mockClear();
   });
 
-  it('creates the client with storage, processLock, and auth session options', () => {
+  it('creates the client with explicit storage key, non-stealing lock, and session options', () => {
     createAppSupabaseClient(VALID_ENV);
 
     expect(mockedCreateClient).toHaveBeenCalledTimes(1);
@@ -72,10 +77,22 @@ describe('createAppSupabaseClient', () => {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        storageKey: 'sb-127-auth-token',
+        lockAcquireTimeout: -1,
       },
     });
     expect(options?.auth?.storage).toBe(authStorage);
-    expect(options?.auth?.lock).toBe(processLock);
+    expect(options?.auth?.lock).toBe(appSupabaseAuthLock);
+  });
+
+  it('derives the same default-compatible storage key for local and hosted URLs', () => {
+    expect(deriveSupabaseAuthStorageKey('http://127.0.0.1:54321')).toBe(
+      'sb-127-auth-token',
+    );
+    expect(deriveSupabaseAuthStorageKey('https://project-ref.supabase.co')).toBe(
+      'sb-project-ref-auth-token',
+    );
+    expect(getSupabaseAuthStorageKey()).toBe('sb-127-auth-token');
   });
 
   it('uses the generated Database type at compile time', () => {
@@ -100,6 +117,29 @@ describe('createAppSupabaseClient', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
 
     fetchSpy.mockRestore();
+  });
+
+  it('creates isolated Auth with memory-only non-persisting options', () => {
+    createIsolatedAuthSupabaseClient(VALID_ENV);
+
+    const [, , options] = mockedCreateClient.mock.calls[0];
+    expect(options).toMatchObject({
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    });
+    expect(options?.auth?.storage).not.toBe(authStorage);
+  });
+
+  it('creates isolated Functions with only the exact supplied bearer', async () => {
+    const bearer = 'fresh-access-token-a';
+    createIsolatedFunctionsSupabaseClient(VALID_ENV, bearer);
+
+    const [, , options] = mockedCreateClient.mock.calls[0];
+    expect(options?.accessToken).toEqual(expect.any(Function));
+    await expect(options?.accessToken?.()).resolves.toBe(bearer);
   });
 });
 

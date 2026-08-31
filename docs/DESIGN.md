@@ -506,9 +506,7 @@ Render only the controls owned by the current accepted task:
 - Task 18 adds Forgot Password
   (`app/auth/forgot-password.tsx`; recovery links land on
   `app/auth/reset-password.tsx`).
-- Task 19 adds Delete Account with permanent-data explanation, destructive
-  confirmation, reauthentication when required, and honest loading/error
-  states.
+- Task 19 adds the signed-in-only Delete Account experience described below.
 - Task 24 adds direct Terms of Use, Privacy Policy, and support/contact routes
   plus a public account-deletion information URL. The deletion-information
   link opens the public web destination; it does not add another destructive
@@ -517,6 +515,61 @@ Render only the controls owned by the current accepted task:
 
 No generic Settings route is planned for the MVP. Add one only when concrete
 settings have explicit task ownership.
+
+#### Task 19 Delete Account
+
+`Delete Account` is a separate secondary action below the ordinary `Sign out`
+card. It is not shown while signed out and it opens an inline confirmation card
+on Account; opening, canceling, and submitting never add or navigate to another
+route.
+
+The confirmation uses this exact permanence copy:
+
+> Your Eazy Review account, your My Rating entries, and private notes will be
+> permanently deleted. Public product information will remain. Each affected
+> Community Score will be recalculated without your rating. This cannot be
+> undone.
+
+Immediately under that permanence copy, the card shows this exact confirmation
+instruction:
+
+> To confirm, enter your current password, then tap Delete my account.
+
+The inline card contains a secure `Current password` input (visible placeholder
+and accessibility label both `Current password`), `Cancel`, and the final
+`Delete my account` action. Confirmation is the current password only — not a
+typed email or `DELETE` phrase. Only the final action uses the shared
+`destructive` button variant and the Negative / Risky color; `Delete Account`
+and `Cancel` remain secondary actions. An empty password disables final submit,
+and a nonempty password is passed through unchanged rather than trimmed or
+normalized. When the password field is focused, Account must keep the
+confirmation copy, instruction, field, and Cancel / Delete actions visible above
+the software keyboard (`Screen` scroll with keyboard insets, plus scroll-into-view
+when the deletion form opens or the field focuses).
+
+While deletion is pending, disable the password input, Cancel, Sign out, the
+Delete Account entry point, and the final action. Keep the final action's
+accessible name while its visible label becomes a loading indicator. Errors
+use fixed safe copy in an alert region and never expose SDK, server, identity,
+session, or credential detail. Cancel collapses the card and clears the
+password and error.
+
+After the initiating principal is signed out, Account may show one of these
+fixed alert messages:
+
+- Confirmed deletion: `Your account was deleted. You can continue browsing
+  Eazy Review without an account.`
+- Confirmed retained account after revocation: `Your account was not deleted.
+  All sessions were signed out. Sign in again to retry.`
+- Unconfirmed destructive outcome: `We couldn't confirm whether account
+  deletion finished. Sign in again. If your account is still available, you
+  can retry deletion.`
+
+An auth transition that supersedes the attempt shows none of those notices. A
+principal change clears the initiating principal's open card, password, error,
+and notice, so a newer signed-in principal is never presented as the result of
+the earlier deletion. The signed-out Account keeps its sign-in/create-account
+controls and explicit continue-browsing path; public Browse remains available.
 
 ## Accessibility
 

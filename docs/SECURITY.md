@@ -167,8 +167,12 @@ Canonical security rules for all agent and human work in this repo, regardless o
     (`resetPasswordForEmail` / `updateUser({ password })`). No custom recovery
     SQL, RLS changes, SECURITY DEFINER helpers, or service-role credentials.
   - Redirect allowlist for local/dev includes the `eazyreview` app scheme paths
-    in `supabase/config.toml`. Staging and production redirect hosts are not
-    Task 18 deliverables (Tasks 25–26 + human).
+    in `supabase/config.toml` for password recovery and signup confirmation.
+    Staging and production redirect hosts are not Task 18 deliverables
+    (Tasks 25–26 + human). Signup confirmation must send the two-slash app URL
+    `eazyreview://auth/sign-in` as `emailRedirectTo`; otherwise Auth falls back
+    to Site URL (often
+    `http://localhost:3000`), which a physical device cannot open.
   - Physical-device local recovery reads the non-secret Auth email-link origin
     from `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`. It must be
     the device-reachable Mac LAN URL with `/auth/v1`; never put a key, token, or
@@ -186,6 +190,67 @@ Canonical security rules for all agent and human work in this repo, regardless o
     exposes only the safe request-new-link state.
   - Local session storage remains the Task 16 AsyncStorage strategy; Task 18
     does not redesign session persistence.
+- Task 19 protected account deletion:
+  - The client supplies only current-password bytes. Email is fixed to the
+    signed-in principal; the exact isolated reauthentication bearer is pinned
+    to one zero-body Function request and never enters UI/context/logs/evidence.
+  - Method, body, and Bearer validation precede runtime-secret access. The
+    server derives the target only from live `getUser` plus matching verified
+    claims, requires recent password AMR, globally revokes refresh sessions,
+    then hard-deletes that same caller once. No target ID or destructive retry.
+  - Only stable `user_not_found` proves absence. Post-revocation ambiguity is
+    never relabeled success or configuration failure; one non-destructive
+    lookup may classify uncertain deletion. Logs use fixed labels only.
+  - The Edge runtime alone reads the server credential. Expo, tests, evidence,
+    screenshots, and chat contain no server credential or real bearer.
+  - The local deletion guard stores only version/counter, Auth subject,
+    monotonic revision/state/lease, optional explicitly adopted `session_id`,
+    and predecessor state. It stores no token, email, password, profile,
+    rating, note, or provider/deletion result and is not server retention.
+  - All participating Auth storage uses one non-stealing Auth-operation lock
+    plus one distinct storage lock in `Auth operation -> storage` order.
+    Guard/session mutations require exact readback; blocked A reads/writes/
+    removals/events fail closed; B/C and newer same-principal snapshots are
+    preserved through exact principal/access/refresh/session-ID/revision checks.
+    Storage identity resolves explicit key, then injected client, then singleton
+    public environment. After storage preflight releases, guard arm drains
+    earlier Auth work inside a short Auth/storage section and releases before
+    isolated reauthentication, so rollback preserves a rotated A2 already
+    persisted before arm.
+  - Ordinary sign-out, invalid bootstrap cleanup, and recovery cleanup never
+    call shared-client `auth.signOut`. They use isolated exact-bearer work and
+    exact-remove only unchanged shared storage. Storage unavailability makes no
+    signed-out authority claim.
+  - Guard notifications are payload-free fixed change labels. Auth event,
+    notification, mount, and foreground reconciliation isolate-validate and
+    exact-recheck before publication; stale/unconfirmed finalization clears the
+    initiating exemption before mandatory reconciliation.
+  - The full unabortable recovery callback exchange remains outside the
+    provider FIFO because wrapping it reproduced the accepted Task 18
+    recovery/explicit-auth deadlock. Its guarded adoption is instead protected
+    by the shared Auth/storage lock, exact storage comparison, and token-free
+    `superseded` result.
+  - Guarded same-principal recovery captures an operation-local exact settled
+    or lease-expired-pending predecessor. Recovery-owned S2 events are
+    maintenance-only until one serialized exact transaction adopts S2 and
+    reads back the new guard/storage state; same-session-ID S2 is allowed.
+    Newer A2, C, empty, malformed, blocked, changed, or unavailable authority is
+    preserved, and the predecessor never enters guard metadata, context, logs,
+    or evidence.
+  - Superseded recovery isolate-validates B, then an application-owned CAS under
+    provider FIFO and `Auth operation -> storage` may replace only exact,
+    guard-allowed displaced A. Raw C, newer A2, empty, malformed, blocked, and
+    uncertain authority is preserved with no retry or SDK Auth event. Deletion
+    winner restoration performs no shared-session write; raw reconciliation,
+    isolated validation, and a final exact recheck choose B/C. Payload-free
+    signaling and A-only cache cleanup remain mandatory.
+  - Forced recovery cleanup requires an exact displaced principal/access/
+    refresh/session-ID/guard-revision snapshot. Unknown displacement never
+    authorizes primary/companion removal or same-principal cache cleanup; valid
+    allowed S1 is published only after isolated validation and exact recheck.
+  - Global revocation invalidates refresh capability, not already-issued JWT
+    signatures. Hosted JWT expiry must be verified at no more than 3,600
+    seconds; residual-token and destructive staging checks remain human-only.
 - Do not print Supabase project refs, keys, tokens, connection strings, or
   dashboard/MCP responses containing them. Report presence and validation
   status without echoing values.

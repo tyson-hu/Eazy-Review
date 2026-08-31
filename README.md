@@ -18,10 +18,19 @@ Score, and maintaining a personal My Rating.
   backend-unreachable states; auth/recovery logic guards stale-session races.
   Failed rating writes preserve form input for manual retry; there is no
   durable offline cache or write queue.
+- Task 19 protected account deletion is **Done — human accepted on
+  2026-08-30.** PR #43 remains open and unmerged; live readiness and CI state
+  are tracked on GitHub, while merge and production remain separate gates.
+  H1/H2 were **tested-pass** on reviewed head
+  `4c8ab7a`; acceptance includes the confirmation-clarity fix. No coding agent
+  or tool executed deletion. Post-acceptance branch closeout also corrected
+  signup confirmation to the exact two-slash app URL at `39c3927`; this does
+  not change deletion acceptance provenance. See the
+  [Task 19 dashboard](docs/evidence/task-19-protected-account-deletion/RESULT.md)
+  and [verification details](docs/evidence/task-19-protected-account-deletion/VERIFICATION.md).
 
-Feed remains a placeholder, and protected account deletion and release work
-remain pending. Current task status and implementation order live in
-[`docs/TASKS.md`](docs/TASKS.md).
+Feed remains a placeholder. Current task status and implementation order live
+in [`docs/TASKS.md`](docs/TASKS.md).
 
 ## Current Stack
 
@@ -42,6 +51,9 @@ remain pending. Current task status and implementation order live in
 - Authentication, session restoration, and password recovery:
   [Task 16 evidence](docs/evidence/task-16-auth-account/RESULT.md) and
   [Task 18 evidence](docs/evidence/task-18-password-recovery/RESULT.md).
+- Protected account-deletion boundary, local orchestration, and human
+  acceptance evidence:
+  [Task 19 evidence](docs/evidence/task-19-protected-account-deletion/RESULT.md).
 - Automated frontend, database, security, and concurrency gates:
   [Expo CI](.github/workflows/expo-ci.yml) and
   [Database CI](.github/workflows/database-ci.yml).
@@ -87,6 +99,9 @@ dotfiles such as `.npmrc` and `.editorconfig`. Dependency lockfiles are
 included, and direct PostgreSQL URLs plus non-empty service-role,
 database-password, JWT-signing-secret, or Supabase management-token assignments
 fail the scan regardless of value length.
+Supabase Edge Function sources use the separate `npm run check:functions`
+format/lint/frozen-type/test lane owned by Database CI; Expo and
+`check:readonly` do not imply Deno coverage.
 
 ## Local Supabase
 
@@ -178,6 +193,23 @@ on the same physical iPhone path. The sandbox and precompiled-module sub-fixes
 remain part of the same plugin for the tested environment; they were not
 independently re-failed in that A/B run. Decision record:
 `docs/decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md`.
+
+### Email confirmation and password recovery redirects
+
+Signup confirmation and password recovery both use the app scheme
+`eazyreview` so a physical device can open the app. Hosted Auth Site URL
+values such as `http://localhost:3000` are unreachable on a phone.
+
+- Signup confirmation: `emailRedirectTo` from
+  `Linking.createURL('auth/sign-in')` in `signUpWithPassword`, which yields
+  the exact native URL `eazyreview://auth/sign-in`.
+- Password recovery: `redirectTo` from
+  `Linking.createURL('/auth/reset-password')` in `requestPasswordReset`.
+- Local Auth must allow the documented scheme/path variants in
+  `supabase/config.toml` `additional_redirect_urls`.
+- Staging/production Redirect URLs (and Site URL if used as fallback) are
+  human-applied; without the `eazyreview` allowlist entry, Auth falls back to
+  Site URL and confirmation links keep `redirect_to=http://localhost:3000`.
 
 ### Password recovery (Task 18 local)
 

@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
 type ButtonProps = PressableProps & {
   label: string;
@@ -16,12 +16,14 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-accent',
   secondary: 'border border-border bg-card',
   ghost: 'bg-transparent',
+  destructive: 'bg-negative',
 };
 
 const labelClasses: Record<ButtonVariant, string> = {
   primary: 'text-white',
   secondary: 'text-primary',
   ghost: 'text-accent',
+  destructive: 'text-white',
 };
 
 export function Button({
@@ -48,7 +50,9 @@ export function Button({
       ]}
       {...props}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#ffffff' : '#0066cc'} />
+        <ActivityIndicator
+          color={variant === 'primary' || variant === 'destructive' ? '#ffffff' : '#0066cc'}
+        />
       ) : (
         <AppText className={`font-normal ${labelClasses[variant]}`}>{label}</AppText>
       )}

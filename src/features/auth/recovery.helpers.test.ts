@@ -1,15 +1,15 @@
-import {
-  authCallbackDiagnosticLabel,
-  classifyAuthCallback,
-  isAuthCallbackUrl,
-  parseAuthCallbackParams,
-} from '@/src/features/auth/recoveryUrl';
-import {
-  MIN_PASSWORD_LENGTH,
-  validateNewPasswordPair,
-} from '@/src/features/auth/password';
 import { isValidEmailFormat, normalizeEmail } from '@/src/features/auth/email';
 import { AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
+import {
+    MIN_PASSWORD_LENGTH,
+    validateNewPasswordPair,
+} from '@/src/features/auth/password';
+import {
+    authCallbackDiagnosticLabel,
+    classifyAuthCallback,
+    isAuthCallbackUrl,
+    parseAuthCallbackParams,
+} from '@/src/features/auth/recoveryUrl';
 
 describe('recovery helpers', () => {
   it('normalizes email consistently', () => {
@@ -56,6 +56,11 @@ describe('recovery helpers', () => {
   it('detects auth callback URLs by path markers only', () => {
     expect(
       isAuthCallbackUrl('eazyreview://auth/reset-password?code=x'),
+    ).toBe(true);
+    expect(
+      isAuthCallbackUrl(
+        'eazyreview://auth/sign-in#access_token=SECRET&refresh_token=REF&type=signup',
+      ),
     ).toBe(true);
     expect(isAuthCallbackUrl('eazyreview:///product/1')).toBe(false);
   });

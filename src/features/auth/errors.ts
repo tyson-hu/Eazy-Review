@@ -10,7 +10,9 @@ export type AuthErrorCode =
   | 'password-too-weak'
   | 'password-update-failed'
   | 'recovery-link-invalid'
-  | 'recovery-request-failed';
+  | 'recovery-request-failed'
+  | 'account-deletion-failed'
+  | 'account-deletion-in-progress';
 
 export type AuthErrorSource =
   | 'transport'
@@ -64,6 +66,8 @@ function defaultSource(code: AuthErrorCode): AuthErrorSource {
     case 'temporary-failure':
     case 'password-update-failed':
     case 'recovery-request-failed':
+    case 'account-deletion-failed':
+    case 'account-deletion-in-progress':
       return 'server';
   }
 }
@@ -96,6 +100,9 @@ export const AUTH_USER_MESSAGES = {
   passwordTooWeak: 'Password must be at least 6 characters.',
   passwordUpdateFailed: 'Could not update your password. Please try again.',
   passwordUpdateSuccess: 'Your password was updated.',
+  accountDeletionWrongPassword: 'Current password is incorrect.',
+  accountDeletionFailed: 'Could not delete your account. Please try again.',
+  accountDeletionInProgress: 'Account deletion is already in progress.',
 } as const;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -148,6 +155,7 @@ function isInvalidCredentials(value: unknown): boolean {
   return (
     code === 'invalid_credentials' ||
     code === 'invalid_grant' ||
+    code === 'email_not_confirmed' ||
     message.includes('invalid login credentials') ||
     message.includes('invalid email or password') ||
     message.includes('email not confirmed')
@@ -258,7 +266,8 @@ export type AuthNormalizeOperation =
   | 'session'
   | 'password-reset-request'
   | 'password-update'
-  | 'recovery-callback';
+  | 'recovery-callback'
+  | 'account-deletion-reauthentication';
 
 export function normalizeAuthError(
   error: unknown,
@@ -303,10 +312,17 @@ export function normalizeAuthError(
     });
   }
 
-  if (options.operation === 'sign-in' && isInvalidCredentials(error)) {
+  if (
+    (options.operation === 'sign-in' ||
+      options.operation === 'account-deletion-reauthentication') &&
+    isInvalidCredentials(error)
+  ) {
     // Email-not-confirmed still looks like "cannot use this credential set"
     // to the user; keep credentials copy, not raw provider wording.
-    if (isConfirmationRelated(error)) {
+    if (
+      options.operation === 'sign-in' &&
+      isConfirmationRelated(error)
+    ) {
       return new AuthError(
         'confirmation-required',
         AUTH_USER_MESSAGES.confirmationRequired,
@@ -315,7 +331,9 @@ export function normalizeAuthError(
     }
     return new AuthError(
       'invalid-credentials',
-      AUTH_USER_MESSAGES.invalidCredentials,
+      options.operation === 'account-deletion-reauthentication'
+        ? AUTH_USER_MESSAGES.accountDeletionWrongPassword
+        : AUTH_USER_MESSAGES.invalidCredentials,
       { source: 'credentials', status, cause: error },
     );
   }
@@ -407,6 +425,8 @@ function userMessageForOperation(operation: AuthNormalizeOperation): string {
       return AUTH_USER_MESSAGES.passwordUpdateFailed;
     case 'recovery-callback':
       return AUTH_USER_MESSAGES.recoveryTemporaryFailure;
+    case 'account-deletion-reauthentication':
+      return AUTH_USER_MESSAGES.accountDeletionFailed;
     case 'sign-in':
     case 'session':
     default:

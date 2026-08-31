@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import type { ReactNode, Ref } from 'react';
+import { ScrollView, View, type ScrollViewProps } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 type ScreenProps = {
@@ -14,6 +14,8 @@ type ScreenProps = {
    * clear the status bar. Opt in for headerless surfaces.
    */
   safeTop?: boolean;
+  /** Forwarded to the inner ScrollView when `scroll` or `footer` is set. */
+  scrollRef?: Ref<ScrollView>;
   className?: string;
   contentClassName?: string;
 };
@@ -24,6 +26,7 @@ export function Screen({
   footer,
   padded = true,
   safeTop = false,
+  scrollRef,
   className,
   contentClassName,
 }: ScreenProps) {
@@ -37,13 +40,30 @@ export function Screen({
   }
 
   if (scroll || footer) {
+    const scrollProps: Pick<
+      ScrollViewProps,
+      | 'keyboardShouldPersistTaps'
+      | 'keyboardDismissMode'
+      | 'automaticallyAdjustKeyboardInsets'
+      | 'showsVerticalScrollIndicator'
+    > = {
+      keyboardShouldPersistTaps: 'handled',
+      keyboardDismissMode: 'on-drag',
+      // iOS: inset the scroll content by the keyboard overlap so focused
+      // fields and trailing actions can scroll above the soft keyboard.
+      // Prefer this over KeyboardAvoidingView padding on scroll screens —
+      // stacking both double-shrinks the viewport.
+      automaticallyAdjustKeyboardInsets: true,
+      showsVerticalScrollIndicator: false,
+    };
+
     return (
       <SafeAreaView className={`flex-1 bg-background ${className ?? ''}`} edges={edges}>
         <ScrollView
+          ref={scrollRef}
           className="flex-1"
           contentContainerClassName={`${horizontalPad} pb-6 ${contentClassName ?? ''}`}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+          {...scrollProps}>
           {children}
         </ScrollView>
         {footer}

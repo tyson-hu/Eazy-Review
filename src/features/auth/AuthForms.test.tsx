@@ -1,10 +1,14 @@
-import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import {
-  signInWithPassword,
-  signUpWithPassword,
+    signInWithPassword,
+    signUpWithPassword,
 } from '@/src/features/auth/api';
-import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
+import { AUTH_USER_MESSAGES, AuthError } from '@/src/features/auth/errors';
 import { sanitizeReturnPath } from '@/src/features/auth/returnPath';
+import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
+
+jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
+  getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
+}));
 
 /**
  * Form-behavior coverage without full screen mount flakiness:
@@ -71,7 +75,13 @@ describe('auth form behaviors (API + return path)', () => {
 
     const first = signInWithPassword(
       { email: 'a@example.com', password: 'password1' },
-      { client, isOnline: () => true },
+      {
+        client,
+        isOnline: () => true,
+        // This test owns duplicate-request behavior, not the SDK storage side
+        // effect covered by authStorage/recovery integration tests.
+        adoptExplicitSession: jest.fn(async () => 'not-guarded' as const),
+      },
     );
     // UI gates duplicate presses with a pending flag; the API itself is single-call.
     expect(signIn).toHaveBeenCalledTimes(1);

@@ -309,18 +309,54 @@ historical evidence record linked at the top.
 
 Task 19's protected self-deletion path hard-deletes only the verified current
 `auth.users` caller. The caller id is derived server-side from verified auth,
-never trusted from a request body. Before deletion, the server revokes all of
-that user's refresh sessions.
+never trusted from a request body; the client sends no target field or request-
+body content. Before deletion, the server must positively confirm global
+revocation of that user's refresh sessions. The Auth Admin sequence is not a
+database transaction, so confirmed deletion, confirmed retained-after-
+revocation, and unconfirmed destructive outcomes remain distinct.
+
+Task 19 requires no schema change or migration. Its non-destructive schema
+proof adds two exact pgTAP assertions over PostgreSQL catalogs. Each assertion
+joins `pg_constraint`, the child/parent classes and namespaces, and paired
+`conkey`/`confkey` attributes, then requires `is(count(*)::int, 1, ...)` with
+`contype = 'f'`, parent `auth.users.id`, and `confdeltype = 'c'` for:
+
+- `public.profiles.id -> auth.users.id`; and
+- `public.user_ratings.user_id -> auth.users.id`.
+
+These read-only metadata assertions establish the existing `ON DELETE CASCADE`
+shape without deleting an Auth account. They do not replace the human-only
+destructive cascade check.
 
 The existing foreign keys define the data lifecycle:
 
-- `profiles.id on delete cascade` removes the profile. MVP retains no
+- `profiles.id ON DELETE CASCADE` removes the profile. MVP retains no
   display-name, username, or avatar-url copy.
-- `user_ratings.user_id on delete cascade` removes every My Rating row,
+- `user_ratings.user_id ON DELETE CASCADE` removes every My Rating row,
   including `private_note`.
 - Each cascaded rating delete must execute the Task 11 aggregate-refresh path.
-  Product rows and `rating_aggregates` are retained and recomputed; a product
-  whose last rating was removed returns to count `0` with null averages/score.
+  Product rows, Eazy assessments, product images/offers, and
+  `rating_aggregates` are retained. Each affected Community Score is recomputed
+  without the deleted user's ratings; a product whose last rating was removed
+  returns to count `0` with null averages, score, and methodology version.
+
+No MVP retention, anonymization, or soft-deletion copy is created. The local
+principal-bound deletion guard is operational client safety data, not retained
+product/account data and not a server retention record. Its minimized local
+shape contains the format version/counter, guarded Auth subject, monotonic
+revision/state, lease, optional explicitly adopted Auth `session_id`, and the
+pending predecessor state needed for rollback. It contains no access token,
+refresh token, email, password, profile field, rating, private note, or
+provider/deletion response. The guard blocks stale session lineages across late
+refresh, offline bootstrap, and participating app contexts; clearing app
+storage removes it. A later explicit sign-in/recovery may adopt only that fresh
+session ID and does not unblock older lineages.
+
+Global sign-out destroys refresh-session capability, but an access token that
+was already issued can remain cryptographically valid until its `exp`. The
+local Auth JWT lifetime is 3,600 seconds; a human must verify that staging's
+effective value is no greater than one hour. Task 19 therefore makes no claim
+of immediate access-token invalidation.
 
 The human-run local/staging deletion checklist covers a user who rated multiple
 products and a user who shares a product with another rater. It proves

@@ -1,4 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query';
+import type { Query, QueryClient } from '@tanstack/react-query';
 
 import { USER_SCOPED_KEY_ROOTS } from '@/src/lib/query/keys';
 
@@ -20,5 +20,27 @@ export async function removeUserScopedQueries(
   for (const root of USER_SCOPED_KEY_ROOTS) {
     await queryClient.cancelQueries({ queryKey: root });
     queryClient.removeQueries({ queryKey: root });
+  }
+}
+
+export async function removePrincipalScopedQueries(
+  queryClient: QueryClient,
+  principalId: string,
+): Promise<void> {
+  const filters = {
+    predicate: (query: Query) => {
+      const [root, surface, owner] = query.queryKey;
+      return (
+        owner === principalId &&
+        ((root === 'account' && surface === 'profile') ||
+          (root === 'rating' &&
+            (surface === 'mine' || surface === 'ratedProducts')))
+      );
+    },
+  };
+  try {
+    await queryClient.cancelQueries(filters);
+  } finally {
+    queryClient.removeQueries(filters);
   }
 }

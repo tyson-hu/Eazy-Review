@@ -17,9 +17,9 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Data and Supabase | [Keep MVP offer payloads single-currency](decisions/2026-07-25-keep-mvp-offer-payloads-single-currency.md) | Accepted | 11, 13, 15 | 2026-07-30 |
 | Data and Supabase | [Keep persisted Community Score calculations server-owned](decisions/2026-06-28-server-owned-community-score.md) | Accepted | 11, 12, 13, 15, 17 | 2026-07-30 |
 | Data and Supabase | [Use versioned eazy_assessments with one current row](decisions/2026-07-25-versioned-eazy-assessments.md) | Accepted | 11, 12, 15 | 2026-07-30 |
+| Authentication and security | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Accepted | 19 | 2026-08-22 |
 | Authentication and security | [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) | Accepted | 11, 12, 16 | 2026-07-30 |
 | Authentication and security | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | 19, 25, 26 | 2026-07-30 |
-| Authentication and security | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Accepted | 19 | 2026-07-30 |
 | Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-26 |
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
 | Architecture | [Fail-fast offline writes and bounded request deadlines](decisions/2026-08-09-connected-request-reliability.md) | Accepted | 15, 17 | 2026-08-09 |
@@ -40,6 +40,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-08-22 |
 | [Fail-fast offline writes and bounded request deadlines](decisions/2026-08-09-connected-request-reliability.md) | Architecture | Accepted | 2026-08-09 |
 | [Use one sneaker-10-v1 rubric for Eazy, Community, and My Rating](decisions/2026-08-09-sneaker-10-v1-shared-rubric.md) | Data and Supabase | Accepted | 2026-08-09 |
 | [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Tooling and CI | Accepted | 2026-08-07 |
@@ -48,7 +49,6 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-08-01 |
 | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Architecture | Accepted | 2026-07-30 |
 | [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Product and UX | Accepted | 2026-07-30 |
-| [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-07-30 |
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-07-30 |
 
 ## Browse by area
@@ -68,9 +68,9 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Authentication and security
 
+- [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) — Accepted; Tasks 19.
 - [Create a profile row when an auth user is inserted](decisions/2026-07-25-profile-row-on-auth-user-insert.md) — Accepted; Tasks 11, 12, 16.
 - [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) — Accepted; Tasks 19, 25, 26.
-- [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) — Accepted; Tasks 19.
 - [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) — Accepted; Tasks 11, 12.
 - [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) — Accepted.
 

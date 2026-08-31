@@ -44,10 +44,23 @@
   recovery matrix: **tested-pass** on SHA `acac64d` (2026-08-15).
   Web/simulator recovery walks: **not-run**. The old-password rejection
   **tested-pass** by human report and Task 18 was human accepted on 2026-08-15.
-  Task 19 remains not started; the merge satisfies its Task 18 dependency but
-  does not authorize Task 19 implementation. Evidence:
+  The merge satisfied Task 19's dependency but did not itself authorize Task
+  19 implementation. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
+- Task 19 is **Done — human accepted on 2026-08-30.** PR #43 remains open and
+  unmerged; live readiness and CI state are tracked on GitHub, while merge and
+  production remain separate gates. Reviewed
+  implementation head for H1/H2 was `4c8ab7a` (Account keyboard remediation)
+  with exact-head Expo CI `33279912599` and Database CI `33279912602` pass.
+  Physical H1 and human H2 staging deletion are **tested-pass** on that SHA;
+  residual second-client UI with no rating access through JWT `exp` is
+  expected. Acceptance included a confirmation-clarity fix (enter current
+  password, then Delete my account). Agents/tools never submit account
+  deletion. Dashboard:
+  [`RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
+  Detailed verification and human checklists:
+  [`VERIFICATION.md`](evidence/task-19-protected-account-deletion/VERIFICATION.md).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -198,7 +211,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted and merged in PR #36 on 2026-08-11 |
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
-| 19 | Protected Account Deletion | Pending |
+| 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
 | 22 | Broader Automated App Tests And CI | Pending |
@@ -547,8 +560,9 @@ Non-goals (remain later work — do not implement in Task 16):
   destructive deletion path, secure operational handling.
 - **Deferred — not part of Tasks 16–19 unless separately promoted in the
   roadmap:** Sign in with Apple; Google/social authentication; passkeys; MFA;
-  editable profile; avatar upload; public profile; global/all-device session
-  revocation; stronger native token-storage revisit.
+  editable profile; avatar upload; public profile; standalone user-facing
+  global/all-device sign-out or session management (distinct from Task 19's
+  mandatory internal revocation); stronger native token-storage revisit.
 
 ## Task 17: My Rating Persistence And Rated Products
 
@@ -886,7 +900,10 @@ in PR #37 on 2026-08-17.**
 
 ## Task 19: Protected Account Deletion
 
-Status: Pending.
+Status: **Done — human accepted on 2026-08-30.**
+
+PR #43 remains open and unmerged; live readiness and CI state are tracked on
+GitHub, while merge and production remain separate gates.
 
 Depends on: Tasks 16–18.
 
@@ -903,10 +920,54 @@ staging destructive checklist is also human-run.
 Goal: provide complete in-app account deletion through a trusted server
 boundary.
 
+Planning state: the revised design and implementation plan were human-approved
+on 2026-08-20. Local non-destructive implementation was authorized on
+2026-08-21 and was published in draft PR #43 at prior head
+`f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`. Exact-head Expo CI run
+`32615974049` and Database CI run `32615974012` passed on that SHA. The
+2026-08-29 agent-owned Function, frontend, local database/gateway, web, and
+iOS Simulator verification is complete against that head. A5 maintenance PR
+#44 validated and merged the ten expected SDK 57 patches (`f3886a5` /
+`33c66ee`); reviewed H1/H2 implementation head is `4c8ab7a` (Account keyboard
+remediation) with exact-head Expo CI `33279912599` and Database CI
+`33279912602` pass. Physical H1 is **tested-pass** on `4c8ab7a` (historical
+fail on `5171d03` retained as evidence screenshot
+`ios-physical-01-delete-keyboard-obscures.png`). Human H2 staging deletion is
+**tested-pass** on `4c8ab7a` (2026-08-30); residual second-client UI still
+showed A with no rating access through JWT `exp` (expected). Human acceptance
+(H3) recorded on 2026-08-30, including the confirmation-clarity fix (enter
+current password, then Delete my account). Readiness, merge, and production
+remain separate gates. Post-acceptance branch closeout also corrected signup
+confirmation to the exact two-slash `eazyreview://auth/sign-in` target at
+`39c3927`; that correction does not change Task 19 deletion acceptance
+provenance.
+
+Implementation evidence:
+[`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
+Detailed verification and human-only checklists:
+[`docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`](evidence/task-19-protected-account-deletion/VERIFICATION.md).
+
+Correction state: superseded recovery now isolate-validates B and may replace
+only exact guard-allowed displaced A through an application-owned CAS. Raw C,
+newer A2, empty, malformed, blocked, or uncertain authority is preserved.
+Deletion winner restoration performs no shared-session write; both paths use
+final exact raw-authority proof, remove only displaced A cache, and never
+broadly purge newer/public cache. Auth storage identity resolves explicit key,
+then injected client, then singleton public environment. Guard arm drains prior
+Auth work before isolated reauthentication, so confirmed rollback preserves a
+rotated A2. Same-principal recovery captures an exact settled or expired-
+pending predecessor; S2 remains maintenance-only until exact adoption succeeds,
+and an unknown displaced snapshot never authorizes session, companion, or
+same-principal cache cleanup.
+
 Deliverables:
 
 - One authenticated Supabase Edge Function.
+- Current-password reauthentication for the fixed signed-in email, with the
+  operation-local bearer pinned to a zero-body Function request.
 - Server validation of the bearer session and caller-derived target user ID.
+- Server-backed caller/claim/session validation plus a password AMR timestamp
+  no older than 300 seconds, allowing at most 60 seconds future clock skew.
 - No authoritative user ID accepted from the client.
 - Revoke all refresh sessions for the verified caller, then hard-delete that
   same Auth user with a server-only secret.
@@ -916,6 +977,12 @@ Deliverables:
 - Existing FK cascades remove profile/ratings and accepted triggers preserve
   aggregates.
 - Local session and user-scoped Query cleanup.
+- A non-stealing shared Auth-operation lock, one distinct storage lock,
+  revision-bound preparing/pending/settled principal guards, payload-free
+  cross-context notification, exact-session cleanup/adoption, and latest-
+  principal arbitration that never removes or republishes a superseding B/C.
+- Honest deleted, retained-account-signed-out, ambiguous-signed-out, and
+  superseded-local outcomes with no automatic destructive retry.
 - Mocked deletion-client orchestration tests that perform no destructive
   account action.
 - Human-run staging destructive-test checklist.
@@ -926,6 +993,8 @@ Acceptance:
 - No server-only secret exists in Expo.
 - The client cannot choose another target.
 - Failed server validation performs no deletion.
+- Revocation or deletion is never automatically retried; one non-destructive
+  lookup may resolve an uncertain delete response.
 - Profile and ratings cascade; affected aggregates remain correct.
 - Local session/cache are removed and deleted credentials cannot sign in.
 - A second pre-existing session for the deleted account cannot refresh after
