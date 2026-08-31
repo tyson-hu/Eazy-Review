@@ -4,6 +4,8 @@ import { SymbolView } from 'expo-symbols';
 export default function TabLayout() {
   return (
     <Tabs
+      backBehavior="none"
+      initialRouteName="browse"
       screenOptions={{
         tabBarActiveTintColor: '#0066cc',
         tabBarInactiveTintColor: '#6b6b6b',

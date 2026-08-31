@@ -1,7 +1,8 @@
 # Staged Codebase Simplification Plan
 
-Status: **Packet S1 is implemented and validated; no other simplification
-packet has started. Android is explicitly out of the current plan.**
+Status: **Packets S1 and E1 are complete locally; E1 human acceptance is
+complete, no other simplification packet has started, and Android is
+explicitly out of the current plan.**
 
 Base SHA: `db27309005e14d80f67df9bfe9cb4debd6dd47b6`
 
@@ -20,12 +21,15 @@ chat history.
 
 ## Authority and stop conditions
 
-- This plan records work; it does not authorize implementation, commit, push,
-  PR lifecycle changes, deployment, hosted configuration, migration, account
-  deletion, or production access.
+- This plan records work; it does not itself authorize implementation, commit,
+  push, PR lifecycle changes, deployment, hosted configuration, migration,
+  account deletion, or production access.
 - A human selected S1 on 2026-08-31 and later authorized its scoped commit.
-  That authorization does not include another packet, push, PR lifecycle work,
-  deployment, hosted configuration, or production access.
+  A later human message selected and authorized local E1 implementation at
+  `0ade2942990486d946b0fb8ba2d3817ff1590b96`, then authorized one local commit
+  for completed E1 and the separately approved tab-root correction. Push, PR
+  lifecycle work, deployment, hosted configuration, database work, and
+  production access remain unauthorized.
 - Before a batch, a human selects its candidate and accepts every listed
   capability loss. One candidate is the default batch size.
 - Stop when a real or unresolved dynamic consumer exists, a baseline cannot
@@ -78,17 +82,17 @@ Current repository proof at the S1 planning baseline (`839ce4fc`):
 ## Kanban portfolio
 
 This board records planning and packet status; it is not execution authority.
-S1 is implemented, and no other packet is in progress. Priority ranks expected
-value and sequencing only: P1 is
-high-value, P2 is worthwhile after stronger cuts, and P3 is fold-only
-housekeeping. Difficulty reflects coordination and proof burden: XS is one
-local symbol/file, S is one owner with focused tests, M crosses live modules or
-contracts, and L needs product/skill approval or native proof.
+S1 and E1 are complete locally, and no other packet is in progress.
+Priority ranks expected value and sequencing only: P1 is high-value, P2 is
+worthwhile after stronger cuts, and P3 is fold-only housekeeping. Difficulty
+reflects coordination and proof burden: XS is one local symbol/file, S is one
+owner with focused tests, M crosses live modules or contracts, and L needs
+product/skill approval or native proof.
 
 | Lane | Priority | ID | Potential work | Benefit | Confidence | Difficulty | Gate or next move |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Implemented | P0 | S1 | Remove Create Expo starter subtree, sample font, and unused direct dependencies/config | High | Contract | M | Web/iOS pass; Android explicitly out of the current plan |
-| Ready, unselected | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Preserve catalog timeout mapping and silent query cancellation |
+| Complete locally | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance and local commit complete; remote lifecycle remains unauthorized |
 | Ready, unselected | P2 | E2 | Share only identical SDK/network error-shape extraction across catalog, ratings, and Auth | Medium | Contract | M | Keep every domain normalizer and transport policy separate |
 | Ready, unselected | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Prove every removed assertion is duplicated or replaced |
 | Decision required | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Explicit capability choice plus skill-file approval if affected |
@@ -100,10 +104,9 @@ contracts, and L needs product/skill approval or native proof.
 | Retain | — | R1 | App/runtime JWT decoders | Low potential | Conflicting contracts | M | Keep fail-closed environment and guarded-session parsing separate |
 | Owned elsewhere | — | I1 | Replace Markdown task-graph parsing with structured config | High | Existing task | L | Follow the deferred Agent infrastructure checker v2 task |
 
-S1 was selected and implemented locally. The next proposed packet is E1, then
-E2 or E3, but each remains unselected. S2 and S3 do not enter a ready lane
-until their stated decision/proof gates pass. P3 items do not justify
-standalone work.
+S1 and E1 were selected and completed locally. E2 and E3 remain ready but
+unselected. S2 and S3 do not enter a ready lane until their stated
+decision/proof gates pass. P3 items do not justify standalone work.
 
 ## Packet S1: remove the starter subtree
 
@@ -198,9 +201,9 @@ data or hosted-state restoration.
   Android runtime-equivalence claim is made; add that proof only if Android
   returns to scope. Existing Jest React `act(...)`, open-handle, and Supabase
   lock deprecation warnings remain visible and unchanged.
-- **Retained candidates:** E1–E3 remain ready but unselected; S2 still requires
-  a capability/skill decision; S3 still requires its native proof; E4, L1, and
-  E5 remain fold-only; U1 and R1 remain retained.
+- **Retained candidates:** E1 is complete locally. E2–E3 remain ready but
+  unselected; S2 still requires a capability/skill decision; S3 still requires
+  its native proof; E4, L1, and E5 remain fold-only; U1 and R1 remain retained.
 - **Undo:** discard or revert the single S1 diff. No data, hosted state, or
   production restoration exists.
 
@@ -355,6 +358,135 @@ Net effect: one deadline/cancellation lifecycle owner and one domain mapping,
 with no new abstraction and no weaker error boundary. Undo is the single E1
 diff or commit.
 
+### E1 lifecycle and race contract
+
+| Event | First owner or predecessor | Terminal result | Late event and cleanup |
+| --- | --- | --- | --- |
+| Success | Supabase transport resolves before either abort source | Adapted catalog data | Deadline and caller listener are cleared |
+| Deadline | Shared ten-second timer fires first | `RequestTimeoutError` becomes `CatalogError('timeout')` | Combined signal aborts the transport; a later transport rejection cannot replace timeout |
+| Caller abort before work settles | Caller signal is already aborted | Non-domain cancellation remains silent and non-retryable | Combined signal is aborted; deadline is cleared |
+| Caller abort during work | Caller signal fires before the deadline | Non-domain cancellation remains silent and non-retryable | Underlying transport is aborted; deadline and listener are cleared |
+| Abort-aware transport rejection | Transport rejects because the combined signal aborted | The first abort owner decides timeout versus caller cancellation | Transport rejection cannot reclassify the winning terminal event |
+| Competing terminal events | Deadline, caller, transport, or success reaches the shared race first | Exactly one terminal result | Late settlements are ignored; deadline-first remains timeout even if caller state changes before API normalization |
+| Cleanup | Any terminal path enters the shared helper's `finally` | Original terminal result is preserved | Timer and external listener are removed once |
+
+### E1 operation receipt — 2026-08-31
+
+- **Scope:** local E1 implementation only, based on tracked-clean
+  `0ade2942990486d946b0fb8ba2d3817ff1590b96`. No other packet, shared-helper
+  source, route, rating, Auth, dependency, Expo configuration, schema,
+  migration, generated file, hosted state, or remote lifecycle action changed.
+- **Baseline:** the focused catalog API/error/query and shared-timeout suites
+  passed 28/28 tests; typecheck and lint passed; the full frontend suite passed
+  42/42 suites and 496/496 tests; `check:readonly` passed.
+- **Retired obligation:** `DEFAULT_CATALOG_TIMEOUT_MS`, `abortError`,
+  `timeoutError`, and both `runCatalogRequest` call paths, including the
+  duplicate controller, timer, external listener, terminal race, and cleanup.
+- **Artifacts:** `src/features/products/api.ts` now sends both Supabase catalog
+  requests through the existing `withRequestTimeout` owner.
+  `src/features/products/errors.ts` maps its existing `RequestTimeoutError` to
+  the existing catalog timeout contract. Owner-level regressions live in the
+  existing catalog API/error and shared-timeout suites; the product-query suite
+  is unchanged after deletion-first review found no missing owner assertion.
+- **Realized net effect:** production code is 55 lines smaller
+  (`api.ts` −56, `errors.ts` +1). Tests add 89 proof lines, so the complete
+  code/test diff is +34 lines while removing one reachable production
+  lifecycle owner. No adapter, configuration layer, error code, dependency, or
+  replacement abstraction was added.
+- **Behavior:** the ten-second deadline, underlying Supabase abort, existing
+  `CatalogError('timeout')` mapping and fixed presentation copy, at most one
+  automatic retry, distinct offline/server classifications, and silent
+  non-retryable caller/navigation cancellation are preserved. Deadline-first
+  remains timeout even when abort-aware transport rejection wins locally.
+- **Verification:** after the review correction, the identical focused command
+  passed 4/4 suites and 33/33 tests; typecheck and lint passed; the full
+  frontend suite passed 42/42 suites and 501/501 tests; `check:readonly`, the
+  removed-owner residue search, and `git diff --check` passed. Live 393×852 web
+  smoke passed reachable Browse and Product Detail, cached offline copy,
+  fixed timeout UI with exactly one retry and aborted underlying requests, and
+  navigation cancellation with one aborted request, no retry, and no catalog
+  error UI. A cold development-build walk on `Eazy-Review-iPhone-15` (iOS
+  26.5) then passed against the linked, `ACTIVE_HEALTHY`
+  `eazy-review-staging` project. A read-only anonymous Data API preflight
+  returned its two published H2 fixtures; the simulator constructed the
+  staging project client, rendered both staging-only Browse cards, opened both
+  distinct Product Details, and returned through the real Back stack with no
+  runtime error. The local `.env` files were isolated only for that process and
+  restored with matching checksums. A later agent-observed physical rerun on
+  an iPhone 17 Pro Max (iOS 27.0, installed Expo development build) passed the
+  online local-Docker and staging lanes. Each target rendered its distinct
+  anonymous Browse rows, both Product Details loaded, Product Detail Back
+  returned to Browse, cold Browse Back stayed on Browse, and Feed → Browse →
+  Back stayed on Browse. No hosted configuration or data changed. Independent
+  deletion-first review and final read-only verification passed.
+- **Residual risk:** agent-run iOS staging proof covers reachable anonymous
+  catalog reads and native navigation, while its timeout, offline, and request-
+  cancellation runtime proof remains web/automated; later human physical
+  acceptance is recorded below. Android, Deno, database, and Edge Function
+  checks were not run; Android was expressly excluded and the other lanes do
+  not own this catalog-only refactor. No
+  durable screenshots were added because E1 forbids new files; three temporary
+  simulator captures remain under
+  `/private/tmp/eazy-review-e1-ios-staging-smoke.n6qx6S/`. A diagnostic printed
+  the local-only anon token while proving `.env.local` precedence; no staging,
+  service-role, or production credential was printed. The local credential was
+  then rotated without a database reset: the former token returns `401`, the
+  fresh public key returns both seeded catalog rows, the same signing secret
+  survives a preserving stop/start from a private mode-600 host file outside
+  the checkout, and `check:secrets` passes. The human reports the current
+  local-target physical offline/reconnect lane as `tested-pass` on 2026-08-31;
+  this lane was not agent-observed. The Account/Profile offline state took
+  about five minutes to appear. That latency is recorded as a separate
+  deferred P2 connectivity-feedback UX finding; it is outside E1's catalog
+  owner, has not been diagnosed, and does not block E1 completion. Existing
+  React `act(...)`, Jest
+  open-handle/forced-exit, Supabase lock deprecation, and npm proxy warnings
+  remain non-gating. Private error-object and nested-cause identity without a
+  consumer are not claimed.
+- **Retained candidates:** E2–E3 remain ready but unselected; S2 still requires
+  a capability/skill decision; S3 still requires native proof; E4, L1, and E5
+  remain fold-only; U1 and R1 remain retained.
+- **Undo:** revert the local completion commit. No data, hosted configuration,
+  database, deployment, or production restoration exists.
+
+### Authorized post-E1 tab-root correction — 2026-08-31
+
+- **Scope:** the human separately authorized the Browse/Feed Back correction
+  after E1. This does not select another simplification packet or authorize a
+  commit, remote lifecycle action, hosted configuration, database work, or
+  production access.
+- **Root cause and correction:** Expo Router's installed tab owner defaulted to
+  Feed as both the first route and the Back target. After that was corrected,
+  cold `/` startup still linked the root `(tabs)` anchor plus `index`; the
+  component redirect then replaced `index` with another `(tabs)` entry, making
+  the first native Back look like Browse → Browse. The tab navigator now uses
+  `initialRouteName="browse"` and `backBehavior="none"`, and the root Stack uses
+  `<Stack.Screen name="index" redirect />` to exclude that component-only
+  redirect from native stack history. The final production change is three
+  native declarations across `app/(tabs)/_layout.tsx` and `app/_layout.tsx`; it
+  adds no listener, gesture suppression, helper, adapter, dependency, or
+  second routing owner.
+- **Verification:** installed-router tab proof reports the old state as
+  `initial=feed browse-back=feed` and the corrected state as
+  `initial=browse browse-back=unhandled`; the installed Stack screen owner
+  removes a route whose `redirect` prop is true. On `Eazy-Review-iPhone-15`
+  (iOS 26.5), a fresh staging-backed launch and its first edge Back gesture
+  retained the same Browse runtime screen hash (`0egt3nx`); Feed → Browse →
+  Back retained its Browse hash (`0oabgeu`); and Product Detail's real Back
+  returned to Browse. The anonymous staging catalog still rendered and the
+  development bundle logged no new runtime error. Typecheck, lint, the full
+  42-suite/501-test frontend run with the repository's known Jest force-exit,
+  `check:readonly`, the E1 residue search, and `git diff --check` pass.
+  Independent deletion-first review found no smaller correct diff and no
+  actionable finding. The later iPhone 17 Pro Max physical rerun passed cold
+  Browse Back, Feed → Browse → Back, and Product Detail Back against both
+  local Docker and staging.
+- **Residual risk:** the current local-target physical offline/reconnect lane
+  is human-reported rather than agent-observed. The separate Account/Profile
+  offline-feedback delay remains undiagnosed. Android remains excluded.
+- **Undo:** revert the local completion commit. No native rebuild, reinstall,
+  data restoration, hosted change, or credential rollback is required.
+
 ## Extended finding E2: share error-shape extraction, not domain policy
 
 ### Candidate, burden, and reachability
@@ -501,6 +633,21 @@ guarded storage behavior may change with it.
   as an opportunistic simplification packet.
 - Keep `plugins/withIosDeviceBuildFixes.js` until the accepted temporary CNG
   decision's same-device no-plugin A/B revisit condition passes.
+- Do not add an in-app local/staging Supabase hot switch. The current runtime
+  intentionally has one immutable public environment, one Supabase client,
+  one Query client, and environment-neutral public catalog keys. A hot switch
+  would require client/Auth listener teardown, in-flight cancellation, full
+  cache eviction or environment-keyed caches, session isolation, target UI,
+  and transition tests; that adds more ownership than it removes and makes an
+  accidental staging write easier. Expo SDK 57 development HMR imports its
+  virtual environment from conventional `.env` files and can merge `.env` or
+  `.env.local` values over shell-selected `EXPO_PUBLIC_*` values even when CLI
+  dotenv loading is disabled. The proven no-rebuild procedure is therefore to
+  stop Metro, temporarily isolate those ignored files, launch Metro with the
+  selected public values and `--clear`, fully reload the app, and restore the
+  files byte-for-byte afterward. Reconsider only if repeated, measured
+  switching friction justifies a developer-only launch-profile task; do not
+  implement a live production-app toggle.
 
 ## Cross-session and multi-agent protocol
 

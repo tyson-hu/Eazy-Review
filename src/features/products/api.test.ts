@@ -1,5 +1,6 @@
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import { getProductById, getProducts } from '@/src/features/products/api';
+import { CatalogError } from '@/src/features/products/errors';
 import { getSupabase } from '@/src/lib/supabase/client';
 import { PublicEnvError } from '@/src/lib/env/publicEnv';
 import {
@@ -23,7 +24,7 @@ type FakeResponse = {
 
 function createFakeClient(
   response: FakeResponse | Promise<FakeResponse>,
-  options: { rejectOnAbort?: boolean } = {},
+  options: { onAbort?: () => void; rejectOnAbort?: boolean } = {},
 ) {
   const calls: { method: string; args: unknown[] }[] = [];
   let rejectOnAbort: ((reason: unknown) => void) | undefined;
@@ -64,6 +65,7 @@ function createFakeClient(
         signal.addEventListener(
           'abort',
           () => {
+            options.onAbort?.();
             const error = new Error('aborted');
             error.name = 'AbortError';
             rejectOnAbort?.(error);
@@ -203,6 +205,48 @@ describe('public catalog API', () => {
       getProducts({ client: fake.client, timeoutMs: 1 }),
     ).rejects.toEqual(expect.objectContaining({ code: 'timeout' }));
   });
+
+  it('keeps deadline classification when transport abort also aborts the caller', async () => {
+    const caller = new AbortController();
+    const fake = createFakeClient(ok(null), {
+      onAbort: () => caller.abort(),
+      rejectOnAbort: true,
+    });
+
+    await expect(
+      getProductById(COMPLETE_PRODUCT_ID, {
+        client: fake.client,
+        signal: caller.signal,
+        timeoutMs: 1,
+      }),
+    ).rejects.toEqual(expect.objectContaining({ code: 'timeout' }));
+  });
+
+  it.each(['before', 'during'] as const)(
+    'keeps caller abort %s work as non-domain cancellation',
+    async (timing) => {
+      const caller = new AbortController();
+      const fake = createFakeClient(ok(null), { rejectOnAbort: true });
+      if (timing === 'before') {
+        caller.abort();
+      }
+
+      const request = getProducts({
+        client: fake.client,
+        signal: caller.signal,
+      });
+      if (timing === 'during') {
+        caller.abort();
+      }
+
+      await expect(request).rejects.not.toBeInstanceOf(CatalogError);
+      const internalSignal = fake.calls.find(
+        (call) => call.method === 'abortSignal',
+      )?.args[0];
+      expect(internalSignal).toBeInstanceOf(AbortSignal);
+      expect((internalSignal as AbortSignal).aborted).toBe(true);
+    },
+  );
 
   it('normalizes invalid public environment configuration at the API boundary', async () => {
     mockGetSupabase.mockImplementationOnce(() => {

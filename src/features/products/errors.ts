@@ -1,4 +1,5 @@
 import { PublicEnvError } from '@/src/lib/env/publicEnv';
+import { isRequestTimeoutError } from '@/src/lib/network/requestTimeout';
 
 export type CatalogErrorCode =
   | 'offline'
@@ -134,7 +135,7 @@ export function normalizeCatalogError(
     });
   }
 
-  if (name === 'TimeoutError') {
+  if (isRequestTimeoutError(error) || name === 'TimeoutError') {
     return new CatalogError('timeout', 'The catalog request timed out.', {
       source: 'transport',
       cause: error,

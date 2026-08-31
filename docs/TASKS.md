@@ -79,7 +79,8 @@ archive is historical evidence, not a current plan.
 
 ### Active maintenance initiative: staged codebase simplification
 
-Status: **S1 implemented and validated locally; no other packet has started.**
+Status: **S1 and E1 complete locally; E1 human acceptance is complete and no
+other packet has started.**
 
 This unnumbered initiative does not start or renumber Task 20 and changes no
 product priority. Its proposed durable boundary is recorded in
@@ -88,14 +89,60 @@ and its candidate evidence, phase order, validation, undo, and cross-session
 protocol live in
 [`docs/superpowers/plans/2026-08-30-staged-codebase-simplification.md`](superpowers/plans/2026-08-30-staged-codebase-simplification.md).
 S1's unreachable starter subtree, sample font, two direct dependencies, and
-three empty config plugins are removed locally. Web and iOS startup passed;
-Android startup is intentionally skipped because the human excluded Android
-from the current plan on 2026-08-31. No Android result is claimed. E1–E3 remain
-ready but unselected; S2 still needs a capability decision; S3 still needs
-native proof; and low-value findings remain fold-only or retained.
-Each packet requires explicit selection before implementation; planning does
-not authorize commit, push, PR lifecycle actions, deployment, hosted
-configuration, or production access.
+three empty config plugins are removed locally. Web and iOS startup passed.
+E1 now routes both public catalog reads through the existing shared request
+deadline/cancellation owner and deletes the duplicate catalog lifecycle with
+no new production abstraction or shared-helper source edit. Its focused and
+full frontend suites, typecheck, lint, `check:readonly`, residue checks, and
+reachable/offline/timeout/navigation-cancelled web smoke passed. A cold iOS
+26.5 development-build simulator walk also passed against the linked
+`eazy-review-staging` project: anonymous Browse showed both staging-only H2
+fixtures, both Product Details loaded, and real Back navigation returned to
+Browse. No hosted write or configuration change occurred. Production code
+realizes a net 55-line reduction. Android startup remains intentionally skipped
+because the human excluded Android from the current plan on 2026-08-31; no
+Android result is claimed. The local-only anon token printed by the simulator
+diagnostic was invalidated: the rotated public key reads both seeded local
+catalog rows, the former token returns `401`, the signing secret is kept in a
+private host file outside the checkout, and `check:secrets` passes. An agent-
+observed physical rerun on an iPhone 17 Pro Max (iOS 27.0, installed Expo
+development build) passed the online local-Docker and staging catalog lanes:
+each target rendered its distinct Browse rows, both Product Details loaded,
+Product Detail Back returned to Browse, cold Browse Back stayed on Browse, and
+Feed → Browse → Back stayed on Browse. The human separately reports the
+current local-target offline/reconnect lane as `tested-pass`. The
+Account/Profile offline status took about five minutes to appear; that is a
+separate deferred P2 connectivity-feedback UX finding, not an E1 catalog
+regression or completion blocker. E1 is therefore complete and committed
+locally together with the separately authorized tab-root correction. Push, PR
+lifecycle actions, deployment, hosted configuration, database, and production
+actions remain unauthorized. E2–E3
+are ready but unselected; S2 still needs a capability decision; S3 still needs
+native proof; and low-value findings remain fold-only or retained. Each later
+packet requires explicit selection before implementation.
+
+One separately authorized follow-up is resolved locally; the environment
+audit remains a recommendation only:
+
+- **Tab-root Back correction:** the existing tab navigator now declares Browse
+  as its initial route and does not consume Back into another tab. The root
+  stack also excludes the component-only `index` redirect, removing the cold-
+  launch duplicate Browse entry. The final production diff is three native
+  navigator declarations across two existing route layouts. Installed-router
+  proof changed `initial=feed browse-back=feed` to
+  `initial=browse browse-back=unhandled`; a cold iOS 26.5 staging-backed run
+  kept the same Browse screen state under Back, Feed → Browse also stayed on
+  Browse, and Product Detail Back still returned to Browse. A later physical
+  iPhone 17 Pro Max rerun passed those same navigation cases against both local
+  Docker and staging.
+- **Local/staging runtime toggle audit:** do not add an in-app hot switch. It
+  adds more lifecycle ownership than it removes; the contract analysis is in
+  the canonical simplification plan. Expo SDK 57's development virtual
+  environment can merge conventional `.env` and `.env.local` values over the
+  shell-selected `EXPO_PUBLIC_*` values during HMR. To change targets without a
+  native rebuild or reinstall, stop Metro, temporarily isolate those ignored
+  env files, start Metro with the selected public values and `--clear`, fully
+  reload the app, then restore the files byte-for-byte.
 
 ## Definition Of Done
 
