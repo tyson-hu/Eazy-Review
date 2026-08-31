@@ -33,7 +33,7 @@
 | Human staging deletion | `tested-pass` | Human H2 on `4c8ab7a` / `eazy-review-staging` (2026-08-30); agent did not submit deletion |
 | Second-session refresh rejection | `tested-pass` | Human H2: second session could not refresh after deletion |
 | Residual access-token observation through `exp` | `tested-pass` | Second client still showed account A UI but had no rating access through JWT `exp` (expected residual-token / non-immediate access invalidation) |
-| Human acceptance | `not-run` | H3 has not occurred |
+| Human acceptance | `accepted` | H3 human-accepted on 2026-08-30; confirmation-clarity fix included; readiness/merge/production remain separate |
 | Production | `not-run` | Production untouched and forbidden to coding agents |
 
 The five identity-free PNGs named in `RESULT.md` are the selected candidate
@@ -289,18 +289,20 @@ The final human gate requires:
 - [x] current exact-head CI, mergeability, and review-thread state refreshed
       (Expo `33279912599`, Database `33279912602` on `4c8ab7a`);
 - [x] canonical status docs and PR description synchronized after the evidence
-      actually exists (H1/H2 pass recorded; H3 accept/reject still open); and
-- [ ] explicit human accept/reject decision.
+      actually exists; and
+- [x] explicit human accept decision (2026-08-30), including the confirmation-
+      clarity instruction / `Current password` placeholder fix.
 
 Human acceptance does not itself authorize PR readiness, merge, deployment, or
 production.
 
 ## Overall result and next decision
 
-A5/A6 remain green on published head `4c8ab7a` (Expo `33279912599`, Database
-`33279912602`). H1 and H2 are **tested-pass** on `4c8ab7a`. Residual
-second-client observation (UI still showed A; no rating access through JWT
-`exp`) matches the Task 19 non-immediate access-token invalidation rule.
-Canonical status docs and draft PR #43 description are synchronized for that
-evidence. **H3** final human accept/reject remains. Never have an agent submit
+**Done — human accepted on 2026-08-30.** A5/A6 remain green on reviewed
+implementation head `4c8ab7a` (Expo `33279912599`, Database `33279912602`). H1
+and H2 are **tested-pass** on that SHA. Residual second-client observation (UI
+still showed A; no rating access through JWT `exp`) matches the Task 19
+non-immediate access-token invalidation rule. Confirmation UX now states to
+enter the current password, then tap Delete my account. Draft PR #43 remains
+open for separate ready/merge authorization. Never have an agent submit
 deletion.

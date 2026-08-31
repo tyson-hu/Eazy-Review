@@ -43,15 +43,11 @@ Task detail, dependencies, acceptance, and current status live in
   dependency but did not itself authorize implementation.
   Production recovery host configuration remains Tasks 25–26. Evidence:
   `docs/evidence/task-18-password-recovery/RESULT.md`.
-- Task 19: **Partial — implementation and H1/H2 complete; human acceptance
-  (H3) pending.** The local non-destructive packet includes current-password
-  reauthentication, caller-derived Edge Function validation, global refresh-
-  session revocation before hard deletion, honest non-atomic outcomes, and a
-  revision-bound principal guard that preserves newer Auth/cache authority.
-  Published head `4c8ab7a` has exact-head Expo CI `33279912599` and Database CI
-  `33279912602` pass. H1 and H2 are **tested-pass** on that SHA (residual
-  second-client UI with no rating access through JWT `exp` noted). Human
-  acceptance, merge, and production remain outstanding. Dashboard:
+- Task 19: **Done — human accepted on 2026-08-30.** Caller-derived Edge
+  Function deletion, current-password reauthentication, global refresh-session
+  revocation, honest outcomes, and principal-bound local settlement. H1/H2
+  **tested-pass** on `4c8ab7a`; acceptance included confirmation-clarity copy.
+  Draft PR #43 remains open; merge and production remain separate. Dashboard:
   `docs/evidence/task-19-protected-account-deletion/RESULT.md`; details:
   `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`.
 - Post–Task 12 review: **GO with roadmap revision**.

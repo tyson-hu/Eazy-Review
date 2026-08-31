@@ -1,12 +1,12 @@
-import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import type { UseQueryResult } from '@tanstack/react-query';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
 
 import AccountScreen from '@/app/(tabs)/account';
 import { formatMemberSince } from '@/src/features/account/api';
-import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
+import { AUTH_USER_MESSAGES, AuthError } from '@/src/features/auth/errors';
 import type { AuthStatus } from '@/src/features/auth/types';
-import type { AccountProfile } from '@/src/types/account';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
+import type { AccountProfile } from '@/src/types/account';
 
 const mockSignOut = jest.fn();
 const mockDeleteAccount = jest.fn();
@@ -409,6 +409,14 @@ describe('Account screen', () => {
         'Your Eazy Review account, your My Rating entries, and private notes will be permanently deleted. Public product information will remain. Each affected Community Score will be recalculated without your rating. This cannot be undone.',
       ),
     ).toBeTruthy();
+    expect(
+      rendered.getByText(
+        'To confirm, enter your current password, then tap Delete my account.',
+      ),
+    ).toBeTruthy();
+    expect(rendered.getByTestId('account-delete-password').props.placeholder).toBe(
+      'Current password',
+    );
     expect(mockPush).not.toHaveBeenCalled();
     await rendered.cleanup();
   });

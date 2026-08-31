@@ -366,6 +366,9 @@ export default function AccountScreen() {
             Each affected Community Score will be recalculated without your
             rating. This cannot be undone.
           </AppText>
+          <AppText testID="account-delete-confirm-hint" variant="body">
+            To confirm, enter your current password, then tap Delete my account.
+          </AppText>
           <Input
             testID="account-delete-password"
             value={currentPassword}
@@ -375,6 +378,7 @@ export default function AccountScreen() {
             autoCorrect={false}
             autoComplete="password"
             textContentType="password"
+            placeholder="Current password"
             accessibilityLabel="Current password"
             editable={!signingOut && !deletePending}
             invalid={deleteError != null}

@@ -296,7 +296,9 @@ Signed-in user opens Account
 -> User taps the separate Delete Account action
 -> Inline confirmation opens on Account; no route transition occurs
 -> App shows exact permanent-data and Community Score recalculation copy
--> User enters Current password
+-> App shows exact instruction to enter current password, then tap Delete my
+   account
+-> User enters Current password (not email or a DELETE phrase)
 -> Isolated Auth reauthentication uses the signed-in account's fixed email
 -> Returned principal must match the principal that started deletion
 -> Client invokes the protected function with that exact fresh bearer,
@@ -316,6 +318,13 @@ Delete Account is hidden while signed out. The confirmation copy is exact:
 > permanently deleted. Public product information will remain. Each affected
 > Community Score will be recalculated without your rating. This cannot be
 > undone.
+
+The confirmation instruction under that copy is exact:
+
+> To confirm, enter your current password, then tap Delete my account.
+
+The secure field uses the visible placeholder and accessibility label
+`Current password`. Confirmation is that password only.
 
 `Cancel` closes the inline card and clears the password and error without a
 router call. Empty password cannot submit. Pending disables password editing,

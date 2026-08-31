@@ -48,24 +48,15 @@
   19 implementation. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
-- Task 19 is **Partial — implementation and H1/H2 complete; human acceptance
-  (H3) pending.**
-  Draft PR #43 previously published the non-destructive implementation at
-  `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`; exact-head Expo CI run
-  `32615974049` and Database CI run `32615974012` passed on that SHA. The
-  2026-08-29 safe verification rerun passed 25 Function tests, 11 focused
-  suites / 270 tests, the full 41-suite / 495-test frontend run, 8 pgTAP files
-  / 483 assertions, both database concurrency races, generated-type parity,
-  unauthenticated gateway checks, mobile web, and iOS Simulator. A5
-  maintenance PR #44 aligned the ten expected SDK 57 patches at `f3886a5`
-  (merged to `master` as `33c66ee`); Task 19 is published on that `master` at
-  `4c8ab7a` (Account keyboard remediation) with exact-head Expo CI
-  `33279912599` and Database CI `33279912602` pass. Physical H1 is
-  **tested-pass** on `4c8ab7a`. Human H2 staging deletion is **tested-pass** on
-  `4c8ab7a` (2026-08-30); residual second-client UI still showed A with no
-  rating access through JWT `exp` (expected). Human acceptance (H3), readiness,
-  merge, and production remain outstanding.
-  Dashboard:
+- Task 19 is **Done — human accepted on 2026-08-30.** Draft PR #43 remains
+  open; readiness, merge, and production remain separate gates. Reviewed
+  implementation head for H1/H2 was `4c8ab7a` (Account keyboard remediation)
+  with exact-head Expo CI `33279912599` and Database CI `33279912602` pass.
+  Physical H1 and human H2 staging deletion are **tested-pass** on that SHA;
+  residual second-client UI with no rating access through JWT `exp` is
+  expected. Acceptance included a confirmation-clarity fix (enter current
+  password, then Delete my account). Agents/tools never submit account
+  deletion. Dashboard:
   [`RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
   Detailed verification and human checklists:
   [`VERIFICATION.md`](evidence/task-19-protected-account-deletion/VERIFICATION.md).
@@ -219,7 +210,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted and merged in PR #36 on 2026-08-11 |
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
-| 19 | Protected Account Deletion | Partial — implementation and H1/H2 complete; human acceptance (H3) pending. |
+| 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 (draft PR #43; merge separate) |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
 | 22 | Broader Automated App Tests And CI | Pending |
@@ -908,8 +899,8 @@ in PR #37 on 2026-08-17.**
 
 ## Task 19: Protected Account Deletion
 
-Status: **Partial — implementation and H1/H2 complete; human acceptance (H3)
-pending.**
+Status: **Done — human accepted on 2026-08-30.** Draft PR #43 remains open;
+readiness, merge, and production remain separate gates.
 
 Depends on: Tasks 16–18.
 
@@ -934,14 +925,16 @@ on 2026-08-20. Local non-destructive implementation was authorized on
 2026-08-29 agent-owned Function, frontend, local database/gateway, web, and
 iOS Simulator verification is complete against that head. A5 maintenance PR
 #44 validated and merged the ten expected SDK 57 patches (`f3886a5` /
-`33c66ee`); Task 19 is published on that `master` at `4c8ab7a` (Account
-keyboard remediation) with exact-head Expo CI `33279912599` and Database CI
+`33c66ee`); reviewed H1/H2 implementation head is `4c8ab7a` (Account keyboard
+remediation) with exact-head Expo CI `33279912599` and Database CI
 `33279912602` pass. Physical H1 is **tested-pass** on `4c8ab7a` (historical
 fail on `5171d03` retained as evidence screenshot
 `ios-physical-01-delete-keyboard-obscures.png`). Human H2 staging deletion is
 **tested-pass** on `4c8ab7a` (2026-08-30); residual second-client UI still
 showed A with no rating access through JWT `exp` (expected). Human acceptance
-(H3), readiness, merge, and production remain separate gates.
+(H3) recorded on 2026-08-30, including the confirmation-clarity fix (enter
+current password, then Delete my account). Readiness, merge, and production
+remain separate gates.
 
 Implementation evidence:
 [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).

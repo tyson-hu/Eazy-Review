@@ -530,14 +530,21 @@ The confirmation uses this exact permanence copy:
 > Community Score will be recalculated without your rating. This cannot be
 > undone.
 
-The inline card contains a secure `Current password` input, `Cancel`, and the
-final `Delete my account` action. Only the final action uses the shared
+Immediately under that permanence copy, the card shows this exact confirmation
+instruction:
+
+> To confirm, enter your current password, then tap Delete my account.
+
+The inline card contains a secure `Current password` input (visible placeholder
+and accessibility label both `Current password`), `Cancel`, and the final
+`Delete my account` action. Confirmation is the current password only — not a
+typed email or `DELETE` phrase. Only the final action uses the shared
 `destructive` button variant and the Negative / Risky color; `Delete Account`
 and `Cancel` remain secondary actions. An empty password disables final submit,
 and a nonempty password is passed through unchanged rather than trimmed or
 normalized. When the password field is focused, Account must keep the
-confirmation copy, field, and Cancel / Delete actions visible above the
-software keyboard (`Screen` scroll with keyboard insets, plus scroll-into-view
+confirmation copy, instruction, field, and Cancel / Delete actions visible above
+the software keyboard (`Screen` scroll with keyboard insets, plus scroll-into-view
 when the deletion form opens or the field focuses).
 
 While deletion is pending, disable the password input, Cancel, Sign out, the
