@@ -77,6 +77,20 @@ available at
 Accepted database behavior remains canonical in `docs/DATA_MODEL.md`; the
 archive is historical evidence, not a current plan.
 
+### Active maintenance initiative: staged codebase simplification
+
+Status: **Planning only; no simplification packet has started.**
+
+This unnumbered initiative does not start or renumber Task 20 and changes no
+product priority. Its proposed durable boundary is recorded in
+[`docs/decisions/2026-08-30-staged-codebase-simplification.md`](decisions/2026-08-30-staged-codebase-simplification.md),
+and its candidate evidence, phase order, validation, undo, and cross-session
+protocol live in
+[`docs/superpowers/plans/2026-08-30-staged-codebase-simplification.md`](superpowers/plans/2026-08-30-staged-codebase-simplification.md).
+Each packet requires explicit selection before implementation; planning does
+not authorize commit, push, PR lifecycle actions, deployment, hosted
+configuration, or production access.
+
 ## Definition Of Done
 
 Use the Definition Of Done in `docs/AGENT_WORKFLOW.md`. Each task remains a
