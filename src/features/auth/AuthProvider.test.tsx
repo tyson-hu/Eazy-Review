@@ -24,7 +24,6 @@ import { renderWithProviders } from '@/src/test/renderWithProviders';
 
 jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
   getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
-  EMAIL_CONFIRMATION_PATH: '/auth/sign-in',
 }));
 
 const mockAdoptExplicitSession = jest.fn(

@@ -373,10 +373,11 @@ Task 16 functions (email/password only):
 - `signUpWithPassword({ email, password })` — may return
   `confirmation-required` when the provider creates a user without a session.
   Confirmation emails use
-  `emailRedirectTo = Linking.createURL('/auth/sign-in')` (scheme
-  `eazyreview`) so a physical device opens the app instead of an unreachable
-  localhost Site URL. The redirect must be allowlisted in Auth redirect URLs
-  (local `supabase/config.toml`; staging/production are human-applied).
+  `emailRedirectTo = Linking.createURL('auth/sign-in')`, which yields the exact
+  native URL `eazyreview://auth/sign-in`, so a physical device opens the app
+  instead of an unreachable localhost Site URL. The redirect must be
+  allowlisted in Auth redirect URLs (local `supabase/config.toml`;
+  staging/production are human-applied).
 - `signOut()` — captures one exact shared session, attempts current-device
   revocation with that bearer on an isolated non-persisting Auth client, then
   exact-removes shared storage only if principal/access/refresh still match.

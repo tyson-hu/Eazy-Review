@@ -8,7 +8,6 @@ import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 
 jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
   getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
-  EMAIL_CONFIRMATION_PATH: '/auth/sign-in',
 }));
 
 /**

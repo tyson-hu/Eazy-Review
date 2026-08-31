@@ -11,7 +11,6 @@ import type { Session } from '@supabase/supabase-js';
 
 jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
   getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
-  EMAIL_CONFIRMATION_PATH: '/auth/sign-in',
 }));
 
 function mockClient(auth: {

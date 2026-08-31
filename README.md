@@ -198,7 +198,8 @@ Signup confirmation and password recovery both use the app scheme
 values such as `http://localhost:3000` are unreachable on a phone.
 
 - Signup confirmation: `emailRedirectTo` from
-  `Linking.createURL('/auth/sign-in')` in `signUpWithPassword`.
+  `Linking.createURL('auth/sign-in')` in `signUpWithPassword`, which yields
+  the exact native URL `eazyreview://auth/sign-in`.
 - Password recovery: `redirectTo` from
   `Linking.createURL('/auth/reset-password')` in `requestPasswordReset`.
 - Local Auth must allow the documented scheme/path variants in
