@@ -36,9 +36,6 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font",
-      "expo-status-bar",
-      "expo-web-browser",
       "./plugins/withIosDeviceBuildFixes.js"
     ],
     "experiments": {

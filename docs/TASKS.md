@@ -79,7 +79,7 @@ archive is historical evidence, not a current plan.
 
 ### Active maintenance initiative: staged codebase simplification
 
-Status: **Planning only; no simplification packet has started.**
+Status: **S1 implemented and validated locally; no other packet has started.**
 
 This unnumbered initiative does not start or renumber Task 20 and changes no
 product priority. Its proposed durable boundary is recorded in
@@ -87,6 +87,12 @@ product priority. Its proposed durable boundary is recorded in
 and its candidate evidence, phase order, validation, undo, and cross-session
 protocol live in
 [`docs/superpowers/plans/2026-08-30-staged-codebase-simplification.md`](superpowers/plans/2026-08-30-staged-codebase-simplification.md).
+S1's unreachable starter subtree, sample font, two direct dependencies, and
+three empty config plugins are removed locally. Web and iOS startup passed;
+Android startup is intentionally skipped because the human excluded Android
+from the current plan on 2026-08-31. No Android result is claimed. E1–E3 remain
+ready but unselected; S2 still needs a capability decision; S3 still needs
+native proof; and low-value findings remain fold-only or retained.
 Each packet requires explicit selection before implementation; planning does
 not authorize commit, push, PR lifecycle actions, deployment, hosted
 configuration, or production access.
