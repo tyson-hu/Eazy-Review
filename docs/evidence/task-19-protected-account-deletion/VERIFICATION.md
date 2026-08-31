@@ -9,8 +9,13 @@
 - A5-integrated published head:
   `8f2f2a9e1f35f9b6cf70742e9d27092beb222367` on `master`
   `33c66ee56b825aa53df5c488e374886591275d25`
-- Current published head (keyboard remediation):
+- Current published head (keyboard remediation / H1–H2 reviewed):
   `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75`
+- Human acceptance + confirmation-clarity head:
+  `e7e3f2876ed8b5c90adc87d8710a1a1af485b0e0`
+  (Expo CI failed: Task 19 Revised Sequence status mismatched Status metadata)
+- Closeout tip: ledger alignment + README sync on this branch tip; refresh
+  exact-head Expo/Database CI before readiness
 - A5 maintenance candidate: `f3886a5160b00f3326281741dd002f17b5d8a6a3`
   (PR #44, merged)
 - Pull request: #43, draft/open, mergeable
@@ -298,11 +303,13 @@ production.
 
 ## Overall result and next decision
 
-**Done — human accepted on 2026-08-30.** A5/A6 remain green on reviewed
+**Done — human accepted on 2026-08-30.** A5/A6 remain green on H1/H2 reviewed
 implementation head `4c8ab7a` (Expo `33279912599`, Database `33279912602`). H1
 and H2 are **tested-pass** on that SHA. Residual second-client observation (UI
 still showed A; no rating access through JWT `exp`) matches the Task 19
 non-immediate access-token invalidation rule. Confirmation UX now states to
-enter the current password, then tap Delete my account. Draft PR #43 remains
-open for separate ready/merge authorization. Never have an agent submit
-deletion.
+enter the current password, then tap Delete my account. Acceptance tip
+`e7e3f28` failed Expo CI on a Task 19 ledger status mismatch; closeout syncs
+Revised Sequence with Status metadata and refreshes exact-head CI before any
+ready/merge authorization. Draft PR #43 remains open. Never have an agent
+submit deletion.

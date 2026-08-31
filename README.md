@@ -18,21 +18,16 @@ Score, and maintaining a personal My Rating.
   backend-unreachable states; auth/recovery logic guards stale-session races.
   Failed rating writes preserve form input for manual retry; there is no
   durable offline cache or write queue.
-- Task 19 protected account deletion is **Partial — implementation complete;
-  human staging deletion pending.** The local packet adds a reauthenticated
-  inline confirmation, caller-derived Edge Function boundary, and guarded
-  principal-specific local settlement. Fresh Function, frontend, local
-  database/gateway, mobile-web, and iOS Simulator verification passed on
-  2026-08-29 against prior head `f64cb3d`. A5 maintenance PR #44 merged the
-  ten expected SDK 57 patches; Task 19 is published on that `master` at
-  `8f2f2a9` with fresh exact-head Expo and Database CI pass. No coding agent or
-  tool executed deletion. See the
+- Task 19 protected account deletion is **Done — human accepted on
+  2026-08-30.** Draft PR #43 remains open; readiness, merge, and production
+  remain separate gates. H1/H2 were **tested-pass** on reviewed head
+  `4c8ab7a`; acceptance includes the confirmation-clarity fix. No coding agent
+  or tool executed deletion. See the
   [Task 19 dashboard](docs/evidence/task-19-protected-account-deletion/RESULT.md)
   and [verification details](docs/evidence/task-19-protected-account-deletion/VERIFICATION.md).
 
-Feed remains a placeholder, and Task 19 human staging acceptance plus release
-work remain pending. Current task status and implementation order live in
-[`docs/TASKS.md`](docs/TASKS.md).
+Feed remains a placeholder. Current task status and implementation order live
+in [`docs/TASKS.md`](docs/TASKS.md).
 
 ## Current Stack
 
@@ -53,8 +48,8 @@ work remain pending. Current task status and implementation order live in
 - Authentication, session restoration, and password recovery:
   [Task 16 evidence](docs/evidence/task-16-auth-account/RESULT.md) and
   [Task 18 evidence](docs/evidence/task-18-password-recovery/RESULT.md).
-- Protected account-deletion boundary, local orchestration, and outstanding
-  human-only destructive matrix:
+- Protected account-deletion boundary, local orchestration, and human
+  acceptance evidence:
   [Task 19 evidence](docs/evidence/task-19-protected-account-deletion/RESULT.md).
 - Automated frontend, database, security, and concurrency gates:
   [Expo CI](.github/workflows/expo-ci.yml) and

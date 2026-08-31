@@ -210,7 +210,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted and merged in PR #36 on 2026-08-11 |
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
-| 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 (draft PR #43; merge separate) |
+| 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
 | 22 | Broader Automated App Tests And CI | Pending |
@@ -899,8 +899,10 @@ in PR #37 on 2026-08-17.**
 
 ## Task 19: Protected Account Deletion
 
-Status: **Done — human accepted on 2026-08-30.** Draft PR #43 remains open;
-readiness, merge, and production remain separate gates.
+Status: **Done — human accepted on 2026-08-30.**
+
+Draft PR #43 remains open; readiness, merge, and production remain separate
+gates.
 
 Depends on: Tasks 16–18.
 
