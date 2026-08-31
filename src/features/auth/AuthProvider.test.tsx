@@ -1,26 +1,31 @@
-import { act, waitFor } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { Session } from '@supabase/supabase-js';
 import { onlineManager } from '@tanstack/react-query';
+import { act, waitFor } from '@testing-library/react-native';
 import { useEffect, type MutableRefObject } from 'react';
 import { Text } from 'react-native';
-import type { Session } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
-  AuthProvider,
-  useAuth,
-  type AuthContextValue,
+    AuthProvider,
+    useAuth,
+    type AuthContextValue,
 } from '@/src/features/auth/AuthProvider';
 import type { SignInResult, SignUpResult } from '@/src/features/auth/types';
-import { accountKeys, catalogKeys, ratingKeys } from '@/src/lib/query/keys';
 import { createAppQueryClient } from '@/src/lib/query/client';
+import { accountKeys, catalogKeys, ratingKeys } from '@/src/lib/query/keys';
 import * as userScopedCache from '@/src/lib/query/userScopedCache';
 import { emitPrincipalDeletionGuardChange } from '@/src/lib/supabase/authCoordination';
-import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import type {
-  RecoveryAdoptionResult,
-  RecoveryPredecessorCapture,
+    RecoveryAdoptionResult,
+    RecoveryPredecessorCapture,
 } from '@/src/lib/supabase/authStorage';
+import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
+
+jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
+  getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
+  EMAIL_CONFIRMATION_PATH: '/auth/sign-in',
+}));
 
 const mockAdoptExplicitSession = jest.fn(
   async (
@@ -5136,7 +5141,7 @@ describe('AuthProvider password recovery', () => {
     await rendered.cleanup();
   });
 
-  it('settles an ordinary PKCE callback unavailable without authorizing recovery', async () => {
+  it('settles an ordinary PKCE session callback idle without authorizing recovery', async () => {
     jest.useFakeTimers();
     try {
       const exchangeCodeForSession = jest.fn(async () => ({
@@ -5196,7 +5201,7 @@ describe('AuthProvider password recovery', () => {
       });
       await waitFor(() =>
         expect(rendered.getByTestId('auth-probe').props.children).toContain(
-          '|unavailable',
+          '|idle',
         ),
       );
       expect(exchangeCodeForSession).toHaveBeenCalledWith('AUTH_CODE_VALUE');
@@ -5207,7 +5212,7 @@ describe('AuthProvider password recovery', () => {
       });
       await waitFor(() =>
         expect(rendered.getByTestId('auth-probe').props.children).toBe(
-          'signed-in|user-p|p@example.com|unavailable',
+          'signed-in|user-p|p@example.com|idle',
         ),
       );
 

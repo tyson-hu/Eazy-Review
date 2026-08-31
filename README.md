@@ -191,6 +191,22 @@ remain part of the same plugin for the tested environment; they were not
 independently re-failed in that A/B run. Decision record:
 `docs/decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md`.
 
+### Email confirmation and password recovery redirects
+
+Signup confirmation and password recovery both use the app scheme
+`eazyreview` so a physical device can open the app. Hosted Auth Site URL
+values such as `http://localhost:3000` are unreachable on a phone.
+
+- Signup confirmation: `emailRedirectTo` from
+  `Linking.createURL('/auth/sign-in')` in `signUpWithPassword`.
+- Password recovery: `redirectTo` from
+  `Linking.createURL('/auth/reset-password')` in `requestPasswordReset`.
+- Local Auth must allow the documented scheme/path variants in
+  `supabase/config.toml` `additional_redirect_urls`.
+- Staging/production Redirect URLs (and Site URL if used as fallback) are
+  human-applied; without the `eazyreview` allowlist entry, Auth falls back to
+  Site URL and confirmation links keep `redirect_to=http://localhost:3000`.
+
 ### Password recovery (Task 18 local)
 
 Email/password recovery uses the app scheme `eazyreview` and the route

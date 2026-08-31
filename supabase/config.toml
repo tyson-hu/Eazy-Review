@@ -167,10 +167,15 @@ external_url = "env(SUPABASE_AUTH_EXTERNAL_URL)"
 # Staging and production redirects are not configured here — Tasks 25–26 + human approval.
 additional_redirect_urls = [
   "https://127.0.0.1:3000",
+  "eazyreview://auth/sign-in",
+  "eazyreview:///auth/sign-in",
   "eazyreview://auth/reset-password",
   "eazyreview:///auth/reset-password",
+  "exp://127.0.0.1:8081/--/auth/sign-in",
   "exp://127.0.0.1:8081/--/auth/reset-password",
+  "http://127.0.0.1:8081/auth/sign-in",
   "http://127.0.0.1:8081/auth/reset-password",
+  "http://localhost:8081/auth/sign-in",
   "http://localhost:8081/auth/reset-password",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).

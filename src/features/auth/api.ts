@@ -1,50 +1,51 @@
-import { onlineManager } from '@tanstack/react-query';
 import type { Session } from '@supabase/supabase-js';
+import { onlineManager } from '@tanstack/react-query';
 
 import {
-  isValidEmailFormat,
-  normalizeEmail,
+    isValidEmailFormat,
+    normalizeEmail,
 } from '@/src/features/auth/email';
+import { getEmailConfirmationRedirectTo } from '@/src/features/auth/emailConfirmationRedirect';
 import {
-  AuthError,
-  AUTH_USER_MESSAGES,
-  isAccountExistenceError,
-  isDefinitiveInvalidSessionError,
-  normalizeAuthError,
+    AUTH_USER_MESSAGES,
+    AuthError,
+    isAccountExistenceError,
+    isDefinitiveInvalidSessionError,
+    normalizeAuthError,
 } from '@/src/features/auth/errors';
 import { getPasswordRecoveryRedirectTo } from '@/src/features/auth/recoveryRedirect';
 import {
-  classifyAuthCallback,
-  isAuthCallbackUrl,
-  parseAuthCallbackParams,
+    classifyAuthCallback,
+    isAuthCallbackUrl,
+    parseAuthCallbackParams,
 } from '@/src/features/auth/recoveryUrl';
 import type {
-  AuthCallbackProcessResult,
-  AuthUser,
-  ExactLocalSignOutResult,
-  PasswordResetRequestResult,
-  PasswordUpdateSuccess,
-  SignInCredentials,
-  SignInResult,
-  SignUpCredentials,
-  SignUpResult,
+    AuthCallbackProcessResult,
+    AuthUser,
+    ExactLocalSignOutResult,
+    PasswordResetRequestResult,
+    PasswordUpdateSuccess,
+    SignInCredentials,
+    SignInResult,
+    SignUpCredentials,
+    SignUpResult,
 } from '@/src/features/auth/types';
 import { runSupabaseAuthOperation } from '@/src/lib/supabase/authCoordination';
 import {
-  createIsolatedAuthClient,
-  getSupabase,
-  getSupabaseAuthStorageKey,
+    adoptExplicitSessionAfterDeletionGuard,
+    adoptRecoverySessionAfterDeletionGuard,
+    captureRecoveryAdoptionPredecessor,
+    removeStoredSessionIfExact,
+    type RecoveryAdoptionPredecessor,
+    type RecoveryAdoptionResult,
+    type RecoveryPredecessorCapture,
+} from '@/src/lib/supabase/authStorage';
+import {
+    createIsolatedAuthClient,
+    getSupabase,
+    getSupabaseAuthStorageKey,
 } from '@/src/lib/supabase/client';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
-import {
-  adoptRecoverySessionAfterDeletionGuard,
-  adoptExplicitSessionAfterDeletionGuard,
-  captureRecoveryAdoptionPredecessor,
-  removeStoredSessionIfExact,
-  type RecoveryAdoptionPredecessor,
-  type RecoveryAdoptionResult,
-  type RecoveryPredecessorCapture,
-} from '@/src/lib/supabase/authStorage';
 
 export type AuthApiOptions = {
   client?: AppSupabaseClient;
@@ -210,10 +211,14 @@ export async function signInWithPassword(
 /**
  * Email/password sign-up. Handles immediate session and confirmation-required.
  * Does not retry. Never claims signed-in without a session.
+ *
+ * When confirmation is required, emails use the app-scheme `emailRedirectTo`
+ * so a physical device opens Eazy Review instead of an unreachable localhost
+ * Site URL. The redirect must also be allowlisted in Auth redirect URLs.
  */
 export async function signUpWithPassword(
   credentials: SignUpCredentials,
-  options?: AuthApiOptions,
+  options?: AuthApiOptions & { emailRedirectTo?: string },
 ): Promise<SignUpResult> {
   if (!isOnline(options)) {
     throw new AuthError('offline', AUTH_USER_MESSAGES.offline, {
@@ -222,12 +227,17 @@ export async function signUpWithPassword(
   }
 
   const email = credentials.email.trim();
+  const emailRedirectTo =
+    options?.emailRedirectTo ?? getEmailConfirmationRedirectTo();
 
   try {
     const client = resolveClient(options);
     const { data, error } = await client.auth.signUp({
       email,
       password: credentials.password,
+      options: {
+        emailRedirectTo,
+      },
     });
 
     if (error) {

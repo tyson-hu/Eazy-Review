@@ -1,72 +1,72 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ReactNode,
+} from 'react';
 import { AppState } from 'react-native';
 
 import {
-  mapAuthUserFromSessionUser,
-  processAuthCallbackUrl,
-  restoreSession,
-  signInWithPassword,
-  signOut as signOutApi,
-  signUpWithPassword,
-  validateSessionSnapshotIsolated,
+    mapAuthUserFromSessionUser,
+    processAuthCallbackUrl,
+    restoreSession,
+    signInWithPassword,
+    signOut as signOutApi,
+    signUpWithPassword,
+    validateSessionSnapshotIsolated,
 } from '@/src/features/auth/api';
 import {
-  deleteCurrentUser,
-  reauthenticateForAccountDeletion,
+    deleteCurrentUser,
+    reauthenticateForAccountDeletion,
 } from '@/src/features/auth/deletion.api';
-import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
-import type {
-  AuthOperationSuperseded,
-  AuthStatus,
-  AuthUser,
-  DeleteAccountOutcome,
-  DeleteCurrentUserApiOutcome,
-  RecoveryPhase,
-  SignInCredentials,
-  SignInResult,
-  SignInSuccess,
-  SignUpCredentials,
-  SignUpResult,
-} from '@/src/features/auth/types';
+import { AUTH_USER_MESSAGES, AuthError } from '@/src/features/auth/errors';
 import { isAuthCallbackUrl } from '@/src/features/auth/recoveryUrl';
+import type {
+    AuthOperationSuperseded,
+    AuthStatus,
+    AuthUser,
+    DeleteAccountOutcome,
+    DeleteCurrentUserApiOutcome,
+    RecoveryPhase,
+    SignInCredentials,
+    SignInResult,
+    SignInSuccess,
+    SignUpCredentials,
+    SignUpResult,
+} from '@/src/features/auth/types';
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@/src/lib/network/requestTimeout';
 import {
-  removePrincipalScopedQueries,
-  removeUserScopedQueries,
+    removePrincipalScopedQueries,
+    removeUserScopedQueries,
 } from '@/src/lib/query/userScopedCache';
-import {
-  getSupabase,
-  getSupabaseAuthStorageKey,
-} from '@/src/lib/supabase/client';
 import { runSupabaseAuthOperation } from '@/src/lib/supabase/authCoordination';
-import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import {
-  armPrincipalDeletionGuard,
-  disarmPrincipalDeletionGuard,
-  isSessionBlockedByDeletionGuard,
-  markPrincipalDeletionDispatched,
-  preflightPrincipalBoundAuthStorage,
-  reconcileGuardedAuthStorage,
-  removeStoredSessionIfExact,
-  replaceDisplacedSessionIfExact,
-  settleGuardedPrincipalSession,
-  settlePrincipalDeletionGuard,
-  subscribePrincipalDeletionGuardChanges,
-  type GuardedAuthStorageReconciliation,
-  type PrincipalDeletionGuardDisarmResult,
+    armPrincipalDeletionGuard,
+    disarmPrincipalDeletionGuard,
+    isSessionBlockedByDeletionGuard,
+    markPrincipalDeletionDispatched,
+    preflightPrincipalBoundAuthStorage,
+    reconcileGuardedAuthStorage,
+    removeStoredSessionIfExact,
+    replaceDisplacedSessionIfExact,
+    settleGuardedPrincipalSession,
+    settlePrincipalDeletionGuard,
+    subscribePrincipalDeletionGuardChanges,
+    type GuardedAuthStorageReconciliation,
+    type PrincipalDeletionGuardDisarmResult,
 } from '@/src/lib/supabase/authStorage';
+import {
+    getSupabase,
+    getSupabaseAuthStorageKey,
+} from '@/src/lib/supabase/client';
+import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 
 export type AuthContextValue = {
   status: AuthStatus;
@@ -1501,8 +1501,16 @@ export function AuthProvider({
           setRecoveryPhase('verified');
           return;
         }
-        // Session exchanged (e.g. PKCE). Only PASSWORD_RECOVERY may promote
-        // this phase; ordinary SIGNED_IN must never authorize password update.
+        if (result.kind === 'session') {
+          // Signup confirmation / ordinary auth callback — not recovery.
+          setRecoveryPhase((current) =>
+            current === 'verified' ? 'verified' : 'idle',
+          );
+          return;
+        }
+        // Non-recovery callback without a settled ordinary session. Only
+        // PASSWORD_RECOVERY may promote this phase; ordinary SIGNED_IN must
+        // never authorize password update.
         setRecoveryPhase((current) =>
           current === 'verified' ? 'verified' : 'unavailable',
         );

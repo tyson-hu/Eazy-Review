@@ -1,10 +1,15 @@
-import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
 import {
-  signInWithPassword,
-  signUpWithPassword,
+    signInWithPassword,
+    signUpWithPassword,
 } from '@/src/features/auth/api';
-import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
+import { AUTH_USER_MESSAGES, AuthError } from '@/src/features/auth/errors';
 import { sanitizeReturnPath } from '@/src/features/auth/returnPath';
+import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
+
+jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
+  getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
+  EMAIL_CONFIRMATION_PATH: '/auth/sign-in',
+}));
 
 /**
  * Form-behavior coverage without full screen mount flakiness:

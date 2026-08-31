@@ -167,8 +167,11 @@ Canonical security rules for all agent and human work in this repo, regardless o
     (`resetPasswordForEmail` / `updateUser({ password })`). No custom recovery
     SQL, RLS changes, SECURITY DEFINER helpers, or service-role credentials.
   - Redirect allowlist for local/dev includes the `eazyreview` app scheme paths
-    in `supabase/config.toml`. Staging and production redirect hosts are not
-    Task 18 deliverables (Tasks 25–26 + human).
+    in `supabase/config.toml` for password recovery and signup confirmation.
+    Staging and production redirect hosts are not Task 18 deliverables
+    (Tasks 25–26 + human). Signup confirmation must send an app-scheme
+    `emailRedirectTo`; otherwise Auth falls back to Site URL (often
+    `http://localhost:3000`), which a physical device cannot open.
   - Physical-device local recovery reads the non-secret Auth email-link origin
     from `SUPABASE_AUTH_EXTERNAL_URL` in the gitignored root `.env`. It must be
     the device-reachable Mac LAN URL with `/auth/v1`; never put a key, token, or

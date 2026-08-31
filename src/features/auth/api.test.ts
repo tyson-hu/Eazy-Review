@@ -1,13 +1,18 @@
 import {
-  restoreSession,
-  signInWithPassword,
-  signOut,
-  signUpWithPassword,
-  validateSessionSnapshotIsolated,
+    restoreSession,
+    signInWithPassword,
+    signOut,
+    signUpWithPassword,
+    validateSessionSnapshotIsolated,
 } from '@/src/features/auth/api';
-import { AuthError, AUTH_USER_MESSAGES } from '@/src/features/auth/errors';
+import { AUTH_USER_MESSAGES, AuthError } from '@/src/features/auth/errors';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import type { Session } from '@supabase/supabase-js';
+
+jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
+  getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
+  EMAIL_CONFIRMATION_PATH: '/auth/sign-in',
+}));
 
 function mockClient(auth: {
   signInWithPassword?: jest.Mock;
@@ -109,46 +114,60 @@ describe('auth api', () => {
   });
 
   it('signs up with an immediate session', async () => {
-    const client = mockClient({
-      signUp: jest.fn(async () => ({
-        data: {
-          session: { user: { id: 'new', email: 'new@example.com' } },
-          user: { id: 'new', email: 'new@example.com' },
-        },
-        error: null,
-      })),
-    });
+    const signUp = jest.fn(async () => ({
+      data: {
+        session: { user: { id: 'new', email: 'new@example.com' } },
+        user: { id: 'new', email: 'new@example.com' },
+      },
+      error: null,
+    }));
+    const client = mockClient({ signUp });
 
     await expect(
       signUpWithPassword(
         { email: 'new@example.com', password: 'secret-pass' },
-        testOptions(client, true),
+        {
+          ...testOptions(client, true),
+          emailRedirectTo: 'eazyreview://auth/sign-in',
+        },
       ),
     ).resolves.toEqual({
       kind: 'signed-in',
       user: { id: 'new', email: 'new@example.com' },
     });
+    expect(signUp).toHaveBeenCalledWith({
+      email: 'new@example.com',
+      password: 'secret-pass',
+      options: { emailRedirectTo: 'eazyreview://auth/sign-in' },
+    });
   });
 
   it('returns confirmation-required when session is null', async () => {
-    const client = mockClient({
-      signUp: jest.fn(async () => ({
-        data: {
-          session: null,
-          user: { id: 'pending', email: 'pending@example.com' },
-        },
-        error: null,
-      })),
-    });
+    const signUp = jest.fn(async () => ({
+      data: {
+        session: null,
+        user: { id: 'pending', email: 'pending@example.com' },
+      },
+      error: null,
+    }));
+    const client = mockClient({ signUp });
 
     await expect(
       signUpWithPassword(
         { email: 'pending@example.com', password: 'secret-pass' },
-        testOptions(client, true),
+        {
+          ...testOptions(client, true),
+          emailRedirectTo: 'eazyreview://auth/sign-in',
+        },
       ),
     ).resolves.toEqual({
       kind: 'confirmation-required',
       email: 'pending@example.com',
+    });
+    expect(signUp).toHaveBeenCalledWith({
+      email: 'pending@example.com',
+      password: 'secret-pass',
+      options: { emailRedirectTo: 'eazyreview://auth/sign-in' },
     });
   });
 
