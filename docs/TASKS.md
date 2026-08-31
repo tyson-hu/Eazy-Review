@@ -48,8 +48,8 @@
   19 implementation. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
-- Task 19 is **Partial — implementation complete; human staging deletion
-  pending.**
+- Task 19 is **Partial — implementation and H1/H2 complete; human acceptance
+  (H3) pending.**
   Draft PR #43 previously published the non-destructive implementation at
   `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e`; exact-head Expo CI run
   `32615974049` and Database CI run `32615974012` passed on that SHA. The
@@ -61,10 +61,10 @@
   (merged to `master` as `33c66ee`); Task 19 is published on that `master` at
   `4c8ab7a` (Account keyboard remediation) with exact-head Expo CI
   `33279912599` and Database CI `33279912602` pass. Physical H1 is
-  **tested-pass** on `4c8ab7a` (historical fail on `5171d03` retained as
-  `screenshots/ios-physical-01-delete-keyboard-obscures.png`). No deletion was
-  submitted. Hosted configuration/deployment, destructive staging proof, human
-  acceptance, readiness, merge, and production remain outstanding.
+  **tested-pass** on `4c8ab7a`. Human H2 staging deletion is **tested-pass** on
+  `4c8ab7a` (2026-08-30); residual second-client UI still showed A with no
+  rating access through JWT `exp` (expected). Human acceptance (H3), readiness,
+  merge, and production remain outstanding.
   Dashboard:
   [`RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
   Detailed verification and human checklists:
@@ -219,7 +219,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 16 | Core Authentication And Account State | Done — human accepted and merged in PR #35 on 2026-08-09 |
 | 17 | My Rating Persistence And Rated Products | Done — human accepted and merged in PR #36 on 2026-08-11 |
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
-| 19 | Protected Account Deletion | Partial — implementation complete; human staging deletion pending. |
+| 19 | Protected Account Deletion | Partial — implementation and H1/H2 complete; human acceptance (H3) pending. |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Pending |
 | 22 | Broader Automated App Tests And CI | Pending |
@@ -908,7 +908,8 @@ in PR #37 on 2026-08-17.**
 
 ## Task 19: Protected Account Deletion
 
-Status: **Partial — implementation complete; human staging deletion pending.**
+Status: **Partial — implementation and H1/H2 complete; human acceptance (H3)
+pending.**
 
 Depends on: Tasks 16–18.
 
@@ -937,9 +938,10 @@ iOS Simulator verification is complete against that head. A5 maintenance PR
 keyboard remediation) with exact-head Expo CI `33279912599` and Database CI
 `33279912602` pass. Physical H1 is **tested-pass** on `4c8ab7a` (historical
 fail on `5171d03` retained as evidence screenshot
-`ios-physical-01-delete-keyboard-obscures.png`). No deletion was submitted.
-Hosted configuration/deployment, destructive staging verification, human
-acceptance, readiness, merge, and production remain separate gates.
+`ios-physical-01-delete-keyboard-obscures.png`). Human H2 staging deletion is
+**tested-pass** on `4c8ab7a` (2026-08-30); residual second-client UI still
+showed A with no rating access through JWT `exp` (expected). Human acceptance
+(H3), readiness, merge, and production remain separate gates.
 
 Implementation evidence:
 [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).

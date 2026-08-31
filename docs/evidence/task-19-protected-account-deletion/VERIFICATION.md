@@ -29,10 +29,10 @@
 
 | Remaining lifecycle surface | Status | Boundary |
 | --- | --- | --- |
-| Staging Function deployment/configuration | `not-run` | Separate authorization and environment identity required |
-| Human staging deletion | `not-tested` | H2 is human-only |
-| Second-session refresh rejection | `not-tested` | H2 is human-only |
-| Residual access-token observation through `exp` | `not-tested` | H2 is human-only |
+| Staging Function deployment/configuration | `pass` | Staging `eazy-review-staging` `ACTIVE_HEALTHY`. `delete-current-user` v1 deployed ACTIVE with `verify_jwt=true` (human-approved 2026-08-29). Unauthenticated OPTIONS → 200; unauthenticated POST → gateway 401 before handler. No JWT/bearer obtained; no deletion. Platform injects `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`. Hosted JWT expiry ≤ 3,600s **human-confirmed**. Disposable fixture account **human-prepared**. |
+| Human staging deletion | `tested-pass` | Human H2 on `4c8ab7a` / `eazy-review-staging` (2026-08-30); agent did not submit deletion |
+| Second-session refresh rejection | `tested-pass` | Human H2: second session could not refresh after deletion |
+| Residual access-token observation through `exp` | `tested-pass` | Second client still showed account A UI but had no rating access through JWT `exp` (expected residual-token / non-immediate access invalidation) |
 | Human acceptance | `not-run` | H3 has not occurred |
 | Production | `not-run` | Production untouched and forbidden to coding agents |
 
@@ -250,19 +250,28 @@ greater than 3,600 seconds, and a staging account with multiple ratings, a
 private note, a shared-product rating, a last-rater product, and a second
 pre-existing session.
 
+H2 is **tested-pass** on reviewed SHA
+`4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75` against `eazy-review-staging`
+(2026-08-30). Deletion was human-initiated in-app on a physical device; no
+agent/tool submitted deletion.
+
 Human-only checks:
 
-- [ ] record safe pre-state counts/scores without identity or secret data;
-- [ ] perform the in-app deletion on the physical device;
-- [ ] verify profile / My Rating / private-note cascade;
-- [ ] verify shared-product Community Score recomputation;
-- [ ] verify last-rater count `0` and null averages/score;
-- [ ] verify local auth/user-cache cleanup and anonymous Browse;
-- [ ] verify force-close/offline relaunch does not restore the deleted principal;
-- [ ] verify deleted credentials cannot sign in;
-- [ ] verify the second session cannot refresh;
-- [ ] observe already-issued access-token behavior through `exp`; and
-- [ ] record staging JWT expiry and the final human result.
+- [x] record safe pre-state counts/scores without identity or secret data;
+- [x] perform the in-app deletion on the physical device;
+- [x] verify profile / My Rating / private-note cascade;
+- [x] verify shared-product Community Score recomputation;
+- [x] verify last-rater count `0` and null averages/score;
+- [x] verify local auth/user-cache cleanup and anonymous Browse;
+- [x] verify force-close/offline relaunch does not restore the deleted principal;
+- [x] verify deleted credentials cannot sign in;
+- [x] verify the second session cannot refresh;
+- [x] observe already-issued access-token behavior through `exp` — second
+      client still displayed account A but had no rating access until JWT
+      expiry (global revoke does not immediately invalidate already-issued
+      access tokens; residual lifetime through `exp` is expected); and
+- [x] record staging JWT expiry (≤ 3,600s, previously human-confirmed) and
+      the final human result (`tested-pass`).
 
 No agent/tool may execute any H2 deletion step.
 
@@ -274,11 +283,13 @@ The final human gate requires:
       `8f2f2a9`; live reviewed head `4c8ab7a`) or explicitly re-dispositioned
       by the human;
 - [x] H1 physical-device result recorded (**tested-pass** on `4c8ab7a`);
-- [ ] H2 staging destructive result recorded against reviewed SHA `4c8ab7a`;
+- [x] H2 staging destructive result recorded against reviewed SHA `4c8ab7a`
+      (**tested-pass**; residual second-client UI / no rating access through
+      JWT `exp` noted);
 - [x] current exact-head CI, mergeability, and review-thread state refreshed
       (Expo `33279912599`, Database `33279912602` on `4c8ab7a`);
-- [ ] canonical status docs and PR description synchronized after the evidence
-      actually exists; and
+- [x] canonical status docs and PR description synchronized after the evidence
+      actually exists (H1/H2 pass recorded; H3 accept/reject still open); and
 - [ ] explicit human accept/reject decision.
 
 Human acceptance does not itself authorize PR readiness, merge, deployment, or
@@ -287,7 +298,9 @@ production.
 ## Overall result and next decision
 
 A5/A6 remain green on published head `4c8ab7a` (Expo `33279912599`, Database
-`33279912602`). H1 is **tested-pass** on `4c8ab7a` (historical fail on
-`5171d03` retained). H2 is **not-run** / human-only; H3 waits on H2 against
-`4c8ab7a`. Next: authorize H2 when staging is ready; never have an agent
-submit deletion.
+`33279912602`). H1 and H2 are **tested-pass** on `4c8ab7a`. Residual
+second-client observation (UI still showed A; no rating access through JWT
+`exp`) matches the Task 19 non-immediate access-token invalidation rule.
+Canonical status docs and draft PR #43 description are synchronized for that
+evidence. **H3** final human accept/reject remains. Never have an agent submit
+deletion.

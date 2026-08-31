@@ -43,18 +43,14 @@ Task detail, dependencies, acceptance, and current status live in
   dependency but did not itself authorize implementation.
   Production recovery host configuration remains Tasks 25–26. Evidence:
   `docs/evidence/task-18-password-recovery/RESULT.md`.
-- Task 19: **Partial — implementation complete; human staging deletion
-  pending.** The local non-destructive packet includes current-password
+- Task 19: **Partial — implementation and H1/H2 complete; human acceptance
+  (H3) pending.** The local non-destructive packet includes current-password
   reauthentication, caller-derived Edge Function validation, global refresh-
   session revocation before hard deletion, honest non-atomic outcomes, and a
   revision-bound principal guard that preserves newer Auth/cache authority.
-  Prior PR head `f64cb3d` passed exact-head Expo and Database CI. Fresh
-  Function, frontend, local database/gateway, mobile-web, and iOS Simulator
-  verification passed on 2026-08-29 against that head. A5 maintenance PR #44
-  merged the ten expected SDK 57 patches (`f3886a5` / `33c66ee`); Task 19 is
-  published on that `master` at `8f2f2a9` with exact-head Expo CI
-  `33277460000` and Database CI `33277459991` pass. Physical-device review,
-  staging deployment/configuration, destructive staging proof, human
+  Published head `4c8ab7a` has exact-head Expo CI `33279912599` and Database CI
+  `33279912602` pass. H1 and H2 are **tested-pass** on that SHA (residual
+  second-client UI with no rating access through JWT `exp` noted). Human
   acceptance, merge, and production remain outstanding. Dashboard:
   `docs/evidence/task-19-protected-account-deletion/RESULT.md`; details:
   `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`.
