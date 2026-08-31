@@ -1,5 +1,10 @@
 # Task 19 Protected Account Deletion Design
 
+> **Status supersession (2026-08-30):** Task 19 is **Done — human accepted.**
+> Canonical current status lives only in `docs/TASKS.md` (and the linked
+> evidence dashboard). Historical status text below is frozen planning and
+> remediation history.
+
 Status: Baseline approved in chat on 2026-08-19. The targeted auth-arbitration
 and principal-bound storage-settlement corrections were reviewed and approved
 in chat on 2026-08-20. Local non-destructive implementation and the bounded
@@ -59,11 +64,6 @@ The feature is intentionally narrow:
   alone runs the destructive staging checklist.
 
 ## Current Baseline
-
-> **Status supersession (2026-08-30):** Task 19 is **Done — human accepted.**
-> Canonical current status lives only in `docs/TASKS.md` (and the linked
-> evidence dashboard). Text below that still says Partial / staging pending is
-> frozen planning history, not live ledger state.
 
 - Tasks 16–18 are accepted and merged.
 - Task 19's canonical status remains **Partial — implementation complete; human

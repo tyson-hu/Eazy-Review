@@ -48,8 +48,9 @@
   19 implementation. Evidence:
   [`docs/evidence/task-18-password-recovery/RESULT.md`](evidence/task-18-password-recovery/RESULT.md).
   PR bodies for this work use the summary template in `docs/AGENT_WORKFLOW.md`.
-- Task 19 is **Done — human accepted on 2026-08-30.** Draft PR #43 remains
-  open; readiness, merge, and production remain separate gates. Reviewed
+- Task 19 is **Done — human accepted on 2026-08-30.** PR #43 remains open and
+  unmerged; live readiness and CI state are tracked on GitHub, while merge and
+  production remain separate gates. Reviewed
   implementation head for H1/H2 was `4c8ab7a` (Account keyboard remediation)
   with exact-head Expo CI `33279912599` and Database CI `33279912602` pass.
   Physical H1 and human H2 staging deletion are **tested-pass** on that SHA;
@@ -901,8 +902,8 @@ in PR #37 on 2026-08-17.**
 
 Status: **Done — human accepted on 2026-08-30.**
 
-Draft PR #43 remains open; readiness, merge, and production remain separate
-gates.
+PR #43 remains open and unmerged; live readiness and CI state are tracked on
+GitHub, while merge and production remain separate gates.
 
 Depends on: Tasks 16–18.
 
@@ -936,7 +937,10 @@ fail on `5171d03` retained as evidence screenshot
 showed A with no rating access through JWT `exp` (expected). Human acceptance
 (H3) recorded on 2026-08-30, including the confirmation-clarity fix (enter
 current password, then Delete my account). Readiness, merge, and production
-remain separate gates.
+remain separate gates. Post-acceptance branch closeout also corrected signup
+confirmation to the exact two-slash `eazyreview://auth/sign-in` target at
+`39c3927`; that correction does not change Task 19 deletion acceptance
+provenance.
 
 Implementation evidence:
 [`docs/evidence/task-19-protected-account-deletion/RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).

@@ -4,14 +4,16 @@
 
 **Done — human accepted on 2026-08-30.**
 
-Draft PR #43 remains open; human acceptance does not itself authorize PR
-readiness, merge, deployment, or production. Agents/tools must never submit
-account deletion.
+PR #43 remains open and unmerged; live readiness and exact-head CI state are
+tracked on GitHub. Human acceptance does not itself authorize merge,
+deployment, or production. Agents/tools must never submit account deletion.
 
 Repository closeout after acceptance: Revised Sequence / Status metadata were
 aligned, README and session handoff were refreshed, and exact-head CI passed on
 closeout tip `5674bd0` (confirmation-clarity + ledger sync), not only on
-historical `4c8ab7a`.
+historical `4c8ab7a`. Post-acceptance branch closeout also corrected signup
+confirmation to the exact two-slash `eazyreview://auth/sign-in` target at
+`39c3927`; this does not change deletion behavior or H1/H2 provenance.
 
 ### Reviewed heads
 
@@ -20,6 +22,7 @@ historical `4c8ab7a`.
 | H1/H2 reviewed implementation | `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75` | Account keyboard remediation; Expo CI `33279912599`, Database CI `33279912602` pass |
 | Human acceptance + confirmation clarity | `e7e3f2876ed8b5c90adc87d8710a1a1af485b0e0` | Expo CI failed: Task 19 Revised Sequence status string mismatched Status metadata |
 | Closeout tip (ledger + README sync) | `5674bd0e3ab46aef8c1f5de0f665ef23aafda160` | Exact-head Expo CI `33347696741` and Database CI `33347696723` pass |
+| Post-acceptance code closeout | `39c3927` | Signup confirmation uses the exact two-slash app URL; focused 5-suite / 96-test and full 42-suite / 496-test frontend gates pass locally; live exact-head CI is tracked on PR #43 |
 
 Prior published draft PR #43 head
 `f64cb3d45dbab5ead4c31e9c1566f5bab94a6b1e` passed exact-head Expo CI run
@@ -31,8 +34,7 @@ maintenance PR #44 validated and merged the ten expected SDK 57 patches at
 `33c66ee56b825aa53df5c488e374886591275d25`).
 
 No agent or tool submitted account deletion, used a real deletion bearer,
-marked the PR ready, merged, or touched production. H2 deletion was
-human-executed on staging only.
+merged, or touched production. H2 deletion was human-executed on staging only.
 
 H1 physical-device e2e is **tested-pass** on reviewed SHA
 `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75` after the Account keyboard
@@ -52,7 +54,7 @@ occlusion) is retained as historical proof:
 
 | Blocked / needs disposition | Backlog | In progress | Ready for human | Done |
 | --- | --- | --- | --- | --- |
-| — | — | — | — | **A1** Function + frontend tests.<br><br>**A2** Local database + unauthenticated gateway.<br><br>**A3** 393×852 mobile web.<br><br>**A4** iOS Simulator 26.5.<br><br>**A5** SDK 57 patch maintenance integrated (PR #44 / `8f2f2a9`).<br><br>**A6** Exact-head CI on H1/H2 head `4c8ab7a` (Expo `33279912599`, Database `33279912602`).<br><br>**A6b** Exact-head CI on closeout tip `5674bd0` (Expo `33347696741`, Database `33347696723`).<br><br>**H1** Physical-device non-destructive walk — **tested-pass** on `4c8ab7a`.<br><br>**H2** Hosted staging deletion — **tested-pass** on `4c8ab7a` (residual second-client UI until JWT `exp` noted).<br><br>**H3** Final human review — **accepted** on 2026-08-30 (confirmation-clarity fix included). |
+| — | — | — | — | **A1** Function + frontend tests.<br><br>**A2** Local database + unauthenticated gateway.<br><br>**A3** 393×852 mobile web.<br><br>**A4** iOS Simulator 26.5.<br><br>**A5** SDK 57 patch maintenance integrated (PR #44 / `8f2f2a9`).<br><br>**A6** Exact-head CI on H1/H2 head `4c8ab7a` (Expo `33279912599`, Database `33279912602`).<br><br>**A6b** Exact-head CI on closeout tip `5674bd0` (Expo `33347696741`, Database `33347696723`).<br><br>**A6c** Post-acceptance code closeout `39c3927`: local full Expo gate 42 suites / 496 tests and Function gate 25/25 pass; live exact-head CI is on PR #43.<br><br>**H1** Physical-device non-destructive walk — **tested-pass** on `4c8ab7a`.<br><br>**H2** Hosted staging deletion — **tested-pass** on `4c8ab7a` (residual second-client UI until JWT `exp` noted).<br><br>**H3** Final human review — **accepted** on 2026-08-30 (confirmation-clarity fix included). |
 
 Card evidence, command results, limitations, findings, and the human-only
 checklists live in
@@ -64,7 +66,7 @@ repeating the detailed matrix.
 
 | Part | Owner | Scope | Current result |
 | --- | --- | --- | --- |
-| 1 — safe verification | Agent | All non-destructive tests, local gateway checks, mobile web, and iOS Simulator | **Completed; exact-head CI green on H1/H2 head `4c8ab7a` and closeout tip `5674bd0`** |
+| 1 — safe verification | Agent | All non-destructive tests, local gateway checks, mobile web, and iOS Simulator | **Completed; exact-head CI green on H1/H2 head `4c8ab7a` and closeout tip `5674bd0`; post-acceptance code closeout `39c3927` passed local full Expo and Function gates** |
 | 2 — acceptance | Human | Physical device, hosted staging destructive matrix, and final review/acceptance | **H1/H2 tested-pass on `4c8ab7a`; H3 accepted on 2026-08-30.** |
 
 ## Current proof set
@@ -81,6 +83,7 @@ local credentials are not retained.
 ## Remaining gate
 
 Task 19 is **human accepted**, and exact-head Expo/Database CI passed on
-closeout tip `5674bd0`. Separate explicit authorization is still required for
-ready-for-review, merge, and any production deploy. Agents must never submit
-account deletion.
+closeout tip `5674bd0`; post-acceptance code closeout is `39c3927`. PR #43 is
+open and unmerged, with live readiness and exact-head CI state tracked on
+GitHub. Merge and any production deploy remain separate explicit actions.
+Agents must never submit account deletion.

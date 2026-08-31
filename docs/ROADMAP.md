@@ -47,7 +47,10 @@ Task detail, dependencies, acceptance, and current status live in
   Function deletion, current-password reauthentication, global refresh-session
   revocation, honest outcomes, and principal-bound local settlement. H1/H2
   **tested-pass** on `4c8ab7a`; acceptance included confirmation-clarity copy.
-  Draft PR #43 remains open; merge and production remain separate. Dashboard:
+  PR #43 remains open and unmerged; live readiness and CI are tracked on
+  GitHub, while merge and production remain separate. Post-acceptance branch
+  closeout corrected signup confirmation to the exact two-slash app URL at
+  `39c3927` without changing deletion acceptance provenance. Dashboard:
   `docs/evidence/task-19-protected-account-deletion/RESULT.md`; details:
   `docs/evidence/task-19-protected-account-deletion/VERIFICATION.md`.
 - Post–Task 12 review: **GO with roadmap revision**.

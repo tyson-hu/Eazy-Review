@@ -19,10 +19,13 @@ Score, and maintaining a personal My Rating.
   Failed rating writes preserve form input for manual retry; there is no
   durable offline cache or write queue.
 - Task 19 protected account deletion is **Done — human accepted on
-  2026-08-30.** Draft PR #43 remains open; readiness, merge, and production
-  remain separate gates. H1/H2 were **tested-pass** on reviewed head
+  2026-08-30.** PR #43 remains open and unmerged; live readiness and CI state
+  are tracked on GitHub, while merge and production remain separate gates.
+  H1/H2 were **tested-pass** on reviewed head
   `4c8ab7a`; acceptance includes the confirmation-clarity fix. No coding agent
-  or tool executed deletion. See the
+  or tool executed deletion. Post-acceptance branch closeout also corrected
+  signup confirmation to the exact two-slash app URL at `39c3927`; this does
+  not change deletion acceptance provenance. See the
   [Task 19 dashboard](docs/evidence/task-19-protected-account-deletion/RESULT.md)
   and [verification details](docs/evidence/task-19-protected-account-deletion/VERIFICATION.md).
 

@@ -17,9 +17,14 @@
 - Closeout tip: `5674bd0e3ab46aef8c1f5de0f665ef23aafda160`
   (ledger alignment + README sync; exact-head Expo CI `33347696741` and
   Database CI `33347696723` pass)
+- Post-acceptance code closeout: `39c3927` (signup confirmation exact
+  two-slash app URL; no deletion-behavior change; focused 5-suite / 96-test
+  and full 42-suite / 496-test frontend gates plus 25/25 Function tests pass
+  locally; live exact-head CI is tracked on PR #43)
 - A5 maintenance candidate: `f3886a5160b00f3326281741dd002f17b5d8a6a3`
   (PR #44, merged)
-- Pull request: #43, draft/open, mergeable
+- Pull request: #43, open and unmerged; live readiness, mergeability, and
+  exact-head CI are tracked on GitHub
 - Safe run environments: local Supabase, 393×852 Expo web, and
   `Eazy-Review-iPhone-15` on iOS Simulator 26.5
 - Destructive boundary: no agent/tool account deletion on local, staging, or
@@ -61,6 +66,8 @@ or diagnostic raw capture is retained.
 | `npm run lint` | **pass** |
 | `npm run check:secrets` | **pass** — 26 scanner tests and clean repository scan |
 | `npm run check:readonly` | **pass** — wrappers, decisions, secrets, agent infrastructure, typecheck, lint |
+| Post-acceptance redirect regression | **pass** — failed before the fix (`eazyreview:///auth/sign-in`), then 5 suites / 96 tests passed with exact `eazyreview://auth/sign-in` |
+| Post-acceptance `npm run check` | **pass** — 42 suites / 496 tests, Expo Doctor 21/21, dependencies aligned; known React `act` and worker-teardown warnings remain |
 
 Known non-failing Jest output remains: React `act(...)` warnings and the
 open-worker/open-handle teardown warning. This run does not claim those are
@@ -198,12 +205,20 @@ Historical GitHub state for prior published head `f64cb3d`:
 - Expo CI `validate`, run `32615974049`: **pass**;
 - Database CI `database`, run `32615974012`: **pass**.
 
-Current published head `4c8ab7a` (2026-08-29, keyboard remediation):
+H1/H2 reviewed head `4c8ab7a` (2026-08-29, keyboard remediation):
 
 - PR #43 head equals `4c8ab7ab0fbf56d9b87c8a6d98b4fc88c48a6c75`;
 - Expo CI `validate`, run `33279912599`: **pass**;
 - Database CI `database`, run `33279912602`: **pass**;
-- PR remains draft/open and mergeable.
+- PR was draft/open and mergeable at that review point.
+
+Post-acceptance code closeout `39c3927`:
+
+- signup confirmation now generates exact `eazyreview://auth/sign-in` rather
+  than the three-slash variant;
+- focused 5-suite / 96-test and full 42-suite / 496-test frontend gates pass;
+- `npm run check:functions` passes 25/25; and
+- live exact-head GitHub CI is tracked on PR #43 before merge.
 
 Prior A5-integrated published head `8f2f2a9` (2026-08-29):
 
@@ -312,6 +327,8 @@ non-immediate access-token invalidation rule. Confirmation UX now states to
 enter the current password, then tap Delete my account. Acceptance tip
 `e7e3f28` failed Expo CI on a Task 19 ledger status mismatch; closeout tip
 `5674bd0` aligned Revised Sequence with Status metadata and refreshed
-exact-head Expo CI `33347696741` / Database CI `33347696723`. Draft PR #43
-remains open for separate ready/merge authorization. Never have an agent
-submit deletion.
+exact-head Expo CI `33347696741` / Database CI `33347696723`. Post-acceptance
+code closeout `39c3927` fixes the signup confirmation URL without changing
+deletion behavior or H1/H2 provenance; PR #43 remains open and unmerged, with
+live readiness and exact-head CI tracked on GitHub. Never have an agent submit
+deletion.
