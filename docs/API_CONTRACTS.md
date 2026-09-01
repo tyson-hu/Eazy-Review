@@ -13,11 +13,6 @@ export type Product = {
   sizeType: string | null;
   releaseDate: string | null;
   description: string | null;
-  imageUrl?: string | null;
-  eazyScore?: number | null;
-  communityScore?: number | null;
-  ratingCount?: number;
-  lowestPrice?: number | null;
 };
 
 /** Anonymous Browse card; contains public catalog data only. */
@@ -92,18 +87,7 @@ export type ProductRatingSummary = {
   acquisitionEaseAvg: number | null;
   /** Community Score 0–100; maps from DB `rating_aggregates.score`. */
   communityScore: number | null;
-};
-
-/** Legacy mock-rating offer shape retained outside connected Task 15 screens. */
-export type ProductOffer = {
-  id: string;
-  productId: string;
-  websiteName: string;
-  websiteLink: string;
-  size: number | null;
-  sizeRegion: string;
-  currency: string;
-  price: number | null;
+  methodologyVersion?: string | null;
 };
 
 /** Public/cacheable Product Detail data; never contains viewer-owned state. */
@@ -111,9 +95,10 @@ export type ProductDetailPublicData = {
   product: Product;
   imageUrls: string[];
   eazyAssessment: {
-    score: number;
+    score100: number;
     methodologyVersion: string | null;
     assessedAt: string | null;
+    dimensions: RatingDimensionScores | null;
   } | null;
   offers: Array<{
     id: string;
@@ -125,14 +110,6 @@ export type ProductDetailPublicData = {
     checkedAt: string;
   }>;
   ratingSummary: ProductRatingSummary;
-};
-
-/** Legacy mock composition. Task 15 public queries never return this shape. */
-export type ProductDetailData = {
-  product: Product;
-  offers: ProductOffer[];
-  ratingSummary: ProductRatingSummary;
-  myRating: MyRating | null;
 };
 
 export type AccountProfile = {
@@ -147,9 +124,8 @@ export type AccountProfile = {
 
 ## Task 11–12 Backend Contract
 
-Tasks 11–12 establish database and authorization contracts only. They do not
-replace mock repositories, rename the current mock `comment` field in UI code,
-add auth screens, or connect rating writes. Task 11 schema (tables, triggers,
+Tasks 11–12 establish database and authorization contracts only. They did not
+add auth screens or connect rating writes. Task 11 schema (tables, triggers,
 deny-by-default RLS with no client policies/grants) precedes the accepted Task
 12 policies and explicit least-privilege Data API grants. They expose profile
 rows only to their authenticated owner. Dated migration and environment
@@ -226,14 +202,16 @@ Product Detail must not mix catalog card fields with detail aggregates. Use thes
 
 | UI field | Canonical source |
 | --- | --- |
-| Eazy Score | `detail.product.eazyScore` |
+| Eazy Score | `detail.eazyAssessment.score100` |
 | Community Score | `detail.ratingSummary.communityScore` |
 | Review / rating count | `detail.ratingSummary.ratingCount` |
 | Purchase / price-by-size rows | `detail.offers` |
-| Lowest price | Min of non-null prices among offers that share **one** currency for the product payload (use that currency). MVP: if offers mix currencies, keep only the dominant/seed currency set and omit or reject the rest — never take a raw numeric min across currencies. If no usable offer prices remain, optional fallback to `detail.product.lowestPrice` treated as USD in mock/MVP catalog data (`Product.lowestPrice` has no currency field) |
-| Card / Detail `imageUrl` | Primary `product_images` row: `sort_order ASC`, then `created_at ASC`, then `id ASC`. No images → `null`. |
+| Lowest price | `detail.offers[0]` after the adapter rejects mixed currencies and sorts verified offers by amount and deterministic tie-breakers. No verified offers → unavailable. |
+| Detail image | `detail.imageUrls[0]`, ordered from `product_images` by `sort_order ASC`, then `created_at ASC`, then `id ASC`. No images → unavailable. |
 
-Do **not** bind Detail Community Score or review count to `product.communityScore` / `product.ratingCount` (those remain Browse/card convenience fields and can drift from the summary).
+`Product` carries identity and metadata only. Browse summaries stay in
+`ProductCardData`; Detail image, assessment, offer, and rating facts stay in
+their dedicated `ProductDetailPublicData` siblings.
 
 ## Recommended Frontend Folder Structure
 
@@ -249,8 +227,8 @@ src/
       adapters.ts               # raw response → stable public view models
       errors.ts                 # catalog domain errors + retry policy
       queries.ts                # identity-neutral TanStack Query hooks
-      mockProducts.ts           # isolated legacy fixtures; not runtime Browse
-      mockProductDetails.ts     # isolated legacy fixtures; not runtime Detail
+      catalogTestFixtures.ts    # scoped raw-row test fixtures
+      catalogViewModelTestFixtures.ts # scoped view-model test fixtures
 
     auth/
       api.ts                    # Tasks 16–19 auth, recovery, guarded adoption
@@ -779,9 +757,9 @@ On complete sign-out or known-invalid cleanup, remove the full account/rating
 roots. On A→B account switch or superseded deletion, remove only A-owned
 `account.profile`, `rating.mine`, and `rating.ratedProducts` keys so B/C cache
 cannot be deleted. Do not enable user-scoped queries until `userId` is known.
-Product Detail composes `ProductDetailData` from the
-public product query plus My Rating; `myRating` must never be stored under a
-public catalog key.
+Product Detail renders `ProductDetailPublicData` from the public product query
+alongside the separate My Rating query; viewer-owned data must never be stored
+under a public catalog key.
 
 Public vs user-scoped distinction (locked):
 
@@ -839,7 +817,7 @@ Initial Task 20 sort options:
 | Concern | DB | Frontend |
 | --- | --- | --- |
 | Published catalog gate | `products.is_published` | filter/map only published rows for anonymous Browse |
-| Editorial Eazy Score | `eazy_assessments` where `is_current = true` | `product.eazyScore` / assessment adapter |
+| Editorial Eazy Score | `eazy_assessments` where `is_current = true` | `ProductCardData.eazyScore` / `ProductDetailPublicData.eazyAssessment` |
 | Community aggregate | `rating_aggregates` | `ProductRatingSummary` |
 | My Rating scores | `user_ratings` score columns | `RatingBreakdown` scores |
 | Optional personal text | `user_ratings.private_note` | `privateNote` (not a public comment) |
@@ -860,152 +838,20 @@ Task 13 seeds must not leave published products without it. Task 15 adapters
 still normalize a missing join to `ratingCount: 0` with null averages and
 Community Score; they never invent client-side score math.
 
-## Mock Data Contract
+## Scoped Product Fixtures
 
-After Task 15, these modules are retained only for tests, isolated component
-fixtures, or explicitly named development helpers.
-Runtime Browse and Product Detail must not import them or silently fall back to
-them when a remote request fails:
+S2 retired the repository-wide canned catalog, legacy detail composition, and
+bundled image protocol. Runtime Browse and Product Detail use only connected
+catalog queries. Tests and isolated examples define the smallest fixture for
+the owner they exercise:
 
-- Catalog / list products: `src/features/products/mockProducts.ts` — `Product[]` only (identity, metadata, card score/price fields). Do not embed offers, rating summaries, or My Rating here.
-- Mock catalog photography: every catalog fixture uses a `mock-product://catalog/<id>` `imageUrl`, resolved to a bundled, logo-free studio asset by `src/features/products/mockProductImages.ts`. Unmapped `mock-product://` URIs resolve to no image source so UI shows the "Image coming soon" placeholder. Production/API product images remain normal HTTP(S) URLs; the mock-only scheme does not change the `Product` contract.
-- Product Detail fixtures: `src/features/products/mockProductDetails.ts` — offers
-  and `ProductRatingSummary` per catalog id, composed via
-  `getMockProductDetailById(productId): ProductDetailData | null`. After Task 15,
-  `myRating` is always `null` on this helper; the product-ID-only mock session map
-  and `saveMockMyRating` write API were removed so connected Supabase UUIDs cannot
-  claim a fake session save.
-- Historical Task 15 interim: `/product/[id]/rate` showed **Rating
-  unavailable** and did not write mock ratings. The current route uses Task 16
-  authentication and Task 17 durable `user_ratings` persistence.
+- `src/features/products/catalogTestFixtures.ts` owns complete and sparse raw
+  catalog rows for adapter/API checks.
+- `src/features/products/catalogViewModelTestFixtures.ts` owns complete and
+  sparse `ProductCardData` / `ProductDetailPublicData` values for screen and
+  feature tests.
+- Purpose-built test-local variations derive from those scoped fixtures.
 
-Task 15 did not adapt session-only My Rating persistence to connected products.
-That interim ended when Tasks 16–17 supplied identity and durable persistence;
-no temporary viewer/product map is part of the connected contract.
-
-```ts
-import type { Product } from '@/src/types/product';
-
-export const mockProducts: Product[] = [
-  {
-    id: '1',
-    brand: 'Adidas',
-    name: 'Adidas Stan Smith Gore-Tex Orange Limited (Kids)',
-    sku: 'UH6907-612',
-    sizeType: 'big kids',
-    releaseDate: '2024-01-01',
-    description: 'A limited kids version of the Adidas Stan Smith Gore-Tex with orange details.',
-    imageUrl: 'mock-product://catalog/1',
-    eazyScore: 77,
-    communityScore: 78,
-    ratingCount: 24,
-    lowestPrice: 120,
-  },
-  {
-    id: '2',
-    brand: 'Nike',
-    name: 'Nike Dunk Low Retro White Black',
-    sku: 'DD1391-100',
-    sizeType: 'men',
-    releaseDate: '2021-01-14',
-    description: 'A classic black and white Nike Dunk Low colorway.',
-    imageUrl: 'mock-product://catalog/2',
-    eazyScore: 84,
-    communityScore: 81,
-    ratingCount: 142,
-    lowestPrice: 115,
-  },
-];
-```
-
-Detail fixture coverage (aligned to the catalog in `mockProducts.ts`):
-
-- Lookup returns `ProductDetailData` for every catalog id `1`–`8`, or `null` for unknown ids.
-- After Task 15, every mock detail returns `myRating: null` (session mock map removed).
-- Edge products stay consistent with catalog: id `6` has `ratingCount: 0` / null Community Score summary; id `8` has null Eazy Score on `product` with a present community summary.
-- Empty / unusable offers: id `5` has no offers (catalog `lowestPrice` fallback); id `7` has offers with null prices (same fallback path).
-
-```ts
-import { getMockProductDetailById } from '@/src/features/products/mockProductDetails';
-
-const detail = getMockProductDetailById('1');
-// detail.product — from mockProducts
-// detail.offers — ProductOffer[]
-// detail.ratingSummary — ProductRatingSummary
-// detail.myRating — always null on the mock helper after Task 15
-```
-
-## Mock Product Example
-
-```ts
-import type { ProductDetailData } from '@/src/types/product';
-
-const detail: ProductDetailData = {
-  product: {
-    id: '1',
-    brand: 'Adidas',
-    name: 'Adidas Stan Smith Gore-Tex Orange Limited (Kids)',
-    sku: 'UH6907-612',
-    sizeType: 'big kids',
-    releaseDate: '2024-01-01',
-    description: 'A limited kids version of the Adidas Stan Smith Gore-Tex with orange details.',
-    imageUrl: 'mock-product://catalog/1',
-    eazyScore: 77,
-    communityScore: 78,
-    ratingCount: 24,
-    lowestPrice: 120,
-  },
-  offers: [
-    {
-      id: 'offer-1-a',
-      productId: '1',
-      websiteName: 'StockX',
-      websiteLink: 'https://stockx.com/e53ccfe7-1cd7-494c-b',
-      size: 3.5,
-      sizeRegion: 'US',
-      currency: 'USD',
-      price: 248,
-    },
-    {
-      id: 'offer-1-b',
-      productId: '1',
-      websiteName: 'StockX',
-      websiteLink: 'https://stockx.com/e53ccfe7-1cd7-494c-b',
-      size: 4,
-      sizeRegion: 'US',
-      currency: 'USD',
-      price: 120,
-    },
-  ],
-  ratingSummary: {
-    productId: '1',
-    ratingCount: 24,
-    lookAvg: 7.8,
-    outfitAvg: 7.6,
-    materialAvg: 8.0,
-    craftsmanshipAvg: 7.9,
-    maintenanceAvg: 7.5,
-    comfortAvg: 7.5,
-    collectionAvg: 7.2,
-    valueAvg: 7.4,
-    resalePotentialAvg: 7.1,
-    acquisitionEaseAvg: 7.3,
-    communityScore: 78,
-  },
-  myRating: {
-    look: 8,
-    outfit: 7,
-    material: 8,
-    craftsmanship: 8,
-    maintenance: 7,
-    comfort: 7,
-    collection: 7,
-    value: 7,
-    resalePotential: 7,
-    acquisitionEase: 8,
-    score100: 74,
-    privateNote: 'Great kids colorway; Gore-Tex is a plus.',
-    methodologyVersion: 'sneaker-10-v1',
-  },
-};
-```
+No global mock journey, custom image URI, or viewer/product session map is a
+supported frontend contract. Historical task, decision-archive, and evidence
+records remain point-in-time history rather than current fixture guidance.

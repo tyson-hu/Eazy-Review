@@ -1,8 +1,10 @@
 # Staged Codebase Simplification Plan
 
-Status: **Packets S1, E1, and E3 are complete locally; E1 and the separately
-addressed Account/Profile P2 have human acceptance, no other simplification
-packet has started, and Android is explicitly out of the current plan.**
+Status: **Packets S1, E1, E3, and S2 are complete locally; E1 and the separately
+addressed Account/Profile P2 have human acceptance; S2 passed mobile web and
+iOS simulator verification and has a human-reported physical-device pass; no
+other simplification packet has started, and Android is explicitly out of the
+current plan.**
 
 Base SHA: `db27309005e14d80f67df9bfe9cb4debd6dd47b6`
 
@@ -31,8 +33,13 @@ chat history.
   2026-08-31 the human separately accepted the Account/Profile P2 physical
   recheck and authorized one local completion commit for that follow-up. On
   2026-08-31 the human selected local E3 implementation and later authorized
-  its local completion commit. Push, PR lifecycle work, deployment, hosted
-  configuration, database work, and production access remain unauthorized.
+  its local completion commit. On 2026-08-31 the human selected local S2,
+  accepted the listed mock-catalog capability loss, approved the affected
+  canonical skill updates, and authorized local edits through human review.
+  On 2026-09-01 the human reported the S2 physical-device check as passed and
+  authorized the iOS simulator check plus one local completion commit if no
+  issue remained. Push, PR lifecycle work, deployment, hosted configuration,
+  database work, and production access remain unauthorized.
 - Before a batch, a human selects its candidate and accepts every listed
   capability loss. One candidate is the default batch size.
 - Stop when a real or unresolved dynamic consumer exists, a baseline cannot
@@ -85,7 +92,7 @@ Current repository proof at the S1 planning baseline (`839ce4fc`):
 ## Kanban portfolio
 
 This board records planning and packet status; it is not execution authority.
-S1, E1, and E3 are complete locally, and no other packet is in progress.
+S1, E1, E3, and S2 are complete locally; no other packet is in progress.
 Priority ranks expected value and sequencing only: P1 is high-value, P2 is
 worthwhile after stronger cuts, and P3 is fold-only housekeeping. Difficulty
 reflects coordination and proof burden: XS is one local symbol/file, S is one
@@ -98,18 +105,18 @@ product/skill approval or native proof.
 | Complete locally | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance and local commit complete; remote lifecycle remains unauthorized |
 | Ready, unselected | P2 | E2 | Share only identical SDK/network error-shape extraction across catalog, ratings, and Auth | Medium | Contract | M | Keep every domain normalizer and transport policy separate |
 | Complete locally | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Local completion commit is complete; remote lifecycle remains unauthorized |
-| Decision required | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Explicit capability choice plus skill-file approval if affected |
+| Complete locally | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Mobile web and iOS simulator pass; physical device `tested-pass` by human report; remote lifecycle remains unauthorized |
 | Proof first | P2 | S3 | Remove `react-native-url-polyfill` over Expo WinterCG URL | Medium | Static | L | Boot-order probe and web/iOS/Android cold-start proof |
 | Fold only | P3 | E4 | Inline the one-caller splash-dismiss relay and retire its proxy test | Low | Static | M | Only with layout/bootstrap work and boot-equivalence proof |
-| Fold only | P3 | L1 | Remove dead `RatingRow` and tiny candidate-exclusive exports | Low | Static | XS | Fold into the packet that owns the surrounding contract |
+| Folded into S2 | P3 | L1 | Remove dead `RatingRow` and tiny candidate-exclusive exports | Low | Static | XS | Implemented inside S2; no standalone packet |
 | Fold only | P3 | E5 | Remove dead `reconcileGuardedSignedOutEvent` alias and stale test mock entry | Low | Static | XS | Task 19 is accepted/merged; fold into future Auth-owned work after a fresh consumer map |
 | Retain | — | U1 | Temporary iOS CNG compatibility plugin | Potentially high | Incomplete | L | Revisit only at the accepted ADR's same-device no-plugin A/B trigger |
 | Retain | — | R1 | App/runtime JWT decoders | Low potential | Conflicting contracts | M | Keep fail-closed environment and guarded-session parsing separate |
 | Owned elsewhere | — | I1 | Replace Markdown task-graph parsing with structured config | High | Existing task | L | Follow the deferred Agent infrastructure checker v2 task |
 
-S1, E1, and E3 were selected and completed locally. E2 remains ready but
-unselected. S2 and S3 do not enter a ready lane until their stated
-decision/proof gates pass. P3 items do not justify standalone work.
+S1, E1, E3, and S2 were selected and completed locally. E2 remains ready but
+unselected. S3 does not enter a ready lane until its native proof gate passes.
+P3 items do not justify standalone work.
 
 ## Packet S1: remove the starter subtree
 
@@ -204,15 +211,15 @@ data or hosted-state restoration.
   Android runtime-equivalence claim is made; add that proof only if Android
   returns to scope. Existing Jest React `act(...)`, open-handle, and Supabase
   lock deprecation warnings remain visible and unchanged.
-- **Retained candidates:** E1 is complete locally. E2 remains ready but
-  unselected; S2 still requires a capability/skill decision; S3 still requires
-  its native proof; E4, L1, and E5 remain fold-only; U1 and R1 remain retained.
+- **Retained candidates:** E1 and S2 are complete locally. E2 remains ready but
+  unselected; S3 still requires its native proof; E4 and E5 remain fold-only;
+  U1 and R1 remain retained.
 - **Undo:** discard or revert the single S1 diff. No data, hosted state, or
   production restoration exists.
 
 ## Packet S2: retire the mock-era product contract
 
-### Current burden and reachability
+### Baseline burden and reachability
 
 - `mockProducts.ts` (116 lines), `mockProductDetails.ts` (259), and
   `mockProductImages.ts` (34) total 409 lines. Their only production-tree
@@ -232,14 +239,15 @@ data or hosted-state restoration.
   fixtures, and the accepted separation between public product cache and
   viewer-owned My Rating.
 
-### Capability choice required
+### Capability choice accepted
 
-Selecting S2 gives up the globally available eight-product mock catalog and
-its `mock-product://` image scheme. Future tests and isolated examples use
-purpose-built fixtures for their actual view model. If product or training
-work still requires the global mock journey, retain S2.
+On 2026-08-31, the human selected S2 and accepted retiring the globally
+available eight-product mock catalog and its `mock-product://` image scheme.
+The human separately approved the affected canonical skill-file updates.
+Future tests and isolated examples use purpose-built fixtures for their actual
+view model.
 
-### Authorized cut when selected
+### Authorized cut
 
 1. Re-run the full consumer map, including documentation, string protocols,
    dynamic imports, tests, seed URLs, and Git history.
@@ -278,6 +286,66 @@ git diff --check
 Also smoke Browse, complete Product Detail, sparse Product Detail, signed-out
 rating CTA, and signed-in My Rating restoration. Undo is the single S2 diff or
 commit; the removed files have no data migration or hosted-state effect.
+
+### S2 operation receipt — 2026-08-31; acceptance 2026-09-01
+
+- **Scope:** local S2 implementation and its one authorized local completion
+  commit, based on `de5daac54d325a65db3ed4bc70460e06d2b71b15`. No
+  push, PR lifecycle, deployment, hosted configuration, migration, production
+  access, Android work, or later simplification packet is included.
+- **Baseline:** the exact consumer map found no runtime consumer outside the
+  disconnected fixture set, no consumer of `RatingRow`, and no current-branch
+  dependency on the eight bundled images. The seed image URL targets a pinned
+  historical commit and is not a current asset dependency. Before the cut,
+  the five focused catalog/detail/rating suites passed 43/43 tests, the full
+  frontend suite passed 39/39 suites and 496/496 tests, and typecheck, lint,
+  skill-wrapper, agent-infrastructure, and decision-index checks passed.
+- **Retired obligation:** three global mock modules totaling 409 lines, the
+  32-line dead score-row component, eight candidate-exclusive images totaling
+  3,260,658 bytes, the `mock-product://` resolver contract, mock-only Product
+  summary fields and types, and the Detail route's duplicate image fallback.
+- **Artifacts:** `ProductDetailPublicData` is now the sole live Detail
+  representation. Connected complete/sparse fixtures stay scoped to their
+  owner tests. Active API, design, task, decision, and approved skill guidance
+  now describe the connected contract; generated skill wrappers remain in
+  sync. No replacement abstraction or dependency was added.
+- **Realized net effect:** the global canned catalog, duplicate Detail shape,
+  dead component, and bundled image payload are gone. The connected adapter is
+  smaller and the route reads the canonical image array directly.
+- **Behavior:** intentionally surrendered only the globally reusable canned
+  eight-product catalog and its private image scheme. Browse, complete and
+  sparse Product Detail, signed-out rating gating, and viewer-owned My Rating
+  remain available through their existing connected owners.
+- **Verification:** the post-change five-suite comparison passes 43/43 tests;
+  typecheck and lint pass; the full frontend suite passes 39/39 suites and
+  496/496 tests; all 24 skill-wrapper checks, all 56 agent-infrastructure
+  tests, the decision-index check, the complete `check:readonly` gate, and
+  `git diff --check` pass. At a 393 x 852 web viewport, live local-Supabase
+  smoke passed connected Browse, complete Detail, sparse Detail, signed-out
+  CTA, sign-up, rating save, and hard-reload restoration of `My Rating`, with
+  zero console errors. A native iPhone 15 / iOS 26.5 simulator walk passed the
+  same connected complete/sparse Detail flow, signed-out gate, rating save,
+  Expo Go termination/relaunch, and restored `My Rating`. The human separately
+  reported the physical-device check as `tested-pass` on 2026-09-01. Selected
+  proof and limitations are recorded in
+  [`docs/evidence/s2-mock-catalog-retirement/RESULT.md`](../../evidence/s2-mock-catalog-retirement/RESULT.md).
+- **Residual risk:** the human physical-device report did not include its
+  device/runtime or detailed observed-step log, and Android remains explicitly
+  out of scope. The web run retained existing Supabase lock, React Native Web
+  pointer-event, and development-reload client warnings. The simulator run
+  encountered accessibility-driver input limitations that did not reproduce
+  as app failures. Three resized, non-sensitive simulator screenshots are
+  committed as selected proof. Two disposable local-only Auth users and
+  ratings remain from the web and simulator smoke runs; no staging or
+  production state changed.
+- **Retained contracts:** `ProductDetailPublicData`, `VerifiedProductOffer`,
+  the public-product/private-My-Rating cache boundary, scoped test fixtures,
+  the generic asset impact rule, the pinned historical seed URL, archives, and
+  evidence records remain intact.
+- **Undo:** revert the local S2 completion commit. Git restores every removed
+  source and asset; there is no migration or hosted-state rollback. The local
+  smoke fixtures are separate from Git and can be cleared only by a separately
+  authorized local database reset.
 
 ## Packet S3: prove and remove the duplicate URL polyfill
 
@@ -450,9 +518,9 @@ diff or commit.
   open-handle/forced-exit, Supabase lock deprecation, and npm proxy warnings
   remain non-gating. Private error-object and nested-cause identity without a
   consumer are not claimed.
-- **Retained candidates:** E2 remains ready but unselected; S2 still requires a
-  capability/skill decision; S3 still requires native proof; E4, L1, and E5
-  remain fold-only; U1 and R1 remain retained.
+- **Retained candidates:** E2 remains ready but unselected; S2 is complete
+  locally; S3 still requires native proof; E4 and E5 remain fold-only; U1 and
+  R1 remain retained.
 - **Undo:** revert the local completion commit. No data, hosted configuration,
   database, deployment, or production restoration exists.
 
@@ -621,9 +689,9 @@ remaining checks attached to real owners. Undo is the single E3 diff or commit.
   documentation only; it does not alter a runtime bundle. Android remains
   explicitly out of scope. No user or production behavior claim depends on a
   deleted proxy suite.
-- **Retained candidates:** E2 remains ready but unselected; S2 still requires a
-  capability/skill decision; S3 still requires native proof; E4, L1, and E5
-  remain fold-only; U1 and R1 remain retained.
+- **Retained candidates:** E2 remains ready but unselected; S2 is complete
+  locally; S3 still requires native proof; E4 and E5 remain fold-only; U1 and
+  R1 remain retained.
 - **Undo:** restore the three deleted suites, remove the owner-screen field
   assertions, and revert the active documentation edits. No data, hosted
   configuration, deployment, or production restoration exists.

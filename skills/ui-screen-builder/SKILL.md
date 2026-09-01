@@ -10,7 +10,7 @@ Goal: build or redesign one Expo / React Native screen's UI following the Eazy R
 ## When not to use
 
 - The work spans data and UI as one `docs/TASKS.md` task: use `skills/feature-slice-builder`.
-- The work changes data shapes or mock data: use `skills/product-data-modeling`.
+- The work changes data shapes or scoped fixtures: use `skills/product-data-modeling`.
 
 ## Inputs expected
 
@@ -25,7 +25,7 @@ Goal: build or redesign one Expo / React Native screen's UI following the Eazy R
 ## Routine
 
 1. Name the screen's one focal point and one primary action from `docs/DESIGN.md` Screen-Level Rules (for example Product Detail: sneaker image plus score summary; primary action: rate).
-2. Inventory `src/components/ui/*` (`Screen`, `Button`, `Input`, `Card`, `AppText`, `ScoreBadge`, `ProductCard`, `RatingRow`, `LoadingState`, `EmptyState`, `ErrorState`) and reuse before writing new markup.
+2. Inventory `src/components/ui/*` (`Screen`, `Button`, `Input`, `Card`, `AppText`, `ScoreBadge`, `ProductCard`, `DimensionStepperRow`, `LoadingState`, `EmptyState`, `ErrorState`) and reuse before writing new markup.
 3. Apply only tokens that exist in the Visual System section of `docs/DESIGN.md`, via the NativeWind theme in `tailwind.config.js`.
 4. Keep score displays labeled: `Eazy Score`, `Community Score`, `My Rating` — never a bare `Score:`. Show `No score yet` for null scores.
 5. For Product Detail, implement the CTA logic exactly as defined in the Product Detail section under Screen-Level Rules in `docs/DESIGN.md`.

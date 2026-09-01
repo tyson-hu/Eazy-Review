@@ -478,11 +478,6 @@ export function adaptProductDetail(value: unknown): ProductDetailPublicData {
     sizeType: parsed.sizeType,
     releaseDate: parsed.releaseDate,
     description: parsed.description,
-    imageUrl: parsed.images[0]?.imageUrl ?? null,
-    eazyScore: parsed.assessment?.score100 ?? null,
-    communityScore: parsed.ratingSummary.communityScore,
-    ratingCount: parsed.ratingSummary.ratingCount,
-    lowestPrice: parsed.offers[0]?.amount ?? null,
   };
 
   return {

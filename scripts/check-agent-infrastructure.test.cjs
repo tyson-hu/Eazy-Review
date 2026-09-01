@@ -2205,7 +2205,7 @@ test('bundled product and release assets report their documentation contracts', 
 
   const productImageReport = reportImpactedDocuments(
     repositoryConfig,
-    ['assets/images/products/product-01-stan-smith-orange.png'],
+    ['assets/images/products/example.png'],
     REPO_ROOT,
   );
   for (const expectedDocument of uiDocuments) {

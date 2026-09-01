@@ -120,13 +120,23 @@ on 2026-08-31**. The P2 finding is solved locally. This was not an E1 catalog
 regression or completion blocker. E1 is therefore complete and committed
 locally together with the separately authorized tab-root correction. Push, PR
 lifecycle actions, deployment, hosted configuration, database, and production
-actions remain unauthorized. E3 is complete and committed locally, while E2
-remains ready but unselected. E3 deletes three proxy suites totaling 182 lines
+actions remain unauthorized. E3 and S2 are complete and committed locally. S2
+retires the global eight-product canned catalog, its bundled image protocol and
+assets, the duplicate Product Detail representation, and the dead score-row
+primitive; scoped complete/sparse fixtures continue to protect the connected
+catalog. Its connected mobile-web walk passed, its iPhone 15 / iOS 26.5
+simulator walk passed, and the human reported the physical-device check as
+`tested-pass` on 2026-09-01 without device/runtime details. The selected proof
+is recorded in
+[`docs/evidence/s2-mock-catalog-retirement/RESULT.md`](evidence/s2-mock-catalog-retirement/RESULT.md).
+Push, PR lifecycle, deployment, hosted configuration, database, and production
+actions remain unauthorized. E2 remains ready but unselected. E3 deletes three
+proxy suites totaling 182 lines
 and seven tests, and moves the useful Auth field configuration checks onto the
 real Sign In and Sign Up screens. The identical owner suite passes 7/7 suites
 and 152/152 tests before and after; the full frontend suite passes 39/39 suites
-and 496/496 tests. No production code or behavior changed. S2 still needs a
-capability decision; S3 still needs native proof; and low-value findings remain
+and 496/496 tests. No production code or behavior changed in E3. S3 still
+needs native proof; and low-value findings remain
 fold-only or retained. Each later packet requires explicit selection before
 implementation.
 
@@ -395,7 +405,7 @@ Non-goals:
 - No app code, Supabase client, dependency, schema change, auth user, rating
   fixture, eight-product import, scraper, or production seed.
 - Do not add Supabase Storage policies merely to host the first image.
-- Never persist `mock-product://` URLs.
+- Persist only public HTTP(S) product image URLs.
 
 ## Task 14: Connected Client And Query Foundation
 
@@ -524,8 +534,7 @@ Deliverables:
 Remove in this task:
 
 - The artificial 300 ms loading delay and `__error__` search trigger.
-- `mockProducts` from connected Browse and `getMockProductDetailById` from
-  connected Detail.
+- The disconnected fixture repositories from connected Browse and Detail.
 - Disabled Filter/Sort controls and fake end-of-list copy.
 - Any product-ID-only or viewer/product transitional rating map.
 
