@@ -76,6 +76,13 @@ describe('auth screens operation results', () => {
     });
 
     const rendered = await render(<SignInScreen />);
+    expect(rendered.getByTestId('sign-in-email').props).toMatchObject({
+      autoCapitalize: 'none',
+      keyboardType: 'email-address',
+    });
+    expect(
+      rendered.getByTestId('sign-in-password').props.secureTextEntry,
+    ).toBe(true);
     await act(async () => {
       fireEvent.changeText(
         rendered.getByTestId('sign-in-email'),
@@ -142,6 +149,13 @@ describe('auth screens operation results', () => {
     });
 
     const rendered = await render(<SignUpScreen />);
+    expect(rendered.getByTestId('sign-up-email').props).toMatchObject({
+      autoCapitalize: 'none',
+      keyboardType: 'email-address',
+    });
+    expect(
+      rendered.getByTestId('sign-up-password').props.secureTextEntry,
+    ).toBe(true);
     await act(async () => {
       fireEvent.changeText(
         rendered.getByTestId('sign-up-email'),

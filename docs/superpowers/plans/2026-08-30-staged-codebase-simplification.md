@@ -1,6 +1,6 @@
 # Staged Codebase Simplification Plan
 
-Status: **Packets S1 and E1 are complete locally; E1 and the separately
+Status: **Packets S1, E1, and E3 are complete locally; E1 and the separately
 addressed Account/Profile P2 have human acceptance, no other simplification
 packet has started, and Android is explicitly out of the current plan.**
 
@@ -29,9 +29,10 @@ chat history.
   `0ade2942990486d946b0fb8ba2d3817ff1590b96`, then authorized one local commit
   for completed E1 and the separately approved tab-root correction. On
   2026-08-31 the human separately accepted the Account/Profile P2 physical
-  recheck and authorized one local completion commit for that follow-up. Push,
-  PR lifecycle work, deployment, hosted configuration, database work, and
-  production access remain unauthorized.
+  recheck and authorized one local completion commit for that follow-up. On
+  2026-08-31 the human selected local E3 implementation and later authorized
+  its local completion commit. Push, PR lifecycle work, deployment, hosted
+  configuration, database work, and production access remain unauthorized.
 - Before a batch, a human selects its candidate and accepts every listed
   capability loss. One candidate is the default batch size.
 - Stop when a real or unresolved dynamic consumer exists, a baseline cannot
@@ -84,7 +85,7 @@ Current repository proof at the S1 planning baseline (`839ce4fc`):
 ## Kanban portfolio
 
 This board records planning and packet status; it is not execution authority.
-S1 and E1 are complete locally, and no other packet is in progress.
+S1, E1, and E3 are complete locally, and no other packet is in progress.
 Priority ranks expected value and sequencing only: P1 is high-value, P2 is
 worthwhile after stronger cuts, and P3 is fold-only housekeeping. Difficulty
 reflects coordination and proof burden: XS is one local symbol/file, S is one
@@ -96,7 +97,7 @@ product/skill approval or native proof.
 | Implemented | P0 | S1 | Remove Create Expo starter subtree, sample font, and unused direct dependencies/config | High | Contract | M | Web/iOS pass; Android explicitly out of the current plan |
 | Complete locally | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance and local commit complete; remote lifecycle remains unauthorized |
 | Ready, unselected | P2 | E2 | Share only identical SDK/network error-shape extraction across catalog, ratings, and Auth | Medium | Contract | M | Keep every domain normalizer and transport policy separate |
-| Ready, unselected | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Prove every removed assertion is duplicated or replaced |
+| Complete locally | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Local completion commit is complete; remote lifecycle remains unauthorized |
 | Decision required | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Explicit capability choice plus skill-file approval if affected |
 | Proof first | P2 | S3 | Remove `react-native-url-polyfill` over Expo WinterCG URL | Medium | Static | L | Boot-order probe and web/iOS/Android cold-start proof |
 | Fold only | P3 | E4 | Inline the one-caller splash-dismiss relay and retire its proxy test | Low | Static | M | Only with layout/bootstrap work and boot-equivalence proof |
@@ -106,7 +107,7 @@ product/skill approval or native proof.
 | Retain | — | R1 | App/runtime JWT decoders | Low potential | Conflicting contracts | M | Keep fail-closed environment and guarded-session parsing separate |
 | Owned elsewhere | — | I1 | Replace Markdown task-graph parsing with structured config | High | Existing task | L | Follow the deferred Agent infrastructure checker v2 task |
 
-S1 and E1 were selected and completed locally. E2 and E3 remain ready but
+S1, E1, and E3 were selected and completed locally. E2 remains ready but
 unselected. S2 and S3 do not enter a ready lane until their stated
 decision/proof gates pass. P3 items do not justify standalone work.
 
@@ -203,7 +204,7 @@ data or hosted-state restoration.
   Android runtime-equivalence claim is made; add that proof only if Android
   returns to scope. Existing Jest React `act(...)`, open-handle, and Supabase
   lock deprecation warnings remain visible and unchanged.
-- **Retained candidates:** E1 is complete locally. E2–E3 remain ready but
+- **Retained candidates:** E1 is complete locally. E2 remains ready but
   unselected; S2 still requires a capability/skill decision; S3 still requires
   its native proof; E4, L1, and E5 remain fold-only; U1 and R1 remain retained.
 - **Undo:** discard or revert the single S1 diff. No data, hosted state, or
@@ -449,8 +450,8 @@ diff or commit.
   open-handle/forced-exit, Supabase lock deprecation, and npm proxy warnings
   remain non-gating. Private error-object and nested-cause identity without a
   consumer are not claimed.
-- **Retained candidates:** E2–E3 remain ready but unselected; S2 still requires
-  a capability/skill decision; S3 still requires native proof; E4, L1, and E5
+- **Retained candidates:** E2 remains ready but unselected; S2 still requires a
+  capability/skill decision; S3 still requires native proof; E4, L1, and E5
   remain fold-only; U1 and R1 remain retained.
 - **Undo:** revert the local completion commit. No data, hosted configuration,
   database, deployment, or production restoration exists.
@@ -578,6 +579,54 @@ full frontend suite, typecheck, lint, agent-infrastructure/document checks, and
 
 Net effect: fewer false-confidence tests and less fixture maintenance, with the
 remaining checks attached to real owners. Undo is the single E3 diff or commit.
+
+### E3 operation receipt — 2026-08-31
+
+- **Scope:** local E3 test-ownership consolidation only, based on tracked-clean
+  `22e2bc20f49549582a32be56361bc0fae349431d`. No production source, Auth
+  behavior, route, dependency, configuration, schema, migration, generated
+  file, hosted state, or remote lifecycle action changed.
+- **Baseline:** the three candidate suites passed 3/3 suites and 7/7 tests. The
+  surviving Auth API/error/screen/return-path, query-infrastructure, and Auth
+  provider owner set passed 7/7 suites and 152/152 tests.
+- **Assertion map:** invalid-credential and offline normalization remain in the
+  Auth API/error suites; confirmation behavior remains in Auth API and screen
+  suites; return-path validation/navigation remains in its owner and screen
+  suites; provider rendering, QueryClient isolation, and cleanup remain in
+  `query.infrastructure.test.tsx`. Email keyboard/capitalization and password
+  security now run against both real Auth screens. The deleted local-variable
+  preservation and single-API-invocation cases exercised no form or pending
+  gate, so they were not recreated as false signal.
+- **Retired obligation:** `AuthForms.test.tsx`, `AuthFieldProps.test.tsx`, and
+  `harness.smoke.test.tsx` are deleted with their proxy fixtures and seven
+  duplicate or vacuous tests.
+- **Artifacts:** `AuthScreens.test.tsx` owns the useful field assertions;
+  `docs/API_CONTRACTS.md` and `docs/TASKS.md` no longer promise the standalone
+  harness sentinel. Historical evidence remains unchanged.
+- **Realized net effect:** 182 proxy-test lines are removed and 14 owner-test
+  lines are added, for a net reduction of 168 test lines, three suites, and
+  seven tests. No replacement helper, abstraction, dependency, or production
+  code was added.
+- **Behavior:** no runtime capability is intentionally changed. The isolated
+  harness-start sentinel and proxy assertions are surrendered; real Auth field
+  configuration, safe error mapping, navigation validation, provider
+  isolation, and cleanup remain directly covered.
+- **Verification:** the identical owner set passes 7/7 suites and 152/152 tests
+  before and after. The decisive Auth screen suite passes 1/1 suite and 5/5
+  tests; the full frontend suite passes 39/39 suites and 496/496 tests;
+  typecheck, lint, `check:readonly`, the residue search, and `git diff --check`
+  pass. Existing React `act(...)`, Jest force-exit/open-handle, Supabase lock,
+  and npm proxy warnings remain non-gating and unchanged.
+- **Residual risk:** no device walk was run because E3 changes tests and active
+  documentation only; it does not alter a runtime bundle. Android remains
+  explicitly out of scope. No user or production behavior claim depends on a
+  deleted proxy suite.
+- **Retained candidates:** E2 remains ready but unselected; S2 still requires a
+  capability/skill decision; S3 still requires native proof; E4, L1, and E5
+  remain fold-only; U1 and R1 remain retained.
+- **Undo:** restore the three deleted suites, remove the owner-screen field
+  assertions, and revert the active documentation edits. No data, hosted
+  configuration, deployment, or production restoration exists.
 
 ## Fold-only and held extended findings
 

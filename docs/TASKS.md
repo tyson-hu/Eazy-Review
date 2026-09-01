@@ -79,7 +79,7 @@ archive is historical evidence, not a current plan.
 
 ### Active maintenance initiative: staged codebase simplification
 
-Status: **S1 and E1 complete locally; E1 and the separately addressed
+Status: **S1, E1, and E3 complete locally; E1 and the separately addressed
 Account/Profile P2 have human acceptance, and no other packet has started.**
 
 This unnumbered initiative does not start or renumber Task 20 and changes no
@@ -120,10 +120,15 @@ on 2026-08-31**. The P2 finding is solved locally. This was not an E1 catalog
 regression or completion blocker. E1 is therefore complete and committed
 locally together with the separately authorized tab-root correction. Push, PR
 lifecycle actions, deployment, hosted configuration, database, and production
-actions remain unauthorized. E2–E3
-are ready but unselected; S2 still needs a capability decision; S3 still needs
-native proof; and low-value findings remain fold-only or retained. Each later
-packet requires explicit selection before implementation.
+actions remain unauthorized. E3 is complete and committed locally, while E2
+remains ready but unselected. E3 deletes three proxy suites totaling 182 lines
+and seven tests, and moves the useful Auth field configuration checks onto the
+real Sign In and Sign Up screens. The identical owner suite passes 7/7 suites
+and 152/152 tests before and after; the full frontend suite passes 39/39 suites
+and 496/496 tests. No production code or behavior changed. S2 still needs a
+capability decision; S3 still needs native proof; and low-value findings remain
+fold-only or retained. Each later packet requires explicit selection before
+implementation.
 
 Two separately authorized follow-ups are implemented locally and human
 accepted; the environment audit remains a recommendation only:
@@ -418,7 +423,8 @@ Deliverables:
 - `@tanstack/react-query` with React Native NetInfo and AppState lifecycle
   integration.
 - Minimal frontend test foundation enforced in Expo CI.
-- One smoke test outside `app/` (`src/test/harness.smoke.test.tsx`).
+- Provider/query infrastructure coverage outside `app/`, including isolated
+  QueryClients and deterministic cleanup.
 - Generated Supabase database types from the local schema
   (`src/types/database.generated.ts`; `npm run types:generate` /
   `npm run types:check`).

@@ -289,7 +289,6 @@ src/
   test/
     setup.ts
     renderWithProviders.tsx    # isolated QueryClient per test
-    harness.smoke.test.tsx
 
   types/
     database.generated.ts      # local schema; npm run types:generate
