@@ -79,8 +79,8 @@ archive is historical evidence, not a current plan.
 
 ### Active maintenance initiative: staged codebase simplification
 
-Status: **S1 and E1 complete locally; E1 human acceptance is complete and no
-other packet has started.**
+Status: **S1 and E1 complete locally; E1 and the separately addressed
+Account/Profile P2 have human acceptance, and no other packet has started.**
 
 This unnumbered initiative does not start or renumber Task 20 and changes no
 product priority. Its proposed durable boundary is recorded in
@@ -111,8 +111,12 @@ each target rendered its distinct Browse rows, both Product Details loaded,
 Product Detail Back returned to Browse, cold Browse Back stayed on Browse, and
 Feed → Browse → Back stayed on Browse. The human separately reports the
 current local-target offline/reconnect lane as `tested-pass`. The
-Account/Profile offline status took about five minutes to appear; that is a
-separate deferred P2 connectivity-feedback UX finding, not an E1 catalog
+Account/Profile offline status took about five minutes to appear in that run;
+the separate P2 connectivity-feedback finding is now addressed locally by
+immediate reactive offline presentation and the existing shared ten-second
+request deadline for profile reads. Focused automated proof passes, and the
+requested physical offline/reconnect recheck is **tested-pass by human report
+on 2026-08-31**. The P2 finding is solved locally. This was not an E1 catalog
 regression or completion blocker. E1 is therefore complete and committed
 locally together with the separately authorized tab-root correction. Push, PR
 lifecycle actions, deployment, hosted configuration, database, and production
@@ -121,8 +125,8 @@ are ready but unselected; S2 still needs a capability decision; S3 still needs
 native proof; and low-value findings remain fold-only or retained. Each later
 packet requires explicit selection before implementation.
 
-One separately authorized follow-up is resolved locally; the environment
-audit remains a recommendation only:
+Two separately authorized follow-ups are implemented locally and human
+accepted; the environment audit remains a recommendation only:
 
 - **Tab-root Back correction:** the existing tab navigator now declares Browse
   as its initial route and does not consume Back into another tab. The root
@@ -135,6 +139,15 @@ audit remains a recommendation only:
   Browse, and Product Detail Back still returned to Browse. A later physical
   iPhone 17 Pro Max rerun passed those same navigation cases against both local
   Docker and staging.
+- **Account/Profile connectivity feedback:** Account now subscribes to the
+  existing online-state owner, shows known-offline profile status immediately,
+  preserves cached profile details with offline context, and routes the profile
+  read through the shared ten-second deadline/cancellation owner. Focused
+  Account, profile API, shared-timeout, and Rated Products tests pass. The
+  requested physical offline/reconnect recheck is **tested-pass by human report
+  on 2026-08-31**, so the P2 finding is solved locally. This follow-up remains
+  within the human-authorized local completion commit; push, PR lifecycle, and
+  later packets remain separately gated.
 - **Local/staging runtime toggle audit:** do not add an in-app hot switch. It
   adds more lifecycle ownership than it removes; the contract analysis is in
   the canonical simplification plan. Expo SDK 57's development virtual

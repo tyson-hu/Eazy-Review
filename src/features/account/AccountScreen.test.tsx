@@ -32,7 +32,9 @@ let mockAuth: MockAuthState = {
   deleteAccount: mockDeleteAccount,
 };
 
-let mockProfileQuery: Partial<UseQueryResult<AccountProfile, Error>> = {
+let mockProfileQuery: Partial<UseQueryResult<AccountProfile, Error>> & {
+  isOffline?: boolean;
+} = {
   data: undefined,
   isPending: false,
   isError: false,
@@ -342,6 +344,35 @@ describe('Account screen', () => {
       'a@example.com',
     );
     expect(mockAuth.isSignedIn).toBe(true);
+
+    await fireEvent.press(rendered.getByText('Try again'));
+    expect(refetch).toHaveBeenCalled();
+    await rendered.cleanup();
+  });
+
+  it('shows profile offline status immediately instead of loading forever', async () => {
+    const refetch = jest.fn();
+    mockAuth = {
+      status: 'signed-in',
+      user: { id: 'user-a', email: 'a@example.com' },
+      isSignedIn: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: mockSignOut,
+    };
+    mockProfileQuery = {
+      data: undefined,
+      isPending: true,
+      isError: false,
+      error: null,
+      fetchStatus: 'paused',
+      isOffline: true,
+      refetch,
+    };
+
+    const rendered = await renderWithProviders(<AccountScreen />);
+    expect(rendered.getByText("You're offline.")).toBeTruthy();
+    expect(rendered.queryByText('Loading profile...')).toBeNull();
 
     await fireEvent.press(rendered.getByText('Try again'));
     expect(refetch).toHaveBeenCalled();

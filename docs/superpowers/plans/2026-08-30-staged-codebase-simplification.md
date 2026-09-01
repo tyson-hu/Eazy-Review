@@ -1,8 +1,8 @@
 # Staged Codebase Simplification Plan
 
-Status: **Packets S1 and E1 are complete locally; E1 human acceptance is
-complete, no other simplification packet has started, and Android is
-explicitly out of the current plan.**
+Status: **Packets S1 and E1 are complete locally; E1 and the separately
+addressed Account/Profile P2 have human acceptance, no other simplification
+packet has started, and Android is explicitly out of the current plan.**
 
 Base SHA: `db27309005e14d80f67df9bfe9cb4debd6dd47b6`
 
@@ -27,8 +27,10 @@ chat history.
 - A human selected S1 on 2026-08-31 and later authorized its scoped commit.
   A later human message selected and authorized local E1 implementation at
   `0ade2942990486d946b0fb8ba2d3817ff1590b96`, then authorized one local commit
-  for completed E1 and the separately approved tab-root correction. Push, PR
-  lifecycle work, deployment, hosted configuration, database work, and
+  for completed E1 and the separately approved tab-root correction. On
+  2026-08-31 the human separately accepted the Account/Profile P2 physical
+  recheck and authorized one local completion commit for that follow-up. Push,
+  PR lifecycle work, deployment, hosted configuration, database work, and
   production access remain unauthorized.
 - Before a batch, a human selects its candidate and accepts every listed
   capability loss. One candidate is the default batch size.
@@ -436,9 +438,13 @@ diff or commit.
   the checkout, and `check:secrets` passes. The human reports the current
   local-target physical offline/reconnect lane as `tested-pass` on 2026-08-31;
   this lane was not agent-observed. The Account/Profile offline state took
-  about five minutes to appear. That latency is recorded as a separate
-  deferred P2 connectivity-feedback UX finding; it is outside E1's catalog
-  owner, has not been diagnosed, and does not block E1 completion. Existing
+  about five minutes to appear. That latency was recorded outside E1's catalog
+  owner and was later addressed under separate authorization: Account now
+  presents the existing reactive offline state immediately, and its profile
+  read uses the shared ten-second deadline/cancellation owner. Focused
+  automated proof passes, and the requested physical offline/reconnect recheck
+  is `tested-pass` by human report on 2026-08-31. The P2 finding is solved
+  locally. The separate follow-up does not change E1 completion. Existing
   React `act(...)`, Jest
   open-handle/forced-exit, Supabase lock deprecation, and npm proxy warnings
   remain non-gating. Private error-object and nested-cause identity without a
@@ -482,8 +488,8 @@ diff or commit.
   Browse Back, Feed → Browse → Back, and Product Detail Back against both
   local Docker and staging.
 - **Residual risk:** the current local-target physical offline/reconnect lane
-  is human-reported rather than agent-observed. The separate Account/Profile
-  offline-feedback delay remains undiagnosed. Android remains excluded.
+  and the solved Account/Profile P2 recheck are human-reported rather than
+  agent-observed. Android remains excluded.
 - **Undo:** revert the local completion commit. No native rebuild, reinstall,
   data restoration, hosted change, or credential rollback is required.
 

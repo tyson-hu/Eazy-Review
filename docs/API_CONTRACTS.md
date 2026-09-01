@@ -749,6 +749,18 @@ failures receive no automatic retry. Reconnect/focus behavior remains owned by
 the accepted Task 14 lifecycle, while every surface exposes manual retry where
 the error is recoverable.
 
+## Account Profile Query
+
+Files: `src/features/account/api.ts` and
+`src/features/account/queries.ts`.
+
+`useMyProfileQuery()` remains owner-scoped and disabled until the authenticated
+user ID is known. It exposes the existing reactive online state so Account can
+show known-offline feedback immediately and keep cached profile details
+visible. `getMyProfile()` routes its Supabase read through the shared ten-second
+request deadline and forwards the combined cancellation signal to PostgREST;
+caller cancellation remains distinct from a deadline.
+
 ## Ratings Query Hooks
 
 File: `src/features/ratings/queries.ts` (Task 17)

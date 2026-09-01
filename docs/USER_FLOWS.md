@@ -170,6 +170,11 @@ User opens Account
 -> Product Detail opens
 ```
 
+The signed-in Account profile read shows known-offline status immediately,
+keeps cached profile details visible with offline context, and bounds an
+unreachable backend with the shared request deadline instead of leaving the
+profile loading state on native transport timing.
+
 ## Flow 5: Password Recovery
 
 Routes:

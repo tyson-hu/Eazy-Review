@@ -1,4 +1,5 @@
 import { getMyProfile, formatMemberSince } from '@/src/features/account/api';
+import { RequestTimeoutError } from '@/src/lib/network/requestTimeout';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 
 function buildProfileChain(options?: {
@@ -80,10 +81,51 @@ describe('getMyProfile', () => {
 
     await getMyProfile('user-a', { client, signal: controller.signal });
 
-    expect(chain.abortSignal).toHaveBeenCalledWith(controller.signal);
+    expect(chain.abortSignal).toHaveBeenCalledWith(expect.anything());
     expect(order.indexOf('abortSignal')).toBeLessThan(
       order.indexOf('maybeSingle'),
     );
     expect(order.indexOf('abortSignal')).toBeGreaterThan(order.indexOf('eq'));
+  });
+
+  it('aborts a stalled profile read at the shared request deadline', async () => {
+    jest.useFakeTimers();
+    let requestSignal: AbortSignal | undefined;
+    let request: Promise<unknown> | undefined;
+    let outcome: Promise<unknown> | undefined;
+    try {
+      const { from, chain } = buildProfileChain();
+      (chain.abortSignal as jest.Mock).mockImplementation(
+        (signal: AbortSignal) => {
+          requestSignal = signal;
+          return chain;
+        },
+      );
+      (chain.maybeSingle as jest.Mock).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(
+              () => resolve({ data: null, error: null }),
+              2_000,
+            );
+          }),
+      );
+      const client = { from } as unknown as AppSupabaseClient;
+      const options = { client, timeoutMs: 1_000 };
+
+      request = getMyProfile('user-a', options);
+      outcome = request.then(
+        (value) => value,
+        (error) => error,
+      );
+      await jest.advanceTimersByTimeAsync(1_000);
+
+      expect(requestSignal?.aborted).toBe(true);
+      await expect(outcome).resolves.toBeInstanceOf(RequestTimeoutError);
+    } finally {
+      await jest.runAllTimersAsync();
+      await request?.catch(() => undefined);
+      jest.useRealTimers();
+    }
   });
 });
