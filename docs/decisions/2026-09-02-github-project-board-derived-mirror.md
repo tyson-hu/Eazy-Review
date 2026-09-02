@@ -56,6 +56,11 @@ authorizes work.
 - The board may lag the ledger between the ledger change and the human's
   approval; once approved, the agent closes the gap before reporting the task
   complete. The board can never contradict the ledger with authority.
+- Acceptance is recorded in `docs/TASKS.md` inside the PR being accepted, and
+  merge is the last repository action for a task: the `Completed` board write
+  follows the merge immediately and no post-merge closeout PR exists. Merge
+  itself requires green exact-head CI and zero unresolved review threads
+  (`docs/DOCUMENTATION_POLICY.md`, Acceptance And Merge).
 - The `Project #4 moves:` line must be filled (or `none`) on every PR, like
   `Docs updated:`, and it is the approval unit: the human approves that list,
   and the agent writes nothing beyond it without a further approval.

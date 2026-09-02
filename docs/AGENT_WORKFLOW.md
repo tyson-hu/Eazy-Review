@@ -302,6 +302,7 @@ A task is not done until:
 - Docs affected by the change are updated per `docs/DOCUMENTATION_POLICY.md`.
 - `docs/TASKS.md` reflects the completed work and any newly discovered follow-up work.
 - GitHub Project #4 matches the ledger: the proposed board writes are listed on the PR body and, once the human approves them, applied by the agent (`docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
+- Every review thread on the PR is resolved on the current head, acceptance is recorded in `docs/TASKS.md` inside the PR, and merge is the last repository action — the `Completed` board write follows it and nothing else does (`docs/DOCUMENTATION_POLICY.md`, Acceptance And Merge).
 - A new or changed durable high-impact decision has an individual record under `docs/decisions/`, and `docs/DECISIONS.md` has been regenerated. Routine fixes, validation, and task progress are not ADRs.
 - Validation was run, or skipped commands are named with a reason.
 - The Human-readable handoff (below) is written, listing docs updated or stating `No documentation update needed` with a reason.
@@ -468,6 +469,7 @@ One home per instruction; everywhere else points, never restates.
 | Routes, user journeys, auth gates | `docs/USER_FLOWS.md` |
 | Doc-update gate and Document Update Map | `docs/DOCUMENTATION_POLICY.md` |
 | GitHub Project #4 role, status mapping, and sync rule | `docs/DOCUMENTATION_POLICY.md` (GitHub Project #4 Mirror; `gh` call classes in `docs/MCP_WORKFLOW.md`) |
+| Acceptance recording, merge requirements (green exact-head CI, zero unresolved review threads), merge as the last repository action | `docs/DOCUMENTATION_POLICY.md` (Acceptance And Merge) |
 | Approved implementation plans and design specs (planning artifacts; status stays in `docs/TASKS.md`) | `docs/superpowers/plans/`, `docs/superpowers/specs/` |
 | Machine-readable document lifecycle, ownership, dependency, mirror, stale-term, impact, and task-graph rules | `config/agent-infrastructure.json` |
 | Security rules | `docs/SECURITY.md` (mirrored by `.cursor/rules/security.mdc`) |

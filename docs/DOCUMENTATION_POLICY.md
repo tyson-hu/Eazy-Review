@@ -207,9 +207,11 @@ will carry (Title, ID, Lane, Status, Priority, Potential work, Benefit,
 Confidence, Difficulty, Gate or next move, body), with the body in the format
 of the existing cards in its Lane. Before a PR exists, list the same writes
 under "What needs review" in the handoff. Propose `Completed` only when the
-ledger already records human acceptance: the acceptance edit to `docs/TASKS.md`
-is written and committed (on the closeout branch or PR is enough — the board
-follows the ledger edit, not the closeout merge).
+ledger already records human acceptance, which happens inside the PR being
+accepted (Acceptance And Merge below): the agent records acceptance in
+`docs/TASKS.md` in that PR, the human merges, and the agent applies `Completed`
+immediately after the merge. Merge is the last repository action for a task;
+there is no post-merge closeout PR.
 
 Who: the agent applies every board write, after human approval. This is an
 agent-operated project: humans review and approve, agents execute. The human
@@ -231,3 +233,24 @@ board.
 Every commit should keep documents and implementation synchronized as much as practical. If a task needs multiple commits, docs may be updated in the final commit of that task, but they must be current before pushing or opening/merging a PR.
 
 PR bodies use the PR summary template in `docs/AGENT_WORKFLOW.md`, and every task ends against the Definition Of Done there.
+
+### Acceptance And Merge
+
+Merge is the last repository action for a task; the next session starts the
+next task, so nothing about the finished task is written after the merge.
+
+1. The human reviews the PR and tells the agent it is accepted.
+2. Before merge, the agent records acceptance in `docs/TASKS.md` inside the
+   same PR (for example `Done — human accepted and merged in PR #N on <date>`),
+   regenerates any affected generated document, re-runs `npm run
+   check:readonly`, and pushes. The PR body's `Project #4 moves:` line lists the
+   resulting `ID: In Review → Completed` write.
+3. Merge requires exact-head CI green and zero unresolved review threads: every
+   automated (Codex, Bugbot, security) or human review comment on the current
+   head is either fixed and resolved, or answered with evidence and resolved,
+   before the human merges. Resolving a thread is a GitHub write the human
+   authorizes together with the fix (`docs/MCP_WORKFLOW.md`).
+4. Immediately after the merge the agent applies the listed `Completed` board
+   write (GitHub Project #4 Mirror above). No post-merge status-sync PR,
+   closeout commit, or evidence note follows; post-merge CI is observed, not
+   recorded.
