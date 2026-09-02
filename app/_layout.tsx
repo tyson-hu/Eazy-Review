@@ -25,6 +25,7 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <Stack>
+        <Stack.Screen name="index" redirect />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="auth/sign-in"

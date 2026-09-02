@@ -270,13 +270,23 @@ export default function AccountScreen() {
         ) : null}
       </View>
 
-      {profileQuery.isPending && !profileQuery.data ? (
+      {profileQuery.isOffline && !profileQuery.data ? (
+        <Card className="mt-6">
+          <ErrorState
+            title="You're offline."
+            message="Connect to the internet and try again."
+            onRetry={() => {
+              void profileQuery.refetch();
+            }}
+          />
+        </Card>
+      ) : profileQuery.isPending && !profileQuery.data ? (
         <Card className="mt-6">
           <LoadingState message="Loading profile..." />
         </Card>
       ) : null}
 
-      {profileQuery.isError && !profileQuery.data ? (
+      {!profileQuery.isOffline && profileQuery.isError && !profileQuery.data ? (
         <Card className="mt-6">
           <ErrorState
             title="Profile unavailable"
@@ -288,7 +298,21 @@ export default function AccountScreen() {
         </Card>
       ) : null}
 
-      {profileQuery.isError && profileQuery.data ? (
+      {profileQuery.isOffline && profileQuery.data ? (
+        <Card className="mt-4">
+          <AppText variant="caption">
+            You&apos;re offline. Showing the last available profile details.
+          </AppText>
+          <Button
+            className="mt-3"
+            label="Retry"
+            variant="secondary"
+            onPress={() => {
+              void profileQuery.refetch();
+            }}
+          />
+        </Card>
+      ) : profileQuery.isError && profileQuery.data ? (
         <Card className="mt-4">
           <AppText variant="caption">
             Profile could not be refreshed. Showing the last available details.

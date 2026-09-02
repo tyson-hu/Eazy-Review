@@ -77,6 +77,108 @@ available at
 Accepted database behavior remains canonical in `docs/DATA_MODEL.md`; the
 archive is historical evidence, not a current plan.
 
+### Active maintenance initiative: staged codebase simplification
+
+Status: **S1, E1, E3, and S2 are complete and published in ready PR #46. Code
+and security reviews completed on head `64e36a2`; security reported no finding,
+and the human authorized a bounded remediation for the one P2 skill-discovery
+metadata finding. E1 and the separately addressed Account/Profile P2 have
+human acceptance; program-level human acceptance, merge, and deployment remain
+pending. Live remediation, check, and thread states are tracked on PR #46, and
+no later packet has started.**
+
+This unnumbered initiative does not start or renumber Task 20 and changes no
+product priority. Its proposed durable boundary is recorded in
+[`docs/decisions/2026-08-30-staged-codebase-simplification.md`](decisions/2026-08-30-staged-codebase-simplification.md),
+and its candidate evidence, phase order, validation, undo, and cross-session
+protocol live in
+[`docs/superpowers/plans/2026-08-30-staged-codebase-simplification.md`](superpowers/plans/2026-08-30-staged-codebase-simplification.md).
+S1's unreachable starter subtree, sample font, two direct dependencies, and
+three empty config plugins are removed locally. Web and iOS startup passed.
+E1 now routes both public catalog reads through the existing shared request
+deadline/cancellation owner and deletes the duplicate catalog lifecycle with
+no new production abstraction or shared-helper source edit. Its focused and
+full frontend suites, typecheck, lint, `check:readonly`, residue checks, and
+reachable/offline/timeout/navigation-cancelled web smoke passed. A cold iOS
+26.5 development-build simulator walk also passed against the linked
+`eazy-review-staging` project: anonymous Browse showed both staging-only H2
+fixtures, both Product Details loaded, and real Back navigation returned to
+Browse. No hosted write or configuration change occurred. Production code
+realizes a net 55-line reduction. Android startup remains intentionally skipped
+because the human excluded Android from the current plan on 2026-08-31; no
+Android result is claimed. The local-only anon token printed by the simulator
+diagnostic was invalidated: the rotated public key reads both seeded local
+catalog rows, the former token returns `401`, the signing secret is kept in a
+private host file outside the checkout, and `check:secrets` passes. An agent-
+observed physical rerun on an iPhone 17 Pro Max (iOS 27.0, installed Expo
+development build) passed the online local-Docker and staging catalog lanes:
+each target rendered its distinct Browse rows, both Product Details loaded,
+Product Detail Back returned to Browse, cold Browse Back stayed on Browse, and
+Feed → Browse → Back stayed on Browse. The human separately reports the
+current local-target offline/reconnect lane as `tested-pass`. The
+Account/Profile offline status took about five minutes to appear in that run;
+the separate P2 connectivity-feedback finding is now addressed locally by
+immediate reactive offline presentation and the existing shared ten-second
+request deadline for profile reads. Focused automated proof passes, and the
+requested physical offline/reconnect recheck is **tested-pass by human report
+on 2026-08-31**. The P2 finding is solved locally. This was not an E1 catalog
+regression or completion blocker. E1 is therefore complete and committed
+together with the separately authorized tab-root correction. E3 and S2 are
+also complete and committed. The branch is published in PR #46; its live
+readiness and exact-head Expo and Database CI states are tracked on the PR.
+Program-level human acceptance, review-finding disposition, merge, deployment, hosted
+configuration, database, and production actions remain separate gates. S2
+retires the global eight-product canned catalog, its bundled image protocol and
+assets, the duplicate Product Detail representation, and the dead score-row
+primitive; scoped complete/sparse fixtures continue to protect the connected
+catalog. Its connected mobile-web walk passed, its iPhone 15 / iOS 26.5
+simulator walk passed, and the human reported the physical-device check as
+`tested-pass` on 2026-09-01 without device/runtime details. The selected proof
+is recorded in
+[`docs/evidence/s2-mock-catalog-retirement/RESULT.md`](evidence/s2-mock-catalog-retirement/RESULT.md).
+E2 remains ready but unselected. E3 deletes three
+proxy suites totaling 182 lines
+and seven tests, and moves the useful Auth field configuration checks onto the
+real Sign In and Sign Up screens. The identical owner suite passes 7/7 suites
+and 152/152 tests before and after; the full frontend suite passes 39/39 suites
+and 496/496 tests. No production code or behavior changed in E3. S3 still
+needs native proof; and low-value findings remain
+fold-only or retained. Each later packet requires explicit selection before
+implementation.
+
+Two separately authorized follow-ups are implemented locally and human
+accepted; the environment audit remains a recommendation only:
+
+- **Tab-root Back correction:** the existing tab navigator now declares Browse
+  as its initial route and does not consume Back into another tab. The root
+  stack also excludes the component-only `index` redirect, removing the cold-
+  launch duplicate Browse entry. The final production diff is three native
+  navigator declarations across two existing route layouts. Installed-router
+  proof changed `initial=feed browse-back=feed` to
+  `initial=browse browse-back=unhandled`; a cold iOS 26.5 staging-backed run
+  kept the same Browse screen state under Back, Feed → Browse also stayed on
+  Browse, and Product Detail Back still returned to Browse. A later physical
+  iPhone 17 Pro Max rerun passed those same navigation cases against both local
+  Docker and staging.
+- **Account/Profile connectivity feedback:** Account now subscribes to the
+  existing online-state owner, shows known-offline profile status immediately,
+  preserves cached profile details with offline context, and routes the profile
+  read through the shared ten-second deadline/cancellation owner. Focused
+  Account, profile API, shared-timeout, and Rated Products tests pass. The
+  requested physical offline/reconnect recheck is **tested-pass by human report
+  on 2026-08-31**, so the P2 finding is solved locally. This follow-up remains
+  within the human-authorized completion commit and PR #46; later packets,
+  program-level human acceptance, review-finding disposition, merge, and deployment remain
+  separately gated.
+- **Local/staging runtime toggle audit:** do not add an in-app hot switch. It
+  adds more lifecycle ownership than it removes; the contract analysis is in
+  the canonical simplification plan. Expo SDK 57's development virtual
+  environment can merge conventional `.env` and `.env.local` values over the
+  shell-selected `EXPO_PUBLIC_*` values during HMR. To change targets without a
+  native rebuild or reinstall, stop Metro, temporarily isolate those ignored
+  env files, start Metro with the selected public values and `--clear`, fully
+  reload the app, then restore the files byte-for-byte.
+
 ## Definition Of Done
 
 Use the Definition Of Done in `docs/AGENT_WORKFLOW.md`. Each task remains a
@@ -310,7 +412,7 @@ Non-goals:
 - No app code, Supabase client, dependency, schema change, auth user, rating
   fixture, eight-product import, scraper, or production seed.
 - Do not add Supabase Storage policies merely to host the first image.
-- Never persist `mock-product://` URLs.
+- Persist only public HTTP(S) product image URLs.
 
 ## Task 14: Connected Client And Query Foundation
 
@@ -338,7 +440,8 @@ Deliverables:
 - `@tanstack/react-query` with React Native NetInfo and AppState lifecycle
   integration.
 - Minimal frontend test foundation enforced in Expo CI.
-- One smoke test outside `app/` (`src/test/harness.smoke.test.tsx`).
+- Provider/query infrastructure coverage outside `app/`, including isolated
+  QueryClients and deterministic cleanup.
 - Generated Supabase database types from the local schema
   (`src/types/database.generated.ts`; `npm run types:generate` /
   `npm run types:check`).
@@ -438,8 +541,7 @@ Deliverables:
 Remove in this task:
 
 - The artificial 300 ms loading delay and `__error__` search trigger.
-- `mockProducts` from connected Browse and `getMockProductDetailById` from
-  connected Detail.
+- The disconnected fixture repositories from connected Browse and Detail.
 - Disabled Filter/Sort controls and fake end-of-list copy.
 - Any product-ID-only or viewer/product transitional rating map.
 

@@ -4,7 +4,7 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 
 ## When to use
 
-- A `docs/TASKS.md` task that spans data and UI, such as Task 6 (mock product data), Task 7 (Browse screen with mock product list), Task 8 (Product Detail screen), or Task 9 (Rating Form with fake local state).
+- A `docs/TASKS.md` task that spans data and UI.
 - Connected catalog reads (Task 15) against the already-shipped schema.
 - Core authentication and Account state (Task 16), connected rating
   persistence and Rated Products (Task 17), password recovery (Task 18), or
@@ -19,7 +19,7 @@ Goal: build one small vertical feature from `docs/TASKS.md` — data to UI — f
 - Task 14 client/query/test infrastructure with no connected screen: follow
   the task contract and canonical workflow directly.
 - The work needs SQL, a migration, or RLS: use `skills/supabase-schema-change` first (then return here for the UI/integration packet).
-- The work only reshapes frontend types or mock data with no screen work: use `skills/product-data-modeling`.
+- The work only reshapes frontend types or scoped fixtures with no screen work: use `skills/product-data-modeling`.
 - Directly deleting accounts (or any other MCP **FORBIDDEN** action) on local, staging, or production: never — implementing the in-app delete-account flow is allowed; performing account deletion through MCP/tools is not (`docs/SECURITY.md`, `docs/MCP_WORKFLOW.md`).
 
 ### When used inside PR remediation
@@ -33,8 +33,8 @@ accepted scope explicitly includes them.
 
 ## Inputs expected
 
-- One named task from `docs/TASKS.md` (for example "Task 7: Build Browse Screen
-  With Mock Product List", "Task 15: Real Public Catalog Reads", "Task 16:
+- One named task from `docs/TASKS.md` (for example "Task 15: Real Public
+  Catalog Reads", "Task 16:
   Core Authentication And Account State", or "Task 17: My Rating Persistence
   And Rated Products").
 - Nothing else; scope is the task as written.
@@ -43,7 +43,10 @@ accepted scope explicitly includes them.
 
 - The task's own section in `docs/TASKS.md`.
 - The matching flow and route requirements in `docs/USER_FLOWS.md` (for example Browse is `app/(tabs)/browse.tsx`; Product Detail is `app/product/[id]/index.tsx`; Rating Form is `app/product/[id]/rate.tsx`; auth routes `sign-in` / `sign-up` / `forgot-password` / `reset-password`; Rated Products as documented).
-- The matching types, API functions, and query keys in `docs/API_CONTRACTS.md` (`Product`, `ProductCardData`, `src/types/product.ts`, `src/features/products/mockProducts.ts`; auth and rating mutation contracts when the task owns them).
+- The matching types, API functions, and query keys in `docs/API_CONTRACTS.md`
+  (`Product`, `ProductCardData`, `ProductDetailPublicData`, and
+  `src/types/product.ts`; auth and rating mutation contracts when the task owns
+  them).
 - The component rules for the task's screens in `docs/DESIGN.md`.
 - For connected-read Task 15: privileges / published-catalog rules in
   `docs/DATA_MODEL.md` and `docs/SECURITY.md` (reads only; no schema edits).
@@ -66,11 +69,10 @@ introduced.
 
 1. Restate the task scope in one sentence; anything beyond it is out of scope.
 2. Confirm every route the task touches exists in `docs/USER_FLOWS.md` under the same name. If a needed route is not documented, stop (see stop conditions).
-3. Confirm the data shapes against `docs/API_CONTRACTS.md`. Use the documented names exactly (`Product`, `ProductCardData`, `RatingBreakdown`, and auth/rating APIs the task names).
+3. Confirm the data shapes against `docs/API_CONTRACTS.md`. Use the documented names exactly (`Product`, `ProductCardData`, `ProductDetailPublicData`, `RatingBreakdown`, and auth/rating APIs the task names).
 4. Choose the data mode from the task packet:
-   - **Mock-first (Tasks 6–9 / pre–Task 10):** use `src/features/products/mockProducts.ts`; do not connect Supabase.
-   - **Connected-read (Task 15):** replace validated mock repositories with
-     published Supabase reads for Browse and Product Detail. Keep anonymous
+   - **Connected-read (Task 15):** use published Supabase reads for Browse and
+     Product Detail. Keep anonymous
      browsing, map sparse data honestly, and make rating unavailable until
      authentication is connected. Do **not** add migrations, RLS, grants, or
      schema edits in this skill.
@@ -151,8 +153,7 @@ introduced.
 
 - Building Feed polish while the task is Browse or Product Detail.
 - Inventing a new product shape instead of using `ProductCardData`.
-- Skipping empty/error states because mock data never fails.
-- Connecting Supabase before the mock UX flow is validated (Task 10).
+- Skipping empty/error states because a happy-path fixture never fails.
 - Routing Task 14 infrastructure through this user-visible feature skill.
 - Treating Tasks 16–19 as one auth packet instead of preserving their separate
   core-auth, write, recovery, and deletion boundaries.

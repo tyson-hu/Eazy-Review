@@ -108,6 +108,15 @@ describe('public catalog adapters', () => {
   it('returns deterministic image and verified-offer ordering for Detail', () => {
     const detail = adaptProductDetail(completeCatalogRow);
 
+    expect(detail.product).toEqual({
+      id: COMPLETE_PRODUCT_ID,
+      brand: 'Nike',
+      name: 'Nike Air Force 1 Low White',
+      sku: 'CW2288-111',
+      sizeType: 'men',
+      releaseDate: '2020-07-15',
+      description: 'The all-white staple Air Force 1 Low.',
+    });
     expect(detail.imageUrls).toEqual([
       'https://example.test/air-force-primary.png',
       'https://example.test/air-force-later.png',

@@ -369,7 +369,6 @@ Initial reusable UI components:
 - `AppText`
 - `ScoreBadge`
 - `ProductCard`
-- `RatingRow`
 - `DimensionStepperRow`
 - `LoadingState`
 - `EmptyState`
@@ -423,10 +422,8 @@ Keep these components small. Add abstractions only when they remove real duplica
   label, and edit guidance. The Rate/Edit screen owns the ten editable
   dimensions and owner-only private note. Preserve signed-out, loading,
   offline, error, and unrated Product Detail states.
-- Image empty state: connected products with no public image show "No image
-  available"; missing or unmapped mock `mock-product://` fixture assets may
-  retain "Image coming soon" on isolated mock-only surfaces. HTTP(S) product
-  URLs load normally.
+- Image empty state: products with no public image show "No image available";
+  HTTP(S) product URLs load normally.
 - Post-MVP only: public written-review snippets or previews are social content and
   must not appear in the MVP Product Detail structure.
 - Avoid: showing all data at the same visual weight, too many badges, crowded charts, marketplace-first layout.

@@ -1,3 +1,4 @@
+import { withRequestTimeout } from '@/src/lib/network/requestTimeout';
 import { getSupabase } from '@/src/lib/supabase/client';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import type { AccountProfile } from '@/src/types/account';
@@ -5,6 +6,7 @@ import type { AccountProfile } from '@/src/types/account';
 export type ProfileRequestOptions = {
   client?: AppSupabaseClient;
   signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 /**
@@ -21,32 +23,33 @@ export async function getMyProfile(
   }
 
   const client = options?.client ?? getSupabase();
-  let query = client
-    .from('profiles')
-    .select('id, display_name, username, avatar_url, created_at')
-    .eq('id', userId);
+  return withRequestTimeout(
+    async (signal) => {
+      const { data, error } = await client
+        .from('profiles')
+        .select('id, display_name, username, avatar_url, created_at')
+        .eq('id', userId)
+        .abortSignal(signal)
+        .maybeSingle();
 
-  if (options?.signal) {
-    query = query.abortSignal(options.signal);
-  }
+      if (error) {
+        throw error;
+      }
 
-  const { data, error } = await query.maybeSingle();
+      if (!data) {
+        throw new Error('Profile is unavailable.');
+      }
 
-  if (error) {
-    throw error;
-  }
-
-  if (!data) {
-    throw new Error('Profile is unavailable.');
-  }
-
-  return {
-    id: data.id,
-    displayName: data.display_name,
-    username: data.username,
-    avatarUrl: data.avatar_url,
-    joinedAt: data.created_at,
-  };
+      return {
+        id: data.id,
+        displayName: data.display_name,
+        username: data.username,
+        avatarUrl: data.avatar_url,
+        joinedAt: data.created_at,
+      };
+    },
+    { signal: options?.signal, timeoutMs: options?.timeoutMs },
+  );
 }
 
 /** Deterministic joined-date label (UTC month + year). */

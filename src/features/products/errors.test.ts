@@ -1,9 +1,11 @@
 import { PublicEnvError } from '@/src/lib/env/publicEnv';
 import {
   CatalogError,
+  getCatalogErrorPresentation,
   normalizeCatalogError,
   shouldRetryCatalogQuery,
 } from '@/src/features/products/errors';
+import { RequestTimeoutError } from '@/src/lib/network/requestTimeout';
 
 describe('catalog errors and retries', () => {
   it.each([
@@ -45,5 +47,18 @@ describe('catalog errors and retries', () => {
     expect(normalizeCatalogError(interruption, { isOffline: false }).code).toBe(
       'server-error',
     );
+  });
+
+  it('maps the shared deadline to the existing timeout copy', () => {
+    const error = normalizeCatalogError(new RequestTimeoutError());
+
+    expect(error).toEqual(
+      expect.objectContaining({ code: 'timeout', source: 'transport' }),
+    );
+    expect(getCatalogErrorPresentation(error, 'products')).toEqual({
+      title: 'Could not load products',
+      message: 'The request took too long. Please try again.',
+      canRetry: true,
+    });
   });
 });

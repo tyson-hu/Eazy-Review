@@ -1,7 +1,7 @@
 ---
 id: decision-separate-public-product-cache-from-my-rating
 date: 2026-07-26
-updated: 2026-07-30
+updated: 2026-08-31
 status: accepted
 area: architecture
 tasks: [14, 15, 16, 17]
@@ -27,8 +27,9 @@ The shared `['product', productId]` query contains only
 is known. Auth transitions clear the prior user's scoped queries without
 discarding valid public product data.
 
-`ProductDetailData` may remain the composed screen-facing shape, but no shared
-cache entry stores its `myRating` field.
+The screen renders the public detail payload alongside the viewer-owned My
+Rating result; no combined public/private payload or shared cache entry owns
+`myRating`.
 
 ## Consequences
 
@@ -37,8 +38,8 @@ cache entry stores its `myRating` field.
 - My Rating cache entries are unambiguously owned by one authenticated user.
 - Rating mutations invalidate the user-scoped rating key and relevant public
   aggregate/product keys independently.
-- Adapters and tests must distinguish fetched public data from the composed
-  screen model.
+- Adapters and tests distinguish fetched public data from the separately
+  rendered viewer-owned result.
 
 ## Revisit when
 

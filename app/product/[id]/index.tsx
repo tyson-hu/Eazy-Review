@@ -230,7 +230,7 @@ export default function ProductDetailScreen() {
   }
 
   const { product, ratingSummary, eazyAssessment, offers } = detail;
-  const productImageUrl = detail.imageUrls[0] ?? product.imageUrl;
+  const productImageUrl = detail.imageUrls[0];
   const productImageSource = productImageUrl
     ? { uri: productImageUrl }
     : undefined;

@@ -6,7 +6,7 @@
  * requests should use a bounded deadline that aborts the underlying work.
  */
 
-/** Default deadline for connected client requests (catalog and ratings). */
+/** Default deadline for connected client requests. */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
 
 export type RequestTimeoutReason = 'timeout' | 'aborted';

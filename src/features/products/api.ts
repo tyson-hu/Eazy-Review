@@ -1,13 +1,16 @@
 import { adaptProductCards, adaptProductDetail } from '@/src/features/products/adapters';
 import { CatalogError, normalizeCatalogError } from '@/src/features/products/errors';
+import {
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  isRequestTimeoutError,
+  withRequestTimeout,
+} from '@/src/lib/network/requestTimeout';
 import { getSupabase } from '@/src/lib/supabase/client';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import type {
   ProductCardData,
   ProductDetailPublicData,
 } from '@/src/types/product';
-
-const DEFAULT_CATALOG_TIMEOUT_MS = 10_000;
 
 const BROWSE_SELECT = `
   id,
@@ -105,79 +108,6 @@ export type CatalogRequestOptions = {
   isOnline?: () => boolean;
 };
 
-function abortError(): Error {
-  const error = new Error('Catalog request aborted.');
-  error.name = 'AbortError';
-  return error;
-}
-
-function timeoutError(cause?: unknown): CatalogError {
-  return new CatalogError('timeout', 'The catalog request timed out.', {
-    source: 'transport',
-    cause,
-  });
-}
-
-async function runCatalogRequest<T>(
-  build: (signal: AbortSignal) => PromiseLike<T>,
-  options: CatalogRequestOptions,
-): Promise<T> {
-  const controller = new AbortController();
-  let didTimeout = false;
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  let removeExternalAbort: (() => void) | undefined;
-
-  const timeoutMs = options.timeoutMs ?? DEFAULT_CATALOG_TIMEOUT_MS;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      didTimeout = true;
-      controller.abort();
-      reject(timeoutError());
-    }, timeoutMs);
-  });
-
-  const externalAbortPromise = new Promise<never>((_, reject) => {
-    const signal = options.signal;
-    if (!signal) {
-      return;
-    }
-    const onAbort = () => {
-      controller.abort();
-      reject(abortError());
-    };
-    if (signal.aborted) {
-      onAbort();
-      return;
-    }
-    signal.addEventListener('abort', onAbort, { once: true });
-    removeExternalAbort = () => signal.removeEventListener('abort', onAbort);
-  });
-
-  try {
-    return await Promise.race([
-      Promise.resolve(build(controller.signal)),
-      timeoutPromise,
-      externalAbortPromise,
-    ]);
-  } catch (error) {
-    // An abort-aware transport can reject before the timer's own rejection
-    // reaches Promise.race. Once the deadline fired, the domain result is
-    // always a timeout regardless of which rejected promise won the race.
-    if (
-      didTimeout &&
-      !(error instanceof CatalogError && error.code === 'timeout')
-    ) {
-      throw timeoutError(error);
-    }
-    throw error;
-  } finally {
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
-    }
-    removeExternalAbort?.();
-  }
-}
-
 function responseError(error: unknown, status: number): unknown {
   if (error != null && typeof error === 'object') {
     return { ...(error as Record<string, unknown>), status };
@@ -194,7 +124,7 @@ export async function getProducts(
 ): Promise<ProductCardData[]> {
   try {
     const client = options.client ?? getSupabase();
-    const response = await runCatalogRequest(
+    const response = await withRequestTimeout(
       (signal) =>
         client
           .from('products')
@@ -229,7 +159,10 @@ export async function getProducts(
           })
           .abortSignal(signal)
           .retry(false),
-      options,
+      {
+        signal: options.signal,
+        timeoutMs: options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
+      },
     );
 
     if (response.error) {
@@ -240,7 +173,11 @@ export async function getProducts(
     }
     return adaptProductCards(response.data);
   } catch (error) {
-    if (options.signal?.aborted && !(error instanceof CatalogError)) {
+    if (
+      options.signal?.aborted &&
+      !isRequestTimeoutError(error) &&
+      !(error instanceof CatalogError)
+    ) {
       throw error;
     }
     throw normalizeCatalogError(error, { isOffline: isOffline(options) });
@@ -253,7 +190,7 @@ export async function getProductById(
 ): Promise<ProductDetailPublicData> {
   try {
     const client = options.client ?? getSupabase();
-    const response = await runCatalogRequest(
+    const response = await withRequestTimeout(
       (signal) =>
         client
           .from('products')
@@ -287,7 +224,10 @@ export async function getProductById(
           .abortSignal(signal)
           .maybeSingle()
           .retry(false),
-      options,
+      {
+        signal: options.signal,
+        timeoutMs: options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
+      },
     );
 
     if (response.error) {
@@ -301,7 +241,11 @@ export async function getProductById(
     }
     return adaptProductDetail(response.data);
   } catch (error) {
-    if (options.signal?.aborted && !(error instanceof CatalogError)) {
+    if (
+      options.signal?.aborted &&
+      !isRequestTimeoutError(error) &&
+      !(error instanceof CatalogError)
+    ) {
       throw error;
     }
     throw normalizeCatalogError(error, { isOffline: isOffline(options) });

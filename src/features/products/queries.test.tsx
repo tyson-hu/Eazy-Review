@@ -56,11 +56,6 @@ const completeDetail: ProductDetailPublicData = {
     sizeType: 'men',
     releaseDate: '2020-07-15',
     description: 'The all-white staple Air Force 1 Low.',
-    imageUrl: 'https://example.test/air-force.png',
-    eazyScore: 79,
-    communityScore: null,
-    ratingCount: 0,
-    lowestPrice: 114.99,
   },
   imageUrls: ['https://example.test/air-force.png'],
   eazyAssessment: {

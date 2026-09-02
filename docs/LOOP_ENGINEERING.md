@@ -86,7 +86,7 @@ Outside `docs/notes/`, no scratch files, no notes docs, no status comments in co
 | Implement one user-visible feature from `docs/TASKS.md` (data + UI) | `skills/feature-slice-builder` |
 | Build or redesign one Expo / React Native screen's UI | `skills/ui-screen-builder` |
 | Change database schema, RLS, migrations, or rating-summary logic | `skills/supabase-schema-change` |
-| Change frontend product/rating data shape, types, or mock data | `skills/product-data-modeling` |
+| Change frontend product/rating data shape, types, or scoped fixtures | `skills/product-data-modeling` |
 | Review an implementation-complete pull request for human acceptance, separating product and behavior decisions from automated verification | `skills/pr-human-review` |
 | Existing Eazy Review pull request findings need read-only current-head triage, stale/already-fixed or root-cause classification, remediation planning, or an authorized bounded remediation epoch | `skills/pr-review-remediation` |
 | Fix a reported bug in existing behavior | `skills/bugfix-debug-loop` |
@@ -111,13 +111,13 @@ authorize edits, epochs, replies, resolutions, or other GitHub writes.
 | --- | --- | --- |
 | Task 13 seed-only SQL/config/test packet with no schema, RLS, grant, or database-contract change | None — follow the canonical workflow and task contract | `supabase-schema-change` |
 | Task 14 client/query/test infrastructure with no connected screen | None — follow the canonical workflow and task contract | `feature-slice-builder` |
-| `docs/TASKS.md` feature spanning data + UI (mock-first Tasks 6–9; connected-read Task 15; core-auth Task 16; connected-write Task 17; recovery Task 18; protected deletion Task 19) | `feature-slice-builder` | `ui-screen-builder` |
+| `docs/TASKS.md` feature spanning data + UI (connected-read Task 15; core-auth Task 16; connected-write Task 17; recovery Task 18; protected deletion Task 19) | `feature-slice-builder` | `ui-screen-builder` |
 | Purely one screen's visuals or layout | `ui-screen-builder` | `feature-slice-builder` |
 | Any schema, migration, RLS, grant, database function/trigger, or database-backed contract change (includes syncing frontend types) | `supabase-schema-change` | `product-data-modeling` / connected-read / core-auth / connected-write / recovery / protected-deletion `feature-slice-builder` |
 | Frontend catalog screens reading an already-shipped schema (no SQL) | `feature-slice-builder` (connected-read) | `supabase-schema-change` |
 | Core auth/session, recovery, or in-app delete-account feature (no schema invent) | `feature-slice-builder` (matching task mode) | MCP account deletion; inventing schema |
 | Authenticated rating persistence / Rated Products (schema already shipped) | `feature-slice-builder` (connected-write) | `supabase-schema-change` as the whole task |
-| Frontend-only shape, type, mock, or display change | `product-data-modeling` | `supabase-schema-change` |
+| Frontend-only shape, type, scoped-fixture, or display change | `product-data-modeling` | `supabase-schema-change` |
 | Validation failure caused by the current change | Fix inside `test-and-validation-loop` (max 2 tries) | `bugfix-debug-loop` |
 | Run TypeScript, lint, Expo Doctor, dependency, or route checks | `test-and-validation-loop` | `interactive-preview-loop` / `pr-human-review` |
 | First-pass finished-PR acceptance review | `pr-human-review` | `pr-review-remediation` |

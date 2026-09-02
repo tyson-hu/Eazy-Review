@@ -8,13 +8,6 @@ export type Product = {
   sizeType: string | null;
   releaseDate: string | null;
   description: string | null;
-  imageUrl?: string | null;
-  /** Eazy Score 0–100. */
-  eazyScore?: number | null;
-  /** Community Score 0–100. */
-  communityScore?: number | null;
-  ratingCount?: number;
-  lowestPrice?: number | null;
 };
 
 export type ProductCardData = {
@@ -42,11 +35,6 @@ export type LowestVerifiedOffer = {
 export type RatingBreakdown = RatingDimensionScores & {
   /** Derived 0–100 composite when complete. */
   score100?: number | null;
-  /**
-   * Connected My Rating uses `privateNote` (DB `private_note`).
-   * Legacy mock-era name retained only for historical fixtures/tests.
-   */
-  comment?: string | null;
   /** Owner-only optional note; max 500 characters. */
   privateNote?: string | null;
 };
@@ -68,17 +56,6 @@ export type ProductRatingSummary = {
   /** Community Score 0–100; maps from DB rating_aggregates.score. */
   communityScore: number | null;
   methodologyVersion?: string | null;
-};
-
-export type ProductOffer = {
-  id: string;
-  productId: string;
-  websiteName: string;
-  websiteLink: string;
-  size: number | null;
-  sizeRegion: string;
-  currency: string;
-  price: number | null;
 };
 
 export type VerifiedProductOffer = LowestVerifiedOffer & {
@@ -103,12 +80,4 @@ export type ProductDetailPublicData = {
   eazyAssessment: EazyAssessmentViewModel | null;
   offers: VerifiedProductOffer[];
   ratingSummary: ProductRatingSummary;
-};
-
-/** Composed Product Detail payload. My Rating is user-specific, not a catalog Product field. */
-export type ProductDetailData = {
-  product: Product;
-  offers: ProductOffer[];
-  ratingSummary: ProductRatingSummary;
-  myRating: RatingBreakdown | null;
 };
