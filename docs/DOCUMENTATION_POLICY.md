@@ -202,13 +202,16 @@ board item, added a ledger item that needs one, or changed a fact a card
 restates (title, summary, gate, delivery PR), retired a ledger item whose card
 should leave the board, or changed a fact the board README states, list each
 proposed board write as `ID: from → to`, `create ID (Lane): Status`,
-`ID: update <fields>`, `archive ID`, or `README: update <what changes>`,
-otherwise write `none`, on the PR body's `Project #4 moves:` line
-(`.github/pull_request_template.md`). These five forms are the only writes the
-line can carry; anything else needs its own explicit approval. A `create` names every field the card
-will carry (Title, ID, Lane, Status, Priority, Potential work, Benefit,
-Confidence, Difficulty, Gate or next move, body), with the body in the format
-of the existing cards in its Lane. Before a PR exists, list the same writes
+`ID: update <field → value, …>`, `archive ID`, or `README: update <the exact
+changed lines>`, otherwise write `none`, on the PR body's `Project #4 moves:`
+line (`.github/pull_request_template.md`). These five forms are the only writes
+the line can carry; anything else needs its own explicit approval. Every write
+states the value it will set, not just the field: a `create` names every field
+the card will carry (Title, ID, Lane, Status, Priority, Potential work,
+Benefit, Confidence, Difficulty, Gate or next move, body) with its value, the
+body in the format of the existing cards in its Lane; an `update` pairs each
+field with its new value; a README write quotes the changed lines. A field
+listed without a value is not approved. Before a PR exists, list the same writes
 under "What needs review" in the handoff. Propose `Completed` only when the
 ledger already records human acceptance, which happens inside the PR being
 accepted (Acceptance And Merge below): the agent records acceptance in
@@ -224,8 +227,9 @@ does the agent apply the listed writes, one approved write per listed item — a
 `create` is `item-create` plus the field edits that fill the card, still one
 write — using the `gh project` classification, recipe, and stop conditions in
 `docs/MCP_WORKFLOW.md`, and a task is not reported complete until the board
-matches the ledger. Approval covers exactly the listed writes; more items, other
-fields, or schema changes need their own approval. The agent fills every field
+matches the ledger. Approval covers exactly the listed writes and values; more
+items, other fields, different values, or schema changes need their own
+approval. The agent fills every field
 on cards it creates and keeps card details consistent with the ledger; humans
 do not hand-edit the board as routine. When the board and the ledger disagree,
 correct the board or report the mismatch; never edit the ledger to match the
