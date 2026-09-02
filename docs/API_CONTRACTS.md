@@ -786,7 +786,10 @@ After rating mutation succeeds, invalidate:
 
 These options are conditional and are not part of Tasks 15–19. Implement them
 only after Task 20 records measured catalog or query-plan evidence that
-client-side loading and search are insufficient.
+client-side loading and search are insufficient. Numeric trigger criteria and
+the 2026-09-02 evaluation (not met) live in
+`docs/decisions/2026-09-02-browse-scale-up-trigger.md` and
+`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`.
 
 When triggered, Browse may support:
 - Search text.

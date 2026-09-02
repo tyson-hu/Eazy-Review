@@ -60,6 +60,16 @@
   [`RESULT.md`](evidence/task-19-protected-account-deletion/RESULT.md).
   Detailed verification and human checklists:
   [`VERIFICATION.md`](evidence/task-19-protected-account-deletion/VERIFICATION.md).
+- Task 20 (Browse Scale-Up) remains **Conditional**. The measured trigger was
+  evaluated on 2026-09-02 against local Docker Supabase (2 published products,
+  ~699 B/product, Browse median ~6 ms) and cited staging evidence (2 published
+  fixtures); none of the ADR criteria were met. Client-side brand/name/SKU
+  search stays. Numeric criteria:
+  [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
+  evidence:
+  [`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
+  Task 21 (Real Feed MVP) is the next Revised Sequence item to select;
+  selecting and implementing Task 21 still requires its own human gate.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -1166,7 +1176,7 @@ Non-goals:
 
 ## Task 20: Browse Scale-Up
 
-Status: **Conditional.**
+Status: **Conditional — trigger evaluated on 2026-09-02, not met.**
 
 Depends on: Task 15 and a measured scaling need.
 
@@ -1177,7 +1187,13 @@ trigger evidence is accepted.
 
 Parallel-safe with: Task 21 only when the parent proves file-disjoint scopes.
 
-Human gate: A human/parent records the measured trigger before implementation.
+Human gate: Trigger evaluation recorded on 2026-09-02 (not met). Numeric
+criteria live in
+[`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
+measurement evidence lives in
+[`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
+A human/parent must re-record the trigger as met against those criteria before
+any Browse Scale-Up implementation starts.
 
 Goal: scale Browse only when catalog size and measured query behavior make
 client-side loading/filtering inefficient.
@@ -1192,6 +1208,14 @@ Deliverables when triggered:
 - Pagination/cursor loading and web query-state behavior when needed.
 
 Until then, keep client-side search over the small catalog.
+
+Trigger evaluation evidence (2026-09-02, local Docker Supabase at SHA
+`0ef13e0`; staging catalog size cited from prior S2/Task 15 walks, not
+re-measured): 2 published products; Browse response 1,398 bytes (~699
+B/product); local Browse median ~5.93 ms; projected payload at 300 products
+~210 KB; candidate `ilike` seq-scans and FTS uses `products_name_idx` at two
+rows with no scale pressure; in-memory `matchesQuery` stays under 1 ms through
+10,000 items. None of the ADR criteria are met.
 
 ## Task 21: Real Feed MVP
 
