@@ -1,12 +1,13 @@
 # Staged Codebase Simplification Plan
 
-Status: **Packets S1, E1, E3, and S2 are complete and published in PR #46. The
-human authorized readying PR #46 after a bounded Expo SDK 57 patch alignment
-and green exact-head Expo and Database CI. E1 and the separately addressed
+Status: **Packets S1, E1, E3, and S2 are complete and published in ready PR
+#46. Code and security reviews completed on head `64e36a2`; security reported
+no finding, and the human authorized a bounded remediation for the one P2
+skill-discovery metadata finding. E1 and the separately addressed
 Account/Profile P2 have human acceptance; S2 passed mobile web and iOS
 simulator verification and has a human-reported physical-device pass.
-Program-level human acceptance, code review, merge, and deployment remain
-pending; live readiness and check states are tracked on PR #46, no other
+Program-level human acceptance, merge, and deployment remain pending; live
+remediation, check, and thread states are tracked on PR #46, no other
 simplification packet has started, and Android is explicitly out of the current
 plan.**
 
@@ -48,8 +49,13 @@ chat history.
   bounded six-package Expo SDK 57 patch alignment, updating the stale PR
   validation result, exact-head Expo and Database CI, marking PR #46 ready only
   if all checks pass, updating the project board, and waiting for code review.
-  Program-level human acceptance, code review, merge, deployment, hosted
-  configuration, database work, and production access remain separate gates.
+  Code and security reviews then completed on head `64e36a2`; security reported
+  no finding and code review reported one P2 skill-discovery metadata mismatch.
+  The human explicitly approved one bounded remediation covering the two stale
+  manifest descriptions, matching `docs/LOOP_ENGINEERING.md` routing text,
+  generated wrappers, and required lifecycle status. Canonical skill bodies,
+  other packets, merge, deployment, hosted configuration, database work, and
+  production access remain outside that approval.
 - Before a batch, a human selects its candidate and accepts every listed
   capability loss. One candidate is the default batch size.
 - Stop when a real or unresolved dynamic consumer exists, a baseline cannot
@@ -103,7 +109,7 @@ Current repository proof at the S1 planning baseline (`839ce4fc`):
 
 This board records planning and packet status; it is not execution authority.
 S1, E1, E3, and S2 are complete and included in PR #46; no other packet is in
-progress. Live readiness and check states are tracked on the PR.
+progress. Live remediation, check, and thread states are tracked on the PR.
 Priority ranks expected value and sequencing only: P1 is high-value, P2 is
 worthwhile after stronger cuts, and P3 is fold-only housekeeping. Difficulty
 reflects coordination and proof burden: XS is one local symbol/file, S is one
@@ -113,10 +119,10 @@ product/skill approval or native proof.
 | Lane | Priority | ID | Potential work | Benefit | Confidence | Difficulty | Gate or next move |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | In review | P0 | S1 | Remove Create Expo starter subtree, sample font, and unused direct dependencies/config | High | Contract | M | PR #46 review; web/iOS pass; Android explicitly out of the current plan |
-| In review | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance complete; code review and merge remain pending |
+| In review | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance complete; program acceptance and merge remain pending |
 | Ready, unselected | P2 | E2 | Share only identical SDK/network error-shape extraction across catalog, ratings, and Auth | Medium | Contract | M | Keep every domain normalizer and transport policy separate |
-| In review | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Included in PR #46; program acceptance, code review, and merge remain pending |
-| In review | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Mobile web and iOS simulator pass; physical device `tested-pass` by human report; program acceptance and code review remain pending |
+| In review | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Included in PR #46; program acceptance and merge remain pending |
+| In review | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Mobile web and iOS simulator pass; physical device `tested-pass` by human report; approved skill-discovery review remediation tracked on PR #46 |
 | Proof first | P2 | S3 | Remove `react-native-url-polyfill` over Expo WinterCG URL | Medium | Static | L | Boot-order probe and web/iOS/Android cold-start proof |
 | Fold only | P3 | E4 | Inline the one-caller splash-dismiss relay and retire its proxy test | Low | Static | M | Only with layout/bootstrap work and boot-equivalence proof |
 | Folded into S2 | P3 | L1 | Remove dead `RatingRow` and tiny candidate-exclusive exports | Low | Static | XS | Implemented inside S2; no standalone packet |

@@ -96,8 +96,9 @@ revalidated before the authorized local commit.
 
 ## Required next decision
 
-S2 is included in PR #46. The human authorized marking the PR ready after the
-bounded Expo SDK 57 patch alignment and green exact-head Expo and Database CI;
-live readiness and check states are tracked on the PR. Program-level human
-acceptance, code review, merge, deployment, hosted configuration, database
-work, and production access remain separate decisions.
+S2 is included in ready PR #46. Code and security reviews completed on head
+`64e36a2`; security reported no finding, and the human authorized a bounded
+remediation for the one P2 skill-discovery metadata finding. Live remediation,
+check, and thread states are tracked on the PR. Program-level human acceptance,
+merge, deployment, hosted configuration, database work, and production access
+remain separate decisions.

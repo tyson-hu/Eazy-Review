@@ -14,7 +14,7 @@
     },
     {
       "name": "feature-slice-builder",
-      "description": "Use when implementing one user-visible feature from docs/TASKS.md that spans data and UI (mock-first, connected-read, core-auth, connected-write, recovery, or protected deletion)."
+      "description": "Use when implementing one user-visible feature from docs/TASKS.md that spans data and UI (connected-read, core-auth, connected-write, recovery, or protected deletion)."
     },
     {
       "name": "interactive-preview-loop",
@@ -30,7 +30,7 @@
     },
     {
       "name": "product-data-modeling",
-      "description": "Use for frontend-only product/rating shape changes — types, mock data, and API contracts, with no SQL."
+      "description": "Use for frontend-only product/rating shape changes — types, scoped fixtures, and API contracts, with no SQL."
     },
     {
       "name": "refactor-safety-loop",
