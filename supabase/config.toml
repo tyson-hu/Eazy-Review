@@ -65,7 +65,9 @@ enabled = true
 schema_paths = []
 
 [db.seed]
-# Task 13 product seed: two published products (complete + sparse).
+# Catalog seed: 27 published products — the Task 13 fixtures (complete +
+# sparse) plus the 25-product 2026-09-02 extension (StockX metadata via
+# KicksDB, maintainer-supplied Eazy assessments). Idempotent on reapply.
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"

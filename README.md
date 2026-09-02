@@ -142,10 +142,13 @@ npm test
 
 Accepted Tasks 11–12 database evidence is preserved in
 `docs/evidence/task-11-12-database-acceptance/RESULT.md`.
-The reset loads Task 13's deterministic two-product catalog seed: a complete
-Air Force 1 White fixture and a sparse Samba White and Black fixture. The test
-command first verifies that the same-database reapply fixture is byte-identical
-to the canonical `supabase/seed.sql` source.
+The reset loads the deterministic 27-product catalog seed: Task 13's complete
+Air Force 1 White and sparse Samba White and Black fixtures plus the
+2026-09-02 extension of 25 StockX-sourced products (metadata via the KicksDB
+API, maintainer-supplied official Eazy assessments, StockX lowest-ask offers,
+and product photos committed under `supabase/seed-assets/products/`). The
+test command first verifies that the same-database reapply fixture is
+byte-identical to the canonical `supabase/seed.sql` source.
 
 ## Physical iPhone Development And Offline Testing
 
