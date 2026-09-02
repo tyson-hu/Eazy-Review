@@ -4,7 +4,7 @@ date: 2026-09-02
 status: proposed
 area: architecture
 tasks: [20]
-pr: null
+pr: 49
 tags: [browse, catalog, performance, trigger]
 supersedes: []
 ---
