@@ -140,10 +140,10 @@ stop-on-error do not neutralize such text.
     with title and body only and returns the item ID), then one `item-edit`
     per field until ID, Lane, Status, and the planning fields are all set.
   - Archive: `gh project item-archive 4 --owner tyson-hu --id <item>`.
-  - README: `gh project edit 4 --owner tyson-hu --readme "$(cat <README
-    file>)"` — the flag replaces the whole README, so save the current README
-    to the file first (`gh project view … | jq -r '.readme'`) and change only
-    the listed lines in that file.
+  - README: first save the current README with `gh project view 4 --owner
+    tyson-hu --format json | jq -r '.readme' > <README file>`, change only the
+    listed lines in that file, then `gh project edit 4 --owner tyson-hu
+    --readme "$(cat <README file>)"` — the flag replaces the whole README.
 - **HIGH IMPACT:** any bulk loop or more items than the approved line lists;
   Status, Lane, or other field/option schema changes (`field-create`,
   `field-delete`, option edits); project close; any move to `Completed` not
