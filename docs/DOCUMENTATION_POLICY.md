@@ -244,10 +244,13 @@ next task, so nothing about the finished task is written after the merge.
 
 1. The human reviews the PR and tells the agent it is accepted.
 2. Before merge, the agent records acceptance in `docs/TASKS.md` inside the
-   same PR (for example `Done — human accepted and merged in PR #N on <date>`),
+   same PR (for example `Done — human accepted in PR #N on <date>`),
    regenerates any affected generated document, re-runs `npm run
-   check:readonly`, and pushes. The PR body's `Project #4 moves:` line lists the
-   resulting `ID: In Review → Completed` write.
+   check:readonly`, and pushes. Record the acceptance only, never the merge:
+   the text reaches `master` solely through that merge, so it can never claim
+   one that did not happen, and a PR that stalls or is abandoned leaves the
+   ledger untouched. The PR body's `Project #4 moves:` line lists the resulting
+   `ID: In Review → Completed` write.
 3. Merge requires exact-head CI green and zero unresolved review threads: every
    automated (Codex, Bugbot, security) or human review comment on the current
    head is either fixed and resolved, or answered with evidence and resolved,
