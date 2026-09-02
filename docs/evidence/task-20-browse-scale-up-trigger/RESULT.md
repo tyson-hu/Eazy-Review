@@ -96,7 +96,7 @@ Against
 
 | Criterion | Threshold | Observed / projected | Met? |
 | --- | --- | --- | --- |
-| Catalog size | ≥ 300 published (or planned) | 2 local; 2 staging (cited) | No |
+| Catalog size | ≥ 300 published (measured) | 2 local; 2 staging (cited) | No |
 | Browse payload | ≥ 1 MB measured or projected | 1,398 B; ~210 KB at 300 | No |
 | Latency / UI | ≥ 2 s device median, or filter+render ≥ ~50 ms | Local REST median ~6 ms only; physical staging Browse median and on-device filter+render **not measured** this run. Filter-alone micro-bench ≪ 50 ms through 10k is insufficient for this criterion | Not evaluated |
 

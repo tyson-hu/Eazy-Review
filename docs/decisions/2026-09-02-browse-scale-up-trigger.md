@@ -29,9 +29,8 @@ client.
 Task 20 implementation starts only when a human/parent records in
 `docs/TASKS.md` that **any one** of these criteria is met:
 
-1. **Catalog size.** Published catalog ≥ 300 products, or a scheduled catalog
-   load (Task 28 import or a seed change) is planned to exceed 300 published
-   products before the next beta milestone.
+1. **Catalog size.** Published catalog ≥ 300 products (measured count on
+   local or approved staging — never production).
 2. **Browse payload.** Measured or projected Browse single-request payload ≥
    1 MB, where projection = measured bytes per published product × published
    count for the same `BROWSE_SELECT` shape.
@@ -41,7 +40,9 @@ Task 20 implementation starts only when a human/parent records in
    eager `.map` rendering in a ScrollView is the practical UI bound).
 
 Until one criterion is recorded as met, keep client-side search over the
-small catalog. Do not ship Filter/Sort/pagination placeholders.
+small catalog. Do not ship Filter/Sort/pagination placeholders. A scheduled
+seed or Task 28 import is a reason to **re-measure** after the load lands; it
+does not by itself authorize Task 20.
 
 **Who records.** The human or parent writes the trigger result into Task 20's
 `Status` / `Human gate` in `docs/TASKS.md` and points at evidence under
