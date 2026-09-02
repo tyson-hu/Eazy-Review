@@ -310,9 +310,9 @@ contract.
 
 ## Maintenance: Agent infrastructure catch-up and Project #4 mirror rule
 
-Status: **Implemented; awaiting human review and acceptance in PR #48.** Board
-item `INF-04` (Lane Infrastructure) is `In Review` while PR #48 is open and
-moves to `Completed` immediately after the merge (`docs/DOCUMENTATION_POLICY.md`,
+Status: **Done — human accepted in PR #48 on 2026-09-02.** Board item `INF-04`
+(Lane Infrastructure) is `In Review` while PR #48 is open and moves to
+`Completed` immediately after the merge (`docs/DOCUMENTATION_POLICY.md`,
 Acceptance And Merge).
 
 This unnumbered maintenance item does not start or renumber Task 20 and
