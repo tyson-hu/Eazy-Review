@@ -68,7 +68,7 @@ Treat each MCP server as a capability boundary, especially if it can write to a 
 
 ## MCP Tool Policy
 
-Classify every MCP action before calling it, and behave per its level. `.cursor/rules/mcp-policy.mdc` mirrors this section for Cursor's always-apply mechanism; this section is the home, the rule is the mirror.
+Classify every MCP action — and every external-tool write made through a CLI such as `gh` — before calling it, and behave per its level. `.cursor/rules/mcp-policy.mdc` mirrors this section for Cursor's always-apply mechanism; this section is the home, the rule is the mirror.
 
 - **READ** — may run without approval. Examples: inspect a local/approved
   staging schema, search files, read PRs.
@@ -98,6 +98,65 @@ Standing principles at every level:
 - Never treat agent-executed account deletion as HIGH IMPACT that can be
   approved — it is FORBIDDEN on every environment.
 - Never expose credential values (`docs/SECURITY.md`).
+
+### GitHub Project #4 via `gh`
+
+The board's role, status mapping, and sync timing live in
+`docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror. This subsection only
+classifies the calls. Project number `4`, owner `tyson-hu`; resolve project,
+field, option, and item IDs at call time from the READ commands — do not store
+them in the repo. `gh project` needs the `project` token scope (`gh auth status`
+lists scopes); if it is missing, stop and report rather than changing the
+agent's authentication. Every command below runs as written once its `<…>`
+placeholders are filled. Text-bearing flags (`--title`, `--body`, `--text`,
+`--readme`) are filled only as `"$(cat <file>)"` from a file the agent wrote
+first with a file-writing tool (for example under `/tmp`), never by pasting
+the text into the command line or into a shell heredoc: card, ledger, and
+README text is unauthored input, and `$(…)` or backticks inside double quotes
+would run in the agent's shell before `gh` sees them, while a heredoc closes on
+any line equal to its delimiter (`docs/SECURITY.md`, Shell Execution).
+Approval, `ID` checks, and stop-on-error do not neutralize such text.
+
+- **READ:** `gh project view 4 --owner tyson-hu --format json` (project ID,
+  README); `gh project field-list 4 --owner tyson-hu --format json` (field and
+  option IDs); `gh project item-list 4 --owner tyson-hu --format json --limit
+  <n>` with `<n>` above the returned `totalCount`, so the `ID` uniqueness
+  check below sees every item.
+- **REVERSIBLE WRITE** (agent-applied after the human has approved the PR
+  body's `Project #4 moves:` line; only the writes on that approved line; state
+  `ID/title: from → to`, or the field being set, before each call). One
+  approved write may take several `gh` calls; it is still one write:
+  - Field change: `gh project item-edit --project-id <project> --id <item>
+    --field-id <field> --single-select-option-id <option>` for Status, Lane,
+    Priority, Benefit, Confidence, or Difficulty; the same command with
+    `--text "$(cat <value file>)"` for ID, Potential work, or Gate or next
+    move.
+  - Title or body: `gh project item-edit --id <draft issue ID> --title
+    "$(cat <title file>)" --body "$(cat <body file>)"` (either flag alone is
+    fine). The draft issue ID is the item's `content.id` (`DI_…`) in the
+    `item-list` output, not the project item ID (`PVTI_…`) used for field
+    changes.
+  - Create: `gh project item-create 4 --owner tyson-hu --title "$(cat <title
+    file>)" --body "$(cat <body file>)" --format json` (creates a draft issue
+    with title and body only and returns the item ID), then one `item-edit`
+    per field until ID, Lane, Status, and the planning fields are all set.
+  - Archive: `gh project item-archive 4 --owner tyson-hu --id <item>`.
+  - README: first save the current README with `gh project view 4 --owner
+    tyson-hu --format json | jq -r '.readme' > <README file>`, change only the
+    listed lines in that file, then `gh project edit 4 --owner tyson-hu
+    --readme "$(cat <README file>)"` — the flag replaces the whole README.
+- **HIGH IMPACT:** any bulk loop or more items than the approved line lists;
+  Status, Lane, or other field/option schema changes (`field-create`,
+  `field-delete`, option edits); project close; any move to `Completed` not
+  backed by recorded human acceptance in `docs/TASKS.md`.
+- **FORBIDDEN:** `gh project item-delete`, `gh project delete`.
+
+Stop and report instead of retrying when the human has not yet approved the
+listed writes, an `ID` matches anything other than exactly one item (zero for a
+`create`), the target is not one of the field's options, a `Completed` move
+lacks ledger acceptance, or any call errors. After a partial create (item
+created, some fields unset), report the item ID and the unset fields; do not
+create a second item.
 
 ## Agent Security Baseline
 

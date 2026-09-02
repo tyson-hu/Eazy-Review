@@ -77,6 +77,10 @@ available at
 Accepted database behavior remains canonical in `docs/DATA_MODEL.md`; the
 archive is historical evidence, not a current plan.
 
+GitHub Project #4 ("Eazy Review Roadmap") mirrors this ledger. This file is
+authoritative if the board drifts; the status mapping, sync timing, and who may
+move cards live in `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror.
+
 ### Active maintenance initiative: staged codebase simplification
 
 Status: **S1, E1, E3, S2, and the two bounded follow-ups are complete, human
@@ -295,11 +299,56 @@ Scope:
 13. Prefer `matchAll()` and restricted regex flags.
 14. Derive generated and mirror registry properties rather than declaring the
     same facts twice.
+15. Validate that every relative link from `docs/TASKS.md` into
+    `docs/evidence/**` resolves to a tracked file, so evidence protection no
+    longer depends on registering each linked file by hand.
 
 Residual risk until this lands: general Markdown/HTML rendering constructs
 outside the documented plain-Markdown task-ledger grammar remain deferred
 limitations of the PR #28 checker, not open defects inside that supported
 contract.
+
+## Maintenance: Agent infrastructure catch-up and Project #4 mirror rule
+
+Status: **Done — human accepted in PR #48 on 2026-09-02.** Board item `INF-04`
+(Lane Infrastructure) is `In Review` while PR #48 is open and moves to
+`Completed` immediately after the merge (`docs/DOCUMENTATION_POLICY.md`,
+Acceptance And Merge).
+
+This unnumbered maintenance item does not start or renumber Task 20 and
+changes no product behavior, schema, RLS, Edge Function, dependency, or CI
+workflow. It caught the agent-infrastructure graph and workflow docs up with the
+repository after Tasks 13–19 and the accepted simplification packets, and made
+GitHub Project #4 sync part of the documentation process:
+
+- Registered `docs/superpowers/` (approved plans and specs) as a status
+  document with a `docs/TASKS.md` dependency and a `planning-artifacts` impact
+  rule, and registered the accepted Task 15–19 and S2 evidence directories
+  plus every `RESULT.md` / `VERIFICATION.md` this ledger links as historical
+  records, so moving or deleting a registered evidence path fails
+  `check:agent-infra` instead of leaving a dangling ledger link. Unregistered
+  files inside those directories (screenshots) are still checked only through
+  their directory; ledger-link validation is Checker v2 scope.
+- Declared `.codex/` (Codex project-scoped agent definitions) gitignored,
+  user-local state; `.cursor/agents/` remains the only committed subagent
+  surface.
+- Made the Roles And Rollout Status table in `docs/AGENT_WORKFLOW.md` the
+  declared rollout home and removed two pointers to a ledger section that did
+  not exist; added the missing `check:skill-wrappers`, `skills:generate`, and
+  `check:secrets` entries to Validation Commands; aligned two Document Update
+  Map rows with the impact rules they had drifted from.
+- Made GitHub Project #4 an explicitly derived mirror of this ledger: the
+  status mapping, sync timing (Completion Sequence step 9), the mandatory
+  `Project #4 moves:` PR-body line, the agent-applies-after-human-approval
+  rule (humans review and approve, agents execute every board write), and
+  `gh project` call classification are recorded in
+  `docs/DOCUMENTATION_POLICY.md` and `docs/MCP_WORKFLOW.md`, with the durable
+  choice in
+  [`docs/decisions/2026-09-02-github-project-board-derived-mirror.md`](decisions/2026-09-02-github-project-board-derived-mirror.md).
+
+Explicitly not done: Agent infrastructure checker v2 (still deferred above),
+any new skill or subagent, any CI that calls GitHub with a token, and any board
+mutation during implementation.
 
 ## Revised Sequence
 

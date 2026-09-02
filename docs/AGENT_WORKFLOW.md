@@ -31,7 +31,7 @@ Recording rules, statuses, and search examples live in `docs/decisions/README.md
 
 ## Session Boundaries And State Persistence
 
-Chat is the workbench; files are the hard drive. For long tasks, loops, and cross-day collaboration, state must never live only in chat — `docs/notes/handoff.md`, `docs/notes/blocker-*.md`, `docs/TASKS.md`, issue boards, and PR checklists are the external state the next session reads, not old transcripts.
+Chat is the workbench; files are the hard drive. For long tasks, loops, and cross-day collaboration, state must never live only in chat — `docs/notes/handoff.md`, `docs/notes/blocker-*.md`, `docs/TASKS.md`, and PR checklists are the external state the next session reads, not old transcripts. GitHub Project #4 is a derived public mirror of `docs/TASKS.md`, never the state a session resumes from (`docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
 
 Tell the user it is time to switch to a new session when:
 
@@ -77,7 +77,7 @@ Example: building the Browse screen needs the Browse flow in `docs/USER_FLOWS.md
 
 ## Delegation And Subagent Policy
 
-Subagents are isolated helpers the parent agent can launch for context isolation, parallel work, or checking work independently of the context that produced it. Active subagent definitions live in `.cursor/agents/`. The parent agent owns scope, decomposition, escalation, and final acceptance; subagents never accept their own work. `.cursor/rules/orchestration.mdc` mirrors the operational reminders for Cursor.
+Subagents are isolated helpers the parent agent can launch for context isolation, parallel work, or checking work independently of the context that produced it. Active subagent definitions live in `.cursor/agents/`. A gitignored `.codex/` tree (Codex project-scoped agent definitions) is user-local state, not a registered surface. The parent agent owns scope, decomposition, escalation, and final acceptance; subagents never accept their own work. `.cursor/rules/orchestration.mdc` mirrors the operational reminders for Cursor.
 
 ### When To Delegate
 
@@ -98,7 +98,7 @@ Never escalate tiers automatically. Before routing work to a stronger tier, stat
 
 ### Roles And Rollout Status
 
-The delegation architecture defines four roles. Rollout is phased; current status is tracked in `docs/TASKS.md`.
+The delegation architecture defines four roles. Rollout is phased; this table is the canonical rollout status.
 
 | Role | Purpose | Status |
 | --- | --- | --- |
@@ -250,6 +250,12 @@ credentials. This trust gate overrides every skill or SOP instruction below.
    decision, mirror, skill, or agent-infrastructure path, re-run
    `npm run check:readonly` on the final tree before handoff so the document,
    task-graph, generated-index, and stale-term gates still cover post-doc edits.
+   If the ledger edit moved a `docs/TASKS.md` status that has a GitHub Project
+   #4 item, or changed a fact a card restates, list the proposed board writes
+   (or `none`) per the GitHub Project #4 Mirror section of
+   `docs/DOCUMENTATION_POLICY.md`; the agent applies them only after the
+   ledger is written and the human has approved them, and the task is not
+   complete until the board matches the ledger.
 10. **Final repository check and handoff** — `git diff --check`,
     `git status --short`, then the Human-Readable Handoff below.
 
@@ -295,6 +301,8 @@ A task is not done until:
 
 - Docs affected by the change are updated per `docs/DOCUMENTATION_POLICY.md`.
 - `docs/TASKS.md` reflects the completed work and any newly discovered follow-up work.
+- GitHub Project #4 matches the ledger: the proposed board writes are listed on the PR body and, once the human approves them, applied by the agent (`docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
+- Every review thread on the PR is resolved on the current head, acceptance is recorded in `docs/TASKS.md` inside the PR, and merge is the last repository action — the `Completed` board write follows it and nothing else does (`docs/DOCUMENTATION_POLICY.md`, Acceptance And Merge).
 - A new or changed durable high-impact decision has an individual record under `docs/decisions/`, and `docs/DECISIONS.md` has been regenerated. Routine fixes, validation, and task progress are not ADRs.
 - Validation was run, or skipped commands are named with a reason.
 - The Human-readable handoff (below) is written, listing docs updated or stating `No documentation update needed` with a reason.
@@ -307,6 +315,16 @@ Pick the narrowest command that covers the change:
 
 - `npm run decisions:build` — validates ADR metadata and writes the generated `docs/DECISIONS.md` index after a decision record changes.
 - `npm run decisions:check` — validates decision filenames, metadata, statuses, IDs, supersession links, required sections, the legacy archive, and generated-index freshness without writing. Run after decision-record or index-tooling edits; CI and `npm run check` also run it.
+- `npm run skills:generate` — regenerates both discovery-wrapper trees
+  (`.claude/skills`, `.agents/skills`) from `skills/manifest.json` after an
+  approved skill or manifest change; never edit wrappers by hand.
+- `npm run check:skill-wrappers` — verifies the manifest, canonical skill
+  inventory, exact generated wrapper output, and generator tests without
+  writing. Run after canonical skill, manifest, generator, or wrapper edits;
+  part of `check:readonly`.
+- `npm run check:secrets` — self-tests the scanner, then scans the allowlisted
+  repository paths for high-confidence secret patterns (`docs/SECURITY.md`);
+  part of `check:readonly` and Expo CI.
 - `npm run test:agent-infra` — unit tests for malformed manifests, missing
   paths, document/task dependency cycles, invalid mirrors, stale-term
   allowlists, impact reporting, and a valid fixture.
@@ -434,7 +452,7 @@ Every PR body uses this format (mirrored in `.github/pull_request_template.md`):
 ## Follow-ups
 ```
 
-`Safety` covers what could break and why it will not (or what to watch). `Follow-ups` lists deferred work, each with a home in `docs/TASKS.md`.
+`Safety` covers what could break and why it will not (or what to watch). `Follow-ups` lists deferred work, each with a home in `docs/TASKS.md`. The body ends with two trailing lines: `Docs updated:` (the list, or `No documentation update needed because …`) and `Project #4 moves:` (each proposed board write as `ID: from → to`, `create ID (Lane): Status` with every field's value, `ID: update <field → value, …>`, `archive ID`, or `README: update <the exact changed lines>`, or `none`; every write states the value it will set; the agent applies them after human approval; rule in `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
 
 ## Canonical Homes
 
@@ -450,11 +468,14 @@ One home per instruction; everywhere else points, never restates.
 | Frontend types, API functions, query keys, folder structure | `docs/API_CONTRACTS.md` |
 | Routes, user journeys, auth gates | `docs/USER_FLOWS.md` |
 | Doc-update gate and Document Update Map | `docs/DOCUMENTATION_POLICY.md` |
+| GitHub Project #4 role, status mapping, and sync rule | `docs/DOCUMENTATION_POLICY.md` (GitHub Project #4 Mirror; `gh` call classes in `docs/MCP_WORKFLOW.md`) |
+| Acceptance recording, merge requirements (green exact-head CI, zero unresolved review threads), merge as the last repository action | `docs/DOCUMENTATION_POLICY.md` (Acceptance And Merge) |
+| Approved implementation plans and design specs (planning artifacts; status stays in `docs/TASKS.md`) | `docs/superpowers/plans/`, `docs/superpowers/specs/` |
 | Machine-readable document lifecycle, ownership, dependency, mirror, stale-term, impact, and task-graph rules | `config/agent-infrastructure.json` |
 | Security rules | `docs/SECURITY.md` (mirrored by `.cursor/rules/security.mdc`) |
 | Session flow, context map, definition of done, validation commands, handoff and PR formats | `docs/AGENT_WORKFLOW.md` (this file) |
 | Session boundary triggers, state-persistence principle, resume prompt | `docs/AGENT_WORKFLOW.md` (this file) |
-| Delegation and subagent policy, model routing tiers, completion sequence, teach-back policy | `docs/AGENT_WORKFLOW.md` (this file, mirrored by `.cursor/rules/orchestration.mdc`) |
+| Delegation and subagent policy, roles and rollout status, model routing tiers, completion sequence, teach-back policy | `docs/AGENT_WORKFLOW.md` (this file, mirrored by `.cursor/rules/orchestration.mdc`) |
 | MCP tool policy (action classification and approval levels) | `docs/MCP_WORKFLOW.md` (mirrored by `.cursor/rules/mcp-policy.mdc`) |
 | iOS Simulator interactive preview and screenshot capture | `docs/MOBILE_SIMULATOR_SOP.md` (entry: `skills/interactive-preview-loop`) |
 | Expo web mobile preview via Playwright MCP | `docs/WEB_MOBILE_PREVIEW_SOP.md` (entry: `skills/interactive-preview-loop`) |

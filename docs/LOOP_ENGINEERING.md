@@ -77,7 +77,7 @@ Loops record exactly three kinds of memory, nothing else:
 - **Decisions** → individual records under `docs/decisions/` only for durable high-impact choices that meet `docs/decisions/README.md`; regenerate `docs/DECISIONS.md`.
 - **Session state** → `docs/notes/handoff.md` (via `skills/session-handoff`) and `docs/notes/blocker-<topic>.md` (via `skills/blocker-note`). These are working state for the next session, not project documentation: chat is the workbench, files are the hard drive.
 
-Outside `docs/notes/`, no scratch files, no notes docs, no status comments in code. Routine fixes, validation results, and task progress are not decision records. If it is not task status, a qualifying decision, or session state, it does not get written down as project memory.
+Outside `docs/notes/`, no scratch files, no notes docs, no status comments in code. Routine fixes, validation results, and task progress are not decision records. If it is not task status, a qualifying decision, or session state, it does not get written down as project memory. Two adjacent surfaces are not memory categories: GitHub Project #4 is a derived public mirror of `docs/TASKS.md` that never leads it, and approved plans or specs under `docs/superpowers/` are planning artifacts whose status still lives in the ledger (both governed by `docs/DOCUMENTATION_POLICY.md`).
 
 ## Loop Index
 
