@@ -4,7 +4,7 @@ date: 2026-09-02
 status: accepted
 area: agent-workflow
 tasks: []
-pr: null
+pr: 48
 tags: [agents, documentation, github, workflow]
 supersedes: []
 ---

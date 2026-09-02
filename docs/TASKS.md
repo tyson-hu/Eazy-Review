@@ -307,9 +307,9 @@ contract.
 
 ## Maintenance: Agent infrastructure catch-up and Project #4 mirror rule
 
-Status: **Implemented on `agent/agent-infra-board-sync`; awaiting PR review and
-human acceptance.** Proposed board item: `INF-04` (Lane Infrastructure),
-`In Review` while the PR is open, `Completed` on acceptance.
+Status: **Implemented; awaiting human review and acceptance in PR #48.** Board
+item `INF-04` (Lane Infrastructure) is `In Review` while PR #48 is open and
+moves to `Completed` on acceptance.
 
 This unnumbered maintenance item does not start or renumber Task 20 and
 changes no product behavior, schema, RLS, Edge Function, dependency, or CI
