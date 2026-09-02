@@ -204,16 +204,20 @@ restates (title, summary, gate, delivery PR), list each proposed board write as
 otherwise write `none`, on the PR body's `Project #4 moves:` line
 (`.github/pull_request_template.md`). A `create` names every field the card
 will carry (Title, ID, Lane, Status, Priority, Potential work, Benefit,
-Confidence, Difficulty, Gate or next move, body). Before a PR exists, list the
-same writes under "What needs review" in the handoff. Propose `Completed` only
-when the ledger already records human acceptance.
+Confidence, Difficulty, Gate or next move, body), with the body in the format
+of the existing cards in its Lane. Before a PR exists, list the same writes
+under "What needs review" in the handoff. Propose `Completed` only when the
+ledger already records human acceptance: the acceptance edit to `docs/TASKS.md`
+is written and committed (on the closeout branch or PR is enough — the board
+follows the ledger edit, not the closeout merge).
 
 Who: the agent applies every board write, after human approval. This is an
 agent-operated project: humans review and approve, agents execute. The human
 reviews the ledger change and the listed writes, then tells the agent — PR
 acceptance or merge, or an explicit go-ahead in chat. Only after that approval
-does the agent apply the listed writes, one REVERSIBLE WRITE per item using the
-`gh project` classification, recipe, and stop conditions in
+does the agent apply the listed writes, one approved write per listed item — a
+`create` is `item-create` plus the field edits that fill the card, still one
+write — using the `gh project` classification, recipe, and stop conditions in
 `docs/MCP_WORKFLOW.md`, and a task is not reported complete until the board
 matches the ledger. Approval covers exactly the listed writes; more items, other
 fields, or schema changes need their own approval. The agent fills every field

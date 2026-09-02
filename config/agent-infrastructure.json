@@ -397,6 +397,66 @@
       "owner": "historical-record"
     },
     {
+      "path": "docs/evidence/s2-mock-catalog-retirement/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-11-12-database-acceptance/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-15-public-catalog/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-16-auth-account/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-my-rating-persistence/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-product-detail-restoration/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-rating-slider-gesture/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-18-password-recovery/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-19-protected-account-deletion/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-19-protected-account-deletion/VERIFICATION.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/notes",
       "kind": "directory",
       "lifecycle": "status",

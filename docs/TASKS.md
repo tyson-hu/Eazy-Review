@@ -299,6 +299,9 @@ Scope:
 13. Prefer `matchAll()` and restricted regex flags.
 14. Derive generated and mirror registry properties rather than declaring the
     same facts twice.
+15. Validate that every relative link from `docs/TASKS.md` into
+    `docs/evidence/**` resolves to a tracked file, so evidence protection no
+    longer depends on registering each linked file by hand.
 
 Residual risk until this lands: general Markdown/HTML rendering constructs
 outside the documented plain-Markdown task-ledger grammar remain deferred
@@ -319,9 +322,12 @@ GitHub Project #4 sync part of the documentation process:
 
 - Registered `docs/superpowers/` (approved plans and specs) as a status
   document with a `docs/TASKS.md` dependency and a `planning-artifacts` impact
-  rule, and registered the accepted Task 15–19 and S2 evidence sets as
-  historical records, so moved or deleted evidence fails `check:agent-infra`
-  instead of leaving dangling ledger links.
+  rule, and registered the accepted Task 15–19 and S2 evidence directories
+  plus every `RESULT.md` / `VERIFICATION.md` this ledger links as historical
+  records, so moving or deleting a registered evidence path fails
+  `check:agent-infra` instead of leaving a dangling ledger link. Unregistered
+  files inside those directories (screenshots) are still checked only through
+  their directory; ledger-link validation is Checker v2 scope.
 - Declared `.codex/` (Codex project-scoped agent definitions) gitignored,
   user-local state; `.cursor/agents/` remains the only committed subagent
   surface.

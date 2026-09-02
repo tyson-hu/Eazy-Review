@@ -105,21 +105,32 @@ The board's role, status mapping, and sync timing live in
 `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror. This subsection only
 classifies the calls. Project number `4`, owner `tyson-hu`; resolve project,
 field, option, and item IDs at call time from the READ commands — do not store
-them in the repo.
+them in the repo. `gh project` needs the `project` token scope (`gh auth status`
+lists scopes); if it is missing, stop and report rather than changing the
+agent's authentication. Every command below runs as written once its `<…>`
+placeholders are filled.
 
-- **READ:** `gh project view 4 --owner tyson-hu --format json`,
-  `gh project field-list 4 --owner tyson-hu --format json`,
-  `gh project item-list 4 --owner tyson-hu --format json --limit 100`.
+- **READ:** `gh project view 4 --owner tyson-hu --format json` (project ID,
+  README); `gh project field-list 4 --owner tyson-hu --format json` (field and
+  option IDs); `gh project item-list 4 --owner tyson-hu --format json --limit
+  <n>` with `<n>` above the returned `totalCount`, so the `ID` uniqueness
+  check below sees every item.
 - **REVERSIBLE WRITE** (agent-applied after the human has approved the PR
-  body's `Project #4 moves:` line; state `ID/title: from → to`, or the field
-  being set, before each call; only the writes on that approved line):
-  `gh project item-edit --project-id <project> --id <item> --field-id <field>`
-  with `--single-select-option-id <option>` for Status, Lane, Priority,
-  Benefit, Confidence, or Difficulty, or `--text` for ID, Potential work, or
-  Gate or next move; `gh project item-create` for one listed new ledger item,
-  followed by the item-edits that fill all of its fields; `gh project
-  item-archive` for one listed item; `gh project edit 4 --readme` for a listed
-  README change.
+  body's `Project #4 moves:` line; only the writes on that approved line; state
+  `ID/title: from → to`, or the field being set, before each call). One
+  approved write may take several `gh` calls; it is still one write:
+  - Field change: `gh project item-edit --project-id <project> --id <item>
+    --field-id <field> --single-select-option-id <option>` for Status, Lane,
+    Priority, Benefit, Confidence, or Difficulty; the same command with
+    `--text "<value>"` for ID, Potential work, or Gate or next move.
+  - Create: `gh project item-create 4 --owner tyson-hu --title "<title>"
+    --body "<body>" --format json` (creates a draft issue with title and body
+    only and returns the item ID), then one `item-edit` per field until ID,
+    Lane, Status, and the planning fields are all set.
+  - Archive: `gh project item-archive 4 --owner tyson-hu --id <item>`.
+  - README: `gh project edit 4 --owner tyson-hu --readme "<full README
+    text>"` — the flag replaces the whole README, so read it first and change
+    only the listed lines.
 - **HIGH IMPACT:** any bulk loop or more items than the approved line lists;
   Status, Lane, or other field/option schema changes (`field-create`,
   `field-delete`, option edits); project close; any move to `Completed` not
@@ -129,7 +140,9 @@ them in the repo.
 Stop and report instead of retrying when the human has not yet approved the
 listed writes, an `ID` matches anything other than exactly one item (zero for a
 `create`), the target is not one of the field's options, a `Completed` move
-lacks ledger acceptance, or any call errors.
+lacks ledger acceptance, or any call errors. After a partial create (item
+created, some fields unset), report the item ID and the unset fields; do not
+create a second item.
 
 ## Agent Security Baseline
 

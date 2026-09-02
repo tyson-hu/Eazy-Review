@@ -39,8 +39,9 @@ authorizes work.
   agent-operated project — humans review and approve, agents execute — so the
   human reviews the ledger change and the listed writes and tells the agent
   (PR acceptance or merge, or an explicit go-ahead), and only then does the
-  agent apply exactly those writes, one REVERSIBLE WRITE per item, resolving
-  board IDs at call time rather than storing them in the repo. A task is not
+  agent apply exactly those writes, one approved write per listed item (a
+  create includes the field edits that fill the card), resolving board IDs at
+  call time rather than storing them in the repo. A task is not
   complete until the board matches the ledger. Bulk or unlisted writes,
   schema changes, and unbacked `Completed` moves are HIGH IMPACT; item or
   project deletion is FORBIDDEN.
