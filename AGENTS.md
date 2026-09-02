@@ -93,7 +93,7 @@ Skill lifecycle is a hybrid rule: the agent proposes, the human approves, the ag
 
 - Docs are part of the change: apply the gate in `docs/DOCUMENTATION_POLICY.md` before commit, PR handoff, or reporting completion.
 - Decision recording rules and the ADR template: `docs/decisions/README.md` (the `docs/DECISIONS.md` index is generated).
-- GitHub Project #4 is a derived mirror of `docs/TASKS.md`, never a source of truth; status mapping and sync rule: `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror; `gh project` call classes: `docs/MCP_WORKFLOW.md`.
+- GitHub Project #4 is a derived mirror of `docs/TASKS.md`, never a source of truth; the agent applies board writes after human approval; status mapping and sync rule: `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror; `gh project` call classes: `docs/MCP_WORKFLOW.md`.
 - Delegation policy: `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy. Active and conditionally available project subagents live in `.cursor/agents/`; role status, invocation boundaries, and the execution sequence live in `docs/AGENT_WORKFLOW.md`.
 - Security rules: `docs/SECURITY.md`
 - Session flow, definition of done, handoff and PR formats: `docs/AGENT_WORKFLOW.md`

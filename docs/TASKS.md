@@ -332,9 +332,11 @@ GitHub Project #4 sync part of the documentation process:
   Map rows with the impact rules they had drifted from.
 - Made GitHub Project #4 an explicitly derived mirror of this ledger: the
   status mapping, sync timing (Completion Sequence step 9), the mandatory
-  `Project #4 moves:` PR-body line, human-applied default, and `gh project`
-  call classification are recorded in `docs/DOCUMENTATION_POLICY.md` and
-  `docs/MCP_WORKFLOW.md`, with the durable choice in
+  `Project #4 moves:` PR-body line, the agent-applies-after-human-approval
+  rule (humans review and approve, agents execute every board write), and
+  `gh project` call classification are recorded in
+  `docs/DOCUMENTATION_POLICY.md` and `docs/MCP_WORKFLOW.md`, with the durable
+  choice in
   [`docs/decisions/2026-09-02-github-project-board-derived-mirror.md`](decisions/2026-09-02-github-project-board-derived-mirror.md).
 
 Explicitly not done: Agent infrastructure checker v2 (still deferred above),

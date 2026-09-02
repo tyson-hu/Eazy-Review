@@ -26,9 +26,11 @@ protected account-deletion flow and prepare a checklist, but an actual deletion
 must be initiated and executed manually by a human, never through an
 agent-controlled browser, MCP, SQL, or admin tool.
 
-GitHub Project #4 via `gh`: listing is READ; one stated card move, create, or
-archive from the PR body's `Project #4 moves:` line is REVERSIBLE WRITE after
-explicit human authorization; bulk moves, schema changes, or `Completed` without
-ledger acceptance are HIGH IMPACT; item or project deletion is FORBIDDEN. The
-board mirrors `docs/TASKS.md` and never leads it (`docs/DOCUMENTATION_POLICY.md`,
+GitHub Project #4 via `gh`: listing is READ; the writes on the PR body's
+`Project #4 moves:` line (card moves, item creation with all fields, detail
+edits, archive, README pointer) are REVERSIBLE WRITEs that the agent applies
+after human approval, one per item — the human reviews and approves, the agent
+executes; bulk or unlisted writes, schema changes, or `Completed` without ledger
+acceptance are HIGH IMPACT; item or project deletion is FORBIDDEN. The board
+mirrors `docs/TASKS.md` and never leads it (`docs/DOCUMENTATION_POLICY.md`,
 GitHub Project #4 Mirror).

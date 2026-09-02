@@ -251,9 +251,11 @@ credentials. This trust gate overrides every skill or SOP instruction below.
    `npm run check:readonly` on the final tree before handoff so the document,
    task-graph, generated-index, and stale-term gates still cover post-doc edits.
    If the ledger edit moved a `docs/TASKS.md` status that has a GitHub Project
-   #4 item, list the proposed card moves (or `none`) per the GitHub Project #4
-   Mirror section of `docs/DOCUMENTATION_POLICY.md`; the board is updated only
-   after the ledger, and by a human unless a move is explicitly authorized.
+   #4 item, or changed a fact a card restates, list the proposed board writes
+   (or `none`) per the GitHub Project #4 Mirror section of
+   `docs/DOCUMENTATION_POLICY.md`; the agent applies them only after the
+   ledger is written and the human has approved them, and the task is not
+   complete until the board matches the ledger.
 10. **Final repository check and handoff** — `git diff --check`,
     `git status --short`, then the Human-Readable Handoff below.
 
@@ -299,6 +301,7 @@ A task is not done until:
 
 - Docs affected by the change are updated per `docs/DOCUMENTATION_POLICY.md`.
 - `docs/TASKS.md` reflects the completed work and any newly discovered follow-up work.
+- GitHub Project #4 matches the ledger: the proposed board writes are listed on the PR body and, once the human approves them, applied by the agent (`docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
 - A new or changed durable high-impact decision has an individual record under `docs/decisions/`, and `docs/DECISIONS.md` has been regenerated. Routine fixes, validation, and task progress are not ADRs.
 - Validation was run, or skipped commands are named with a reason.
 - The Human-readable handoff (below) is written, listing docs updated or stating `No documentation update needed` with a reason.
@@ -448,7 +451,7 @@ Every PR body uses this format (mirrored in `.github/pull_request_template.md`):
 ## Follow-ups
 ```
 
-`Safety` covers what could break and why it will not (or what to watch). `Follow-ups` lists deferred work, each with a home in `docs/TASKS.md`. The body ends with two trailing lines: `Docs updated:` (the list, or `No documentation update needed because …`) and `Project #4 moves:` (each proposed card move as `ID: from → to`, or `none`; rule in `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
+`Safety` covers what could break and why it will not (or what to watch). `Follow-ups` lists deferred work, each with a home in `docs/TASKS.md`. The body ends with two trailing lines: `Docs updated:` (the list, or `No documentation update needed because …`) and `Project #4 moves:` (each proposed board write as `ID: from → to`, `create ID (Lane): Status`, or `ID: update <fields>`, or `none`; the agent applies them after human approval; rule in `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
 
 ## Canonical Homes
 

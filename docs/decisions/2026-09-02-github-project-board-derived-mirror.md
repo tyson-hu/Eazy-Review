@@ -32,13 +32,18 @@ authorizes work.
   ownership live once in `docs/DOCUMENTATION_POLICY.md` (GitHub Project #4
   Mirror). `gh project` call classification lives in `docs/MCP_WORKFLOW.md`.
 - Sync attaches to the existing documentation gate (Completion Sequence
-  step 9): after a ledger status changes, the agent lists proposed card moves
+  step 9): after a ledger status changes, the agent lists the proposed board
+  writes — status moves, item creation with every card field, detail updates —
   on the mandatory `Project #4 moves:` line of the PR body, or writes `none`.
-- A human applies the moves at merge or acceptance. An agent may apply only
-  the listed moves after explicit authorization, one REVERSIBLE WRITE per
-  item, resolving board IDs at call time rather than storing them in the repo.
-  Bulk, schema, or unbacked `Completed` moves are HIGH IMPACT; item or project
-  deletion is FORBIDDEN.
+- The agent applies every board write; the human approves. Eazy Review is an
+  agent-operated project — humans review and approve, agents execute — so the
+  human reviews the ledger change and the listed writes and tells the agent
+  (PR acceptance or merge, or an explicit go-ahead), and only then does the
+  agent apply exactly those writes, one REVERSIBLE WRITE per item, resolving
+  board IDs at call time rather than storing them in the repo. A task is not
+  complete until the board matches the ledger. Bulk or unlisted writes,
+  schema changes, and unbacked `Completed` moves are HIGH IMPACT; item or
+  project deletion is FORBIDDEN.
 - The board is not a project-memory category, not a checker input, and not a
   CI dependency. No token-bearing CI job, generator, snapshot file, or skill is
   introduced for it.
@@ -47,16 +52,22 @@ authorizes work.
 
 - Future sessions have one place that says how and when the board follows the
   ledger, so board updates stop being an ad hoc verification note.
-- The board may lag the ledger between merge and the human's card move; it can
-  never contradict the ledger with authority.
+- The board may lag the ledger between the ledger change and the human's
+  approval; once approved, the agent closes the gap before reporting the task
+  complete. The board can never contradict the ledger with authority.
 - The `Project #4 moves:` line must be filled (or `none`) on every PR, like
-  `Docs updated:`.
+  `Docs updated:`, and it is the approval unit: the human approves that list,
+  and the agent writes nothing beyond it without a further approval.
+- Card details are agent-maintained. Humans do not hand-edit the board as
+  routine; if they do, the agent reconciles the board to the ledger on the next
+  sync.
 - The Memory Rule is unchanged: three memory kinds, with the board and the
   approved plans under `docs/superpowers/` named as non-memory surfaces.
 
 ## Revisit when
 
-Manual board sync is missed on three or more merged PRs, or the ledger grows
+Board sync is missed — board and ledger disagree after acceptance — on three or
+more merged PRs, or the ledger grows
 enough that a checker-validated snapshot (a `config/project-board.json` compared
 against a read-only `gh project item-list`) would cost less than the manual
 step. Either trigger reopens this record together with the deferred Agent

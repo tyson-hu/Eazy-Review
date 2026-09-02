@@ -79,7 +79,7 @@ Before staging or committing, agents must:
 2. Identify which docs are affected by the change.
 3. Update those docs before committing.
 4. If the change introduces or changes a durable high-impact decision, add or update one ADR-style record under `docs/decisions/` using `docs/decisions/README.md`, then run `npm run decisions:build`.
-5. Confirm in the final response or PR body which docs changed, or why no docs changed, and list proposed Project #4 card moves (or `none`) per the GitHub Project #4 Mirror section below.
+5. Confirm in the final response or PR body which docs changed, or why no docs changed, and list proposed Project #4 board writes (or `none`) per the GitHub Project #4 Mirror section below; the agent applies them after human approval.
 
 Do not leave docs stale because a change is "obvious from the code." Future agents use the docs as source of truth.
 
@@ -198,18 +198,29 @@ Status mapping (`docs/TASKS.md` wording → board `Status`):
 
 When: at Completion Sequence step 9 in `docs/AGENT_WORKFLOW.md`, after the
 ledger edit is written. If the change moved a `docs/TASKS.md` status that has a
-board item, or added a ledger item that needs one, list each proposed move as
-`ID: from → to` (or `create ID (Lane): Status`), otherwise write `none`, on the
-PR body's `Project #4 moves:` line (`.github/pull_request_template.md`). Before
-a PR exists, list the same moves under "What needs review" in the handoff.
-Propose `Completed` only when the ledger already records human acceptance.
+board item, added a ledger item that needs one, or changed a fact a card
+restates (title, summary, gate, delivery PR), list each proposed board write as
+`ID: from → to`, `create ID (Lane): Status`, or `ID: update <fields>`,
+otherwise write `none`, on the PR body's `Project #4 moves:` line
+(`.github/pull_request_template.md`). A `create` names every field the card
+will carry (Title, ID, Lane, Status, Priority, Potential work, Benefit,
+Confidence, Difficulty, Gate or next move, body). Before a PR exists, list the
+same writes under "What needs review" in the handoff. Propose `Completed` only
+when the ledger already records human acceptance.
 
-Who: a human applies the moves at merge or acceptance. An agent applies only the
-moves listed in the PR body, only after the human explicitly authorizes them,
-one REVERSIBLE WRITE per item using the `gh project` classification, recipe,
-and stop conditions in `docs/MCP_WORKFLOW.md`. Nothing else on the board is
-agent-writable. When the board and the ledger disagree, correct the board or
-report the mismatch; never edit the ledger to match the board.
+Who: the agent applies every board write, after human approval. This is an
+agent-operated project: humans review and approve, agents execute. The human
+reviews the ledger change and the listed writes, then tells the agent — PR
+acceptance or merge, or an explicit go-ahead in chat. Only after that approval
+does the agent apply the listed writes, one REVERSIBLE WRITE per item using the
+`gh project` classification, recipe, and stop conditions in
+`docs/MCP_WORKFLOW.md`, and a task is not reported complete until the board
+matches the ledger. Approval covers exactly the listed writes; more items, other
+fields, or schema changes need their own approval. The agent fills every field
+on cards it creates and keeps card details consistent with the ledger; humans
+do not hand-edit the board as routine. When the board and the ledger disagree,
+correct the board or report the mismatch; never edit the ledger to match the
+board.
 
 ## Commit And PR Expectations
 

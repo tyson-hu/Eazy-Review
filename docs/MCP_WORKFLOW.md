@@ -110,20 +110,26 @@ them in the repo.
 - **READ:** `gh project view 4 --owner tyson-hu --format json`,
   `gh project field-list 4 --owner tyson-hu --format json`,
   `gh project item-list 4 --owner tyson-hu --format json --limit 100`.
-- **REVERSIBLE WRITE** (state `ID/title: from → to` before each call; only
-  items the human authorized from the PR body's `Project #4 moves:` line):
-  `gh project item-edit --project-id <project> --id <item> --field-id <Status
-  field> --single-select-option-id <option>`; `gh project item-create` for one
-  stated new ledger item with its Lane and ID; `gh project item-archive` for
-  one stated item; a one-time `gh project edit 4 --readme` pointer change.
-- **HIGH IMPACT:** any bulk loop or more items than the PR body lists; Status,
-  Lane, or other field/option schema changes; project close; any move to
-  `Completed` not backed by recorded human acceptance in `docs/TASKS.md`.
+- **REVERSIBLE WRITE** (agent-applied after the human has approved the PR
+  body's `Project #4 moves:` line; state `ID/title: from → to`, or the field
+  being set, before each call; only the writes on that approved line):
+  `gh project item-edit --project-id <project> --id <item> --field-id <field>`
+  with `--single-select-option-id <option>` for Status, Lane, Priority,
+  Benefit, Confidence, or Difficulty, or `--text` for ID, Potential work, or
+  Gate or next move; `gh project item-create` for one listed new ledger item,
+  followed by the item-edits that fill all of its fields; `gh project
+  item-archive` for one listed item; `gh project edit 4 --readme` for a listed
+  README change.
+- **HIGH IMPACT:** any bulk loop or more items than the approved line lists;
+  Status, Lane, or other field/option schema changes (`field-create`,
+  `field-delete`, option edits); project close; any move to `Completed` not
+  backed by recorded human acceptance in `docs/TASKS.md`.
 - **FORBIDDEN:** `gh project item-delete`, `gh project delete`.
 
-Stop and report instead of retrying when an `ID` matches anything other than
-exactly one item, the target is not one of the board's `Status` options, a
-`Completed` move lacks ledger acceptance, or any call errors.
+Stop and report instead of retrying when the human has not yet approved the
+listed writes, an `ID` matches anything other than exactly one item (zero for a
+`create`), the target is not one of the field's options, a `Completed` move
+lacks ledger acceptance, or any call errors.
 
 ## Agent Security Baseline
 
