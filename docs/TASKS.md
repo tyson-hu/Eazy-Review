@@ -79,10 +79,12 @@ archive is historical evidence, not a current plan.
 
 ### Active maintenance initiative: staged codebase simplification
 
-Status: **S1, E1, E3, and S2 are complete and published for review in draft
-PR #46. E1 and the separately addressed Account/Profile P2 have human
-acceptance; program-level human acceptance, PR readiness, merge, and deployment
-remain pending, and no later packet has started.**
+Status: **S1, E1, E3, and S2 are complete and published in PR #46. The human
+authorized readying PR #46 after a bounded Expo SDK 57 patch alignment and
+green exact-head Expo and Database CI. E1 and the separately addressed
+Account/Profile P2 have human acceptance; program-level human acceptance, code
+review, merge, and deployment remain pending. Live readiness and check states are
+tracked on PR #46, and no later packet has started.**
 
 This unnumbered initiative does not start or renumber Task 20 and changes no
 product priority. Its proposed durable boundary is recorded in
@@ -121,9 +123,9 @@ requested physical offline/reconnect recheck is **tested-pass by human report
 on 2026-08-31**. The P2 finding is solved locally. This was not an E1 catalog
 regression or completion blocker. E1 is therefore complete and committed
 together with the separately authorized tab-root correction. E3 and S2 are
-also complete and committed. The branch is published in draft PR #46; its
-exact-head Expo and Database CI results are the remote validation source.
-Program-level human acceptance, PR readiness, merge, deployment, hosted
+also complete and committed. The branch is published in PR #46; its live
+readiness and exact-head Expo and Database CI states are tracked on the PR.
+Program-level human acceptance, code review, merge, deployment, hosted
 configuration, database, and production actions remain separate gates. S2
 retires the global eight-product canned catalog, its bundled image protocol and
 assets, the duplicate Product Detail representation, and the dead score-row
@@ -164,8 +166,9 @@ accepted; the environment audit remains a recommendation only:
   Account, profile API, shared-timeout, and Rated Products tests pass. The
   requested physical offline/reconnect recheck is **tested-pass by human report
   on 2026-08-31**, so the P2 finding is solved locally. This follow-up remains
-  within the human-authorized completion commit and draft PR #46; later packets,
-  PR readiness, merge, and deployment remain separately gated.
+  within the human-authorized completion commit and PR #46; later packets,
+  program-level human acceptance, code review, merge, and deployment remain
+  separately gated.
 - **Local/staging runtime toggle audit:** do not add an in-app hot switch. It
   adds more lifecycle ownership than it removes; the contract analysis is in
   the canonical simplification plan. Expo SDK 57's development virtual

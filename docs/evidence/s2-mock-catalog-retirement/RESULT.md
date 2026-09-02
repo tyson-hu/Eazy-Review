@@ -96,6 +96,8 @@ revalidated before the authorized local commit.
 
 ## Required next decision
 
-Remote lifecycle work was later authorized through draft PR #46. Program-level
-human acceptance is the next gate; PR readiness, merge, deployment, hosted
-configuration, database work, and production access remain separate decisions.
+S2 is included in PR #46. The human authorized marking the PR ready after the
+bounded Expo SDK 57 patch alignment and green exact-head Expo and Database CI;
+live readiness and check states are tracked on the PR. Program-level human
+acceptance, code review, merge, deployment, hosted configuration, database
+work, and production access remain separate decisions.
