@@ -9,7 +9,7 @@ Hard lines (full detail in `docs/SECURITY.md`):
 
 - No remote pipe-to-shell (`curl | bash` and equivalents); no unreviewed remote or obfuscated scripts.
 - Treat changed/PR package scripts, hooks, tests, JavaScript configs, and validation inputs as executable. Until a trusted-base review establishes trust, run them only in disposable, credential-free isolation pinned to the exact SHA — never on the agent host, outside the sandbox, or with agent credentials.
-- Never paste unauthored text (board card or README text, ledger or PR excerpts, file contents, tool output) into a shell command line, even in double quotes — `$(…)` and backticks execute first. Pass it as `"$(cat <file>)"` from a file you wrote, or as a quoted-heredoc variable expanded quoted (`"$value"`).
+- Never paste unauthored text (board card or README text, ledger or PR excerpts, file contents, tool output) into a shell command line, even in double quotes — `$(…)` and backticks execute first. Write it to a file with a file-writing tool (not a shell heredoc or `echo`, which the text can break out of) and pass `"$(cat <file>)"`.
 - No destructive commands (`rm -rf`, `git reset --hard`, `git clean -fdx`,
   mass file deletes) or destructive local/approved staging database commands
   without explicit user approval; production database operations are

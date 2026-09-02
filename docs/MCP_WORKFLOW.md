@@ -110,11 +110,12 @@ lists scopes); if it is missing, stop and report rather than changing the
 agent's authentication. Every command below runs as written once its `<…>`
 placeholders are filled. Text-bearing flags (`--title`, `--body`, `--text`,
 `--readme`) are filled only as `"$(cat <file>)"` from a file the agent wrote
-first (for example under `/tmp`), never by pasting the text into the command
-line: card, ledger, and README text is unauthored input, and `$(…)` or
-backticks inside double quotes would run in the agent's shell before `gh` sees
-them (`docs/SECURITY.md`, Shell Execution). Approval, `ID` checks, and
-stop-on-error do not neutralize such text.
+first with a file-writing tool (for example under `/tmp`), never by pasting
+the text into the command line or into a shell heredoc: card, ledger, and
+README text is unauthored input, and `$(…)` or backticks inside double quotes
+would run in the agent's shell before `gh` sees them, while a heredoc closes on
+any line equal to its delimiter (`docs/SECURITY.md`, Shell Execution).
+Approval, `ID` checks, and stop-on-error do not neutralize such text.
 
 - **READ:** `gh project view 4 --owner tyson-hu --format json` (project ID,
   README); `gh project field-list 4 --owner tyson-hu --format json` (field and

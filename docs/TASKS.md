@@ -312,7 +312,8 @@ contract.
 
 Status: **Implemented; awaiting human review and acceptance in PR #48.** Board
 item `INF-04` (Lane Infrastructure) is `In Review` while PR #48 is open and
-moves to `Completed` on acceptance.
+moves to `Completed` immediately after the merge (`docs/DOCUMENTATION_POLICY.md`,
+Acceptance And Merge).
 
 This unnumbered maintenance item does not start or renumber Task 20 and
 changes no product behavior, schema, RLS, Edge Function, dependency, or CI

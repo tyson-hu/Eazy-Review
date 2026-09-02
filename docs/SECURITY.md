@@ -33,11 +33,12 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Never paste text you did not author (board card or README text, ledger or
   PR excerpts, file contents, tool output) into a shell command line, even
   inside double quotes: `$(…)` and backticks are evaluated before the program
-  receives its arguments. Write the text to a file and pass `"$(cat <file>)"`,
-  or read it into a variable from a quoted heredoc (`value=$(cat <<'EOF' …
-  EOF)`) and expand that variable quoted (`"$value"`), so it reaches the
-  program as a single unevaluated argument. An unquoted `$value` is still
-  field-split and glob-expanded.
+  receives its arguments. Write the text to a file with a file-writing tool
+  (the editor's write tool), not through the shell, then pass
+  `"$(cat <file>)"` so it reaches the program as a single unevaluated
+  argument. A shell heredoc or `echo` is not a substitute: a line in the text
+  equal to the heredoc delimiter closes the heredoc and the remaining lines
+  run as commands, and `echo` re-evaluates the text on the command line.
 - Treat package scripts and hooks, tests, JavaScript configuration, and other
   validation inputs from a changed or pull-request tree as executable code.
   If trust is not established by reviewing those surfaces against a trusted
