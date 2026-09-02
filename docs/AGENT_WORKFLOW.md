@@ -452,7 +452,7 @@ Every PR body uses this format (mirrored in `.github/pull_request_template.md`):
 ## Follow-ups
 ```
 
-`Safety` covers what could break and why it will not (or what to watch). `Follow-ups` lists deferred work, each with a home in `docs/TASKS.md`. The body ends with two trailing lines: `Docs updated:` (the list, or `No documentation update needed because …`) and `Project #4 moves:` (each proposed board write as `ID: from → to`, `create ID (Lane): Status`, or `ID: update <fields>`, or `none`; the agent applies them after human approval; rule in `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
+`Safety` covers what could break and why it will not (or what to watch). `Follow-ups` lists deferred work, each with a home in `docs/TASKS.md`. The body ends with two trailing lines: `Docs updated:` (the list, or `No documentation update needed because …`) and `Project #4 moves:` (each proposed board write as `ID: from → to`, `create ID (Lane): Status`, `ID: update <fields>`, `archive ID`, or `README: update <what changes>`, or `none`; the agent applies them after human approval; rule in `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror).
 
 ## Canonical Homes
 

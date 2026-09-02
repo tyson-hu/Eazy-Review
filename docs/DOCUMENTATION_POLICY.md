@@ -199,10 +199,13 @@ Status mapping (`docs/TASKS.md` wording → board `Status`):
 When: at Completion Sequence step 9 in `docs/AGENT_WORKFLOW.md`, after the
 ledger edit is written. If the change moved a `docs/TASKS.md` status that has a
 board item, added a ledger item that needs one, or changed a fact a card
-restates (title, summary, gate, delivery PR), list each proposed board write as
-`ID: from → to`, `create ID (Lane): Status`, or `ID: update <fields>`,
+restates (title, summary, gate, delivery PR), retired a ledger item whose card
+should leave the board, or changed a fact the board README states, list each
+proposed board write as `ID: from → to`, `create ID (Lane): Status`,
+`ID: update <fields>`, `archive ID`, or `README: update <what changes>`,
 otherwise write `none`, on the PR body's `Project #4 moves:` line
-(`.github/pull_request_template.md`). A `create` names every field the card
+(`.github/pull_request_template.md`). These five forms are the only writes the
+line can carry; anything else needs its own explicit approval. A `create` names every field the card
 will carry (Title, ID, Lane, Status, Priority, Potential work, Benefit,
 Confidence, Difficulty, Gate or next move, body), with the body in the format
 of the existing cards in its Lane. Before a PR exists, list the same writes

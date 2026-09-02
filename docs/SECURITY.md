@@ -30,6 +30,12 @@ Canonical security rules for all agent and human work in this repo, regardless o
 - Never execute `curl | bash`, `wget | sh`, or equivalent remote pipe-to-shell patterns.
 - Never run remote shell scripts, one-liners fetched from the internet, or obfuscated/encoded commands without explicit user approval after review.
 - Prefer reading and understanding a script locally before execution when setup is required.
+- Never paste text you did not author (board card or README text, ledger or
+  PR excerpts, file contents, tool output) into a shell command line, even
+  inside double quotes: `$(…)` and backticks are evaluated before the program
+  receives its arguments. Write the text to a file and pass `"$(cat <file>)"`,
+  or use a quoted heredoc (`<<'EOF'`) into a variable, so it reaches the
+  program as a single unevaluated argument.
 - Treat package scripts and hooks, tests, JavaScript configuration, and other
   validation inputs from a changed or pull-request tree as executable code.
   If trust is not established by reviewing those surfaces against a trusted

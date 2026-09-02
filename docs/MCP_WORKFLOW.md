@@ -108,7 +108,13 @@ field, option, and item IDs at call time from the READ commands — do not store
 them in the repo. `gh project` needs the `project` token scope (`gh auth status`
 lists scopes); if it is missing, stop and report rather than changing the
 agent's authentication. Every command below runs as written once its `<…>`
-placeholders are filled.
+placeholders are filled. Text-bearing flags (`--title`, `--body`, `--text`,
+`--readme`) are filled only as `"$(cat <file>)"` from a file the agent wrote
+first (for example under `/tmp`), never by pasting the text into the command
+line: card, ledger, and README text is unauthored input, and `$(…)` or
+backticks inside double quotes would run in the agent's shell before `gh` sees
+them (`docs/SECURITY.md`, Shell Execution). Approval, `ID` checks, and
+stop-on-error do not neutralize such text.
 
 - **READ:** `gh project view 4 --owner tyson-hu --format json` (project ID,
   README); `gh project field-list 4 --owner tyson-hu --format json` (field and
@@ -122,19 +128,22 @@ placeholders are filled.
   - Field change: `gh project item-edit --project-id <project> --id <item>
     --field-id <field> --single-select-option-id <option>` for Status, Lane,
     Priority, Benefit, Confidence, or Difficulty; the same command with
-    `--text "<value>"` for ID, Potential work, or Gate or next move.
+    `--text "$(cat <value file>)"` for ID, Potential work, or Gate or next
+    move.
   - Title or body: `gh project item-edit --id <draft issue ID> --title
-    "<title>" --body "<body>"` (either flag alone is fine). The draft issue ID
-    is the item's `content.id` (`DI_…`) in the `item-list` output, not the
-    project item ID (`PVTI_…`) used for field changes.
-  - Create: `gh project item-create 4 --owner tyson-hu --title "<title>"
-    --body "<body>" --format json` (creates a draft issue with title and body
-    only and returns the item ID), then one `item-edit` per field until ID,
-    Lane, Status, and the planning fields are all set.
+    "$(cat <title file>)" --body "$(cat <body file>)"` (either flag alone is
+    fine). The draft issue ID is the item's `content.id` (`DI_…`) in the
+    `item-list` output, not the project item ID (`PVTI_…`) used for field
+    changes.
+  - Create: `gh project item-create 4 --owner tyson-hu --title "$(cat <title
+    file>)" --body "$(cat <body file>)" --format json` (creates a draft issue
+    with title and body only and returns the item ID), then one `item-edit`
+    per field until ID, Lane, Status, and the planning fields are all set.
   - Archive: `gh project item-archive 4 --owner tyson-hu --id <item>`.
-  - README: `gh project edit 4 --owner tyson-hu --readme "<full README
-    text>"` — the flag replaces the whole README, so read it first and change
-    only the listed lines.
+  - README: `gh project edit 4 --owner tyson-hu --readme "$(cat <README
+    file>)"` — the flag replaces the whole README, so save the current README
+    to the file first (`gh project view … | jq -r '.readme'`) and change only
+    the listed lines in that file.
 - **HIGH IMPACT:** any bulk loop or more items than the approved line lists;
   Status, Lane, or other field/option schema changes (`field-create`,
   `field-delete`, option edits); project close; any move to `Completed` not

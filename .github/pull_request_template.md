@@ -25,4 +25,4 @@ Full template rules: docs/AGENT_WORKFLOW.md -> PR Summary Template. -->
 
 Docs updated: <!-- list them, or write: No documentation update needed because ... -->
 
-Project #4 moves: <!-- each proposed board write as `ID: from → to`, `create ID (Lane): Status` (name every card field), or `ID: update <fields>`, or: none. Rule: docs/DOCUMENTATION_POLICY.md -> GitHub Project #4 Mirror. The agent applies them after human approval. -->
+Project #4 moves: <!-- each proposed board write as `ID: from → to`, `create ID (Lane): Status` (name every card field), `ID: update <fields>`, `archive ID`, or `README: update <what changes>`, or: none. Rule: docs/DOCUMENTATION_POLICY.md -> GitHub Project #4 Mirror. The agent applies them after human approval. -->
