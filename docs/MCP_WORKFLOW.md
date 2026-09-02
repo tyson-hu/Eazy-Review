@@ -68,7 +68,7 @@ Treat each MCP server as a capability boundary, especially if it can write to a 
 
 ## MCP Tool Policy
 
-Classify every MCP action before calling it, and behave per its level. `.cursor/rules/mcp-policy.mdc` mirrors this section for Cursor's always-apply mechanism; this section is the home, the rule is the mirror.
+Classify every MCP action — and every external-tool write made through a CLI such as `gh` — before calling it, and behave per its level. `.cursor/rules/mcp-policy.mdc` mirrors this section for Cursor's always-apply mechanism; this section is the home, the rule is the mirror.
 
 - **READ** — may run without approval. Examples: inspect a local/approved
   staging schema, search files, read PRs.
@@ -98,6 +98,32 @@ Standing principles at every level:
 - Never treat agent-executed account deletion as HIGH IMPACT that can be
   approved — it is FORBIDDEN on every environment.
 - Never expose credential values (`docs/SECURITY.md`).
+
+### GitHub Project #4 via `gh`
+
+The board's role, status mapping, and sync timing live in
+`docs/DOCUMENTATION_POLICY.md`, GitHub Project #4 Mirror. This subsection only
+classifies the calls. Project number `4`, owner `tyson-hu`; resolve project,
+field, option, and item IDs at call time from the READ commands — do not store
+them in the repo.
+
+- **READ:** `gh project view 4 --owner tyson-hu --format json`,
+  `gh project field-list 4 --owner tyson-hu --format json`,
+  `gh project item-list 4 --owner tyson-hu --format json --limit 100`.
+- **REVERSIBLE WRITE** (state `ID/title: from → to` before each call; only
+  items the human authorized from the PR body's `Project #4 moves:` line):
+  `gh project item-edit --project-id <project> --id <item> --field-id <Status
+  field> --single-select-option-id <option>`; `gh project item-create` for one
+  stated new ledger item with its Lane and ID; `gh project item-archive` for
+  one stated item; a one-time `gh project edit 4 --readme` pointer change.
+- **HIGH IMPACT:** any bulk loop or more items than the PR body lists; Status,
+  Lane, or other field/option schema changes; project close; any move to
+  `Completed` not backed by recorded human acceptance in `docs/TASKS.md`.
+- **FORBIDDEN:** `gh project item-delete`, `gh project delete`.
+
+Stop and report instead of retrying when an `ID` matches anything other than
+exactly one item, the target is not one of the board's `Status` options, a
+`Completed` move lacks ledger acceptance, or any call errors.
 
 ## Agent Security Baseline
 

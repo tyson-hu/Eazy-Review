@@ -24,3 +24,5 @@ Full template rules: docs/AGENT_WORKFLOW.md -> PR Summary Template. -->
 <!-- Deferred work; each item must have a home in docs/TASKS.md. -->
 
 Docs updated: <!-- list them, or write: No documentation update needed because ... -->
+
+Project #4 moves: <!-- each proposed card move as `ID: from → to` (or `create ID (Lane): Status`), or: none. Rule: docs/DOCUMENTATION_POLICY.md -> GitHub Project #4 Mirror. A human applies them unless a move is explicitly authorized. -->

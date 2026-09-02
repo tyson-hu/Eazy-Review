@@ -3,7 +3,7 @@ description: MCP tool action classification and approval policy
 alwaysApply: true
 ---
 
-The canonical MCP policy lives in `docs/MCP_WORKFLOW.md`, MCP Tool Policy. Classify every MCP action before calling it:
+The canonical MCP policy lives in `docs/MCP_WORKFLOW.md`, MCP Tool Policy. Classify every MCP action — and every external-tool write through a CLI such as `gh` — before calling it:
 
 - **READ** — may run without approval (inspect a local/approved staging schema,
   search files, read PRs).
@@ -25,3 +25,10 @@ account deletion as approvable; never expose credential values
 protected account-deletion flow and prepare a checklist, but an actual deletion
 must be initiated and executed manually by a human, never through an
 agent-controlled browser, MCP, SQL, or admin tool.
+
+GitHub Project #4 via `gh`: listing is READ; one stated card move, create, or
+archive from the PR body's `Project #4 moves:` line is REVERSIBLE WRITE after
+explicit human authorization; bulk moves, schema changes, or `Completed` without
+ledger acceptance are HIGH IMPACT; item or project deletion is FORBIDDEN. The
+board mirrors `docs/TASKS.md` and never leads it (`docs/DOCUMENTATION_POLICY.md`,
+GitHub Project #4 Mirror).

@@ -307,6 +307,12 @@
       "owner": "historical-record"
     },
     {
+      "path": "docs/evidence/s2-mock-catalog-retirement",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/task-11-12-database-acceptance",
       "kind": "directory",
       "lifecycle": "historical",
@@ -326,6 +332,48 @@
     },
     {
       "path": "docs/evidence/task-10-reaudit",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-15-public-catalog",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-16-auth-account",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-my-rating-persistence",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-product-detail-restoration",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-rating-slider-gesture",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-18-password-recovery",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-19-protected-account-deletion",
       "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
@@ -366,6 +414,12 @@
       "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
+    },
+    {
+      "path": "docs/superpowers",
+      "kind": "directory",
+      "lifecycle": "status",
+      "owner": "parent-agent"
     },
     {
       "path": "skills/blocker-note/SKILL.md",
@@ -679,6 +733,11 @@
       "reason": "Browser automation follows MCP action policy."
     },
     {
+      "document": "docs/superpowers",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "Approved plans and specs must agree with the accepted ledger status."
+    },
+    {
       "document": "skills/blocker-note/SKILL.md",
       "dependsOn": "docs/LOOP_ENGINEERING.md",
       "reason": "Blocker persistence implements the global retry stop."
@@ -757,6 +816,8 @@
       "docs/decisions/archive/**",
       "docs/evidence/pr-24-review-correction",
       "docs/evidence/pr-24-review-correction/**",
+      "docs/evidence/s2-mock-catalog-retirement",
+      "docs/evidence/s2-mock-catalog-retirement/**",
       "docs/evidence/task-10-baseline-ux",
       "docs/evidence/task-10-baseline-ux/**",
       "docs/evidence/task-10-f4-check",
@@ -765,6 +826,20 @@
       "docs/evidence/task-10-reaudit/**",
       "docs/evidence/task-11-12-database-acceptance",
       "docs/evidence/task-11-12-database-acceptance/**",
+      "docs/evidence/task-15-public-catalog",
+      "docs/evidence/task-15-public-catalog/**",
+      "docs/evidence/task-16-auth-account",
+      "docs/evidence/task-16-auth-account/**",
+      "docs/evidence/task-17-my-rating-persistence",
+      "docs/evidence/task-17-my-rating-persistence/**",
+      "docs/evidence/task-17-product-detail-restoration",
+      "docs/evidence/task-17-product-detail-restoration/**",
+      "docs/evidence/task-17-rating-slider-gesture",
+      "docs/evidence/task-17-rating-slider-gesture/**",
+      "docs/evidence/task-18-password-recovery",
+      "docs/evidence/task-18-password-recovery/**",
+      "docs/evidence/task-19-protected-account-deletion",
+      "docs/evidence/task-19-protected-account-deletion/**",
       "docs/evidence/ui-audit-remediation-20260719",
       "docs/evidence/ui-audit-remediation-20260719/**",
       "docs/evidence/ui-audit-remediation-20260719-attempt1",
@@ -878,6 +953,15 @@
       ],
       "requiredDocuments": [
         "docs/API_CONTRACTS.md",
+        "docs/TASKS.md"
+      ]
+    },
+    {
+      "id": "planning-artifacts",
+      "changedPaths": [
+        "docs/superpowers/**"
+      ],
+      "requiredDocuments": [
         "docs/TASKS.md"
       ]
     },

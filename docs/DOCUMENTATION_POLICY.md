@@ -79,7 +79,7 @@ Before staging or committing, agents must:
 2. Identify which docs are affected by the change.
 3. Update those docs before committing.
 4. If the change introduces or changes a durable high-impact decision, add or update one ADR-style record under `docs/decisions/` using `docs/decisions/README.md`, then run `npm run decisions:build`.
-5. Confirm in the final response or PR body which docs changed, or why no docs changed.
+5. Confirm in the final response or PR body which docs changed, or why no docs changed, and list proposed Project #4 card moves (or `none`) per the GitHub Project #4 Mirror section below.
 
 Do not leave docs stale because a change is "obvious from the code." Future agents use the docs as source of truth.
 
@@ -129,6 +129,10 @@ Tooling, scripts, dependencies, quality checks, local setup, or developer workfl
 - `README.md`
 - `AGENTS.md`
 - `docs/TASKS.md`
+- `docs/AGENT_WORKFLOW.md` (Validation Commands) when a check, gate, or
+  generated-command changes
+- `docs/DOCUMENTATION_POLICY.md` when the documentation gate itself changes
+- `docs/SECURITY.md` when install, shell, dependency-approval, or secret rules change
 - `docs/MCP_WORKFLOW.md` when agent/tool workflow changes
 - `docs/RELEASE_CHECKLIST.md` when release validation changes
 - `docs/decisions/*.md` only for a qualifying durable workflow, tooling, or dependency decision
@@ -136,7 +140,9 @@ Tooling, scripts, dependencies, quality checks, local setup, or developer workfl
 Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `AGENTS.md`
 - `.cursor/rules/*`
-- `.cursor/agents/*` (subagent definitions; keep aligned with the Delegation And Subagent Policy in `docs/AGENT_WORKFLOW.md` and the rollout status in `docs/TASKS.md`)
+- `.cursor/agents/*` (subagent definitions; keep aligned with the Delegation And Subagent Policy and its Roles And Rollout Status table in `docs/AGENT_WORKFLOW.md`)
+- `config/agent-infrastructure.json` when a registered document, mirror,
+  dependency, generated command, stale-term rule, or impact rule changes
 - `docs/SECURITY.md` when security rules change (keep `.cursor/rules/security.mdc` mirrored)
 - `docs/AGENT_WORKFLOW.md`
 - `docs/LOOP_ENGINEERING.md`
@@ -154,6 +160,56 @@ Release readiness, QA criteria, security checks, or store-readiness work:
 - `docs/TASKS.md`
 - `README.md` when setup or release instructions change
 - `docs/decisions/*.md` only for a qualifying durable release-process decision
+
+Approved implementation plans and design specs under `docs/superpowers/plans/`
+and `docs/superpowers/specs/` are registered status documents (planning
+artifacts). Editing one requires `docs/TASKS.md` to still agree with it
+(`docs/LOOP_ENGINEERING.md`, Memory Rule).
+
+## GitHub Project #4 Mirror
+
+GitHub Project #4 ("Eazy Review Roadmap", owner `tyson-hu`) is a derived public
+mirror of `docs/TASKS.md`. The ledger is authoritative and the board never
+leads it. Board inclusion or status authorizes nothing — not implementation,
+merge, deployment, hosted configuration, database changes, production access,
+or account deletion. The board is not a project-memory category
+(`docs/LOOP_ENGINEERING.md`, Memory Rule) and is not a checker or CI input.
+
+Item identity is the board `ID` field: `T01`–`T29` for numbered tasks,
+`INF-nn` for unnumbered agent-infrastructure gates and follow-ups, packet codes
+(`S1`, `E1`, …) plus `O1`, `O2` for the staged-simplification initiative, and
+`F01`+ for Future Ideas. Lanes are Core Roadmap, Infrastructure,
+Simplification, and Future Ideas.
+
+Status mapping (`docs/TASKS.md` wording → board `Status`):
+
+| Ledger status | Board `Status` |
+| --- | --- |
+| Done / human accepted / merged | `Completed` |
+| Conditional | `Conditional` |
+| Pending — waiting on a dependency or human gate | `Gated` |
+| Post-MVP, optional workstream, or deferred follow-up | `Deferred` |
+| Selected task or packet under implementation | `In Progress` |
+| Locally complete with an open PR | `In Review` |
+| Specified but unselected (for example E2) | `Ready` |
+| Needs runtime proof before selection (for example S3) | `Proof First` |
+| Fold-only finding | `Fold Only` |
+| Explicitly deferred idea (Post–Task 12 Review Gate list; `docs/BLUEBOOK.md` non-MVP items) | `Candidate` |
+
+When: at Completion Sequence step 9 in `docs/AGENT_WORKFLOW.md`, after the
+ledger edit is written. If the change moved a `docs/TASKS.md` status that has a
+board item, or added a ledger item that needs one, list each proposed move as
+`ID: from → to` (or `create ID (Lane): Status`), otherwise write `none`, on the
+PR body's `Project #4 moves:` line (`.github/pull_request_template.md`). Before
+a PR exists, list the same moves under "What needs review" in the handoff.
+Propose `Completed` only when the ledger already records human acceptance.
+
+Who: a human applies the moves at merge or acceptance. An agent applies only the
+moves listed in the PR body, only after the human explicitly authorizes them,
+one REVERSIBLE WRITE per item using the `gh project` classification, recipe,
+and stop conditions in `docs/MCP_WORKFLOW.md`. Nothing else on the board is
+agent-writable. When the board and the ledger disagree, correct the board or
+report the mismatch; never edit the ledger to match the board.
 
 ## Commit And PR Expectations
 

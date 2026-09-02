@@ -66,6 +66,10 @@ docs/notes/handoff.md
 # Cursor local plan files (never commit)
 .cursor/plans/
 
+# Codex project-scoped agent definitions are user-local state, not a registered
+# surface; the committed subagent definitions live in .cursor/agents/
+.codex/
+
 # Task 10 evidence: raw capture sets stay local; GitHub keeps a representative proof set
 # (1 F4 PNG + 11 re-audit PNGs). See docs/TASKS.md Task 10 and the evidence reports.
 docs/evidence/task-10-baseline-ux/screenshots/

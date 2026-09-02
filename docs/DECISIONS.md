@@ -28,6 +28,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Architecture | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Accepted | 13, 14, 15, 16, 17, 18, 19 | 2026-07-30 |
 | Tooling and CI | [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Accepted | 15 | 2026-08-07 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
+| Agent workflow | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Accepted | — | 2026-09-02 |
 | Agent workflow | [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Accepted | — | 2026-08-06 |
 | Agent workflow | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Accepted | — | 2026-08-01 |
 | Agent workflow | [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) | Accepted | — | 2026-07-26 |
@@ -41,6 +42,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Agent workflow | Accepted | 2026-09-02 |
 | [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) | Architecture | Accepted | 2026-09-02 |
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-08-31 |
 | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-08-22 |
@@ -50,7 +52,6 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Agent workflow | Accepted | 2026-08-06 |
 | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Agent workflow | Accepted | 2026-08-01 |
 | [Do not use direct PostgREST upsert for My Rating](decisions/2026-07-25-no-direct-postgrest-rating-upsert.md) | Data and Supabase | Accepted | 2026-08-01 |
-| [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Architecture | Accepted | 2026-07-30 |
 
 ## Browse by area
 
@@ -89,6 +90,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Agent workflow
 
+- [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) — Accepted.
 - [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) — Accepted.
 - [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) — Accepted.
 - [Generate skill discovery wrappers from one manifest](decisions/2026-07-26-generate-skill-discovery-wrappers-from-one-manifest.md) — Accepted.
