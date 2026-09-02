@@ -96,9 +96,8 @@ revalidated before the authorized local commit.
 
 ## Required next decision
 
-S2 is included in ready PR #46. Code and security reviews completed on head
-`64e36a2`; security reported no finding, and the human authorized a bounded
-remediation for the one P2 skill-discovery metadata finding. Live remediation,
-check, and thread states are tracked on the PR. Program-level human acceptance,
-merge, deployment, hosted configuration, database work, and production access
-remain separate decisions.
+S2 is human accepted and merged through PR #46. Final reviewed head `85b4ef3`
+passed exact-head Expo and Database CI with zero unresolved review threads and
+merged to `master` as `38d6420`; post-merge Expo and Database CI also passed.
+Deployment, hosted configuration, database mutation, production access,
+Android work, and later packets remain separate decisions.

@@ -1,21 +1,19 @@
 # Staged Codebase Simplification Plan
 
-Status: **Packets S1, E1, E3, and S2 are complete and published in ready PR
-#46. Code and security reviews completed on head `64e36a2`; security reported
-no finding, and the human authorized a bounded remediation for the one P2
-skill-discovery metadata finding. E1 and the separately addressed
-Account/Profile P2 have human acceptance; S2 passed mobile web and iOS
-simulator verification and has a human-reported physical-device pass.
-Program-level human acceptance, merge, and deployment remain pending; live
-remediation, check, and thread states are tracked on PR #46, no other
-simplification packet has started, and Android is explicitly out of the current
-plan.**
+Status: **Packets S1, E1, E3, S2, and the two bounded follow-ups are complete,
+human accepted, and merged through PR #46. Final reviewed head `85b4ef3`
+passed exact-head Expo and Database CI with zero unresolved review threads and
+merged to `master` as `38d6420`; post-merge Expo and Database CI also passed.
+GitHub Project #4 records the six related entries as `Completed`. No other
+simplification packet has started. Deployment, hosted configuration, database
+mutation, production access, Android work, and later packets remain separate
+gates.**
 
 Base SHA: `db27309005e14d80f67df9bfe9cb4debd6dd47b6`
 
 Planning branch: `codex/codebase-simplification-program`
 
-Proposed decision:
+Accepted decision:
 `docs/decisions/2026-08-30-staged-codebase-simplification.md`
 
 ## Objective
@@ -53,9 +51,15 @@ chat history.
   no finding and code review reported one P2 skill-discovery metadata mismatch.
   The human explicitly approved one bounded remediation covering the two stale
   manifest descriptions, matching `docs/LOOP_ENGINEERING.md` routing text,
-  generated wrappers, and required lifecycle status. Canonical skill bodies,
-  other packets, merge, deployment, hosted configuration, database work, and
-  production access remain outside that approval.
+  generated wrappers, and required lifecycle status. The final reviewed head
+  `85b4ef31fe0dc5461676fcbe39e67e6ab518f0d6` passed exact-head Expo and
+  Database CI with zero unresolved review threads. The human then authorized
+  merge and project-board closeout; PR #46 merged to `master` as
+  `38d64200e5d33603240e7d7fe1056e4e2585e1c0`, both post-merge workflows
+  passed, and the six related project entries moved to `Completed`. Canonical
+  skill bodies, other packets, deployment, hosted configuration, database
+  work, production access, Android work, and later packets remain outside that
+  approval.
 - Before a batch, a human selects its candidate and accepts every listed
   capability loss. One candidate is the default batch size.
 - Stop when a real or unresolved dynamic consumer exists, a baseline cannot
@@ -108,8 +112,8 @@ Current repository proof at the S1 planning baseline (`839ce4fc`):
 ## Kanban portfolio
 
 This board records planning and packet status; it is not execution authority.
-S1, E1, E3, and S2 are complete and included in PR #46; no other packet is in
-progress. Live remediation, check, and thread states are tracked on the PR.
+S1, E1, E3, and S2 are complete and merged through PR #46; no other packet is
+in progress. The six related GitHub Project #4 entries are `Completed`.
 Priority ranks expected value and sequencing only: P1 is high-value, P2 is
 worthwhile after stronger cuts, and P3 is fold-only housekeeping. Difficulty
 reflects coordination and proof burden: XS is one local symbol/file, S is one
@@ -118,11 +122,11 @@ product/skill approval or native proof.
 
 | Lane | Priority | ID | Potential work | Benefit | Confidence | Difficulty | Gate or next move |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| In review | P0 | S1 | Remove Create Expo starter subtree, sample font, and unused direct dependencies/config | High | Contract | M | PR #46 review; web/iOS pass; Android explicitly out of the current plan |
-| In review | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance complete; program acceptance and merge remain pending |
+| Completed | P0 | S1 | Remove Create Expo starter subtree, sample font, and unused direct dependencies/config | High | Contract | M | Merged in PR #46 at `38d6420`; web/iOS pass; Android explicitly out of the current plan |
+| Completed | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human accepted and merged in PR #46 at `38d6420` |
 | Ready, unselected | P2 | E2 | Share only identical SDK/network error-shape extraction across catalog, ratings, and Auth | Medium | Contract | M | Keep every domain normalizer and transport policy separate |
-| In review | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Included in PR #46; program acceptance and merge remain pending |
-| In review | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Mobile web and iOS simulator pass; physical device `tested-pass` by human report; approved skill-discovery review remediation tracked on PR #46 |
+| Completed | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Human accepted and merged in PR #46 at `38d6420` |
+| Completed | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Mobile web and iOS simulator pass; physical device `tested-pass` by human report; merged in PR #46 at `38d6420` |
 | Proof first | P2 | S3 | Remove `react-native-url-polyfill` over Expo WinterCG URL | Medium | Static | L | Boot-order probe and web/iOS/Android cold-start proof |
 | Fold only | P3 | E4 | Inline the one-caller splash-dismiss relay and retire its proxy test | Low | Static | M | Only with layout/bootstrap work and boot-equivalence proof |
 | Folded into S2 | P3 | L1 | Remove dead `RatingRow` and tiny candidate-exclusive exports | Low | Static | XS | Implemented inside S2; no standalone packet |
@@ -131,7 +135,8 @@ product/skill approval or native proof.
 | Retain | — | R1 | App/runtime JWT decoders | Low potential | Conflicting contracts | M | Keep fail-closed environment and guarded-session parsing separate |
 | Owned elsewhere | — | I1 | Replace Markdown task-graph parsing with structured config | High | Existing task | L | Follow the deferred Agent infrastructure checker v2 task |
 
-S1, E1, E3, and S2 were selected, completed, and published in PR #46.
+S1, E1, E3, and S2 were selected, completed, human accepted, and merged in PR
+#46. Their related project entries are `Completed`.
 E2 remains ready but unselected. S3 does not enter a ready lane until its
 native proof gate passes. P3 items do not justify standalone work.
 
@@ -795,7 +800,7 @@ Every continuation starts with:
 
 1. `git status --short`, repository identity, branch, HEAD, and worktree
    topology.
-2. Read `AGENTS.md`, the proposed decision, this plan, and
+2. Read `AGENTS.md`, the accepted decision, this plan, and
    `docs/notes/handoff.md`; then restate the selected packet before editing.
 3. Confirm the human-selected candidate and authorization boundary. Planning
    approval is not implementation, commit, push, readiness, merge, deployment,
@@ -820,3 +825,8 @@ The program is complete when every human-selected packet is either validated
 and documented, or retained with the failed proof or real consumer recorded.
 Unselected candidates remain proposals. No raw deletion, dependency, or line
 count is a completion criterion.
+
+That condition is satisfied for the selected program: S1, E1, E3, S2, and the
+two bounded follow-ups were validated, documented, human accepted, and merged
+through PR #46. Unselected candidates remain proposals and require separate
+authorization.
