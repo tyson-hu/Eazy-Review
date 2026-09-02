@@ -42,7 +42,8 @@ Goal: change frontend product/rating data shapes, types, or scoped fixtures — 
 
 ## Stop conditions
 
-- The change implies a new rating category beyond `look`, `comfort`, `quality`, `outfit`, `value`, `overall`: stop; that is a product decision.
+- The change alters the canonical `sneaker-10-v1` dimension set in
+  `src/features/ratings/dimensions.ts`: stop; that is a product decision.
 - The change turns out to need SQL or a view (for example `product_card_view` materialization): stop and switch to `skills/supabase-schema-change`.
 
 ## Memory step

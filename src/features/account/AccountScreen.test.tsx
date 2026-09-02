@@ -350,7 +350,7 @@ describe('Account screen', () => {
     await rendered.cleanup();
   });
 
-  it('shows profile offline status immediately instead of loading forever', async () => {
+  it('shows only profile offline status for pending and retained-error states', async () => {
     const refetch = jest.fn();
     mockAuth = {
       status: 'signed-in',
@@ -373,10 +373,24 @@ describe('Account screen', () => {
     const rendered = await renderWithProviders(<AccountScreen />);
     expect(rendered.getByText("You're offline.")).toBeTruthy();
     expect(rendered.queryByText('Loading profile...')).toBeNull();
-
-    await fireEvent.press(rendered.getByText('Try again'));
-    expect(refetch).toHaveBeenCalled();
     await rendered.cleanup();
+
+    mockProfileQuery = {
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error('previous failure'),
+      fetchStatus: 'idle',
+      isOffline: true,
+      refetch,
+    };
+    const retainedError = await renderWithProviders(<AccountScreen />);
+    expect(retainedError.getByText("You're offline.")).toBeTruthy();
+    expect(retainedError.queryByText('Profile unavailable')).toBeNull();
+
+    await fireEvent.press(retainedError.getByText('Try again'));
+    expect(refetch).toHaveBeenCalled();
+    await retainedError.cleanup();
   });
 
   it('does not display account A data for account B', async () => {

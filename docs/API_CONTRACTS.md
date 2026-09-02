@@ -135,7 +135,7 @@ acceptance results are preserved in
 | Database contract | Frontend / API meaning |
 | --- | --- |
 | `products.is_published` | Anonymous Browse/Detail adapters must eventually select published products only; Tasks 11–12 add no runtime adapter |
-| Current `eazy_assessments` row | Future source for `Product.eazyScore`; select `is_current = true` |
+| Current `eazy_assessments` row | Source for `ProductCardData.eazyScore` and `ProductDetailPublicData.eazyAssessment`; select `is_current = true` |
 | `rating_aggregates` | Future source for `ProductRatingSummary` and Community Score; clients never calculate or write it |
 | `user_ratings.private_note` | Task 17 `privateNote`; maximum 500 characters and owner-only |
 | `profiles.created_at` | Non-null `AccountProfile.joinedAt`; optional mutable profile fields may remain null |

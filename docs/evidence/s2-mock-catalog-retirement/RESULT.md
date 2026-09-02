@@ -96,4 +96,6 @@ revalidated before the authorized local commit.
 
 ## Required next decision
 
-No triage is required. Remote lifecycle work remains a separate human gate.
+Remote lifecycle work was later authorized through draft PR #46. Program-level
+human acceptance is the next gate; PR readiness, merge, deployment, hosted
+configuration, database work, and production access remain separate decisions.

@@ -286,7 +286,7 @@ export default function AccountScreen() {
         </Card>
       ) : null}
 
-      {profileQuery.isError && !profileQuery.data ? (
+      {!profileQuery.isOffline && profileQuery.isError && !profileQuery.data ? (
         <Card className="mt-6">
           <ErrorState
             title="Profile unavailable"

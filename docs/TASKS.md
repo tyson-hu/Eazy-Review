@@ -79,8 +79,10 @@ archive is historical evidence, not a current plan.
 
 ### Active maintenance initiative: staged codebase simplification
 
-Status: **S1, E1, and E3 complete locally; E1 and the separately addressed
-Account/Profile P2 have human acceptance, and no other packet has started.**
+Status: **S1, E1, E3, and S2 are complete and published for review in draft
+PR #46. E1 and the separately addressed Account/Profile P2 have human
+acceptance; program-level human acceptance, PR readiness, merge, and deployment
+remain pending, and no later packet has started.**
 
 This unnumbered initiative does not start or renumber Task 20 and changes no
 product priority. Its proposed durable boundary is recorded in
@@ -118,9 +120,11 @@ request deadline for profile reads. Focused automated proof passes, and the
 requested physical offline/reconnect recheck is **tested-pass by human report
 on 2026-08-31**. The P2 finding is solved locally. This was not an E1 catalog
 regression or completion blocker. E1 is therefore complete and committed
-locally together with the separately authorized tab-root correction. Push, PR
-lifecycle actions, deployment, hosted configuration, database, and production
-actions remain unauthorized. E3 and S2 are complete and committed locally. S2
+together with the separately authorized tab-root correction. E3 and S2 are
+also complete and committed. The branch is published in draft PR #46; its
+exact-head Expo and Database CI results are the remote validation source.
+Program-level human acceptance, PR readiness, merge, deployment, hosted
+configuration, database, and production actions remain separate gates. S2
 retires the global eight-product canned catalog, its bundled image protocol and
 assets, the duplicate Product Detail representation, and the dead score-row
 primitive; scoped complete/sparse fixtures continue to protect the connected
@@ -129,8 +133,7 @@ simulator walk passed, and the human reported the physical-device check as
 `tested-pass` on 2026-09-01 without device/runtime details. The selected proof
 is recorded in
 [`docs/evidence/s2-mock-catalog-retirement/RESULT.md`](evidence/s2-mock-catalog-retirement/RESULT.md).
-Push, PR lifecycle, deployment, hosted configuration, database, and production
-actions remain unauthorized. E2 remains ready but unselected. E3 deletes three
+E2 remains ready but unselected. E3 deletes three
 proxy suites totaling 182 lines
 and seven tests, and moves the useful Auth field configuration checks onto the
 real Sign In and Sign Up screens. The identical owner suite passes 7/7 suites
@@ -161,8 +164,8 @@ accepted; the environment audit remains a recommendation only:
   Account, profile API, shared-timeout, and Rated Products tests pass. The
   requested physical offline/reconnect recheck is **tested-pass by human report
   on 2026-08-31**, so the P2 finding is solved locally. This follow-up remains
-  within the human-authorized local completion commit; push, PR lifecycle, and
-  later packets remain separately gated.
+  within the human-authorized completion commit and draft PR #46; later packets,
+  PR readiness, merge, and deployment remain separately gated.
 - **Local/staging runtime toggle audit:** do not add an in-app hot switch. It
   adds more lifecycle ownership than it removes; the contract analysis is in
   the canonical simplification plan. Expo SDK 57's development virtual

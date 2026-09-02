@@ -1,10 +1,11 @@
 # Staged Codebase Simplification Plan
 
-Status: **Packets S1, E1, E3, and S2 are complete locally; E1 and the separately
-addressed Account/Profile P2 have human acceptance; S2 passed mobile web and
-iOS simulator verification and has a human-reported physical-device pass; no
-other simplification packet has started, and Android is explicitly out of the
-current plan.**
+Status: **Packets S1, E1, E3, and S2 are complete and published for review in
+draft PR #46; E1 and the separately addressed Account/Profile P2 have human
+acceptance; S2 passed mobile web and iOS simulator verification and has a
+human-reported physical-device pass. Program-level human acceptance, PR
+readiness, merge, and deployment remain pending; no other simplification packet
+has started, and Android is explicitly out of the current plan.**
 
 Base SHA: `db27309005e14d80f67df9bfe9cb4debd6dd47b6`
 
@@ -38,8 +39,11 @@ chat history.
   canonical skill updates, and authorized local edits through human review.
   On 2026-09-01 the human reported the S2 physical-device check as passed and
   authorized the iOS simulator check plus one local completion commit if no
-  issue remained. Push, PR lifecycle work, deployment, hosted configuration,
-  database work, and production access remain unauthorized.
+  issue remained. On 2026-09-01 the human then authorized branch publication,
+  draft PR #46, exact-head Expo and Database CI, and one bounded remediation of
+  the four final-review findings. Program-level human acceptance, PR readiness,
+  merge, deployment, hosted configuration, database work, and production
+  access remain separate gates.
 - Before a batch, a human selects its candidate and accepts every listed
   capability loss. One candidate is the default batch size.
 - Stop when a real or unresolved dynamic consumer exists, a baseline cannot
@@ -92,7 +96,8 @@ Current repository proof at the S1 planning baseline (`839ce4fc`):
 ## Kanban portfolio
 
 This board records planning and packet status; it is not execution authority.
-S1, E1, E3, and S2 are complete locally; no other packet is in progress.
+S1, E1, E3, and S2 are complete and included in draft PR #46; no other packet
+is in progress.
 Priority ranks expected value and sequencing only: P1 is high-value, P2 is
 worthwhile after stronger cuts, and P3 is fold-only housekeeping. Difficulty
 reflects coordination and proof burden: XS is one local symbol/file, S is one
@@ -102,10 +107,10 @@ product/skill approval or native proof.
 | Lane | Priority | ID | Potential work | Benefit | Confidence | Difficulty | Gate or next move |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Implemented | P0 | S1 | Remove Create Expo starter subtree, sample font, and unused direct dependencies/config | High | Contract | M | Web/iOS pass; Android explicitly out of the current plan |
-| Complete locally | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance and local commit complete; remote lifecycle remains unauthorized |
+| In draft PR | P1 | E1 | Route catalog requests through the existing shared deadline/cancellation owner | High | Contract | M | Human acceptance complete; PR readiness and merge remain pending |
 | Ready, unselected | P2 | E2 | Share only identical SDK/network error-shape extraction across catalog, ratings, and Auth | Medium | Contract | M | Keep every domain normalizer and transport policy separate |
-| Complete locally | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Local completion commit is complete; remote lifecycle remains unauthorized |
-| Complete locally | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Mobile web and iOS simulator pass; physical device `tested-pass` by human report; remote lifecycle remains unauthorized |
+| In draft PR | P2 | E3 | Retire redundant/proxy Auth and test-harness suites after moving the few real assertions to owner suites | Medium | Contract | S | Included in PR #46; program acceptance, readiness, and merge remain pending |
+| In draft PR | P1 | S2 | Retire mock-era product detail contract and bundled fixture assets | Very high | Contract | L | Mobile web and iOS simulator pass; physical device `tested-pass` by human report; program acceptance remains pending |
 | Proof first | P2 | S3 | Remove `react-native-url-polyfill` over Expo WinterCG URL | Medium | Static | L | Boot-order probe and web/iOS/Android cold-start proof |
 | Fold only | P3 | E4 | Inline the one-caller splash-dismiss relay and retire its proxy test | Low | Static | M | Only with layout/bootstrap work and boot-equivalence proof |
 | Folded into S2 | P3 | L1 | Remove dead `RatingRow` and tiny candidate-exclusive exports | Low | Static | XS | Implemented inside S2; no standalone packet |
@@ -114,9 +119,9 @@ product/skill approval or native proof.
 | Retain | — | R1 | App/runtime JWT decoders | Low potential | Conflicting contracts | M | Keep fail-closed environment and guarded-session parsing separate |
 | Owned elsewhere | — | I1 | Replace Markdown task-graph parsing with structured config | High | Existing task | L | Follow the deferred Agent infrastructure checker v2 task |
 
-S1, E1, E3, and S2 were selected and completed locally. E2 remains ready but
-unselected. S3 does not enter a ready lane until its native proof gate passes.
-P3 items do not justify standalone work.
+S1, E1, E3, and S2 were selected, completed, and published in draft PR #46.
+E2 remains ready but unselected. S3 does not enter a ready lane until its
+native proof gate passes. P3 items do not justify standalone work.
 
 ## Packet S1: remove the starter subtree
 
