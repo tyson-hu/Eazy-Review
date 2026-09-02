@@ -1,10 +1,11 @@
 ---
 id: decision-staged-codebase-simplification
 date: 2026-08-30
-status: proposed
+status: accepted
+updated: 2026-09-02
 area: architecture
 tasks: []
-pr: null
+pr: 46
 tags: [codebase-health, dependencies, simplification]
 supersedes: []
 ---
@@ -30,7 +31,7 @@ live in the related implementation plan.
 
 ## Decision
 
-Propose a staged simplification program with one ownership boundary per
+Use a staged simplification program with one ownership boundary per
 validated batch:
 
 1. Remove the unreachable Create Expo starter subtree, its sample font, and
@@ -48,10 +49,10 @@ check plus the affected repository gates; and leave an undo path. A failed
 proof keeps the current code instead of weakening the check or adding a new
 compatibility wrapper.
 
-This record is proposed, not binding. It authorizes no implementation, commit,
-push, pull request, deployment, hosted configuration, migration, account
-deletion, or production action by itself. Each selected cut remains a separate
-scope and validation boundary.
+This record is the binding simplification boundary. It authorizes no future
+packet, implementation, commit, push, pull request, deployment, hosted
+configuration, migration, account deletion, or production action by itself.
+Each selected cut remains a separate scope and validation boundary.
 
 Do not treat security isolation, authorization, trust-boundary validation,
 data-loss prevention, accessibility essentials, request cancellation,

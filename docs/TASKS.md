@@ -79,22 +79,22 @@ archive is historical evidence, not a current plan.
 
 ### Active maintenance initiative: staged codebase simplification
 
-Status: **S1, E1, E3, and S2 are complete and published in ready PR #46. Code
-and security reviews completed on head `64e36a2`; security reported no finding,
-and the human authorized a bounded remediation for the one P2 skill-discovery
-metadata finding. E1 and the separately addressed Account/Profile P2 have
-human acceptance; program-level human acceptance, merge, and deployment remain
-pending. Live remediation, check, and thread states are tracked on PR #46, and
-no later packet has started.**
+Status: **S1, E1, E3, S2, and the two bounded follow-ups are complete, human
+accepted, and merged through PR #46. Final reviewed head `85b4ef3` passed
+exact-head Expo and Database CI with zero unresolved review threads and merged
+to `master` as `38d6420`; post-merge Expo and Database CI also passed. The six
+related GitHub Project #4 entries are `Completed`. No later packet has started;
+deployment, hosted configuration, database mutation, production access, and
+Android work remain separate gates.**
 
 This unnumbered initiative does not start or renumber Task 20 and changes no
-product priority. Its proposed durable boundary is recorded in
+product priority. Its accepted durable boundary is recorded in
 [`docs/decisions/2026-08-30-staged-codebase-simplification.md`](decisions/2026-08-30-staged-codebase-simplification.md),
 and its candidate evidence, phase order, validation, undo, and cross-session
 protocol live in
 [`docs/superpowers/plans/2026-08-30-staged-codebase-simplification.md`](superpowers/plans/2026-08-30-staged-codebase-simplification.md).
 S1's unreachable starter subtree, sample font, two direct dependencies, and
-three empty config plugins are removed locally. Web and iOS startup passed.
+three empty config plugins are removed and merged. Web and iOS startup passed.
 E1 now routes both public catalog reads through the existing shared request
 deadline/cancellation owner and deletes the duplicate catalog lifecycle with
 no new production abstraction or shared-helper source edit. Its focused and
@@ -117,21 +117,23 @@ Product Detail Back returned to Browse, cold Browse Back stayed on Browse, and
 Feed → Browse → Back stayed on Browse. The human separately reports the
 current local-target offline/reconnect lane as `tested-pass`. The
 Account/Profile offline status took about five minutes to appear in that run;
-the separate P2 connectivity-feedback finding is now addressed locally by
+the separate P2 connectivity-feedback finding is now addressed and merged by
 immediate reactive offline presentation and the existing shared ten-second
 request deadline for profile reads. Focused automated proof passes, and the
 requested physical offline/reconnect recheck is **tested-pass by human report
-on 2026-08-31**. The P2 finding is solved locally. This was not an E1 catalog
-regression or completion blocker. E1 is therefore complete and committed
-together with the separately authorized tab-root correction. E3 and S2 are
-also complete and committed. The branch is published in PR #46; its live
-readiness and exact-head Expo and Database CI states are tracked on the PR.
-Program-level human acceptance, review-finding disposition, merge, deployment, hosted
-configuration, database, and production actions remain separate gates. S2
-retires the global eight-product canned catalog, its bundled image protocol and
-assets, the duplicate Product Detail representation, and the dead score-row
-primitive; scoped complete/sparse fixtures continue to protect the connected
-catalog. Its connected mobile-web walk passed, its iPhone 15 / iOS 26.5
+on 2026-08-31**. The P2 finding is solved and merged. This was not an E1
+catalog regression or completion blocker. E1 and the separately authorized
+tab-root correction are complete and merged; E3 and S2 are also complete and
+merged. PR #46's final reviewed head `85b4ef3` passed exact-head Expo and
+Database CI and merged to `master` as `38d6420`; both post-merge workflows
+passed on that merge commit. Program-level acceptance, review-finding
+disposition, and merge are complete. Deployment, hosted configuration,
+database mutation, production access, Android work, and later packets remain
+separate gates. S2 retires the global eight-product canned catalog, its bundled
+image protocol and assets, the duplicate Product Detail representation, and
+the dead score-row primitive; scoped complete/sparse fixtures continue to
+protect the connected catalog. Its connected mobile-web walk passed, its
+iPhone 15 / iOS 26.5
 simulator walk passed, and the human reported the physical-device check as
 `tested-pass` on 2026-09-01 without device/runtime details. The selected proof
 is recorded in
@@ -146,8 +148,8 @@ needs native proof; and low-value findings remain
 fold-only or retained. Each later packet requires explicit selection before
 implementation.
 
-Two separately authorized follow-ups are implemented locally and human
-accepted; the environment audit remains a recommendation only:
+Two separately authorized follow-ups are implemented, human accepted, and
+merged; the environment audit remains a recommendation only:
 
 - **Tab-root Back correction:** the existing tab navigator now declares Browse
   as its initial route and does not consume Back into another tab. The root
@@ -166,10 +168,9 @@ accepted; the environment audit remains a recommendation only:
   read through the shared ten-second deadline/cancellation owner. Focused
   Account, profile API, shared-timeout, and Rated Products tests pass. The
   requested physical offline/reconnect recheck is **tested-pass by human report
-  on 2026-08-31**, so the P2 finding is solved locally. This follow-up remains
-  within the human-authorized completion commit and PR #46; later packets,
-  program-level human acceptance, review-finding disposition, merge, and deployment remain
-  separately gated.
+  on 2026-08-31**, so the P2 finding is solved and merged in PR #46. Later
+  packets, deployment, hosted configuration, database mutation, production
+  access, and Android remain separately gated.
 - **Local/staging runtime toggle audit:** do not add an in-app hot switch. It
   adds more lifecycle ownership than it removes; the contract analysis is in
   the canonical simplification plan. Expo SDK 57's development virtual
