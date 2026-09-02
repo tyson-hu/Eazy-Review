@@ -123,6 +123,10 @@ placeholders are filled.
     --field-id <field> --single-select-option-id <option>` for Status, Lane,
     Priority, Benefit, Confidence, or Difficulty; the same command with
     `--text "<value>"` for ID, Potential work, or Gate or next move.
+  - Title or body: `gh project item-edit --id <draft issue ID> --title
+    "<title>" --body "<body>"` (either flag alone is fine). The draft issue ID
+    is the item's `content.id` (`DI_…`) in the `item-list` output, not the
+    project item ID (`PVTI_…`) used for field changes.
   - Create: `gh project item-create 4 --owner tyson-hu --title "<title>"
     --body "<body>" --format json` (creates a draft issue with title and body
     only and returns the item ID), then one `item-edit` per field until ID,
