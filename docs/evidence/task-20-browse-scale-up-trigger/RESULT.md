@@ -2,8 +2,10 @@
 
 ## Status
 
-**Trigger evaluated on 2026-09-02 — not met.** Task 20 remains Conditional.
-No Browse Scale-Up implementation was authorized or started.
+**Trigger evaluated on 2026-09-02 — no triggering criterion recorded as met
+(catalog size and Browse payload: not met; latency / UI: not evaluated).**
+Task 20 remains Conditional. Evaluation human accepted in PR #49 on
+2026-09-02. No Browse Scale-Up implementation was authorized or started.
 
 ## Environment
 
@@ -96,16 +98,21 @@ Against
 | --- | --- | --- | --- |
 | Catalog size | ≥ 300 published (or planned) | 2 local; 2 staging (cited) | No |
 | Browse payload | ≥ 1 MB measured or projected | 1,398 B; ~210 KB at 300 | No |
-| Latency / UI | ≥ 2 s device median, or filter+render ≥ ~50 ms | Local median ~6 ms; no physical staging latency measured this run; filter alone ≪ 50 ms through 10k | No |
+| Latency / UI | ≥ 2 s device median, or filter+render ≥ ~50 ms | Local REST median ~6 ms only; physical staging Browse median and on-device filter+render **not measured** this run. Filter-alone micro-bench ≪ 50 ms through 10k is insufficient for this criterion | Not evaluated |
 
-**Verdict: not met.** Keep client-side brand/name/SKU search. Do not start
-server-side search, sort, filters, pagination, or index-change work.
+**Verdict: no triggering criterion recorded as met.** Catalog size and Browse
+payload fail on evidence. Latency / UI is inconclusive because neither required
+measurement was performed; an unevaluated criterion cannot authorize Task 20
+and also must not be reported as a measured miss. Keep client-side
+brand/name/SKU search. Do not start server-side search, sort, filters,
+pagination, or index-change work.
 
 ## Skipped (with reason)
 
 | Item | Reason |
 | --- | --- |
-| Physical-device Browse latency against staging | Not required to decide "not met" at 2 products; criterion 3 remains available for a future re-evaluation |
+| Physical-device Browse latency against staging | Out of scope for this docs-only evaluation; criterion 3 therefore stays **Not evaluated**, not `No` |
+| On-device filter+render timing | Same; filter-alone micro-bench is supporting context only |
 | Hosted staging SQL count | Agents must not treat staging DB inspection as routine for this docs packet; S2/Task 15 evidence already records two published fixtures |
 | Synthetic multi-thousand seed | Explicitly out of scope for trigger evaluation; projection used instead |
 | `npm test` / Expo / database suites | No application, Edge Function, or database code changed |

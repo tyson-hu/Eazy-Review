@@ -1,7 +1,7 @@
 ---
 id: decision-browse-scale-up-trigger
 date: 2026-09-02
-status: proposed
+status: accepted
 area: architecture
 tasks: [20]
 pr: 49
@@ -61,9 +61,11 @@ never production DB reads.
 ## Consequences
 
 - Agents have a pass/fail rule instead of an open-ended judgment call.
-- At the 2026-09-02 evaluation (2 published products, ~699 B/product, local
-  Browse median ~6 ms), none of the criteria are met; Task 20 stays
-  Conditional and Task 21 is the next Revised Sequence item to select.
+- At the 2026-09-02 evaluation, catalog size and Browse payload criteria are
+  not met (2 published products, ~699 B/product). Latency / UI was not
+  measured on device, so it is inconclusive and does not authorize Scale-Up.
+  No triggering criterion is recorded as met; Task 20 stays Conditional and
+  Task 21 is the next Revised Sequence item to select.
 - Index and schema work for Task 20 remain a separately authorized
   `supabase-schema-change` packet after the trigger is recorded as met.
 - Criteria may be tightened or relaxed at PR review when new evidence lands;

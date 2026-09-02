@@ -63,8 +63,10 @@
 - Task 20 (Browse Scale-Up) remains **Conditional**. The measured trigger was
   evaluated on 2026-09-02 against local Docker Supabase (2 published products,
   ~699 B/product, Browse median ~6 ms) and cited staging evidence (2 published
-  fixtures); none of the ADR criteria were met. Client-side brand/name/SKU
-  search stays. Numeric criteria:
+  fixtures); catalog size and Browse payload criteria were not met, and
+  latency / UI was not evaluated on device. No triggering criterion is
+  recorded as met. Client-side brand/name/SKU search stays. Evaluation human
+  accepted in PR #49 on 2026-09-02. Numeric criteria:
   [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
   evidence:
   [`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
@@ -1176,7 +1178,8 @@ Non-goals:
 
 ## Task 20: Browse Scale-Up
 
-Status: **Conditional — trigger evaluated on 2026-09-02, not met.**
+Status: **Conditional — trigger evaluated on 2026-09-02, not met; evaluation
+human accepted in PR #49 on 2026-09-02.**
 
 Depends on: Task 15 and a measured scaling need.
 
@@ -1215,7 +1218,9 @@ re-measured): 2 published products; Browse response 1,398 bytes (~699
 B/product); local Browse median ~5.93 ms; projected payload at 300 products
 ~210 KB; candidate `ilike` seq-scans and FTS uses `products_name_idx` at two
 rows with no scale pressure; in-memory `matchesQuery` stays under 1 ms through
-10,000 items. None of the ADR criteria are met.
+10,000 items. Catalog size and Browse payload criteria are not met. Latency /
+UI was not measured on device and is recorded as not evaluated. No triggering
+criterion is recorded as met.
 
 ## Task 21: Real Feed MVP
 

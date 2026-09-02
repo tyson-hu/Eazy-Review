@@ -22,7 +22,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Authentication and security | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | 19, 25, 26 | 2026-07-30 |
 | Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-26 |
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
-| Architecture | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Proposed | 20 | 2026-09-02 |
+| Architecture | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Accepted | 20 | 2026-09-02 |
 | Architecture | [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) | Accepted | — | 2026-09-02 |
 | Architecture | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Accepted | 14, 15, 16, 17 | 2026-08-31 |
 | Architecture | [Fail-fast offline writes and bounded request deadlines](decisions/2026-08-09-connected-request-reliability.md) | Accepted | 15, 17 | 2026-08-09 |
@@ -43,7 +43,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
-| [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Architecture | Proposed | 2026-09-02 |
+| [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Architecture | Accepted | 2026-09-02 |
 | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Agent workflow | Accepted | 2026-09-02 |
 | [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) | Architecture | Accepted | 2026-09-02 |
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-08-31 |
@@ -79,7 +79,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Architecture
 
-- [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) — Proposed; Tasks 20.
+- [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) — Accepted; Tasks 20.
 - [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) — Accepted.
 - [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) — Accepted; Tasks 14, 15, 16, 17.
 - [Fail-fast offline writes and bounded request deadlines](decisions/2026-08-09-connected-request-reliability.md) — Accepted; Tasks 15, 17.
