@@ -2,12 +2,147 @@
 
 ## Status
 
-**Trigger evaluated on 2026-09-02 — no triggering criterion recorded as met
-(catalog size and Browse payload: not met; latency / UI: not evaluated).**
-Task 20 remains Conditional. Evaluation human accepted in PR #49 on
-2026-09-02. No Browse Scale-Up implementation was authorized or started.
+**Trigger re-measured on 2026-09-02 after the 27-product catalog seed — no
+triggering criterion recorded as met (catalog size and Browse payload: not
+met; latency / UI: not evaluated).** Task 20 remains Conditional. Original
+two-product evaluation human accepted in PR #49 on 2026-09-02. Catalog seed
+extension human accepted in PR #50. No Browse Scale-Up implementation was
+authorized or started.
 
-## Environment
+The 27 × ~700 B ≈ 19 KB estimate in the seed packet understated nested
+offers and SHA-pinned image URLs. Measured Browse payload is 32,747 bytes
+(~32 KB), still far below the 1 MB criterion.
+
+## Re-measurement after 27-product seed (2026-09-02)
+
+### Environment
+
+| Item | Value |
+| --- | --- |
+| Date | 2026-09-02 |
+| Repository SHA at measurement | `df92a71` (`origin/master`; merge of PR #50) |
+| Database | Local Docker Supabase only (`supabase_db_eazy-review`) |
+| Hosted / production | Not touched |
+| Staging catalog size | Cited from the 2026-09-02 post-merge session: 27 published products after H2 fixtures were removed, matching the seed; not re-queried in this run |
+| App code changed | None |
+
+### Catalog size and footprint (local)
+
+| Metric | Result |
+| --- | --- |
+| `products` total | 27 |
+| `products` published | 27 |
+| `product_images` | 26 |
+| `product_offers` | 77 |
+| `eazy_assessments` | 26 |
+| `rating_aggregates` | 27 |
+
+Relation total sizes (`pg_total_relation_size`):
+
+| Relation | Size |
+| --- | --- |
+| `products` | 120 kB |
+| `product_offers` | 112 kB |
+| `eazy_assessments` | 48 kB |
+| `product_images` | 48 kB |
+| `rating_aggregates` | 32 kB |
+
+Existing `products` indexes (present, unused by the client Browse path):
+`products_pkey`, `products_sku_key`, `products_brand_idx`,
+`products_created_at_idx`, `products_name_idx` (GIN FTS on `name`),
+`products_published_idx`.
+
+### Browse wire payload and latency (local REST)
+
+Exact `getProducts` select/filters/orders from
+`src/features/products/api.ts`, issued as anonymous PostgREST against the
+local stack (10 runs; first run cold).
+
+| Metric | Result |
+| --- | --- |
+| Rows returned | 27 |
+| Response bytes (stable) | 32,747 |
+| Bytes per published product | 1,212.9 |
+| Min / median / max latency | 6.53 ms / 19.14 ms / 64.85 ms |
+| Projected payload at 300 products | ~364 KB |
+| Projected payload at 1,000 products | ~1.21 MB |
+
+Nested-shape context (same response, no product identity logged): images
+0–1 per row (avg 0.96); offers 0–3 per row (avg 2.85); current Eazy
+assessments 0–1 per row (avg 0.96); image URL length avg ~140 characters.
+Bytes-per-product rose from the two-row mix (one complete + one sparse,
+~1 offer/row) because most of the 25 added products carry a SHA-pinned
+image URL and up to three offers.
+
+Caveat: the 27-row catalog still includes the Task 13 sparse fixture, so
+bytes-per-product is an average, not a worst-case complete row.
+
+The 1,000-product projection exceeds 1 MB. That is supporting context for
+a later import (Task 28), not a met trigger: the accepted check uses
+measured bytes and the projection at the catalog-size threshold (300),
+matching PR #49.
+
+### Query plans (local `EXPLAIN ANALYZE, BUFFERS`)
+
+1. **Published base scan** ordered `created_at, id`: Seq Scan + Sort;
+   actual rows 27; execution 0.068 ms. Planner still estimates ~180 rows and
+   does not use `products_published_idx`.
+2. **Candidate `ilike` search** across brand / name / sku (`%nike%`): Seq
+   Scan; actual rows 2; execution 0.089 ms. Brand btree unused.
+3. **Candidate FTS** `to_tsvector('english', name) @@ plainto_tsquery(...)`:
+   Bitmap Index Scan on `products_name_idx`; actual rows 2; execution
+   0.080 ms. The GIN index is usable and still irrelevant at 27 rows.
+
+### Client-side `matchesQuery` micro-bench
+
+Pure in-memory copy of Browse's `matchesQuery` (no DB, no React render),
+1,000 iterations, query `"nike"`:
+
+| Catalog size | Matched | Per-call ms |
+| --- | --- | --- |
+| 2 | 1 | 0.0005 |
+| 100 | 15 | 0.0062 |
+| 1,000 | 143 | 0.0448 |
+| 10,000 | 1,429 | 0.4590 |
+
+Filter alone stays under 1 ms even at 10,000 items. The practical UI bound
+at scale is eager `.map` rendering of every card in a ScrollView, not the
+string filter.
+
+### Criteria check
+
+Against
+[`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](../../decisions/2026-09-02-browse-scale-up-trigger.md):
+
+| Criterion | Threshold | Observed / projected | Met? |
+| --- | --- | --- | --- |
+| Catalog size | ≥ 300 published (measured) | 27 local; 27 staging (cited) | No |
+| Browse payload | ≥ 1 MB measured or projected | 32,747 B; ~364 KB at 300 | No |
+| Latency / UI | ≥ 2 s device median, or filter+render ≥ ~50 ms | Local REST median 19.14 ms only; physical staging Browse median and on-device filter+render **not measured** this run. Filter-alone micro-bench ≪ 50 ms through 10k is insufficient for this criterion | Not evaluated |
+
+**Verdict: no triggering criterion recorded as met.** Catalog size and Browse
+payload fail on evidence. Latency / UI is inconclusive because neither
+required measurement was performed; an unevaluated criterion cannot
+authorize Task 20 and also must not be reported as a measured miss. Keep
+client-side brand/name/SKU search. Do not start server-side search, sort,
+filters, pagination, or index-change work.
+
+### Skipped (with reason)
+
+| Item | Reason |
+| --- | --- |
+| Physical-device Browse latency against staging | Out of scope for this numbers-only re-measurement; criterion 3 therefore stays **Not evaluated**, not `No` |
+| On-device filter+render timing | Same; filter-alone micro-bench is supporting context only |
+| Hosted staging SQL count | Agents must not treat staging DB inspection as routine for this docs packet; prior session already recorded 27 published products after H2 removal |
+| `supabase db reset` / seed re-apply | Local catalog already had 27 published products matching the seed |
+| Synthetic multi-thousand seed | Explicitly out of scope; projection used instead |
+| `npm test` / Expo / database suites | No application, Edge Function, or database code changed |
+
+## Baseline evaluation (2026-09-02, two-product catalog)
+
+Human accepted in PR #49. Kept as the pre-seed snapshot.
+
+### Environment
 
 | Item | Value |
 | --- | --- |
@@ -18,7 +153,7 @@ Task 20 remains Conditional. Evaluation human accepted in PR #49 on
 | Staging catalog size | Cited from S2 / Task 15 evidence: two published staging-only fixtures observed on cold iOS staging-backed walks (2026-08-31 / 2026-09-01); not re-measured in this run |
 | App code changed | None |
 
-## Catalog size and footprint (local)
+### Catalog size and footprint (local)
 
 | Metric | Result |
 | --- | --- |
@@ -44,7 +179,7 @@ Existing `products` indexes (present, unused by the client Browse path):
 `products_created_at_idx`, `products_name_idx` (GIN FTS on `name`),
 `products_published_idx`.
 
-## Browse wire payload and latency (local REST)
+### Browse wire payload and latency (local REST)
 
 Exact `getProducts` select/filters/orders from
 `src/features/products/api.ts`, issued as anonymous PostgREST against the
@@ -62,7 +197,7 @@ local stack (10 runs; first run cold).
 Caveat: the two-row catalog mixes one complete fixture and one sparse
 fixture, so bytes-per-product is an average, not a worst-case complete row.
 
-## Query plans (local `EXPLAIN ANALYZE, BUFFERS`)
+### Query plans (local `EXPLAIN ANALYZE, BUFFERS`)
 
 1. **Published base scan** ordered `created_at, id`: Seq Scan + Sort;
    actual rows 2; execution ~0.05 ms. Planner estimates ~180 rows and does
@@ -73,7 +208,7 @@ fixture, so bytes-per-product is an average, not a worst-case complete row.
    Bitmap Index Scan on `products_name_idx`; actual rows 1; execution
    ~0.09 ms. The GIN index is usable but irrelevant at two rows.
 
-## Client-side `matchesQuery` micro-bench
+### Client-side `matchesQuery` micro-bench
 
 Pure in-memory copy of Browse's `matchesQuery` (no DB, no React render),
 1,000 iterations, query `"nike"`:
@@ -89,7 +224,7 @@ Filter alone stays under 1 ms even at 10,000 items. The practical UI bound
 at scale is eager `.map` rendering of every card in a ScrollView, not the
 string filter.
 
-## Criteria check
+### Criteria check
 
 Against
 [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](../../decisions/2026-09-02-browse-scale-up-trigger.md):
@@ -107,7 +242,7 @@ and also must not be reported as a measured miss. Keep client-side
 brand/name/SKU search. Do not start server-side search, sort, filters,
 pagination, or index-change work.
 
-## Skipped (with reason)
+### Skipped (with reason)
 
 | Item | Reason |
 | --- | --- |

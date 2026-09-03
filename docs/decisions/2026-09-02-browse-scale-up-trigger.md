@@ -2,6 +2,7 @@
 id: decision-browse-scale-up-trigger
 date: 2026-09-02
 status: accepted
+updated: 2026-09-02
 area: architecture
 tasks: [20]
 pr: 49
@@ -19,10 +20,12 @@ measured scaling need. Until 2026-09-02 no ADR fixed a numeric threshold, so
 "measured need" was undefined and agents could not tell implement from park.
 Browse today fetches every published product once
 (`src/features/products/api.ts` `getProducts`) and filters brand/name/SKU
-client-side (`app/(tabs)/browse.tsx` `matchesQuery`). The local seed and the
-last observed staging catalog each expose two published products. Existing
-indexes (`products_brand_idx`, GIN `products_name_idx`) are unused by the
-client.
+client-side (`app/(tabs)/browse.tsx` `matchesQuery`). When this decision was
+recorded, the local seed and the last observed staging catalog each exposed
+two published products. PR #50 later grew the published seed to 27 products;
+that load is a reason to re-measure, not a change to these criteria.
+Existing indexes (`products_brand_idx`, GIN `products_name_idx`) are unused
+by the client.
 
 ## Decision
 
@@ -62,11 +65,16 @@ never production DB reads.
 ## Consequences
 
 - Agents have a pass/fail rule instead of an open-ended judgment call.
-- At the 2026-09-02 evaluation, catalog size and Browse payload criteria are
-  not met (2 published products, ~699 B/product). Latency / UI was not
-  measured on device, so it is inconclusive and does not authorize Scale-Up.
-  No triggering criterion is recorded as met; Task 20 stays Conditional and
-  Task 21 is the next Revised Sequence item to select.
+- At the 2026-09-02 two-product evaluation, catalog size and Browse payload
+  criteria are not met (2 published products, ~699 B/product). Latency / UI
+  was not measured on device, so it is inconclusive and does not authorize
+  Scale-Up. No triggering criterion is recorded as met; Task 20 stays
+  Conditional and Task 21 is the next Revised Sequence item to select.
+- Re-measured on 2026-09-02 after PR #50 (27 published products). Catalog
+  size and Browse payload remain unmet (32,747 B Browse payload, ~1,213
+  B/product, ~364 KB projected at 300). Latency / UI still not evaluated on
+  device. Criteria unchanged. Evidence:
+  `docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`.
 - Index and schema work for Task 20 remain a separately authorized
   `supabase-schema-change` packet after the trigger is recorded as met.
 - Criteria may be tightened or relaxed at PR review when new evidence lands;
