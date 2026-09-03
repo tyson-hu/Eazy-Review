@@ -4,7 +4,7 @@ date: 2026-09-02
 status: accepted
 area: product-ux
 tasks: [21]
-pr: null
+pr: 52
 tags: [catalog, discovery, feed]
 supersedes: []
 ---
@@ -29,7 +29,9 @@ product exists. Ranked sections require at least two qualifying products and
 cap at five cards. Most Rated qualifies on `ratingCount >= 1` and ranks by
 that count, not Community Score. A later section whose ordered product ids
 match an earlier visible section is hidden. Do not add a feed-configuration
-table, a Feed query key, or a Trending label.
+table, a Feed query key, or a Trending label. Keep `selectFeedSections` as a
+one-caller helper so ranking, caps, and duplicate-hide rules stay covered by
+isolated unit tests outside the Feed screen.
 
 ## Consequences
 

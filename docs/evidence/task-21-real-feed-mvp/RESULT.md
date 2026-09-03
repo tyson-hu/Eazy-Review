@@ -29,17 +29,23 @@ Web mobile preview of the connected Feed on the 27-product local catalog
     (`/product/a1000000-0000-4000-8000-000010001700`): **pass**
 - Evidence directory: `docs/evidence/task-21-real-feed-mvp/`
 - Evidence filenames:
-  - `screenshots/web-01-feed-newly-added.png`
-  - `screenshots/web-02-feed-full.png`
+  - `screenshots/web-01-feed-newly-added.png` — Feed top / Newly Added
+  - `screenshots/web-02-feed-full.png` — Feed scrolled to **Best Eazy
+    Scores** (section header + first ranked cards). Distinct hash from
+    `web-01`.
   - `screenshots/web-03-product-detail-from-feed.png`
   - `screenshots/web-04-product-detail-from-best-eazy.png`
 - GitHub disposition: `RESULT.md` plus the four screenshots above are
   selected proof. No local-only raw captures were kept.
-- Findings and severity: none
+- Findings and severity: none after review-fix recapture of `web-02`
 - Known limitations: web-only; native tab chrome and iOS Simulator were
   not exercised. Most Rated cannot appear until two products have
-  community ratings.
+  community ratings. Expo web uses an inner scroll container, so
+  `web-02` is a viewport capture scrolled to Best Eazy Scores rather
+  than a document-height stitch.
 - Automated checks run separately: focused Feed Jest suites 22/22;
-  `npm run typecheck`; `npm run lint`; `npm run check:readonly`
-- Required next decision: human review of the implementation PR; apply
-  `T21: Gated → In Progress` after approval
+  `npm run typecheck`; `npm run lint`; `npm run check:readonly`;
+  parent `npm run check:expo` on the review-fix head
+- Required next decision: human review and acceptance of the
+  implementation PR. Project #4 Status write `T21: Gated → In Progress`
+  was applied after chat approval.
