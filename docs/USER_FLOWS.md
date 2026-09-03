@@ -61,9 +61,10 @@ Rating Form opens from Product Detail.
 
 Route ownership is phased: Task 16 adds core auth routes and Account states;
 Task 17 adds Rated Products; Task 18 adds recovery routes; Task 19 adds the
-Delete Account action and protected server boundary; Task 24 adds direct Terms,
-Privacy, and support/contact routes plus the public account-deletion
-information URL. No generic Settings route is planned for the MVP.
+Delete Account action and protected server boundary; Task 21 replaces the Feed
+placeholder with real catalog sections; Task 24 adds direct Terms, Privacy, and
+support/contact routes plus the public account-deletion information URL. No
+generic Settings route is planned for the MVP.
 
 ## Flow 1: Browse Without Login
 
@@ -369,6 +370,52 @@ records that bounded lifetime without claiming immediate token invalidation.
 Task 24's public account-deletion information link explains this in-app path
 and the data deletion/retention behavior; it is informational and does not
 replace or invoke the Task 19 action.
+
+## Flow 7: Discover Products On Feed
+
+```txt
+User opens the Feed tab
+-> App loads the shared published catalog query
+-> User sees populated sections that the current catalog can support
+-> User taps a product card
+-> Product Detail opens
+```
+
+Feed stays anonymous. It reuses Browse's catalog query and `ProductCard`.
+Empty, loading, offline, error, retry, and cached-refresh states match Browse.
+Most Rated appears only after at least two published products have a community
+rating count.
+
+## Feed Requirements
+
+Route: `app/(tabs)/feed.tsx`
+
+Features:
+- Up to three non-duplicative sections: Newly Added, Best Eazy Scores, and
+  Most Rated.
+- Product cards.
+- Empty state.
+- Loading state.
+- Error state.
+- Manual retry.
+- Cached products remain visible during background refresh or while offline;
+  offline-without-cache is an explicit full-surface state.
+
+Section rules:
+- Newly Added reverses the published catalog list (`created_at ASC`, `id ASC`)
+  and shows up to five products when at least one published product exists.
+- Best Eazy Scores includes products with a non-null Eazy Score, ranks by
+  Eazy Score then id descending, and shows only when at least two products
+  qualify. Cap is five cards.
+- Most Rated includes products with `ratingCount >= 1`, ranks by rating count
+  then id descending, and shows only when at least two products qualify. Cap
+  is five cards. Do not rank on Community Score.
+- Hide a later section whose ordered product ids match an earlier visible
+  section. The same products in a different order stay.
+- Do not label a section Trending. Do not add a feed-configuration table.
+- Do not add an in-page Feed title; the tab header already names the screen.
+
+Product card tap should navigate to `/product/[id]`.
 
 ## Browse Requirements
 

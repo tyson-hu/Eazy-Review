@@ -71,7 +71,7 @@ Product image
 Each screen must have one clear focal point.
 
 Examples:
-- Feed: one useful real-data discovery section.
+- Feed: the first populated real-data discovery section.
 - Browse: search bar and product results.
 - Product Detail: sneaker image plus score summary.
 - Rating Screen: rating input.
@@ -381,11 +381,12 @@ Keep these components small. Add abstractions only when they remove real duplica
 ### Feed / Discover
 
 - Job: help users find interesting products worth checking.
-- Focal point: one useful real-data discovery section.
+- Focal point: the first populated real-data discovery section.
 - MVP Feed uses no more than three non-duplicative sections: Newly Added, Best
-  Eazy Scores, and Most Rated or Best Community Scores only when data supports
-  it. Hide empty sections; do not label a section “Trending” without a real
-  time-based activity signal.
+  Eazy Scores, and Most Rated. Ranked sections appear only when at least two
+  products qualify and show at most five cards. Hide empty or duplicate
+  sections; do not label a section “Trending” without a real time-based
+  activity signal. Do not add Best Community Scores.
 - Post-MVP, when community text is in scope: category chips and public review
   snippets.
 - Avoid: too many product grids, too many banners, marketplace discount feeling, overloaded homepage.

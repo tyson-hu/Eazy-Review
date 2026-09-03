@@ -726,6 +726,17 @@ failures receive no automatic retry. Reconnect/focus behavior remains owned by
 the accepted Task 14 lifecycle, while every surface exposes manual retry where
 the error is recoverable.
 
+Task 21 Feed reuses `useProductsQuery()` and `catalogKeys.products()`. It
+does not add a Feed query key or a second catalog request. `selectFeedSections`
+derives Newly Added, Best Eazy Scores, and Most Rated from that published
+`ProductCardData[]`. Newly Added reverses the adapter catalog order
+(`created_at ASC`, then `id ASC`) and caps at five. Ranked sections require
+at least two qualifying products (`eazyScore != null` for Best Eazy Scores;
+`ratingCount >= 1` for Most Rated), rank by that signal then `id` descending,
+and cap at five. A later section whose ordered ids match an earlier visible
+section is omitted. Task 17 already invalidates `catalogKeys.products()` after
+a rating write, so Most Rated can appear without a new cache key.
+
 ## Account Profile Query
 
 Files: `src/features/account/api.ts` and

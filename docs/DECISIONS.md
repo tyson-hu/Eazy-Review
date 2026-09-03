@@ -10,6 +10,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Area | Decision | Status | Tasks | Updated |
 | --- | --- | --- | --- | --- |
+| Product and UX | [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Accepted | 21 | 2026-09-02 |
 | Product and UX | [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Accepted | — | 2026-07-30 |
 | Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 15, 17 | 2026-07-30 |
 | Data and Supabase | [Use one sneaker-10-v1 rubric for Eazy, Community, and My Rating](decisions/2026-08-09-sneaker-10-v1-shared-rubric.md) | Accepted | 17 | 2026-08-09 |
@@ -45,6 +46,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | --- | --- | --- | --- |
 | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Architecture | Accepted | 2026-09-02 |
 | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Agent workflow | Accepted | 2026-09-02 |
+| [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Product and UX | Accepted | 2026-09-02 |
 | [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) | Architecture | Accepted | 2026-09-02 |
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-08-31 |
 | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-08-22 |
@@ -52,12 +54,12 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Use one sneaker-10-v1 rubric for Eazy, Community, and My Rating](decisions/2026-08-09-sneaker-10-v1-shared-rubric.md) | Data and Supabase | Accepted | 2026-08-09 |
 | [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Tooling and CI | Accepted | 2026-08-07 |
 | [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Agent workflow | Accepted | 2026-08-06 |
-| [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Agent workflow | Accepted | 2026-08-01 |
 
 ## Browse by area
 
 ### Product and UX
 
+- [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) — Accepted; Tasks 21.
 - [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) — Accepted.
 - [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) — Accepted; Tasks 8, 9, 10, 15, 17.
 

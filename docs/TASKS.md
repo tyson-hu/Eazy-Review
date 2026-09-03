@@ -77,11 +77,11 @@
   [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
   evidence:
   [`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
-  Task 21 (Real Feed MVP) is the next Revised Sequence item to select;
-  selecting and implementing Task 21 still requires its own human gate. The
-  human declined to select Task 21 against a two-product catalog on
-  2026-09-02 and chose to grow the catalog first (see the active data
-  initiative below).
+  Task 21 (Real Feed MVP) is selected and under implementation on
+  2026-09-02 after the 27-product catalog seed. The human declined to
+  select it against a two-product catalog on 2026-09-02 and grew the
+  catalog first (see the active data initiative below). Proposed Project
+  #4 write after this ledger edit: `T21: Gated → In Progress`.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -422,7 +422,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
 | 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 |
 | 20 | Browse Scale-Up | Conditional |
-| 21 | Real Feed MVP | Pending |
+| 21 | Real Feed MVP | In Progress |
 | 22 | Broader Automated App Tests And CI | Pending |
 | 23 | Reliability, Accessibility, And Device QA | Pending |
 | 24 | Privacy, Legal, And Store Disclosures | Pending |
@@ -1290,7 +1290,7 @@ trigger implementation. Human accepted in PR #51 on 2026-09-02.
 
 ## Task 21: Real Feed MVP
 
-Status: Pending.
+Status: In Progress — selected on 2026-09-02.
 
 Depends on: Task 15, Task 17, and enough real data for useful sections.
 
@@ -1301,19 +1301,23 @@ parent owns scope and acceptance.
 
 Parallel-safe with: Task 20 only when the parent proves file-disjoint scopes.
 
-Human gate: Human acceptance is required before Task 22.
+Human gate: Implementation selected on 2026-09-02. Human acceptance is
+required before Task 22.
 
 Data dependency note: the catalog seed extension is human accepted in PR #50
 (Active data initiative under Current Repo Status): 27 published products, 26
-of them with a current Eazy assessment. Selecting this task still requires
-its own human gate in a fresh session after merge.
+of them with a current Eazy assessment. The Feed uses Newly Added, Best Eazy
+Scores, and Most Rated; ranked sections require at least two qualifying
+products and cap at five cards. Most Rated stays hidden until at least two
+products have `ratingCount >= 1`. Proposed Project #4 write:
+`T21: Gated → In Progress`.
 
 Goal: replace the primary placeholder with a deliberately small real Feed.
 
 Deliverables:
 
-- No more than three sections: Newly Added, Best Eazy Scores, and Most Rated or
-  Best Community Scores only when data supports it.
+- No more than three sections: Newly Added, Best Eazy Scores, and Most Rated
+  only when data supports it.
 - Hide empty or duplicate sections.
 - Reuse `ProductCard` and existing product queries.
 - Do not use “Trending” without a real time-based activity signal.
@@ -1325,6 +1329,9 @@ Acceptance:
 - Every visible section is distinct, populated, and opens Product Detail.
 - If a useful Feed cannot be completed before beta, remove the tab rather than
   ship a primary placeholder.
+
+Implementation evidence (web preview, not human acceptance):
+[`docs/evidence/task-21-real-feed-mvp/RESULT.md`](evidence/task-21-real-feed-mvp/RESULT.md).
 
 ## Task 22: Broader Automated App Tests And CI
 
