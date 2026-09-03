@@ -204,9 +204,11 @@ merged; the environment audit remains a recommendation only:
 
 Status: **Implemented on branch `agent/catalog-seed-extension`; awaiting human
 acceptance of the catalog seed extension PR. Local `npm run test:db:reset`
-passes (8 pgTAP files, seed suite 54/54, both concurrency races). Staging
-application remains a separate, explicitly approved HIGH IMPACT write after
-merge; production remains forbidden.**
+passes (8 pgTAP files, seed suite 54/54, both concurrency races). Merge with a
+merge commit, never squash: the seeded image URLs pin commit `788b356`, which
+must stay reachable from `master`. Staging application remains a separate,
+explicitly approved HIGH IMPACT write after merge; production remains
+forbidden.**
 
 Scope: a seed-only SQL/config/test packet that grows `supabase/seed.sql` from
 the two Task 13 fixtures to 27 deterministic published products so Task 21 can
