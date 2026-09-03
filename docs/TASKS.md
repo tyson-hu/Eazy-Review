@@ -6,8 +6,9 @@
   journey passed its UX gate, and the Supabase schema, trigger-owned Community
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
-  accepted; the catalog seed extension below grows that same seed file to 27
-  published products without changing the Task 13 fixtures.
+  accepted; the catalog seed extension below is **Done — human accepted in
+  PR #50 on 2026-09-02** and grows that same seed file to 27 published
+  products without changing the Task 13 fixtures.
 - Task 14 is complete and human accepted. Expo has a validated public Supabase
   env module, one typed client, generated local database types, TanStack Query
   providers/lifecycle, public vs user-scoped query keys, and a jest-expo
@@ -202,13 +203,12 @@ merged; the environment audit remains a recommendation only:
 
 ### Active data initiative: catalog seed extension
 
-Status: **Implemented on branch `agent/catalog-seed-extension`; awaiting human
-acceptance of the catalog seed extension PR. Local `npm run test:db:reset`
-passes (8 pgTAP files, seed suite 54/54, both concurrency races). Merge with a
-merge commit, never squash: the seeded image URLs pin commit `788b356`, which
-must stay reachable from `master`. Staging application remains a separate,
-explicitly approved HIGH IMPACT write after merge; production remains
-forbidden.**
+Status: **Done — human accepted in PR #50 on 2026-09-02.** Local
+`npm run test:db:reset` passed (8 pgTAP files, seed suite 54/54, both
+concurrency races). Merge with a merge commit, never squash: the seeded
+image URLs pin commit `788b356`, which must stay reachable from `master`.
+Staging application remains a separately approved HIGH IMPACT write after
+merge; production remains forbidden.
 
 Scope: a seed-only SQL/config/test packet that grows `supabase/seed.sql` from
 the two Task 13 fixtures to 27 deterministic published products so Task 21 can
@@ -1286,11 +1286,10 @@ Parallel-safe with: Task 20 only when the parent proves file-disjoint scopes.
 
 Human gate: Human acceptance is required before Task 22.
 
-Data dependency note: the "enough real data" dependency is being met by the
-catalog seed extension (Active data initiative under Current Repo Status),
-which seeds 27 published products, 26 of them with a current Eazy assessment.
-Selecting this task still requires its own human gate in a fresh session after
-the seed is accepted.
+Data dependency note: the catalog seed extension is human accepted in PR #50
+(Active data initiative under Current Repo Status): 27 published products, 26
+of them with a current Eazy assessment. Selecting this task still requires
+its own human gate in a fresh session after merge.
 
 Goal: replace the primary placeholder with a deliberately small real Feed.
 
