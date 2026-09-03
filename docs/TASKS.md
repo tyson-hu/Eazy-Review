@@ -63,12 +63,17 @@
   Detailed verification and human checklists:
   [`VERIFICATION.md`](evidence/task-19-protected-account-deletion/VERIFICATION.md).
 - Task 20 (Browse Scale-Up) remains **Conditional**. The measured trigger was
-  evaluated on 2026-09-02 against local Docker Supabase (2 published products,
-  ~699 B/product, Browse median ~6 ms) and cited staging evidence (2 published
-  fixtures); catalog size and Browse payload criteria were not met, and
-  latency / UI was not evaluated on device. No triggering criterion is
-  recorded as met. Client-side brand/name/SKU search stays. Evaluation human
-  accepted in PR #49 on 2026-09-02. Numeric criteria:
+  first evaluated on 2026-09-02 against local Docker Supabase (2 published
+  products, ~699 B/product, Browse median ~6 ms) and cited staging evidence
+  (2 published fixtures). After the 27-product catalog seed (PR #50) it was
+  re-measured the same day: 27 published products locally, Browse response
+  32,747 bytes (~1,213 B/product), local Browse median 19.14 ms, projected
+  payload at 300 products ~364 KB. Catalog size and Browse payload criteria
+  were not met either time, and latency / UI was not evaluated on device.
+  No triggering criterion is recorded as met. Client-side brand/name/SKU
+  search stays. Two-product evaluation human accepted in PR #49 on
+  2026-09-02. 27-product re-measure human accepted in PR #51 on
+  2026-09-02. Numeric criteria:
   [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
   evidence:
   [`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
@@ -231,9 +236,11 @@ Non-goals: no schema, migration, RLS, grant, or function change; no Task 20
 trigger change (Browse stays client-side over the small catalog); no Task 21
 implementation; no scraper or import pipeline (Task 28); no auth or rating
 fixtures; no Supabase Storage policies; no new dependencies; no production
-access. Follow-up after merge: re-measure the Task 20 trigger per the ADR
-"Revisit when" clause; the criteria are expected to remain unmet at 27
-products (roughly 27 × 700 B ≈ 19 KB Browse payload).
+access. Follow-up after merge: re-measured the Task 20 trigger on 2026-09-02
+per the ADR "Revisit when" clause; still unmet (27 published products,
+32,747 B Browse payload, ~364 KB projected at 300). The pre-measure 27 ×
+700 B ≈ 19 KB estimate understated nested offers and image URLs. Human
+accepted in PR #51 on 2026-09-02.
 
 ## Definition Of Done
 
@@ -1222,7 +1229,9 @@ Non-goals:
 ## Task 20: Browse Scale-Up
 
 Status: **Conditional — trigger evaluated on 2026-09-02, not met; evaluation
-human accepted in PR #49 on 2026-09-02.**
+human accepted in PR #49 on 2026-09-02; re-measured 2026-09-02 after the
+27-product seed, still not met; re-measure human accepted in PR #51 on
+2026-09-02.**
 
 Depends on: Task 15 and a measured scaling need.
 
@@ -1233,7 +1242,9 @@ trigger evidence is accepted.
 
 Parallel-safe with: Task 21 only when the parent proves file-disjoint scopes.
 
-Human gate: Trigger evaluation recorded on 2026-09-02 (not met). Numeric
+Human gate: Trigger evaluation recorded on 2026-09-02 (not met; human
+accepted in PR #49) and re-measured on 2026-09-02 after the 27-product seed
+(still not met; human accepted in PR #51). Numeric
 criteria live in
 [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
 measurement evidence lives in
@@ -1265,11 +1276,17 @@ rows with no scale pressure; in-memory `matchesQuery` stays under 1 ms through
 UI was not measured on device and is recorded as not evaluated. No triggering
 criterion is recorded as met.
 
-Follow-up: after the catalog seed extension merges, re-measure against the
-ADR "Revisit when" clause. At 27 published products the catalog-size and
-payload criteria are expected to remain unmet (about 27 × 700 B ≈ 19 KB); a
-re-measurement only records the new numbers and does not itself trigger
-implementation.
+Re-measurement after the catalog seed extension (2026-09-02, local Docker
+Supabase at SHA `df92a71`; staging published count 27 cited from the
+post-merge session after H2 removal, not re-queried): 27 published products;
+Browse response 32,747 bytes (~1,213 B/product); local Browse median
+19.14 ms; projected payload at 300 products ~364 KB; candidate `ilike`
+seq-scans and FTS still uses `products_name_idx` at 27 rows with no scale
+pressure; in-memory `matchesQuery` stays under 1 ms through 10,000 items.
+Catalog size and Browse payload criteria remain not met. Latency / UI was
+not measured on device and stays not evaluated. No triggering criterion is
+recorded as met. This re-measurement records numbers only and does not
+trigger implementation. Human accepted in PR #51 on 2026-09-02.
 
 ## Task 21: Real Feed MVP
 
