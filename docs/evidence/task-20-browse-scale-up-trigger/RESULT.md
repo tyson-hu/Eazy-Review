@@ -6,8 +6,8 @@
 triggering criterion recorded as met (catalog size and Browse payload: not
 met; latency / UI: not evaluated).** Task 20 remains Conditional. Original
 two-product evaluation human accepted in PR #49 on 2026-09-02. Catalog seed
-extension human accepted in PR #50. No Browse Scale-Up implementation was
-authorized or started.
+extension human accepted in PR #50. Re-measure human accepted in PR #51 on
+2026-09-02. No Browse Scale-Up implementation was authorized or started.
 
 The 27 × ~700 B ≈ 19 KB estimate in the seed packet understated nested
 offers and SHA-pinned image URLs. Measured Browse payload is 32,747 bytes

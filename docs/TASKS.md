@@ -72,6 +72,7 @@
   were not met either time, and latency / UI was not evaluated on device.
   No triggering criterion is recorded as met. Client-side brand/name/SKU
   search stays. Two-product evaluation human accepted in PR #49 on
+  2026-09-02. 27-product re-measure human accepted in PR #51 on
   2026-09-02. Numeric criteria:
   [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
   evidence:
@@ -238,7 +239,8 @@ fixtures; no Supabase Storage policies; no new dependencies; no production
 access. Follow-up after merge: re-measured the Task 20 trigger on 2026-09-02
 per the ADR "Revisit when" clause; still unmet (27 published products,
 32,747 B Browse payload, ~364 KB projected at 300). The pre-measure 27 ×
-700 B ≈ 19 KB estimate understated nested offers and image URLs.
+700 B ≈ 19 KB estimate understated nested offers and image URLs. Human
+accepted in PR #51 on 2026-09-02.
 
 ## Definition Of Done
 
@@ -1228,7 +1230,8 @@ Non-goals:
 
 Status: **Conditional — trigger evaluated on 2026-09-02, not met; evaluation
 human accepted in PR #49 on 2026-09-02; re-measured 2026-09-02 after the
-27-product seed, still not met.**
+27-product seed, still not met; re-measure human accepted in PR #51 on
+2026-09-02.**
 
 Depends on: Task 15 and a measured scaling need.
 
@@ -1239,8 +1242,9 @@ trigger evidence is accepted.
 
 Parallel-safe with: Task 21 only when the parent proves file-disjoint scopes.
 
-Human gate: Trigger evaluation recorded on 2026-09-02 (not met) and
-re-measured on 2026-09-02 after the 27-product seed (still not met). Numeric
+Human gate: Trigger evaluation recorded on 2026-09-02 (not met; human
+accepted in PR #49) and re-measured on 2026-09-02 after the 27-product seed
+(still not met; human accepted in PR #51). Numeric
 criteria live in
 [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
 measurement evidence lives in
@@ -1282,7 +1286,7 @@ pressure; in-memory `matchesQuery` stays under 1 ms through 10,000 items.
 Catalog size and Browse payload criteria remain not met. Latency / UI was
 not measured on device and stays not evaluated. No triggering criterion is
 recorded as met. This re-measurement records numbers only and does not
-trigger implementation.
+trigger implementation. Human accepted in PR #51 on 2026-09-02.
 
 ## Task 21: Real Feed MVP
 
