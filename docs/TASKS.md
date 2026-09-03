@@ -6,7 +6,9 @@
   journey passed its UX gate, and the Supabase schema, trigger-owned Community
   Score, RLS policies, explicit Data API grants, and authorization contract are
   complete. Task 13's deterministic two-product local catalog seed is also
-  accepted.
+  accepted; the catalog seed extension below is **Done — human accepted in
+  PR #50 on 2026-09-02** and grows that same seed file to 27 published
+  products without changing the Task 13 fixtures.
 - Task 14 is complete and human accepted. Expo has a validated public Supabase
   env module, one typed client, generated local database types, TanStack Query
   providers/lifecycle, public vs user-scoped query keys, and a jest-expo
@@ -71,7 +73,10 @@
   evidence:
   [`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
   Task 21 (Real Feed MVP) is the next Revised Sequence item to select;
-  selecting and implementing Task 21 still requires its own human gate.
+  selecting and implementing Task 21 still requires its own human gate. The
+  human declined to select Task 21 against a two-product catalog on
+  2026-09-02 and chose to grow the catalog first (see the active data
+  initiative below).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -195,6 +200,40 @@ merged; the environment audit remains a recommendation only:
   native rebuild or reinstall, stop Metro, temporarily isolate those ignored
   env files, start Metro with the selected public values and `--clear`, fully
   reload the app, then restore the files byte-for-byte.
+
+### Active data initiative: catalog seed extension
+
+Status: **Done — human accepted in PR #50 on 2026-09-02.** Local
+`npm run test:db:reset` passed (8 pgTAP files, seed suite 54/54, both
+concurrency races). Merge with a merge commit, never squash: the seeded
+image URLs pin commit `788b356`, which must stay reachable from `master`.
+Staging application remains a separately approved HIGH IMPACT write after
+merge; production remains forbidden.
+
+Scope: a seed-only SQL/config/test packet that grows `supabase/seed.sql` from
+the two Task 13 fixtures to 27 deterministic published products so Task 21 can
+be judged against real data. The 25 added products come from the maintainer's
+2026-09-02 CSV of official `sneaker-10-v1` Eazy assessments (ten 0–10 half-step
+dimensions per style code); brand, title, style code, gender, release date,
+colorway, and retail price come from StockX through the KicksDB standard API
+(fetched 2026-09-02T23:35Z, matched by exact style code); offers are StockX
+lowest asks (USD, US market) for up to three common sizes with the KicksDB
+variant refresh time as `last_checked_at`; product photos (840×600 JPEG) are
+committed under `supabase/seed-assets/products/` and referenced by
+SHA-pinned raw GitHub URLs, for personal-study use as directed by the
+maintainer on 2026-09-02. The seed is one data-driven `DO` block (a `jsonb`
+catalog constant plus insert-if-absent / assert-canonical loops), keeps the six
+Task 13 ids and values verbatim, never writes `rating_aggregates`,
+`auth.users`, `profiles`, or `user_ratings`, and stays nestable inside the
+pgTAP reapply transaction. Eazy Scores are trigger-derived, never seeded.
+
+Non-goals: no schema, migration, RLS, grant, or function change; no Task 20
+trigger change (Browse stays client-side over the small catalog); no Task 21
+implementation; no scraper or import pipeline (Task 28); no auth or rating
+fixtures; no Supabase Storage policies; no new dependencies; no production
+access. Follow-up after merge: re-measure the Task 20 trigger per the ADR
+"Revisit when" clause; the criteria are expected to remain unmet at 27
+products (roughly 27 × 700 B ≈ 19 KB Browse payload).
 
 ## Definition Of Done
 
@@ -388,7 +427,11 @@ Work in order unless a task explicitly states that it is conditional.
 
 ## Task 13: Product Seed Data
 
-Status: **Done — human accepted.**
+Status: **Done — human accepted.** The accepted two-product seed is
+superseded in place by the 27-product catalog seed extension (see Active data
+initiative under Current Repo Status): `supabase/seed.sql` is now data-driven,
+the Task 13 fixture ids and values are unchanged, and the deliverables below
+are retained as the accepted history of the original packet.
 
 Depends on: Tasks 11–12 and a passing run of the initial local-only Database CI
 workflow that explicitly checks out the pull request head SHA.
@@ -1222,6 +1265,12 @@ rows with no scale pressure; in-memory `matchesQuery` stays under 1 ms through
 UI was not measured on device and is recorded as not evaluated. No triggering
 criterion is recorded as met.
 
+Follow-up: after the catalog seed extension merges, re-measure against the
+ADR "Revisit when" clause. At 27 published products the catalog-size and
+payload criteria are expected to remain unmet (about 27 × 700 B ≈ 19 KB); a
+re-measurement only records the new numbers and does not itself trigger
+implementation.
+
 ## Task 21: Real Feed MVP
 
 Status: Pending.
@@ -1236,6 +1285,11 @@ parent owns scope and acceptance.
 Parallel-safe with: Task 20 only when the parent proves file-disjoint scopes.
 
 Human gate: Human acceptance is required before Task 22.
+
+Data dependency note: the catalog seed extension is human accepted in PR #50
+(Active data initiative under Current Repo Status): 27 published products, 26
+of them with a current Eazy assessment. Selecting this task still requires
+its own human gate in a fresh session after merge.
 
 Goal: replace the primary placeholder with a deliberately small real Feed.
 
