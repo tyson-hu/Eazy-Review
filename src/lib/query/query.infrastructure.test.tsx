@@ -1,16 +1,16 @@
-import { Text, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { Text, View } from 'react-native';
 
 import {
-  createAppQueryClient,
-  defaultQueryClientOptions,
-  resetAppQueryClientForTests,
-  shouldRetryQuery,
+    createAppQueryClient,
+    defaultQueryClientOptions,
+    resetAppQueryClientForTests,
+    shouldRetryQuery,
 } from '@/src/lib/query/client';
 import {
-  accountKeys,
-  catalogKeys,
-  ratingKeys,
+    accountKeys,
+    catalogKeys,
+    ratingKeys,
 } from '@/src/lib/query/keys';
 import { removeUserScopedQueries } from '@/src/lib/query/userScopedCache';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
@@ -74,6 +74,7 @@ describe('query keys', () => {
       catalogKeys.all,
       catalogKeys.products(),
       catalogKeys.product(productId),
+      catalogKeys.feedCollections(),
     ];
     for (const key of keys) {
       expect(key.join('.')).not.toMatch(/user/i);
@@ -88,6 +89,10 @@ describe('query keys', () => {
     );
     // Structural: list is [...'products']; detail is [...'product', id].
     expect(catalogKeys.products()).toEqual(['catalog', 'products']);
+    expect(catalogKeys.feedCollections()).toEqual([
+      'catalog',
+      'feedCollections',
+    ]);
     expect(catalogKeys.product(productId)).toEqual([
       'catalog',
       'product',

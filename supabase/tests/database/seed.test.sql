@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(54);
+select plan(61);
 
 -- Seed namespace (must match supabase/seed.sql): every seeded product id lives
 -- under a1000000-0000-4000-8000-. Task 13 fixtures use 0000000000NN; the
@@ -484,6 +484,41 @@ select ok(
   'seed left aggregates empty (no direct aggregate population)'
 );
 
+select is(
+  (
+    select slug || '|' || caption || '|' || feed_position::text || '|' ||
+      is_published::text
+    from public.product_collections
+    where id = 'a1000000-0000-4000-8000-000050000001'::uuid
+  ),
+  'editors-picks|Picked by Eazy Review|150|true',
+  'seed editors-picks collection is published on Feed at position 150'
+);
+select is(
+  (
+    select count(*)::int
+    from public.product_collection_items
+    where collection_id = 'a1000000-0000-4000-8000-000050000001'::uuid
+  ),
+  5,
+  'seed editors-picks collection has five items'
+);
+select is(
+  (
+    select array_agg(product_id order by position)
+    from public.product_collection_items
+    where collection_id = 'a1000000-0000-4000-8000-000050000001'::uuid
+  ),
+  array[
+    'a1000000-0000-4000-8000-000010000300'::uuid,
+    'a1000000-0000-4000-8000-000010000400'::uuid,
+    'a1000000-0000-4000-8000-000010000500'::uuid,
+    'a1000000-0000-4000-8000-000010000600'::uuid,
+    'a1000000-0000-4000-8000-000010000700'::uuid
+  ],
+  'seed editors-picks items use the deterministic Jordan product ids'
+);
+
 -- Privileged row counts, compared against anon reads below.
 create temporary table seed_counts as
 select 'products'::text as tbl, count(*)::int as n
@@ -504,7 +539,15 @@ where product_id in (select id from seed_products)
 union all
 select 'rating_aggregates', count(*)::int
 from public.rating_aggregates
-where product_id in (select id from seed_products);
+where product_id in (select id from seed_products)
+union all
+select 'product_collections', count(*)::int
+from public.product_collections
+where id = 'a1000000-0000-4000-8000-000050000001'::uuid
+union all
+select 'product_collection_items', count(*)::int
+from public.product_collection_items
+where collection_id = 'a1000000-0000-4000-8000-000050000001'::uuid;
 
 -- Anonymous reads under Task 12 policies (anon needs the temp helpers only).
 grant select on seed_products, seed_counts to anon;
@@ -581,6 +624,24 @@ select is(
   (select n from seed_counts where tbl = 'rating_aggregates'),
   'anon can read every seeded product aggregate'
 );
+select is(
+  (
+    select count(*)::int
+    from public.product_collections
+    where id = 'a1000000-0000-4000-8000-000050000001'::uuid
+  ),
+  (select n from seed_counts where tbl = 'product_collections'),
+  'anon can read the seeded published collection'
+);
+select is(
+  (
+    select count(*)::int
+    from public.product_collection_items
+    where collection_id = 'a1000000-0000-4000-8000-000050000001'::uuid
+  ),
+  (select n from seed_counts where tbl = 'product_collection_items'),
+  'anon can read every seeded collection item'
+);
 reset role;
 
 -- Capture complete seeded state before reapply (same database).
@@ -618,7 +679,21 @@ select
   ra.product_id::text,
   to_jsonb(ra)
 from public.rating_aggregates ra
-where ra.product_id in (select id from seed_products);
+where ra.product_id in (select id from seed_products)
+union all
+select
+  'product_collections',
+  pc.id::text,
+  to_jsonb(pc)
+from public.product_collections pc
+where pc.id = 'a1000000-0000-4000-8000-000050000001'::uuid
+union all
+select
+  'product_collection_items',
+  pci.id::text,
+  to_jsonb(pci)
+from public.product_collection_items pci
+where pci.collection_id = 'a1000000-0000-4000-8000-000050000001'::uuid;
 
 -- Reapply committed seed against the same database (nestable DO, no COMMIT).
 \ir ../support/task13_seed_reapply.sql.inc
@@ -668,6 +743,24 @@ select is(
   (select n from seed_counts where tbl = 'rating_aggregates'),
   'idempotent reapply: aggregate row count unchanged'
 );
+select is(
+  (
+    select count(*)::int
+    from public.product_collections
+    where id = 'a1000000-0000-4000-8000-000050000001'::uuid
+  ),
+  (select n from seed_counts where tbl = 'product_collections'),
+  'idempotent reapply: collection row count unchanged'
+);
+select is(
+  (
+    select count(*)::int
+    from public.product_collection_items
+    where collection_id = 'a1000000-0000-4000-8000-000050000001'::uuid
+  ),
+  (select n from seed_counts where tbl = 'product_collection_items'),
+  'idempotent reapply: collection item row count unchanged'
+);
 
 create temporary table seed_state_after as
 select
@@ -703,7 +796,21 @@ select
   ra.product_id::text,
   to_jsonb(ra)
 from public.rating_aggregates ra
-where ra.product_id in (select id from seed_products);
+where ra.product_id in (select id from seed_products)
+union all
+select
+  'product_collections',
+  pc.id::text,
+  to_jsonb(pc)
+from public.product_collections pc
+where pc.id = 'a1000000-0000-4000-8000-000050000001'::uuid
+union all
+select
+  'product_collection_items',
+  pci.id::text,
+  to_jsonb(pci)
+from public.product_collection_items pci
+where pci.collection_id = 'a1000000-0000-4000-8000-000050000001'::uuid;
 
 select is(
   (

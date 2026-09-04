@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(39);
+select plan(48);
 
 -- Seven Task 11 tables exist.
 select has_table('public', 'profiles', 'profiles exists');
@@ -13,6 +13,16 @@ select has_table('public', 'eazy_assessments', 'eazy_assessments exists');
 select has_table('public', 'user_ratings', 'user_ratings exists');
 select has_table('public', 'rating_aggregates', 'rating_aggregates exists');
 select has_table('public', 'product_offers', 'product_offers exists');
+select has_table(
+  'public',
+  'product_collections',
+  'product_collections exists'
+);
+select has_table(
+  'public',
+  'product_collection_items',
+  'product_collection_items exists'
+);
 
 -- Auth-user foreign keys are exact cascading relationships.
 select is(
@@ -99,6 +109,12 @@ select has_index(
   'eazy_assessments_one_current_per_product',
   'one-current eazy assessment unique index exists'
 );
+select has_index(
+  'public',
+  'product_collections',
+  'product_collections_one_published_feed_position',
+  'one published Feed position unique index exists'
+);
 
 -- Key uniqueness / PK constraints via catalog.
 select ok(
@@ -138,6 +154,45 @@ select ok(
       and c.contype = 'p'
   ),
   'rating_aggregates PK on product_id'
+);
+select ok(
+  exists (
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'product_collections'
+      and c.contype = 'u'
+      and pg_get_constraintdef(c.oid) ilike '%slug%'
+  ),
+  'product_collections unique slug'
+);
+select ok(
+  exists (
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'product_collection_items'
+      and c.contype = 'u'
+      and pg_get_constraintdef(c.oid) ilike '%collection_id%product_id%'
+  ),
+  'product_collection_items unique (collection_id, product_id)'
+);
+select ok(
+  exists (
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'product_collection_items'
+      and c.contype = 'u'
+      and pg_get_constraintdef(c.oid) ilike '%collection_id%position%'
+  ),
+  'product_collection_items unique (collection_id, position)'
 );
 
 -- Required triggers.
@@ -207,6 +262,12 @@ select has_trigger(
   'user_ratings',
   'user_ratings_set_updated_at',
   'user_ratings updated_at trigger exists'
+);
+select has_trigger(
+  'public',
+  'product_collections',
+  'product_collections_set_updated_at',
+  'product_collections updated_at trigger exists'
 );
 
 -- Required functions exist with expected security attributes.
@@ -325,6 +386,24 @@ select ok(
     where n.nspname = 'public' and c.relname = 'product_offers'
   ),
   'RLS enabled on product_offers'
+);
+select ok(
+  (
+    select c.relrowsecurity
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relname = 'product_collections'
+  ),
+  'RLS enabled on product_collections'
+);
+select ok(
+  (
+    select c.relrowsecurity
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relname = 'product_collection_items'
+  ),
+  'RLS enabled on product_collection_items'
 );
 
 select * from finish();

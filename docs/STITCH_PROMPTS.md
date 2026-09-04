@@ -163,19 +163,24 @@ Use the global visual system. Keep the screen calm, useful, and account-focused.
 
 ```txt
 Design a premium mobile Feed / Discover tab for Eazy Review. The screen should
-help users find interesting products through truthful real-data groupings.
+help users find interesting products through truthful real-data groupings and
+read as a scoreboard, clearly different from the Browse search list.
 
-Use at most three non-duplicative sections selected from:
-- Newly Added
-- Best Eazy Scores
-- Most Rated
-- Best Community Scores, only when enough rating data makes the label honest
-
-Use the same ProductCard design from Browse.
+Use the auto sections Newly Added, Best Eazy Scores, and Most Rated, plus any
+published curated collections merged by position. Each section has a title
+and a one-line caption stating how it is ordered. A curated caption must say
+the list is hand-picked (for example "Picked by Eazy Review").
+The first section leads with one spotlight card: large editorial sneaker
+image, brand, product name, one large Eazy Score with its label, compact
+Community Score with rating count, lowest verified offer, and a "View product"
+action. Every other product is a compact rank row inside one bordered list:
+rank number (ranked sections only), small thumbnail, brand, name, and one
+labeled score. Do not reuse the Browse product card stack on Feed.
 Hide empty or duplicate sections. Do not use “Trending” without a real
-time-based activity signal. Do not make Feed more complex than Browse or
-Product Detail. Do not add comments, likes, or social reactions to the MVP
-implementation.
+time-based activity signal. Do not add horizontal carousels, comments, likes,
+or social reactions to the MVP implementation; leave room for a later
+"Latest community reviews" section of review cards between the spotlight and
+the ranked sections.
 ```
 
 ## Refinement Prompt

@@ -4,7 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
-select plan(70);
+select plan(79);
 
 create or replace function pg_temp.make_auth_user(p_id uuid, p_email text)
 returns uuid
@@ -183,6 +183,65 @@ insert into public.user_ratings (
   'user-b-private-note'
 );
 
+insert into public.product_collections (
+  id,
+  slug,
+  title,
+  caption,
+  lead_label,
+  signal,
+  is_ranked,
+  feed_position,
+  is_published
+) values
+  (
+    'c01ec71e-0000-4000-8000-000000000001'::uuid,
+    'published-picks',
+    'Published Picks',
+    'Picked by Eazy Review',
+    'Published pick',
+    'eazy',
+    false,
+    160,
+    true
+  ),
+  (
+    'c01ec71e-0000-4000-8000-000000000002'::uuid,
+    'draft-picks',
+    'Draft Picks',
+    'Picked by Eazy Review',
+    'Draft pick',
+    'eazy',
+    false,
+    50,
+    false
+  );
+
+insert into public.product_collection_items (
+  id,
+  collection_id,
+  product_id,
+  position
+) values
+  (
+    'c01ec71e-0000-4000-8000-000000000011'::uuid,
+    'c01ec71e-0000-4000-8000-000000000001'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+    1
+  ),
+  (
+    'c01ec71e-0000-4000-8000-000000000012'::uuid,
+    'c01ec71e-0000-4000-8000-000000000001'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::uuid,
+    2
+  ),
+  (
+    'c01ec71e-0000-4000-8000-000000000021'::uuid,
+    'c01ec71e-0000-4000-8000-000000000002'::uuid,
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1'::uuid,
+    1
+  );
+
 -- A policy is insufficient without its explicit table grant.
 revoke select on table public.products from anon;
 set local role anon;
@@ -282,6 +341,53 @@ select is(
   ),
   2,
   'anon reads aggregates only for published products'
+);
+select is(
+  (
+    select count(*)::int
+    from public.product_collections
+    where id in (
+      'c01ec71e-0000-4000-8000-000000000001'::uuid,
+      'c01ec71e-0000-4000-8000-000000000002'::uuid
+    )
+  ),
+  1,
+  'anon reads only the published collection'
+);
+select is(
+  (
+    select count(*)::int
+    from public.product_collection_items
+    where id in (
+      'c01ec71e-0000-4000-8000-000000000011'::uuid,
+      'c01ec71e-0000-4000-8000-000000000012'::uuid,
+      'c01ec71e-0000-4000-8000-000000000021'::uuid
+    )
+  ),
+  2,
+  'anon reads items only for the published collection'
+);
+select throws_ok(
+  $$insert into public.product_collections (
+    slug, title, caption, lead_label
+  ) values (
+    'blocked-picks', 'Blocked', 'Picked by Eazy Review', 'Blocked'
+  )$$,
+  '42501',
+  null,
+  'anon cannot insert collections'
+);
+select throws_ok(
+  $$update public.product_collections set title = title$$,
+  '42501',
+  null,
+  'anon cannot update collections'
+);
+select throws_ok(
+  $$delete from public.product_collections$$,
+  '42501',
+  null,
+  'anon cannot delete collections'
 );
 select throws_ok(
   $$select count(*) from public.profiles$$,
@@ -956,6 +1062,52 @@ select ok(
     where product_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb3'::uuid
   ),
   'service-role rating delete restores the zero/null aggregate'
+);
+select lives_ok(
+  $$
+    insert into public.product_collections (
+      id,
+      slug,
+      title,
+      caption,
+      lead_label,
+      feed_position,
+      is_published
+    ) values (
+      'c01ec71e-0000-4000-8000-000000000003'::uuid,
+      'service-picks',
+      'Service Picks',
+      'Picked by Eazy Review',
+      'Service pick',
+      250,
+      true
+    )
+  $$,
+  'service_role inserts a collection through its table allowlist'
+);
+select lives_ok(
+  $$
+    update public.product_collections
+    set title = 'Service Picks Updated'
+    where id = 'c01ec71e-0000-4000-8000-000000000003'::uuid
+  $$,
+  'service_role updates a collection through its table allowlist'
+);
+select is(
+  (
+    select title
+    from public.product_collections
+    where id = 'c01ec71e-0000-4000-8000-000000000003'::uuid
+  ),
+  'Service Picks Updated',
+  'service_role selects the updated collection'
+);
+select lives_ok(
+  $$
+    delete from public.product_collections
+    where id = 'c01ec71e-0000-4000-8000-000000000003'::uuid
+  $$,
+  'service_role deletes a collection through its table allowlist'
 );
 select lives_ok(
   $$

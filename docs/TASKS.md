@@ -77,11 +77,16 @@
   [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
   evidence:
   [`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
-  Task 21 (Real Feed MVP) is the next Revised Sequence item to select;
-  selecting and implementing Task 21 still requires its own human gate. The
-  human declined to select Task 21 against a two-product catalog on
-  2026-09-02 and chose to grow the catalog first (see the active data
-  initiative below).
+  Task 21 (Real Feed MVP) is selected and under implementation on
+  2026-09-02 after the 27-product catalog seed. The human declined to
+  select it against a two-product catalog on 2026-09-02 and grew the
+  catalog first (see the active data initiative below). Proposed Project
+  #4 write after this ledger edit: `T21: Gated → In Progress`. On
+  2026-09-03 the human directed a Feed visual redesign on PR #52 so Feed
+  no longer mirrors Browse: one spotlight card plus compact ranked rows
+  (Task 21 note below). The same PR now also merges code-owned auto
+  sections with published curated collections from `product_collections`
+  (Task 21 note below).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -422,7 +427,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
 | 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 |
 | 20 | Browse Scale-Up | Conditional |
-| 21 | Real Feed MVP | Pending |
+| 21 | Real Feed MVP | In Progress |
 | 22 | Broader Automated App Tests And CI | Pending |
 | 23 | Reliability, Accessibility, And Device QA | Pending |
 | 24 | Privacy, Legal, And Store Disclosures | Pending |
@@ -1290,7 +1295,7 @@ trigger implementation. Human accepted in PR #51 on 2026-09-02.
 
 ## Task 21: Real Feed MVP
 
-Status: Pending.
+Status: In Progress — selected on 2026-09-02.
 
 Depends on: Task 15, Task 17, and enough real data for useful sections.
 
@@ -1301,30 +1306,56 @@ parent owns scope and acceptance.
 
 Parallel-safe with: Task 20 only when the parent proves file-disjoint scopes.
 
-Human gate: Human acceptance is required before Task 22.
+Human gate: Implementation selected on 2026-09-02. Human acceptance is
+required before Task 22.
 
 Data dependency note: the catalog seed extension is human accepted in PR #50
 (Active data initiative under Current Repo Status): 27 published products, 26
-of them with a current Eazy assessment. Selecting this task still requires
-its own human gate in a fresh session after merge.
+of them with a current Eazy assessment. The Feed uses Newly Added, Best Eazy
+Scores, and Most Rated plus published curated collections; ranked sections
+require at least two qualifying products and cap at five cards. Most Rated
+stays hidden until at least two products have `ratingCount >= 1`. Proposed
+Project #4 write: `T21: Gated → In Progress`.
+
+Visual redesign note (2026-09-03, human-directed on PR #52): the first Feed
+cut stacked the Browse `ProductCard` under section titles and was visually
+indistinguishable from Browse. The Feed now renders one `ProductSpotlightCard`
+for the lead product of the first populated section and `ProductRankRow`s
+inside one bordered list for every other product, with a basis caption per
+section. Auto-section selection, caps, ordering, and duplicate hiding stay;
+curated collections now merge into that same list. Rules:
+[`docs/DESIGN.md`](DESIGN.md) (Feed / Discover, Product Spotlight Card,
+Product Rank Row); rationale:
+[`docs/decisions/2026-09-03-feed-scoreboard-layout.md`](decisions/2026-09-03-feed-scoreboard-layout.md).
 
 Goal: replace the primary placeholder with a deliberately small real Feed.
 
 Deliverables:
 
-- No more than three sections: Newly Added, Best Eazy Scores, and Most Rated or
-  Best Community Scores only when data supports it.
-- Hide empty or duplicate sections.
-- Reuse `ProductCard` and existing product queries.
+- Auto sections Newly Added, Best Eazy Scores, and Most Rated only when data
+  supports them, plus published curated collections with a `feed_position`.
+- Hide empty or duplicate sections. Cap each section at five cards.
+- Reuse the published catalog query for cards; add a published-collections
+  query for curated section metadata. Render the Feed-specific spotlight and
+  rank rows rather than the Browse `ProductCard` stack (2026-09-03 redesign).
 - Do not use “Trending” without a real time-based activity signal.
-- No feed-configuration table.
+- Curated captions must say the list is hand-picked. Humans edit collections
+  through SQL, Studio, or seed — no admin UI in this task.
 
 Acceptance:
 
 - Feed contains no placeholder primary surface.
 - Every visible section is distinct, populated, and opens Product Detail.
+- A published curated section appears at its `feed_position` with its title
+  and honest caption; missing or unpublished product ids drop out.
+- If collections fail or are offline with no cache, Feed still shows auto
+  sections.
+- Feed is visually distinct from Browse at the 393px reference width.
 - If a useful Feed cannot be completed before beta, remove the tab rather than
   ship a primary placeholder.
+
+Implementation evidence (web preview, not human acceptance):
+[`docs/evidence/task-21-real-feed-mvp/RESULT.md`](evidence/task-21-real-feed-mvp/RESULT.md).
 
 ## Task 22: Broader Automated App Tests And CI
 
