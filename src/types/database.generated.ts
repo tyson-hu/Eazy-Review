@@ -112,6 +112,84 @@ export type Database = {
           },
         ]
       }
+      product_collection_items: {
+        Row: {
+          collection_id: string
+          id: string
+          position: number
+          product_id: string
+        }
+        Insert: {
+          collection_id: string
+          id?: string
+          position: number
+          product_id: string
+        }
+        Update: {
+          collection_id?: string
+          id?: string
+          position?: number
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "product_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_collection_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_collections: {
+        Row: {
+          caption: string
+          created_at: string
+          feed_position: number | null
+          id: string
+          is_published: boolean
+          is_ranked: boolean
+          lead_label: string
+          signal: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          caption: string
+          created_at?: string
+          feed_position?: number | null
+          id?: string
+          is_published?: boolean
+          is_ranked?: boolean
+          lead_label: string
+          signal?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string
+          created_at?: string
+          feed_position?: number | null
+          id?: string
+          is_published?: boolean
+          is_ranked?: boolean
+          lead_label?: string
+          signal?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_images: {
         Row: {
           created_at: string

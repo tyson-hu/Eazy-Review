@@ -22,6 +22,19 @@ export type ProductCardData = {
   lowestOffer: LowestVerifiedOffer | null;
 };
 
+/** Published curated collection for Feed; product cards resolve from the catalog. */
+export type FeedCollection = {
+  id: string;
+  slug: string;
+  title: string;
+  caption: string;
+  leadLabel: string;
+  signal: 'eazy' | 'community';
+  isRanked: boolean;
+  feedPosition: number;
+  productIds: string[];
+};
+
 export type LowestVerifiedOffer = {
   retailer: string;
   amount: number;

@@ -50,6 +50,11 @@ export const catalogKeys = {
     assertSerializableParts(key);
     return key;
   },
+  feedCollections: () => {
+    const key = [...catalogKeys.all, 'feedCollections'] as const;
+    assertSerializableParts(key);
+    return key;
+  },
 } as const;
 
 /** Owner profile and account reads — always user-scoped. */

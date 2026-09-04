@@ -30,7 +30,8 @@ Eazy Review combines an app-curated product score with community ratings and the
 ## Main Screens
 
 - Feed: a small set of truthful, real-data discovery sections; do not claim
-  “Trending” without a real time-based activity signal.
+  “Trending” without a real time-based activity signal. Hand-picked sections
+  must say they are hand-picked.
 - Browse: a product list with brand/name/SKU search and product detail
   navigation; add filters, sorting, or pagination only when catalog evidence
   requires them.

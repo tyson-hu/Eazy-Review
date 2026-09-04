@@ -10,7 +10,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Area | Decision | Status | Tasks | Updated |
 | --- | --- | --- | --- | --- |
-| Product and UX | [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Accepted | 21 | 2026-09-02 |
+| Product and UX | [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Accepted | 21 | 2026-09-03 |
 | Product and UX | [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Accepted | — | 2026-07-30 |
 | Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 15, 17 | 2026-07-30 |
 | Data and Supabase | [Use one sneaker-10-v1 rubric for Eazy, Community, and My Rating](decisions/2026-08-09-sneaker-10-v1-shared-rubric.md) | Accepted | 17 | 2026-08-09 |
@@ -23,6 +23,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Authentication and security | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | 19, 25, 26 | 2026-07-30 |
 | Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-26 |
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
+| Architecture | [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Accepted | 21 | 2026-09-03 |
 | Architecture | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Accepted | 20 | 2026-09-02 |
 | Architecture | [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) | Accepted | — | 2026-09-02 |
 | Architecture | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Accepted | 14, 15, 16, 17 | 2026-08-31 |
@@ -44,22 +45,22 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Product and UX | Accepted | 2026-09-03 |
+| [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Architecture | Accepted | 2026-09-03 |
+| [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Product and UX | Superseded | 2026-09-03 |
 | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Architecture | Accepted | 2026-09-02 |
 | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Agent workflow | Accepted | 2026-09-02 |
-| [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Product and UX | Accepted | 2026-09-02 |
 | [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) | Architecture | Accepted | 2026-09-02 |
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-08-31 |
 | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-08-22 |
 | [Fail-fast offline writes and bounded request deadlines](decisions/2026-08-09-connected-request-reliability.md) | Architecture | Accepted | 2026-08-09 |
 | [Use one sneaker-10-v1 rubric for Eazy, Community, and My Rating](decisions/2026-08-09-sneaker-10-v1-shared-rubric.md) | Data and Supabase | Accepted | 2026-08-09 |
-| [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Tooling and CI | Accepted | 2026-08-07 |
-| [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Agent workflow | Accepted | 2026-08-06 |
 
 ## Browse by area
 
 ### Product and UX
 
-- [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) — Accepted; Tasks 21.
+- [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) — Accepted; Tasks 21.
 - [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) — Accepted.
 - [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) — Accepted; Tasks 8, 9, 10, 15, 17.
 
@@ -81,6 +82,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Architecture
 
+- [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) — Accepted; Tasks 21.
 - [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) — Accepted; Tasks 20.
 - [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) — Accepted.
 - [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) — Accepted; Tasks 14, 15, 16, 17.

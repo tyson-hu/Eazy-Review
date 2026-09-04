@@ -1,6 +1,7 @@
-import { Image, Platform, Pressable, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui/AppText';
+import { productImageShadow } from '@/src/components/ui/productImageShadow';
 import { ScoreBadge } from '@/src/components/ui/ScoreBadge';
 import type { ProductCardData } from '@/src/types/product';
 import { formatPrice } from '@/src/utils/formatPrice';
@@ -10,18 +11,6 @@ type ProductCardProps = {
   product: ProductCardData;
   onPress?: () => void;
 };
-
-// Preserve the single allowed product shadow with the platform-native API.
-const productImageShadow = Platform.select({
-  web: { boxShadow: '3px 5px 30px rgba(0, 0, 0, 0.22)' },
-  default: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 3, height: 5 },
-    shadowOpacity: 0.22,
-    shadowRadius: 15,
-    elevation: 6,
-  },
-});
 
 export function ProductCard({ product, onPress }: ProductCardProps) {
   const imageSource = product.imageUrl ? { uri: product.imageUrl } : undefined;

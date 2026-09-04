@@ -71,7 +71,7 @@ Product image
 Each screen must have one clear focal point.
 
 Examples:
-- Feed: the first populated real-data discovery section.
+- Feed: the spotlight card that leads the first populated real-data section.
 - Browse: search bar and product results.
 - Product Detail: sneaker image plus score summary.
 - Rating Screen: rating input.
@@ -236,7 +236,12 @@ Typography:
 - Prefer SF Pro / system stack (`system-ui`, `-apple-system`). Inter is an
   acceptable off-platform substitute.
 - Body ~17px at weight 400; headlines and strong emphasis at weight 600. Do not use weight 500 — the ladder is 400 + 600 (weight 300 only where UI style explicitly calls for airy display).
-- Use large weight-600 numbers for scores and prices.
+- Use large weight-600 numbers for scores and prices. The `AppText` `score`
+  variant (36px, weight 600) is the one hero-sized composite display; it sets
+  no color, and the caller passes the score tone class. The `action` variant
+  (17px, weight 600, Primary Accent) is the inline text affordance inside a
+  tappable surface. Generated class CSS is ordered by name, so do not rely on
+  a trailing size or color class to override a variant's own size or color.
 - Use weight-600 product names, readable over decorative typography.
 - Use small quiet metadata and clear, concise section and rating labels.
 - Avoid marketing copy in core app surfaces.
@@ -302,7 +307,9 @@ Below 60: Risky
 
 ### Product Card
 
-Product cards are used in Feed, Browse, and Rated Products.
+Product cards are used in Browse and Rated Products. Feed does not stack
+Product Cards; it uses the Product Spotlight Card and Product Rank Row below so
+the two tabs never read as the same list.
 
 Show:
 - Product image.
@@ -314,6 +321,41 @@ Show:
 - Lowest price.
 
 Do not add description, long metadata, comments, likes, or social UI to MVP product cards. Avoid putting too much information on small cards.
+
+### Product Spotlight Card
+
+The Feed's single hero-sized surface; only the lead product of the first
+populated section uses it.
+
+- Eyebrow names why the product leads (`Latest addition`, `Top Eazy Score`,
+  `Most rated`); never a marketing headline.
+- Reading order follows the Main Principle: 224px editorial image area with the
+  product shadow, brand, product name at title size, SKU, one large Eazy Score
+  (`score` variant, tone colored, `/ 100`, score label plus
+  `Editorial assessment`), compact Community Score with rating-count context
+  (`Early score · N rating(s)` under five; `N ratings` at five or more), a
+  labeled `Lowest verified offer` line, and a `View product` action text.
+- Null states: `No image available`, `—` with `Not assessed yet`, `—` with
+  `No ratings yet` or `No score yet`, and `No verified offer available`.
+- The whole card is the tap target and opens Product Detail. Do not nest a
+  button inside it or add a Rate action; rating stays on Product Detail.
+
+### Product Rank Row
+
+Compact list row for Feed rankings. Rows stack inside one bordered
+`Card`-radius container with hairline dividers, so a section reads as a
+scoreboard, not a card stack.
+
+- Left to right: optional rank number (ranked sections only), 48px thumbnail
+  on the Background tile, brand label plus weight-600 product name (up to three
+  lines so long sneaker names stay distinguishable), then one labeled composite
+  score column: `Eazy Score` or `Community Score`, `NN / 100` in the score
+  tone, and a caption (score label for Eazy Score; `N rating(s)` for Community
+  Score; `Not assessed yet`, `No ratings yet`, or `No score yet` when null).
+- Rows show one score each; the section header names the ordering basis. Do
+  not add price, SKU, or a second score to a row.
+- Minimum row height 72px; the whole row is the tap target and opens Product
+  Detail. A missing image leaves the Background tile empty.
 
 ### Review Card
 
@@ -369,6 +411,8 @@ Initial reusable UI components:
 - `AppText`
 - `ScoreBadge`
 - `ProductCard`
+- `ProductSpotlightCard`
+- `ProductRankRow`
 - `DimensionStepperRow`
 - `LoadingState`
 - `EmptyState`
@@ -380,16 +424,39 @@ Keep these components small. Add abstractions only when they remove real duplica
 
 ### Feed / Discover
 
-- Job: help users find interesting products worth checking.
-- Focal point: the first populated real-data discovery section.
-- MVP Feed uses no more than three non-duplicative sections: Newly Added, Best
-  Eazy Scores, and Most Rated. Ranked sections appear only when at least two
-  products qualify and show at most five cards. Hide empty or duplicate
-  sections; do not label a section “Trending” without a real time-based
-  activity signal. Do not add Best Community Scores.
-- Post-MVP, when community text is in scope: category chips and public review
-  snippets.
-- Avoid: too many product grids, too many banners, marketplace discount feeling, overloaded homepage.
+- Job: help users find interesting products worth checking, and show at a
+  glance how the catalog is scored.
+- Focal point: the spotlight card that leads the first populated real-data
+  section. Everything below it is compact.
+- Feed must look different from Browse. Browse is a search bar over a stack of
+  full Product Cards; Feed is a scoreboard: one Product Spotlight Card, then
+  sections of Product Rank Rows. Never render the Browse Product Card stack on
+  Feed.
+- Every section has a header (section title) and a one-line basis caption
+  that states truthfully how it is ordered. Auto captions are `Latest additions
+  to the catalog`, `Ranked by Eazy Score`, and `Ranked by number of community
+  ratings`. A curated caption must say the list is hand-picked (for example
+  `Picked by Eazy Review`) and must not claim a measured basis such as
+  `Ranked by Eazy Score` or `Trending`.
+- Auto sections are Newly Added, Best Eazy Scores, and Most Rated. Published
+  curated collections with a `feed_position` merge into the same ordered list.
+  Ranked sections appear only when at least two products qualify and show at
+  most five products. Hide empty or duplicate sections; do not label a section
+  “Trending” without a real time-based activity signal. Do not add Best
+  Community Scores.
+- Only the first populated section's lead product renders as the spotlight;
+  that section's remaining products continue as rows beneath it. Newly Added
+  rows and unranked curated rows carry no rank numbers; Best Eazy Scores, Most
+  Rated, and ranked curated rows are numbered. Newly Added and Best Eazy
+  Scores rows show Eazy Score; Most Rated rows show Community Score and the
+  rating count. A curated row shows the collection's `signal`.
+- Post-MVP, when community text is in scope: a `Latest community reviews`
+  section of Review Cards (user, product, rating, short opinion, helpful
+  action) inserted after the spotlight and before the ranked sections, plus
+  category chips. Until then the slot does not exist on screen; never ship a
+  placeholder for it.
+- Avoid: horizontal carousels that hide the ranking, too many banners,
+  marketplace discount feeling, overloaded homepage.
 - Do not overbuild Feed before Browse, Product Detail, and Rating work.
 
 ### Browse / Explore

@@ -1,9 +1,9 @@
-import { completeProductCard } from '@/src/features/products/catalogViewModelTestFixtures';
 import {
-  FEED_SECTION_CAP,
-  selectFeedSections,
-} from '@/src/features/products/selectFeedSections';
-import type { ProductCardData } from '@/src/types/product';
+    FEED_SECTION_CAP,
+    selectFeedSections,
+} from '@/src/features/feed/selectFeedSections';
+import { completeProductCard } from '@/src/features/products/catalogViewModelTestFixtures';
+import type { FeedCollection, ProductCardData } from '@/src/types/product';
 
 function card(
   overrides: Partial<ProductCardData> & Pick<ProductCardData, 'id'>,
@@ -12,6 +12,22 @@ function card(
     ...completeProductCard,
     sku: overrides.sku ?? overrides.id,
     ...overrides,
+  };
+}
+
+function collection(
+  overrides: Partial<FeedCollection> & Pick<FeedCollection, 'slug' | 'productIds'>,
+): FeedCollection {
+  return {
+    id: overrides.id ?? `collection-${overrides.slug}`,
+    slug: overrides.slug,
+    title: overrides.title ?? 'Editor\'s Picks',
+    caption: overrides.caption ?? 'Picked by Eazy Review',
+    leadLabel: overrides.leadLabel ?? 'Editor\'s pick',
+    signal: overrides.signal ?? 'eazy',
+    isRanked: overrides.isRanked ?? false,
+    feedPosition: overrides.feedPosition ?? 150,
+    productIds: overrides.productIds,
   };
 }
 
@@ -42,6 +58,10 @@ describe('selectFeedSections', () => {
 
     expect(sectionIds(sections)).toEqual(['newly-added']);
     expect(productIds(sections, 'newly-added')).toEqual(['p1']);
+    expect(sections[0]).toMatchObject({
+      kind: 'auto',
+      position: 100,
+    });
   });
 
   it('reverses catalog order for Newly Added and caps at five', () => {
@@ -223,5 +243,89 @@ describe('selectFeedSections', () => {
     selectFeedSections(products);
 
     expect(products.map((product) => product.id)).toEqual(snapshot);
+  });
+
+  it('inserts a curated collection between Newly Added and Best Eazy Scores', () => {
+    const products = [
+      card({ id: 'older-high', eazyScore: 90, ratingCount: 0 }),
+      card({ id: 'newer-low', eazyScore: 70, ratingCount: 0 }),
+    ];
+    const sections = selectFeedSections(products, [
+      collection({
+        slug: 'editors-picks',
+        feedPosition: 150,
+        productIds: ['older-high'],
+      }),
+    ]);
+
+    expect(sectionIds(sections)).toEqual([
+      'newly-added',
+      'collection:editors-picks',
+      'best-eazy-scores',
+    ]);
+    expect(sections[1]).toMatchObject({
+      kind: 'curated',
+      position: 150,
+      ranked: false,
+    });
+    expect(productIds(sections, 'collection:editors-picks')).toEqual([
+      'older-high',
+    ]);
+  });
+
+  it('lets a curated collection at position 50 lead the Feed', () => {
+    const products = [
+      card({ id: 'older-high', eazyScore: 90, ratingCount: 0 }),
+      card({ id: 'newer-low', eazyScore: 70, ratingCount: 0 }),
+    ];
+    const sections = selectFeedSections(products, [
+      collection({
+        slug: 'cover-story',
+        feedPosition: 50,
+        productIds: ['older-high', 'newer-low'],
+      }),
+    ]);
+
+    expect(sectionIds(sections)).toEqual([
+      'collection:cover-story',
+      'newly-added',
+    ]);
+    // Best Eazy Scores matches the curated ordered ids, so duplicate-hide drops it.
+  });
+
+  it('breaks a position tie by placing the curated section first', () => {
+    const products = [
+      card({ id: 'older-high', eazyScore: 90, ratingCount: 0 }),
+      card({ id: 'newer-low', eazyScore: 70, ratingCount: 0 }),
+    ];
+    const sections = selectFeedSections(products, [
+      collection({
+        slug: 'same-slot',
+        feedPosition: 100,
+        productIds: ['older-high'],
+      }),
+    ]);
+
+    expect(sectionIds(sections)).toEqual([
+      'collection:same-slot',
+      'newly-added',
+      'best-eazy-scores',
+    ]);
+  });
+
+  it('hides a curated section whose ordered ids match an earlier section', () => {
+    const products = [
+      card({ id: 'older', eazyScore: 70, ratingCount: 0 }),
+      card({ id: 'newer', eazyScore: 90, ratingCount: 0 }),
+    ];
+    const sections = selectFeedSections(products, [
+      collection({
+        slug: 'same-order',
+        feedPosition: 150,
+        productIds: ['newer', 'older'],
+      }),
+    ]);
+
+    expect(sectionIds(sections)).toEqual(['newly-added']);
   });
 });

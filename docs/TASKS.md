@@ -81,7 +81,12 @@
   2026-09-02 after the 27-product catalog seed. The human declined to
   select it against a two-product catalog on 2026-09-02 and grew the
   catalog first (see the active data initiative below). Proposed Project
-  #4 write after this ledger edit: `T21: Gated → In Progress`.
+  #4 write after this ledger edit: `T21: Gated → In Progress`. On
+  2026-09-03 the human directed a Feed visual redesign on PR #52 so Feed
+  no longer mirrors Browse: one spotlight card plus compact ranked rows
+  (Task 21 note below). The same PR now also merges code-owned auto
+  sections with published curated collections from `product_collections`
+  (Task 21 note below).
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -1307,26 +1312,45 @@ required before Task 22.
 Data dependency note: the catalog seed extension is human accepted in PR #50
 (Active data initiative under Current Repo Status): 27 published products, 26
 of them with a current Eazy assessment. The Feed uses Newly Added, Best Eazy
-Scores, and Most Rated; ranked sections require at least two qualifying
-products and cap at five cards. Most Rated stays hidden until at least two
-products have `ratingCount >= 1`. Proposed Project #4 write:
-`T21: Gated → In Progress`.
+Scores, and Most Rated plus published curated collections; ranked sections
+require at least two qualifying products and cap at five cards. Most Rated
+stays hidden until at least two products have `ratingCount >= 1`. Proposed
+Project #4 write: `T21: Gated → In Progress`.
+
+Visual redesign note (2026-09-03, human-directed on PR #52): the first Feed
+cut stacked the Browse `ProductCard` under section titles and was visually
+indistinguishable from Browse. The Feed now renders one `ProductSpotlightCard`
+for the lead product of the first populated section and `ProductRankRow`s
+inside one bordered list for every other product, with a basis caption per
+section. Auto-section selection, caps, ordering, and duplicate hiding stay;
+curated collections now merge into that same list. Rules:
+[`docs/DESIGN.md`](DESIGN.md) (Feed / Discover, Product Spotlight Card,
+Product Rank Row); rationale:
+[`docs/decisions/2026-09-03-feed-scoreboard-layout.md`](decisions/2026-09-03-feed-scoreboard-layout.md).
 
 Goal: replace the primary placeholder with a deliberately small real Feed.
 
 Deliverables:
 
-- No more than three sections: Newly Added, Best Eazy Scores, and Most Rated
-  only when data supports it.
-- Hide empty or duplicate sections.
-- Reuse `ProductCard` and existing product queries.
+- Auto sections Newly Added, Best Eazy Scores, and Most Rated only when data
+  supports them, plus published curated collections with a `feed_position`.
+- Hide empty or duplicate sections. Cap each section at five cards.
+- Reuse the published catalog query for cards; add a published-collections
+  query for curated section metadata. Render the Feed-specific spotlight and
+  rank rows rather than the Browse `ProductCard` stack (2026-09-03 redesign).
 - Do not use “Trending” without a real time-based activity signal.
-- No feed-configuration table.
+- Curated captions must say the list is hand-picked. Humans edit collections
+  through SQL, Studio, or seed — no admin UI in this task.
 
 Acceptance:
 
 - Feed contains no placeholder primary surface.
 - Every visible section is distinct, populated, and opens Product Detail.
+- A published curated section appears at its `feed_position` with its title
+  and honest caption; missing or unpublished product ids drop out.
+- If collections fail or are offline with no cache, Feed still shows auto
+  sections.
+- Feed is visually distinct from Browse at the 393px reference width.
 - If a useful Feed cannot be completed before beta, remove the tab rather than
   ship a primary placeholder.
 

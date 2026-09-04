@@ -1,7 +1,9 @@
 ---
 id: decision-real-feed-mvp-sections
 date: 2026-09-02
-status: accepted
+updated: 2026-09-03
+status: superseded
+superseded_by: decision-curated-feed-collections
 area: product-ux
 tasks: [21]
 pr: 52
