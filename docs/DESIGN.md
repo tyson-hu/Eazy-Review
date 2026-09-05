@@ -437,10 +437,12 @@ Keep these components small. Add abstractions only when they remove real duplica
   to the catalog`, `Ranked by Eazy Score`, and `Ranked by number of community
   ratings`. A curated caption must say the list is hand-picked (for example
   `Picked by Eazy Review`) and must not claim a measured basis such as
-  `Ranked by Eazy Score` or `Trending`. The client substitutes that trusted
-  copy when a stored caption breaks the rule. Spotlight and rank-row
-  accessibility labels include the displayed eyebrow or rank, the shown
-  signal and score, and the relevant caption.
+  `Ranked by Eazy Score` or `Trending`.   The client substitutes that trusted
+  copy when a stored caption breaks the rule, and substitutes trusted
+  title and eyebrow copy when those fields claim `Trending` or another
+  reserved measured basis. Spotlight and rank-row accessibility labels
+  include the displayed eyebrow or rank, the shown signal and score, and
+  the relevant caption.
 - Auto sections are Newly Added, Best Eazy Scores, and Most Rated. Published
   curated collections with a `feed_position` merge into the same ordered list.
   Ranked sections appear only when at least two products qualify and show at

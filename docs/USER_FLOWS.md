@@ -430,7 +430,8 @@ Presentation rules:
   Score`, `Ranked by number of community ratings`. Curated captions come
   from the row after the client replaces a caption that claims a measured
   basis or does not say the list is hand-picked with `Picked by Eazy
-  Review`.
+  Review`. The client also replaces a curated title or eyebrow that
+  claims a reserved measured basis such as `Trending`.
 - Auto spotlight eyebrows: `Latest addition`, `Top Eazy Score`, `Most rated`.
   Curated eyebrows come from `lead_label`.
 - Newly Added and Best Eazy Scores rows show Eazy Score; Most Rated rows show

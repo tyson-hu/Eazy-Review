@@ -1,6 +1,10 @@
 import {
   TRUSTED_CURATED_CAPTION,
+  TRUSTED_CURATED_LEAD_LABEL,
+  TRUSTED_CURATED_TITLE,
   honestCuratedCaption,
+  honestCuratedLeadLabel,
+  honestCuratedTitle,
 } from '@/src/features/feed/honestCuratedCaption';
 
 describe('honestCuratedCaption', () => {
@@ -30,5 +34,25 @@ describe('honestCuratedCaption', () => {
     expect(honestCuratedCaption("Editor's selection")).toBe(
       TRUSTED_CURATED_CAPTION,
     );
+  });
+});
+
+describe('honestCuratedTitle', () => {
+  it('keeps an editorial title that does not claim a reserved basis', () => {
+    expect(honestCuratedTitle("Editor's Picks")).toBe("Editor's Picks");
+  });
+
+  it('replaces a title that labels the section Trending', () => {
+    expect(honestCuratedTitle('Trending')).toBe(TRUSTED_CURATED_TITLE);
+  });
+});
+
+describe('honestCuratedLeadLabel', () => {
+  it('keeps an editorial eyebrow', () => {
+    expect(honestCuratedLeadLabel("Editor's pick")).toBe("Editor's pick");
+  });
+
+  it('replaces a reserved measured-basis eyebrow', () => {
+    expect(honestCuratedLeadLabel('Trending')).toBe(TRUSTED_CURATED_LEAD_LABEL);
   });
 });

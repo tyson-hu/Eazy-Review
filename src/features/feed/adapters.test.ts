@@ -61,6 +61,17 @@ describe('adaptFeedCollections', () => {
     ).toBe('Picked by Eazy Review');
   });
 
+  it('substitutes a reserved Trending title and eyebrow', () => {
+    expect(
+      adaptFeedCollections([
+        { ...publishedRow, title: 'Trending', lead_label: 'Trending' },
+      ])[0],
+    ).toMatchObject({
+      title: 'Curated picks',
+      leadLabel: "Editor's pick",
+    });
+  });
+
   it('rejects an unknown signal', () => {
     expect(() =>
       adaptFeedCollections([{ ...publishedRow, signal: 'trending' }]),

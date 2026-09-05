@@ -104,7 +104,8 @@ duplicate-hide, Most Rated by count, no Trending without a real signal).
 - Curated content can never leak an unpublished product, because cards come
   from the published catalog. The client replaces a curated caption that
   claims a measured basis or does not say the list is hand-picked with
-  `Picked by Eazy Review`.
+  `Picked by Eazy Review`, and replaces a title or eyebrow that claims a
+  reserved measured basis such as `Trending`.
 - The Feed makes two requests instead of one; the second is a few hundred
   bytes and shares the catalog cache lifecycle.
 - The seed and staging databases become the editorial workspace until Task 28

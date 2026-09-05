@@ -1,4 +1,8 @@
-import { honestCuratedCaption } from '@/src/features/feed/honestCuratedCaption';
+import {
+  honestCuratedCaption,
+  honestCuratedLeadLabel,
+  honestCuratedTitle,
+} from '@/src/features/feed/honestCuratedCaption';
 import { CatalogError } from '@/src/features/products/errors';
 import type { FeedCollection } from '@/src/types/product';
 
@@ -81,11 +85,13 @@ export function adaptFeedCollections(value: unknown): FeedCollection[] {
       return {
         id: string(row.id, 'product_collections.id'),
         slug: string(row.slug, 'product_collections.slug'),
-        title: string(row.title, 'product_collections.title'),
+        title: honestCuratedTitle(string(row.title, 'product_collections.title')),
         caption: honestCuratedCaption(
           string(row.caption, 'product_collections.caption'),
         ),
-        leadLabel: string(row.lead_label, 'product_collections.lead_label'),
+        leadLabel: honestCuratedLeadLabel(
+          string(row.lead_label, 'product_collections.lead_label'),
+        ),
         signal: parseSignal(row.signal),
         isRanked: boolean(row.is_ranked, 'product_collections.is_ranked'),
         feedPosition: integer(

@@ -406,7 +406,9 @@ Publishing a replacement assessment must retire the prior current row and
 create the new current row atomically. A curated caption must state that the
 list is hand-picked; it may not claim a measured basis such as
 `Ranked by Eazy Score` or `Trending`. The client also substitutes
-`Picked by Eazy Review` when a stored caption violates that rule.
+`Picked by Eazy Review` when a stored caption violates that rule, and
+substitutes trusted title and eyebrow copy when those fields claim
+`Trending` or another reserved measured basis.
 
 ## Import Rules
 

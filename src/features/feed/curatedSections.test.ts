@@ -145,4 +145,21 @@ describe('resolveCuratedSections', () => {
 
     expect(section.caption).toBe('Picked by Eazy Review');
   });
+
+  it('replaces a reserved Trending title and eyebrow', () => {
+    const [section] = resolveCuratedSections(
+      [
+        collection({
+          slug: 'false-trend-title',
+          title: 'Trending',
+          leadLabel: 'Trending',
+          productIds: ['p1', 'p2'],
+        }),
+      ],
+      catalog,
+    );
+
+    expect(section.title).toBe('Curated picks');
+    expect(section.leadLabel).toBe("Editor's pick");
+  });
 });
