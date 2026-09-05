@@ -17,7 +17,7 @@
   (`f7cb8856ccdebece51e007df301e4ce578892c1a`). Anonymous Browse and Product
   Detail read the two deterministic published products through one Supabase
   request per surface, with complete, sparse, loading, cached-refresh, offline,
-  error/retry, empty, and not-found behavior. Feed remains mock/placeholder.
+  error/retry, empty, and not-found behavior. Feed stayed mock until Task 21.
 - Task 16 is **Done — human accepted and merged in PR #35 on 2026-08-09.**
   Core authentication and Account state (email/password sign-in/up/out,
   session restore, auth-gated Rate, minimal Account, cache isolation,
@@ -77,16 +77,18 @@
   [`docs/decisions/2026-09-02-browse-scale-up-trigger.md`](decisions/2026-09-02-browse-scale-up-trigger.md);
   evidence:
   [`docs/evidence/task-20-browse-scale-up-trigger/RESULT.md`](evidence/task-20-browse-scale-up-trigger/RESULT.md).
-  Task 21 (Real Feed MVP) is selected and under implementation on
-  2026-09-02 after the 27-product catalog seed. The human declined to
-  select it against a two-product catalog on 2026-09-02 and grew the
-  catalog first (see the active data initiative below). Proposed Project
-  #4 write after this ledger edit: `T21: Gated → In Progress`. On
-  2026-09-03 the human directed a Feed visual redesign on PR #52 so Feed
-  no longer mirrors Browse: one spotlight card plus compact ranked rows
-  (Task 21 note below). The same PR now also merges code-owned auto
-  sections with published curated collections from `product_collections`
-  (Task 21 note below).
+  Task 21 (Real Feed MVP) is **Done — human accepted in PR #52 on
+  2026-09-05.** Feed is a scoreboard of Newly Added, Best Eazy Scores,
+  Most Rated, and published curated collections: the first populated
+  section leads with `ProductSpotlightCard`, remaining products are
+  `ProductRankRow`s, and a ranked lead shows rank 1 on the spotlight.
+  Most Rated stays hidden until at least two products have
+  `ratingCount >= 1`. Task 22 stays Pending until a later session
+  selects it. Evidence:
+  [`docs/evidence/task-21-real-feed-mvp/RESULT.md`](evidence/task-21-real-feed-mvp/RESULT.md).
+  Proposed Project #4 writes after this ledger edit: `T21: In Progress →
+  In Review` before merge; `T21: In Review → Completed` immediately
+  after merge.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -427,7 +429,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 18 | Password Recovery And Deep Links | Done — human accepted and merged in PR #37 on 2026-08-17 |
 | 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 |
 | 20 | Browse Scale-Up | Conditional |
-| 21 | Real Feed MVP | In Progress |
+| 21 | Real Feed MVP | Done — human accepted in PR #52 on 2026-09-05 |
 | 22 | Broader Automated App Tests And CI | Pending |
 | 23 | Reliability, Accessibility, And Device QA | Pending |
 | 24 | Privacy, Legal, And Store Disclosures | Pending |
@@ -1295,7 +1297,7 @@ trigger implementation. Human accepted in PR #51 on 2026-09-02.
 
 ## Task 21: Real Feed MVP
 
-Status: In Progress — selected on 2026-09-02.
+Status: **Done — human accepted in PR #52 on 2026-09-05.**
 
 Depends on: Task 15, Task 17, and enough real data for useful sections.
 
@@ -1306,16 +1308,19 @@ parent owns scope and acceptance.
 
 Parallel-safe with: Task 20 only when the parent proves file-disjoint scopes.
 
-Human gate: Implementation selected on 2026-09-02. Human acceptance is
-required before Task 22.
+Human gate: **Accepted** in PR #52 on 2026-09-05. Merge of that PR is the
+last repository action. Do not start Task 22 until a later session selects
+it.
 
 Data dependency note: the catalog seed extension is human accepted in PR #50
 (Active data initiative under Current Repo Status): 27 published products, 26
 of them with a current Eazy assessment. The Feed uses Newly Added, Best Eazy
 Scores, and Most Rated plus published curated collections; ranked sections
 require at least two qualifying products and cap at five cards. Most Rated
-stays hidden until at least two products have `ratingCount >= 1`. Proposed
-Project #4 write: `T21: Gated → In Progress`.
+stays hidden until at least two products have `ratingCount >= 1`. The earlier
+`T21: Gated → In Progress` write was already applied. Proposed Project #4
+writes after this acceptance: `T21: In Progress → In Review` before merge;
+`T21: In Review → Completed` immediately after merge.
 
 Visual redesign note (2026-09-03, human-directed on PR #52): the first Feed
 cut stacked the Browse `ProductCard` under section titles and was visually

@@ -61,7 +61,7 @@ Rating Form opens from Product Detail.
 
 Route ownership is phased: Task 16 adds core auth routes and Account states;
 Task 17 adds Rated Products; Task 18 adds recovery routes; Task 19 adds the
-Delete Account action and protected server boundary; Task 21 replaces the Feed
+Delete Account action and protected server boundary; Task 21 replaced the Feed
 placeholder with real catalog sections; Task 24 adds direct Terms, Privacy, and
 support/contact routes plus the public account-deletion information URL. No
 generic Settings route is planned for the MVP.

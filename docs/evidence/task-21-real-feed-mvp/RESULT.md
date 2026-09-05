@@ -147,6 +147,8 @@ Picks without changing the Newly Added spotlight.
 - Automated checks run separately: focused Feed Jest suites 22/22;
   `npm run typecheck`; `npm run lint`; `npm run check:readonly`;
   parent `npm run check:expo` on the review-fix head
-- Required next decision: human review and acceptance of the
-  implementation PR. Project #4 Status write `T21: Gated → In Progress`
-  was applied after chat approval.
+- Required next decision: human accepted in PR #52 on 2026-09-05. Merge
+  is the last repository action. Project #4 writes: `T21: In Progress →
+  In Review` before merge; `T21: In Review → Completed` immediately
+  after merge. The earlier `T21: Gated → In Progress` write was already
+  applied.
