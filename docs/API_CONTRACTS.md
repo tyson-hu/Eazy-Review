@@ -781,9 +781,8 @@ and the view fields `caption`, `leadLabel`, `signal`, and `ranked`.
 `adaptFeedCollections` and `resolveCuratedSections` substitute
 `Picked by Eazy Review` when a stored curated caption claims a measured
 basis or does not say the list is hand-picked, and substitute trusted
-title and eyebrow copy when those fields claim a reserved measured basis
-such as `Trending`, `Best Eazy Scores`, or another Eazy/Community score
-or rating-rank claim. The Feed screen renders
+title and eyebrow copy when those fields claim a score, rating, rank, or
+`Trending` basis. The Feed screen renders
 the first section's first product as `ProductSpotlightCard` and every
 other product as `ProductRankRow`. Initial
 load waits for both queries when collections have no cache so a curated

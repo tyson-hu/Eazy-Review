@@ -3,12 +3,12 @@ export const TRUSTED_CURATED_CAPTION = 'Picked by Eazy Review';
 export const TRUSTED_CURATED_TITLE = 'Curated picks';
 export const TRUSTED_CURATED_LEAD_LABEL = "Editor's pick";
 
-const CLAIMS_RESERVED_FEED_BASIS =
-  /trending|ranked by|eazy scores?|community score|most rated|number of(?: community)? ratings/i;
+const CLAIMS_MEASURED_BASIS =
+  /\brated\b|\bratings?\b|\bscores?\b|\branked\b|\branks?\b|\btrending\b/i;
 const SAYS_HAND_PICKED = /hand[\s-]*picked|picked by/i;
 
-function claimsReservedFeedBasis(value: string): boolean {
-  return CLAIMS_RESERVED_FEED_BASIS.test(value);
+function claimsMeasuredBasis(value: string): boolean {
+  return CLAIMS_MEASURED_BASIS.test(value);
 }
 
 /**
@@ -18,24 +18,24 @@ function claimsReservedFeedBasis(value: string): boolean {
  */
 export function honestCuratedCaption(caption: string): string {
   const trimmed = caption.trim();
-  if (claimsReservedFeedBasis(trimmed) || !SAYS_HAND_PICKED.test(trimmed)) {
+  if (claimsMeasuredBasis(trimmed) || !SAYS_HAND_PICKED.test(trimmed)) {
     return TRUSTED_CURATED_CAPTION;
   }
   return trimmed;
 }
 
 /**
- * Section titles and spotlight eyebrows must not label a list Trending or
- * claim another reserved measured basis without a real signal.
+ * Section titles and spotlight eyebrows must not claim a score, rating,
+ * rank, or Trending basis without a real signal.
  */
 export function honestCuratedTitle(title: string): string {
   const trimmed = title.trim();
-  return claimsReservedFeedBasis(trimmed) ? TRUSTED_CURATED_TITLE : trimmed;
+  return claimsMeasuredBasis(trimmed) ? TRUSTED_CURATED_TITLE : trimmed;
 }
 
 export function honestCuratedLeadLabel(leadLabel: string): string {
   const trimmed = leadLabel.trim();
-  return claimsReservedFeedBasis(trimmed)
+  return claimsMeasuredBasis(trimmed)
     ? TRUSTED_CURATED_LEAD_LABEL
     : trimmed;
 }

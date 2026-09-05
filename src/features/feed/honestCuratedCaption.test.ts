@@ -31,6 +31,9 @@ describe('honestCuratedCaption', () => {
     expect(honestCuratedCaption('Picked by Community Score')).toBe(
       TRUSTED_CURATED_CAPTION,
     );
+    expect(honestCuratedCaption('Hand-picked by highest user rating')).toBe(
+      TRUSTED_CURATED_CAPTION,
+    );
   });
 
   it('replaces a caption that does not say the list is hand-picked', () => {
@@ -52,6 +55,7 @@ describe('honestCuratedTitle', () => {
   it('replaces a title that impersonates a measured auto section', () => {
     expect(honestCuratedTitle('Best Eazy Scores')).toBe(TRUSTED_CURATED_TITLE);
     expect(honestCuratedTitle('Most Rated')).toBe(TRUSTED_CURATED_TITLE);
+    expect(honestCuratedTitle('Highest Rated')).toBe(TRUSTED_CURATED_TITLE);
   });
 });
 
