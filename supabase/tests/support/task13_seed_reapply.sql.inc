@@ -799,3 +799,122 @@ begin
   end loop;
 end;
 $catalog_seed$;
+
+-- Human-curated Feed collection. Insert-if-absent, then assert canonical
+-- values. Deterministic ids use TT=50 (collection) and TT=60 (items).
+do $collection_seed$
+declare
+  collection_id constant uuid :=
+    'a1000000-0000-4000-8000-000050000001';
+  r_collection public.product_collections%rowtype;
+  r_item public.product_collection_items%rowtype;
+  item record;
+begin
+  insert into public.product_collections (
+    id,
+    slug,
+    title,
+    caption,
+    lead_label,
+    signal,
+    is_ranked,
+    feed_position,
+    is_published
+  )
+  select
+    collection_id,
+    'editors-picks',
+    'Editor''s Picks',
+    'Picked by Eazy Review',
+    'Editor''s pick',
+    'eazy',
+    false,
+    150,
+    true
+  where not exists (
+    select 1
+    from public.product_collections c
+    where c.id = collection_id
+  );
+
+  select * into strict r_collection
+  from public.product_collections
+  where id = collection_id;
+
+  if r_collection.slug is distinct from 'editors-picks'
+    or r_collection.title is distinct from 'Editor''s Picks'
+    or r_collection.caption is distinct from 'Picked by Eazy Review'
+    or r_collection.lead_label is distinct from 'Editor''s pick'
+    or r_collection.signal is distinct from 'eazy'
+    or r_collection.is_ranked is distinct from false
+    or r_collection.feed_position is distinct from 150
+    or r_collection.is_published is distinct from true
+  then
+    raise exception
+      'Catalog seed conflict: product_collections % exists with non-canonical data',
+      collection_id;
+  end if;
+
+  for item in
+    select *
+    from (
+      values
+        (
+          'a1000000-0000-4000-8000-000060000001'::uuid,
+          'a1000000-0000-4000-8000-000010000300'::uuid,
+          1
+        ),
+        (
+          'a1000000-0000-4000-8000-000060000002'::uuid,
+          'a1000000-0000-4000-8000-000010000400'::uuid,
+          2
+        ),
+        (
+          'a1000000-0000-4000-8000-000060000003'::uuid,
+          'a1000000-0000-4000-8000-000010000500'::uuid,
+          3
+        ),
+        (
+          'a1000000-0000-4000-8000-000060000004'::uuid,
+          'a1000000-0000-4000-8000-000010000600'::uuid,
+          4
+        ),
+        (
+          'a1000000-0000-4000-8000-000060000005'::uuid,
+          'a1000000-0000-4000-8000-000010000700'::uuid,
+          5
+        )
+    ) as seeded(id, product_id, position)
+  loop
+    insert into public.product_collection_items (
+      id,
+      collection_id,
+      product_id,
+      position
+    )
+    select
+      item.id,
+      collection_id,
+      item.product_id,
+      item.position
+    where not exists (
+      select 1
+      from public.product_collection_items pci
+      where pci.id = item.id
+    );
+
+    select * into strict r_item
+    from public.product_collection_items
+    where id = item.id;
+
+    if r_item.collection_id is distinct from collection_id
+      or r_item.product_id is distinct from item.product_id
+      or r_item.position is distinct from item.position
+    then
+      raise exception
+        'Catalog seed conflict: product_collection_items % exists with non-canonical data',
+        item.id;
+    end if;
+  end loop;
+end;
+$collection_seed$;

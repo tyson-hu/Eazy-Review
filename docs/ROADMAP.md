@@ -94,8 +94,8 @@ E2E smoke, and optimizes the already-present CI lanes. Task 23 owns release
 reliability, ordinary device QA, and non-extreme accessibility smoke. Full
 VoiceOver and maximum Dynamic Type hardening are post-launch (Task 27).
 
-Task 21 must replace or remove the primary Feed placeholder before beta. Task
-20 does not start merely because Filter/Sort existed in the mock design.
+Task 21 replaced the primary Feed placeholder with a real scoreboard Feed.
+Task 20 does not start merely because Filter/Sort existed in the mock design.
 
 ## Phase 4: Release Boundary
 

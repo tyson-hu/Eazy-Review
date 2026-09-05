@@ -35,6 +35,19 @@ export type ProductCardData = {
   } | null;
 };
 
+/** Published curated collection; cards resolve from the published catalog. */
+export type FeedCollection = {
+  id: string;
+  slug: string;
+  title: string;
+  caption: string;
+  leadLabel: string;
+  signal: 'eazy' | 'community';
+  isRanked: boolean;
+  feedPosition: number;
+  productIds: string[];
+};
+
 /**
  * Dimension scores are 0–10 half-steps. Composite scores are 0–100 and never
  * user-entered. Live shapes live in `src/types/product.ts` and
@@ -245,6 +258,15 @@ src/
 
     ratings/
       # Task 17 connected ratings, persistence, and Rated Products modules
+
+    feed/
+      sections.ts               # FeedSection contract, caps, curated id
+      autoSections.ts           # code-owned Newly Added / Best Eazy / Most Rated
+      curatedSections.ts        # resolve published collection ids to cards
+      selectFeedSections.ts     # merge, position sort, duplicate-hide
+      api.ts                    # published collections read
+      adapters.ts               # raw collection rows → FeedCollection
+      queries.ts                # catalogKeys.feedCollections() hook
 
   lib/
     env/
@@ -712,9 +734,10 @@ Hooks:
 Use the centralized factories in `src/lib/query/keys.ts`:
 
 - Public catalog (never include user id): `catalogKeys.products()`,
-  `catalogKeys.product(productId)`
+  `catalogKeys.product(productId)`, `catalogKeys.feedCollections()`
 - Equivalent historical shapes in prose: `['catalog','products']`,
-  `['catalog','product', productId]` (prefer factories over hand-built arrays)
+  `['catalog','product', productId]`, `['catalog','feedCollections']`
+  (prefer factories over hand-built arrays)
 
 Task 15 uses the accepted Query Client and defaults; it creates no second
 client and does not persist the cache. Catalog errors are normalized to
@@ -725,6 +748,46 @@ Offline, unauthorized, not-found, invalid-response, and invalid-configuration
 failures receive no automatic retry. Reconnect/focus behavior remains owned by
 the accepted Task 14 lifecycle, while every surface exposes manual retry where
 the error is recoverable.
+
+Task 21 Feed reuses `useProductsQuery()` / `catalogKeys.products()` for cards
+and adds `useFeedCollectionsQuery()` / `catalogKeys.feedCollections()` for
+published curated collections. `getFeedCollections` (`src/features/feed/api.ts`)
+reads `product_collections` where `is_published = true` and `feed_position` is
+not null. Select string:
+
+```
+id, slug, title, caption, lead_label, signal, is_ranked, feed_position,
+product_collection_items ( id, product_id, position )
+```
+
+Nested items are ordered by `position` then `id`. Collections are ordered by
+`feed_position` then `id`.
+`selectFeedSections(products, collections)` merges code-owned auto sources
+(Newly Added at 100, Best Eazy Scores at 200, Most Rated at 300) with
+resolved curated sections. Newly Added reverses the adapter catalog order
+(`created_at ASC`, then `id ASC`) and caps at five. Ranked auto sections
+require at least two qualifying products (`eazyScore != null` for Best Eazy
+Scores; `ratingCount >= 1` for Most Rated), rank by that signal then `id`
+descending, and cap at five. Curated sections resolve ids against the
+published catalog (missing or unpublished ids drop out), require two
+products when `isRanked` else one, and cap at five. Auto and curated
+sections sort by `position` (tie: curated first, then id). A later section
+whose ordered ids match an earlier visible section is omitted. Task 17
+already invalidates `catalogKeys.products()` after a rating write, so Most
+Rated can appear without a new card request.
+
+Each `FeedSection` carries `id`, `kind` (`auto` | `curated`), `position`,
+and the view fields `caption`, `leadLabel`, `signal`, and `ranked`.
+`adaptFeedCollections` and `resolveCuratedSections` substitute
+`Picked by Eazy Review` when a stored curated caption claims a measured
+basis or does not say the list is hand-picked, and substitute trusted
+title and eyebrow copy when those fields claim a score, rating, rank, or
+`Trending` basis. The Feed screen renders
+the first section's first product as `ProductSpotlightCard` and every
+other product as `ProductRankRow`. Initial
+load waits for both queries when collections have no cache so a curated
+section cannot pop in above the spotlight. If collections fail or are
+offline with nothing cached, Feed renders auto sections only.
 
 ## Account Profile Query
 

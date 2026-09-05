@@ -17,6 +17,7 @@ Separate these concerns:
 | Product facts | `products`, `product_images`, `product_offers` | Brand, model, SKU, release, images, and offers |
 | Editorial assessment | `eazy_assessments` | Versioned app-builder Eazy Score |
 | Community evidence | `user_ratings`, `rating_aggregates` | Personal scores plus owner-only note; server-owned Community Score |
+| Curated collections | `product_collections`, `product_collection_items` | Human-picked series; Feed reads published rows by `feed_position` |
 
 UI names remain `Eazy Score`, `Community Score`, and `My Rating`.
 
@@ -35,6 +36,30 @@ UI names remain `Eazy Score`, `Community Score`, and `My Rating`.
 - `rating_aggregates`: server-owned Community Score and category averages.
 - `product_offers`: current purchase offers with constrained size, region,
   currency, and price values.
+
+## Task 21 Curated Collections
+
+Two tables store human-curated series. They hold product ids and section
+presentation only; the client resolves cards from the published catalog.
+
+**`product_collections`:** `id`, unique lowercase kebab `slug`, `title`,
+`caption`, `lead_label`, `signal` (`eazy` | `community`, default `eazy`),
+`is_ranked` (default `false`), nullable `feed_position` (null means not
+shown on Feed), `is_published` (default `false`), timestamps. The shared
+`set_updated_at` trigger maintains `updated_at`. A partial unique index on
+`feed_position` where `is_published and feed_position is not null` prevents
+two live Feed collections from claiming one slot.
+
+**`product_collection_items`:** `id`, `collection_id` and `product_id`
+cascade foreign keys, `position` (>= 1), unique `(collection_id, product_id)`
+and unique `(collection_id, position)`.
+
+RLS is enabled at create. `anon` and `authenticated` receive `SELECT` only:
+collections where `is_published = true`, and items whose parent collection
+is published. Product publish state is enforced when the client maps ids to
+the published catalog, not on the item row. `service_role` has full DML.
+No client writes, no RPC. Humans edit via SQL, Studio, or seed on local and
+approved staging — the same path as Eazy assessments.
 
 Names `official_ratings` and `product_rating_summary` are obsolete planning
 names. Do not introduce them in migrations.
@@ -231,6 +256,8 @@ Task 12 is a new forward-only migration after Task 11 is accepted:
 | `eazy_assessments` | `SELECT` | `SELECT` | `SELECT, INSERT, UPDATE, DELETE` |
 | `rating_aggregates` | `SELECT` | `SELECT` only | `SELECT, INSERT, UPDATE, DELETE` |
 | `product_offers` | `SELECT` | `SELECT` | `SELECT, INSERT, UPDATE, DELETE` |
+| `product_collections` | `SELECT` | `SELECT` | `SELECT, INSERT, UPDATE, DELETE` |
+| `product_collection_items` | `SELECT` | `SELECT` | `SELECT, INSERT, UPDATE, DELETE` |
 | `profiles` | none | `SELECT`; `UPDATE (display_name, username, avatar_url)` | `SELECT, INSERT, UPDATE, DELETE` |
 | `user_ratings` | none | `SELECT, DELETE`; column-level `INSERT` / `UPDATE` below | `SELECT, INSERT, UPDATE, DELETE` |
 
@@ -252,7 +279,9 @@ Privilege inventory must assert effective privileges with
 `has_table_privilege` and `has_column_privilege`, not only inspect direct grant
 rows. It must prove `PUBLIC` contributes no access, `anon` / `authenticated`
 match the client allowlist exactly, and `service_role` has every table
-privilege in the matrix above after the rebuild.
+privilege in the matrix above after the rebuild. Task 21 added
+`product_collections` and `product_collection_items` to this current
+allowlist; the Task 12 migration itself was not rewritten.
 
 ## Task 12 Row-Level Security
 
@@ -262,6 +291,8 @@ Policies must use explicit target roles and enforce:
 | --- | --- |
 | `products SELECT` | Only `is_published = true` |
 | Related catalog `SELECT` | Image, current Eazy assessment, aggregate, or offer is visible only when its product is published; assessments also require `is_current = true` |
+| `product_collections SELECT` | Only `is_published = true` |
+| `product_collection_items SELECT` | Parent collection is published |
 | `profiles SELECT` | Authenticated owner only (`auth.uid() = id`); anonymous users receive no profile grant or policy |
 | `profiles UPDATE` | Authenticated owner only (`auth.uid() = id`) with the same ownership check after update |
 | `user_ratings SELECT` | Authenticated owner only; raw ratings are not community content |
@@ -276,6 +307,8 @@ Keep `private_note` on the owner-only row. Community Score reads come from
 ### Required Authorization Scenarios
 
 - Anonymous can read published products and only their related catalog rows.
+- Anonymous and authenticated users can read published collections and their
+  items; unpublished collections are hidden.
 - Anonymous cannot read drafts, profiles, or raw ratings and cannot create
   ratings.
 - An authenticated user can read/create/update/delete only their own rating.
@@ -367,9 +400,15 @@ account deletion under Task 19's acceptance boundary in `docs/TASKS.md`.
 
 ## Admin Eazy Score Workflow
 
-For MVP, create Eazy assessments through trusted staging/admin tooling or seed
-SQL. Do not build an admin dashboard first. Publishing a replacement assessment
-must retire the prior current row and create the new current row atomically.
+For MVP, create Eazy assessments and curated collections through trusted
+staging/admin tooling or seed SQL. Do not build an admin dashboard first.
+Publishing a replacement assessment must retire the prior current row and
+create the new current row atomically. A curated caption must state that the
+list is hand-picked; it may not claim a measured basis such as
+`Ranked by Eazy Score` or `Trending`. The client also substitutes
+`Picked by Eazy Review` when a stored caption violates that rule, and
+substitutes trusted title and eyebrow copy when those fields claim
+`Trending` or another reserved measured basis.
 
 ## Import Rules
 

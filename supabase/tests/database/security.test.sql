@@ -3,10 +3,10 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path to public, extensions;
 
--- 17 policy assertions + 196 table-privilege assertions +
+-- 21 policy assertions + 252 table-privilege assertions +
 -- 48 authenticated column-write assertions + 30 helper assertions +
 -- 1 service-role attribute assertion.
-select plan(292);
+select plan(352);
 
 create temporary table expected_policies (
   table_name text not null,
@@ -83,6 +83,30 @@ insert into expected_policies (
     'authenticated'
   ),
   (
+    'product_collections',
+    'anon_select_published_product_collections',
+    'SELECT',
+    'anon'
+  ),
+  (
+    'product_collections',
+    'authenticated_select_published_product_collections',
+    'SELECT',
+    'authenticated'
+  ),
+  (
+    'product_collection_items',
+    'anon_select_published_product_collection_items',
+    'SELECT',
+    'anon'
+  ),
+  (
+    'product_collection_items',
+    'authenticated_select_published_product_collection_items',
+    'SELECT',
+    'authenticated'
+  ),
+  (
     'profiles',
     'authenticated_select_own_profile',
     'SELECT',
@@ -132,12 +156,14 @@ select is(
           'eazy_assessments',
           'user_ratings',
           'rating_aggregates',
-          'product_offers'
+          'product_offers',
+          'product_collections',
+          'product_collection_items'
         ]
       )
   ),
-  16,
-  'exactly the 16 Task 12 policies exist'
+  20,
+  'exactly the 20 Task 12 plus Task 21 collection policies exist'
 );
 
 select ok(
@@ -173,7 +199,9 @@ insert into core_tables (table_name) values
   ('eazy_assessments'),
   ('user_ratings'),
   ('rating_aggregates'),
-  ('product_offers');
+  ('product_offers'),
+  ('product_collections'),
+  ('product_collection_items');
 
 create temporary table checked_roles (
   role_name text primary key
@@ -212,7 +240,9 @@ select is(
         'product_images',
         'eazy_assessments',
         'rating_aggregates',
-        'product_offers'
+        'product_offers',
+        'product_collections',
+        'product_collection_items'
       )
     when r.role_name = 'authenticated' then
       (
@@ -224,7 +254,9 @@ select is(
           'eazy_assessments',
           'user_ratings',
           'rating_aggregates',
-          'product_offers'
+          'product_offers',
+          'product_collections',
+          'product_collection_items'
         )
       )
       or (
