@@ -405,7 +405,8 @@ staging/admin tooling or seed SQL. Do not build an admin dashboard first.
 Publishing a replacement assessment must retire the prior current row and
 create the new current row atomically. A curated caption must state that the
 list is hand-picked; it may not claim a measured basis such as
-`Ranked by Eazy Score` or `Trending`.
+`Ranked by Eazy Score` or `Trending`. The client also substitutes
+`Picked by Eazy Review` when a stored caption violates that rule.
 
 ## Import Rules
 

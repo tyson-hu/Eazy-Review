@@ -130,4 +130,19 @@ describe('resolveCuratedSections', () => {
       ranked: true,
     });
   });
+
+  it('replaces a dishonest stored caption with trusted hand-picked copy', () => {
+    const [section] = resolveCuratedSections(
+      [
+        collection({
+          slug: 'false-trend',
+          caption: 'Trending',
+          productIds: ['p1', 'p2'],
+        }),
+      ],
+      catalog,
+    );
+
+    expect(section.caption).toBe('Picked by Eazy Review');
+  });
 });

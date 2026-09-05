@@ -21,6 +21,28 @@ const toneClasses = {
   neutral: 'text-secondary',
 } as const;
 
+function spokenScore100(score: number | null | undefined): string {
+  return score == null ? 'not available' : `${score} out of 100`;
+}
+
+function spotlightAccessibilityLabel(
+  product: ProductCardData,
+  eyebrow: string,
+  eazyCaption: string,
+  communityCaption: string,
+  offerCaption: string,
+): string {
+  return [
+    `Open ${product.brand} ${product.name}`,
+    eyebrow,
+    `Eazy Score ${spokenScore100(product.eazyScore)}`,
+    eazyCaption,
+    `Community Score ${spokenScore100(product.communityScore)}`,
+    communityCaption,
+    offerCaption,
+  ].join('. ') + '.';
+}
+
 /**
  * The Feed's single focal card: editorial image, identity, one large Eazy
  * Score, compact Community proof, and a one-line price signal. It follows the
@@ -35,18 +57,34 @@ export function ProductSpotlightCard({
   const imageSource = product.imageUrl ? { uri: product.imageUrl } : undefined;
   const eazyTone = getScoreTone(product.eazyScore);
   const communityTone = getScoreTone(product.communityScore);
+  const eazyCaption =
+    product.eazyScore == null
+      ? 'Not assessed yet'
+      : `${getScoreLabel(product.eazyScore)} · Editorial assessment`;
   const communityCaption =
     product.ratingCount === 0
       ? 'No ratings yet'
       : product.communityScore == null
         ? 'No score yet'
         : formatCommunityRatingContext(product.ratingCount);
+  const offerCaption = product.lowestOffer
+    ? `${formatPrice(
+        product.lowestOffer.amount,
+        product.lowestOffer.currency,
+      )} ${product.lowestOffer.currency} · ${product.lowestOffer.retailer}`
+    : 'No verified offer available';
 
   return (
     <Pressable
       testID={`feed-spotlight-${product.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${product.brand} ${product.name}`}
+      accessibilityLabel={spotlightAccessibilityLabel(
+        product,
+        eyebrow,
+        eazyCaption,
+        communityCaption,
+        offerCaption,
+      )}
       onPress={onPress}
       className="rounded-card border border-border bg-card p-6"
       style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }]}>
@@ -89,9 +127,7 @@ export function ProductSpotlightCard({
             {product.eazyScore == null ? '—' : `${product.eazyScore} / 100`}
           </AppText>
           <AppText variant="caption" className="mt-1">
-            {product.eazyScore == null
-              ? 'Not assessed yet'
-              : `${getScoreLabel(product.eazyScore)} · Editorial assessment`}
+            {eazyCaption}
           </AppText>
         </View>
         <View className="items-end">
@@ -112,12 +148,7 @@ export function ProductSpotlightCard({
         <View className="flex-1">
           <AppText variant="label">Lowest verified offer</AppText>
           <AppText variant="caption" className="mt-1">
-            {product.lowestOffer
-              ? `${formatPrice(
-                  product.lowestOffer.amount,
-                  product.lowestOffer.currency,
-                )} ${product.lowestOffer.currency} · ${product.lowestOffer.retailer}`
-              : 'No verified offer available'}
+            {offerCaption}
           </AppText>
         </View>
         <AppText variant="action">View product</AppText>

@@ -1,7 +1,7 @@
 ---
 id: decision-curated-feed-collections
 date: 2026-09-03
-updated: 2026-09-03
+updated: 2026-09-05
 status: accepted
 area: architecture
 tasks: [21]
@@ -101,9 +101,10 @@ duplicate-hide, Most Rated by count, no Trending without a real signal).
 
 - Adding a computed perspective is one source entry with unit tests; adding an
   editorial perspective is one row plus items, with no deploy.
-- Curated content can never leak an unpublished product or bypass the honest
-  caption rule, because cards come from the published catalog and the caption
-  is required.
+- Curated content can never leak an unpublished product, because cards come
+  from the published catalog. The client replaces a curated caption that
+  claims a measured basis or does not say the list is hand-picked with
+  `Picked by Eazy Review`.
 - The Feed makes two requests instead of one; the second is a few hundred
   bytes and shares the catalog cache lifecycle.
 - The seed and staging databases become the editorial workspace until Task 28

@@ -777,9 +777,12 @@ already invalidates `catalogKeys.products()` after a rating write, so Most
 Rated can appear without a new card request.
 
 Each `FeedSection` carries `id`, `kind` (`auto` | `curated`), `position`,
-and the view fields `caption`, `leadLabel`, `signal`, and `ranked`. The
-Feed screen renders the first section's first product as
-`ProductSpotlightCard` and every other product as `ProductRankRow`. Initial
+and the view fields `caption`, `leadLabel`, `signal`, and `ranked`.
+`adaptFeedCollections` and `resolveCuratedSections` substitute
+`Picked by Eazy Review` when a stored curated caption claims a measured
+basis or does not say the list is hand-picked. The Feed screen renders
+the first section's first product as `ProductSpotlightCard` and every
+other product as `ProductRankRow`. Initial
 load waits for both queries when collections have no cache so a curated
 section cannot pop in above the spotlight. If collections fail or are
 offline with nothing cached, Feed renders auto sections only.

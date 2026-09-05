@@ -23,7 +23,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Authentication and security | [Forbid coding-agent production database access and account deletion](decisions/2026-07-24-forbid-agent-production-database-access.md) | Accepted | 19, 25, 26 | 2026-07-30 |
 | Authentication and security | [Apply RLS policies before client Data API grants](decisions/2026-07-24-rls-before-client-grants.md) | Accepted | 11, 12 | 2026-07-26 |
 | Authentication and security | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Accepted | — | 2026-07-04 |
-| Architecture | [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Accepted | 21 | 2026-09-03 |
+| Architecture | [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Accepted | 21 | 2026-09-05 |
 | Architecture | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Accepted | 20 | 2026-09-02 |
 | Architecture | [Stage codebase simplification by ownership boundary](decisions/2026-08-30-staged-codebase-simplification.md) | Accepted | — | 2026-09-02 |
 | Architecture | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Accepted | 14, 15, 16, 17 | 2026-08-31 |
@@ -45,8 +45,8 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Architecture | Accepted | 2026-09-05 |
 | [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Product and UX | Accepted | 2026-09-03 |
-| [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Architecture | Accepted | 2026-09-03 |
 | [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Product and UX | Superseded | 2026-09-03 |
 | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Architecture | Accepted | 2026-09-02 |
 | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Agent workflow | Accepted | 2026-09-02 |

@@ -1,8 +1,9 @@
+import { honestCuratedCaption } from '@/src/features/feed/honestCuratedCaption';
 import {
-    FEED_SECTION_CAP,
-    RANKED_SECTION_MIN,
-    curatedSectionId,
-    type FeedSection,
+  FEED_SECTION_CAP,
+  RANKED_SECTION_MIN,
+  curatedSectionId,
+  type FeedSection,
 } from '@/src/features/feed/sections';
 import type { FeedCollection, ProductCardData } from '@/src/types/product';
 
@@ -37,7 +38,7 @@ export function resolveCuratedSections(
       kind: 'curated',
       position: collection.feedPosition,
       title: collection.title,
-      caption: collection.caption,
+      caption: honestCuratedCaption(collection.caption),
       leadLabel: collection.leadLabel,
       signal: collection.signal,
       ranked: collection.isRanked,

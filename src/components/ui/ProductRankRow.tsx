@@ -24,6 +24,10 @@ const toneClasses = {
   neutral: 'text-secondary',
 } as const;
 
+function spokenScore100(score: number | null | undefined): string {
+  return score == null ? 'not available' : `${score} out of 100`;
+}
+
 function trailingColumn(product: ProductCardData, signal: ProductRankRowSignal) {
   if (signal === 'eazy') {
     return {
@@ -47,6 +51,20 @@ function trailingColumn(product: ProductCardData, signal: ProductRankRowSignal) 
   };
 }
 
+function rankRowAccessibilityLabel(
+  product: ProductCardData,
+  rank: number | undefined,
+  trailing: ReturnType<typeof trailingColumn>,
+): string {
+  const parts = [
+    `Open ${product.brand} ${product.name}`,
+    rank != null ? `Rank ${rank}` : null,
+    `${trailing.label} ${spokenScore100(trailing.score100)}`,
+    trailing.caption,
+  ];
+  return `${parts.filter((part) => part != null).join('. ')}.`;
+}
+
 /**
  * Compact list row for Feed rankings: rank, thumbnail, identity, and one
  * labeled composite score. Lists of these rows sit inside one bordered card
@@ -67,7 +85,7 @@ export function ProductRankRow({
     <Pressable
       testID={`feed-row-${product.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${product.brand} ${product.name}`}
+      accessibilityLabel={rankRowAccessibilityLabel(product, rank, trailing)}
       onPress={onPress}
       className={`min-h-[72px] flex-row items-center gap-3 px-4 py-3 ${className ?? ''}`}
       style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }]}>

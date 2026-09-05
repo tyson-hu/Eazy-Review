@@ -54,6 +54,13 @@ describe('adaptFeedCollections', () => {
     ).toEqual(['earlier', 'later']);
   });
 
+  it('substitutes a dishonest curated caption with trusted hand-picked copy', () => {
+    expect(
+      adaptFeedCollections([{ ...publishedRow, caption: 'Trending' }])[0]
+        .caption,
+    ).toBe('Picked by Eazy Review');
+  });
+
   it('rejects an unknown signal', () => {
     expect(() =>
       adaptFeedCollections([{ ...publishedRow, signal: 'trending' }]),

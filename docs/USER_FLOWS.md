@@ -428,7 +428,9 @@ Section rules:
 Presentation rules:
 - Auto basis captions: `Latest additions to the catalog`, `Ranked by Eazy
   Score`, `Ranked by number of community ratings`. Curated captions come
-  from the row.
+  from the row after the client replaces a caption that claims a measured
+  basis or does not say the list is hand-picked with `Picked by Eazy
+  Review`.
 - Auto spotlight eyebrows: `Latest addition`, `Top Eazy Score`, `Most rated`.
   Curated eyebrows come from `lead_label`.
 - Newly Added and Best Eazy Scores rows show Eazy Score; Most Rated rows show
