@@ -133,7 +133,8 @@ export function ProductSpotlightCard({
         <View className="items-end">
           <AppText variant="label">Community Score</AppText>
           <AppText
-            className={`mt-1 text-xl font-semibold ${toneClasses[communityTone]}`}>
+            variant="scoreCompact"
+            className={`mt-1 text-xl ${toneClasses[communityTone]}`}>
             {product.communityScore == null
               ? '—'
               : `${product.communityScore} / 100`}

@@ -122,7 +122,9 @@ export function ProductRankRow({
 
       <View className="items-end">
         <AppText variant="label">{trailing.label}</AppText>
-        <AppText className={`mt-0.5 text-lg font-semibold ${toneClasses[tone]}`}>
+        <AppText
+          variant="scoreCompact"
+          className={`mt-0.5 text-lg ${toneClasses[tone]}`}>
           {trailing.score100 == null ? '—' : `${trailing.score100} / 100`}
         </AppText>
         <AppText variant="caption" className="mt-0.5">

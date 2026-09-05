@@ -238,10 +238,12 @@ Typography:
 - Body ~17px at weight 400; headlines and strong emphasis at weight 600. Do not use weight 500 — the ladder is 400 + 600 (weight 300 only where UI style explicitly calls for airy display).
 - Use large weight-600 numbers for scores and prices. The `AppText` `score`
   variant (36px, weight 600) is the one hero-sized composite display; it sets
-  no color, and the caller passes the score tone class. The `action` variant
-  (17px, weight 600, Primary Accent) is the inline text affordance inside a
-  tappable surface. Generated class CSS is ordered by name, so do not rely on
-  a trailing size or color class to override a variant's own size or color.
+  no color, and the caller passes the score tone class. Compact Feed scores
+  use `scoreCompact` (weight 600, no color or size) and pass both the size
+  and the tone class. The `action` variant (17px, weight 600, Primary Accent)
+  is the inline text affordance inside a tappable surface. Generated class
+  CSS is ordered by name, so do not rely on a trailing size or color class
+  to override a variant's own size or color.
 - Use weight-600 product names, readable over decorative typography.
 - Use small quiet metadata and clear, concise section and rating labels.
 - Avoid marketing copy in core app surfaces.
