@@ -28,6 +28,9 @@ describe('honestCuratedCaption', () => {
     expect(honestCuratedCaption('Hand-picked trending list')).toBe(
       TRUSTED_CURATED_CAPTION,
     );
+    expect(honestCuratedCaption('Picked by Community Score')).toBe(
+      TRUSTED_CURATED_CAPTION,
+    );
   });
 
   it('replaces a caption that does not say the list is hand-picked', () => {
@@ -44,6 +47,11 @@ describe('honestCuratedTitle', () => {
 
   it('replaces a title that labels the section Trending', () => {
     expect(honestCuratedTitle('Trending')).toBe(TRUSTED_CURATED_TITLE);
+  });
+
+  it('replaces a title that impersonates a measured auto section', () => {
+    expect(honestCuratedTitle('Best Eazy Scores')).toBe(TRUSTED_CURATED_TITLE);
+    expect(honestCuratedTitle('Most Rated')).toBe(TRUSTED_CURATED_TITLE);
   });
 });
 

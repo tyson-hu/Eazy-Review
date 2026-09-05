@@ -4,7 +4,7 @@ export const TRUSTED_CURATED_TITLE = 'Curated picks';
 export const TRUSTED_CURATED_LEAD_LABEL = "Editor's pick";
 
 const CLAIMS_RESERVED_FEED_BASIS =
-  /trending|ranked by eazy score|ranked by number of community ratings/i;
+  /trending|ranked by|eazy scores?|community score|most rated|number of(?: community)? ratings/i;
 const SAYS_HAND_PICKED = /hand[\s-]*picked|picked by/i;
 
 function claimsReservedFeedBasis(value: string): boolean {
