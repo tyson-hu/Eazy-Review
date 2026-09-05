@@ -100,6 +100,16 @@ Outside `docs/notes/`, no scratch files, no notes docs, no status comments in co
 
 ## Disambiguation
 
+For work in this repository, the selected project routine owns scope, local
+conventions, required evidence, and completion. Treat global and plugin skills
+as supporting capabilities for a concrete gap. Their setup, publishing,
+feedback, database, and review instructions do not add authority or replace
+the project's canonical owners. Use the requested provider skill when
+applicable, resolve conflicts against project policy before action, and load
+only the supporting material needed for the task. Skill creation follows the
+project skill-creator and generated-wrapper contract; preview tools must
+satisfy the approved SOP and evidence boundary.
+
 When two loops seem to apply, use these precedence rules. Each pair is also cross-referenced in the skills' "When not to use" sections.
 
 For Eazy Review PR findings, `pr-review-remediation` owns the PR epoch and

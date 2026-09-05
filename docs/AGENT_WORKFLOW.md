@@ -83,11 +83,17 @@ Subagents are isolated helpers the parent agent can launch for context isolation
 
 - Delegate when a task benefits from context isolation (bulk file reads, independent review), parallel work, or verification independent of the implementing context.
 - Never delegate trivial edits; the delegation overhead costs more than it saves.
-- Subagents start with a clean context and cannot see the parent conversation. Every delegation prompt must contain the task spec, the exact file and doc paths to read (per the Context Map above), and the matching skill when one exists. When no skill matches, state that explicitly and instruct the subagent to follow its own definition.
+- Child context depends on the host and invocation. Supply a self-contained
+  packet with the task, allowed files, exact required references, constraints,
+  acceptance checks, and return format. Include the matching skill, or state
+  explicitly that none matches and follow the role definition. Do not rely on
+  unseen or inherited conversation to establish scope or authority.
 
 ### Model Routing Tiers
 
-Logical tiers live here; concrete model IDs live only in `.cursor/agents/*` frontmatter, so a model rename or replacement touches one file, not the docs.
+Logical routing tiers live here. Cursor-specific model settings live in
+`.cursor/agents/` frontmatter. Other hosts use their available configuration;
+verify supported choices before an override and report an unavailable choice.
 
 - **fast** — exploration, checks, mechanical edits, formatting, structured summaries.
 - **inherit / verified medium** — normal screen and feature implementation.
@@ -234,10 +240,10 @@ credentials. This trust gate overrides every skill or SOP instruction below.
 5. **Parent preparation** — when routes/configuration require generation, the
    parent runs `npm run prepare:routes` and checks tracked drift before the
    verifier starts.
-6. **Read-only verifier** — run the narrowest command and, for a finished
-   packet, `npm run check:readonly` after the final modification. The verifier
-   never runs an intentionally mutating preparation command, and its execution
-   environment must satisfy the trust gate above.
+6. **Read-only verifier** — run the narrowest command. For a finished packet,
+   run the final gate selected in Validation Commands after the last relevant
+   modification. The verifier never runs intentionally mutating preparation;
+   its execution environment must satisfy the trust gate above.
 7. **Bounded repair or debugger escalation** — only a directly evidenced
    caused-by-change failure enters the repair budgets above; the verifier
    reruns after any modification.
@@ -246,10 +252,11 @@ credentials. This trust gate overrides every skill or SOP instruction below.
    trusted-base review above.
 9. **Documentation gate** — tasks, contracts, decisions, and affected docs per
    `docs/DOCUMENTATION_POLICY.md`. Documentation-only changes do not require
-   unrelated application checks. When step 9 changes any registered document,
-   decision, mirror, skill, or agent-infrastructure path, re-run
-   `npm run check:readonly` on the final tree before handoff so the document,
-   task-graph, generated-index, and stale-term gates still cover post-doc edits.
+   unrelated application checks. After documentation changes, rerun the
+   affected document, task-graph, generated-index, and stale-term checks
+   selected in Validation Commands. Run full `npm run check:readonly` for
+   final trees containing code beyond the literal-copy exception, executable
+   configuration, or validation-contract changes.
    If the ledger edit moved a `docs/TASKS.md` status that has a GitHub Project
    #4 item, or changed a fact a card restates, list the proposed board writes
    (or `none`) per the GitHub Project #4 Mirror section of
@@ -310,6 +317,22 @@ A task is not done until:
 ## Validation Commands
 
 This section is the canonical home for validation commands; `AGENTS.md` carries the compact list and `README.md` carries the setup-facing pointer.
+
+For a spelling or literal-copy correction that changes no behavior, route,
+contract, command, policy, skill metadata, generated content, or machine-parsed
+field, inspect Git state and the affected text, verify the intended diff, and
+run `git diff --check`. This case does not require a full workflow read,
+application tests, typecheck, lint, a screenshot audit, or a new session. If the
+text can affect layout or accessibility meaning, inspect that specific effect.
+A field consumed by a documentation parser is outside this exception; run its
+existing structural check.
+
+For other documentation-only changes, run the affected document checks below.
+Full `npm run check:readonly` remains required for code beyond the literal-copy
+exception, executable configuration, validation-contract changes, or combined
+final trees containing them. Apply the trust gate before every executable
+check. An explicit user request for broader validation and required PR or
+exact-head gates still apply.
 
 Pick the narrowest command that covers the change:
 

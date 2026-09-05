@@ -91,6 +91,16 @@ Follow the canonical workflow in `skills/<name>/SKILL.md`. Do not improvise a di
 
 Do not edit either stub by hand. Add or update the sorted `{ "name", "description" }` record in `skills/manifest.json`, then run `npm run skills:generate`.
 
+## Read-only library audit
+
+For an explicitly authorized read-only library audit, use this branch instead
+of the creation routine: inventory triggers and dependencies, compare overlap,
+and propose keep, shorten, correct, consolidate/remove, or defer dispositions.
+Overlap is evidence to explain and does not stop collection or drafting.
+This branch permits no skill, index, script, template, installation, or
+configuration write. The existing creation/maintenance approval gate and its
+write verification apply before proposed writes, not audit-report drafting.
+
 ## Routine
 
 1. Choose the creation path, then confirm the matching entry gate:
@@ -124,6 +134,10 @@ Review the skill library periodically (monthly is enough): flag stale skills who
 
 ## Verification
 
+- For a proposed trigger or workflow change, record one realistic selecting
+  request and one neighboring request, then check their decisions in a fresh
+  read-only context. Distinguish simulation from execution and retain the
+  tested instructions and limits.
 - The structured proposal (name, trigger, why, remaining-gate summary, inputs, workflow summary, overlap check, files) was shown and explicitly approved before any files were created or modified.
 - The proposal's "why" either names 3+ occurrences (agent-proactive) or records an explicit human-directed three-use waiver (human-directed), and the Remaining gate checklist passed on the same draft.
 - The skill does not instruct forbidden or unapproved high-risk actions; any `scripts/` or `templates/` were separately approved and inspected.

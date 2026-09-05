@@ -25,7 +25,10 @@ connectivity lifecycle where applicable.
 ## Task Discipline
 
 - Work one task at a time; keep changes scoped to the requested task.
-- Start each session: `git status --short` -> current task in `docs/TASKS.md`
+- For a spelling or literal-copy correction within the exception in
+  `docs/AGENT_WORKFLOW.md`, Validation Commands, inspect Git state and the
+  affected text, then follow that exception. Otherwise, start each session:
+  `git status --short` -> current task in `docs/TASKS.md`
   -> select the route in `docs/LOOP_ENGINEERING.md` (a matching skill or its
   explicit no-skill workflow).
 - Use the generated `docs/DECISIONS.md` index to find the current task or area, then open only the linked decision records; use the legacy archive only for historical reasoning.

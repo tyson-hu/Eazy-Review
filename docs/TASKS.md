@@ -415,6 +415,37 @@ Explicitly not done: Agent infrastructure checker v2 (still deferred above),
 any new skill or subagent, any CI that calls GitHub with a token, and any board
 mutation during implementation.
 
+## Maintenance: Skills and agent infrastructure audit corrections
+
+Status: **Implemented — independent review and local validation passed;
+human acceptance pending.** User authorized implementation on 2026-09-05.
+Branch: `codex/agent-infrastructure-audit-remediation`.
+
+Scope: implement P1–P8 from the
+[`agent infrastructure audit`](notes/agent-infrastructure-audit.md): canonical
+skill graph coverage, factual README/release corrections, proportional
+validation, host-dependent delegation facts, current feature contracts,
+effect-based preview classification, read-only skill-audit routing, and global
+supporting-skill precedence. The validation choice is recorded in
+[`docs/decisions/2026-09-05-proportional-agent-validation.md`](decisions/2026-09-05-proportional-agent-validation.md).
+
+D1/D2 remain deferred: no broad safety-mirror trimming, additional UI audit
+checklist, plugin installation/removal, alternate preview driver, model change,
+checker v2, or product implementation. Task 22 remains Pending. Proposed
+Project #4 writes: **none**; no existing board item is being changed.
+
+Validation: the canonical-skill registration regression failed on the old
+registry and passed after correction. `npm run check:readonly` passed all
+108 tests (24 wrappers, 1 decision, 26 secrets, 57 infrastructure), the
+repository secret scan, typecheck, and lint. Both wrapper trees and manifest
+remain unchanged after generation; 34 decision records are current.
+Independent review found no actionable issues. Two fresh read-only contexts
+completed 25 decision scenarios with the intended routing and safeguards;
+these were simulations, not executed application or external workflows.
+User authorized commit, push, and draft PR delivery on 2026-09-05. Human
+acceptance remains pending; local validation does not establish PR readiness.
+Merge, deployment, and board actions are outside this delivery scope.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.

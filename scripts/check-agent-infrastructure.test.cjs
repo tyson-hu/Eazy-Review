@@ -648,6 +648,28 @@ test('generated sources must be registered active canonical documents', (t) => {
   );
 });
 
+test('every canonical skill has an evergreen graph registration', () => {
+  const { skills } = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, 'skills', 'manifest.json'), 'utf8'),
+  );
+  const { documents } = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const missing = skills
+    .map(({ name }) => `skills/${name}/SKILL.md`)
+    .filter((skillPath) => !documents.some((document) => (
+      document.path === skillPath
+      && document.kind === 'file'
+      && document.lifecycle === 'evergreen'
+      && document.owner === 'canonical-skill'
+    )));
+
+  assert.deepEqual(missing, [], 'Canonical skills must participate in the document graph');
+});
+
 test('GEMINI.md is registered as an AGENTS.md pointer and pointer content is validated', (t) => {
   const repositoryConfig = JSON.parse(
     fs.readFileSync(

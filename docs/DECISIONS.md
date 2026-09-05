@@ -31,6 +31,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Architecture | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Accepted | 13, 14, 15, 16, 17, 18, 19 | 2026-07-30 |
 | Tooling and CI | [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Accepted | 15 | 2026-08-07 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
+| Agent workflow | [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) | Accepted | — | 2026-09-05 |
 | Agent workflow | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Accepted | — | 2026-09-02 |
 | Agent workflow | [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) | Accepted | — | 2026-08-06 |
 | Agent workflow | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Accepted | — | 2026-08-01 |
@@ -45,6 +46,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) | Agent workflow | Accepted | 2026-09-05 |
 | [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Product and UX | Accepted | 2026-09-05 |
 | [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Architecture | Accepted | 2026-09-05 |
 | [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Product and UX | Superseded | 2026-09-03 |
@@ -54,7 +56,6 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Separate public Product Detail cache from My Rating](decisions/2026-07-26-separate-public-product-cache-from-my-rating.md) | Architecture | Accepted | 2026-08-31 |
 | [Make self-deletion caller-derived and session-aware](decisions/2026-07-26-caller-derived-session-aware-self-deletion.md) | Authentication and security | Accepted | 2026-08-22 |
 | [Fail-fast offline writes and bounded request deadlines](decisions/2026-08-09-connected-request-reliability.md) | Architecture | Accepted | 2026-08-09 |
-| [Use one sneaker-10-v1 rubric for Eazy, Community, and My Rating](decisions/2026-08-09-sneaker-10-v1-shared-rubric.md) | Data and Supabase | Accepted | 2026-08-09 |
 
 ## Browse by area
 
@@ -96,6 +97,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Agent workflow
 
+- [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) — Accepted.
 - [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) — Accepted.
 - [Human-directed skill creation may waive the three-use threshold](decisions/2026-08-06-human-directed-skill-creation-waives-three-use.md) — Accepted.
 - [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) — Accepted.

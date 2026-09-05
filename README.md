@@ -29,8 +29,8 @@ Score, and maintaining a personal My Rating.
   [Task 19 dashboard](docs/evidence/task-19-protected-account-deletion/RESULT.md)
   and [verification details](docs/evidence/task-19-protected-account-deletion/VERIFICATION.md).
 
-Feed remains a placeholder. Current task status and implementation order live
-in [`docs/TASKS.md`](docs/TASKS.md).
+Current task status and implementation order live in
+[`docs/TASKS.md`](docs/TASKS.md).
 
 ## Current Stack
 

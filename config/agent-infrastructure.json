@@ -543,6 +543,12 @@
       "staleScan": false
     },
     {
+      "path": "skills/pr-human-review/SKILL.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
       "path": "skills/pr-review-remediation/SKILL.md",
       "kind": "file",
       "lifecycle": "evergreen",
@@ -855,6 +861,16 @@
       "document": "skills/interactive-preview-loop/SKILL.md",
       "dependsOn": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
       "reason": "The evidence loop delegates capture details to the SOP."
+    },
+    {
+      "document": "skills/pr-human-review/SKILL.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "Human review follows acceptance and current-head evidence boundaries."
+    },
+    {
+      "document": "skills/pr-human-review/SKILL.md",
+      "dependsOn": "docs/TASKS.md",
+      "reason": "Human review evaluates the accepted task contract."
     },
     {
       "document": "skills/pr-review-remediation/SKILL.md",

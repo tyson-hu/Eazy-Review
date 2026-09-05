@@ -33,11 +33,9 @@ accepted scope explicitly includes them.
 
 ## Inputs expected
 
-- One named task from `docs/TASKS.md` (for example "Task 15: Real Public
-  Catalog Reads", "Task 16:
-  Core Authentication And Account State", or "Task 17: My Rating Persistence
-  And Rated Products").
-- Nothing else; scope is the task as written.
+- One named task or explicitly bounded packet from `docs/TASKS.md`.
+- The accepted packet defines edit scope; task sections supply contracts and
+  prerequisites, not additional authority.
 
 ## Read first
 
@@ -48,7 +46,7 @@ accepted scope explicitly includes them.
   `src/types/product.ts`; auth and rating mutation contracts when the task owns
   them).
 - The component rules for the task's screens in `docs/DESIGN.md`.
-- For connected-read Task 15: privileges / published-catalog rules in
+- For connected reads: privileges / published-catalog rules in
   `docs/DATA_MODEL.md` and `docs/SECURITY.md` (reads only; no schema edits).
 - For Tasks 16–19: the task-owned auth/rating contracts in
   `docs/API_CONTRACTS.md`, plus `docs/SECURITY.md` /
@@ -70,10 +68,22 @@ introduced.
 1. Restate the task scope in one sentence; anything beyond it is out of scope.
 2. Confirm every route the task touches exists in `docs/USER_FLOWS.md` under the same name. If a needed route is not documented, stop (see stop conditions).
 3. Confirm the data shapes against `docs/API_CONTRACTS.md`. Use the documented names exactly (`Product`, `ProductCardData`, `ProductDetailPublicData`, `RatingBreakdown`, and auth/rating APIs the task names).
-4. Choose the data mode from the task packet:
+4. Select feature mode from the approved behavior and data boundary.
+   Existing-schema public reads use connected-read guidance; authenticated
+   sessions, private writes, recovery, and protected deletion use their
+   matching sensitive workflow. Apply Task 15–19 details only when the
+   requested change affects those task contracts. A later existing-schema
+   catalog feature does not inherit Task 15's historical rating-unavailable
+   requirement, require a schema migration, or reopen completed acceptance.
+   Use the approved current task contract and specified files; a needed scope
+   expansion still requires the parent/user decision.
+
+   Historical task-contract cases: consult only the case affected by this packet.
+
    - **Connected-read (Task 15):** use published Supabase reads for Browse and
      Product Detail. Keep anonymous
-     browsing, map sparse data honestly, and make rating unavailable until
+     browsing and map sparse data honestly. Only for the original Task 15
+     transition before authentication exists, make rating unavailable until
      authentication is connected. Do **not** add migrations, RLS, grants, or
      schema edits in this skill.
    - **Core-auth (Task 16):** wire email/password sign-up, sign-in, sign-out,

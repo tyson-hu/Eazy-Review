@@ -61,7 +61,7 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 ## Automated Verification
 
-- Frontend unit/integration tests pass in the documented path-filtered CI
+- Frontend unit/integration tests pass in the documented Expo CI
   workflow for relevant application changes; they are not local-only.
 - Database migrations, pgTAP authorization/behavior tests, and concurrency
   races pass in the documented CI path.

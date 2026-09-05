@@ -8,7 +8,11 @@ The canonical delegation policy lives in `docs/AGENT_WORKFLOW.md`, Delegation An
 Operational reminders:
 
 - Do not delegate trivial edits; delegation overhead costs more than it saves.
-- Subagents start with a clean context and cannot see this conversation. Every delegation prompt must include the task spec, the exact file and doc paths to read (per the Context Map), and the matching skill when one exists; when none matches, say so and instruct the subagent to follow its own definition.
+- Child context and model configuration depend on the host and invocation.
+  Supply a self-contained packet with exact scope, required references,
+  constraints, acceptance checks, return format, and the matching skill (or an
+  explicit no-skill route). Inherited conversation does not establish authority.
+  Follow the canonical host/model guidance in `docs/AGENT_WORKFLOW.md`.
 - The parent agent owns scope, decomposition, escalation, and final acceptance. Subagents never accept their own work.
 - Tasks 16–19 are parent-owned, verified-strong implementations. The generic
   implementer may receive only explicitly bounded non-sensitive leaf packets;
