@@ -436,7 +436,8 @@ Presentation rules:
   Curated eyebrows come from `lead_label`.
 - Newly Added and Best Eazy Scores rows show Eazy Score; Most Rated rows show
   Community Score and the rating count. Newly Added rows and unranked curated
-  rows are unnumbered.
+  rows are unnumbered. When a ranked section owns the spotlight, the spotlight
+  is rank 1 and remaining rows start at 2.
 
 Spotlight and row taps navigate to `/product/[id]`.
 

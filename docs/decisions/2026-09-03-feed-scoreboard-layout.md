@@ -1,6 +1,7 @@
 ---
 id: decision-feed-scoreboard-layout
 date: 2026-09-03
+updated: 2026-09-05
 status: accepted
 area: product-ux
 tasks: [21]
@@ -30,9 +31,10 @@ first populated section renders as one `ProductSpotlightCard` (editorial image,
 identity, one large Eazy Score, compact Community proof, offer line, and a
 `View product` affordance). Every other product renders as a
 `ProductRankRow` inside one bordered list: optional rank number, thumbnail,
-brand and name, and one labeled composite score. Newly Added rows are
-unnumbered because recency is not a rank; Best Eazy Scores and Most Rated rows
-are numbered. Newly Added and Best Eazy Scores rows show Eazy Score; Most Rated
+brand and name, and one labeled composite score. When the lead section is
+ranked, the spotlight is rank 1 and remaining rows continue from 2. Newly
+Added rows are unnumbered because recency is not a rank; Best Eazy Scores and
+Most Rated rows are numbered. Newly Added and Best Eazy Scores rows show Eazy Score; Most Rated
 rows show Community Score with the rating count. The Browse `ProductCard`
 remains the Browse and Rated Products card and is never stacked on Feed.
 Section selection, the min-two ranked threshold, the five-item cap, and the

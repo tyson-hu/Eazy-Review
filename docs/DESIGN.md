@@ -452,11 +452,13 @@ Keep these components small. Add abstractions only when they remove real duplica
   “Trending” without a real time-based activity signal. Do not add Best
   Community Scores.
 - Only the first populated section's lead product renders as the spotlight;
-  that section's remaining products continue as rows beneath it. Newly Added
-  rows and unranked curated rows carry no rank numbers; Best Eazy Scores, Most
-  Rated, and ranked curated rows are numbered. Newly Added and Best Eazy
-  Scores rows show Eazy Score; Most Rated rows show Community Score and the
-  rating count. A curated row shows the collection's `signal`.
+  that section's remaining products continue as rows beneath it. When that
+  lead section is ranked, the spotlight is rank 1 and remaining rows continue
+  from 2. Newly Added rows and unranked curated rows carry no rank numbers;
+  Best Eazy Scores, Most Rated, and ranked curated rows are numbered. Newly
+  Added and Best Eazy Scores rows show Eazy Score; Most Rated rows show
+  Community Score and the rating count. A curated row shows the collection's
+  `signal`.
 - Post-MVP, when community text is in scope: a `Latest community reviews`
   section of Review Cards (user, product, rating, short opinion, helpful
   action) inserted after the spotlight and before the ranked sections, plus

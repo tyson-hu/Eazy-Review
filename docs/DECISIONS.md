@@ -10,7 +10,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Area | Decision | Status | Tasks | Updated |
 | --- | --- | --- | --- | --- |
-| Product and UX | [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Accepted | 21 | 2026-09-03 |
+| Product and UX | [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Accepted | 21 | 2026-09-05 |
 | Product and UX | [Make DESIGN the only app UI authority](decisions/2026-07-30-make-design-the-only-app-ui-authority.md) | Accepted | — | 2026-07-30 |
 | Product and UX | [Use Eazy Review score names in the UI](decisions/2026-06-28-use-eazy-review-score-names.md) | Accepted | 8, 9, 10, 15, 17 | 2026-07-30 |
 | Data and Supabase | [Use one sneaker-10-v1 rubric for Eazy, Community, and My Rating](decisions/2026-08-09-sneaker-10-v1-shared-rubric.md) | Accepted | 17 | 2026-08-09 |
@@ -45,8 +45,8 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Product and UX | Accepted | 2026-09-05 |
 | [Merge code-owned auto sections with row-owned curated collections on Feed](decisions/2026-09-03-curated-feed-collections.md) | Architecture | Accepted | 2026-09-05 |
-| [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Product and UX | Accepted | 2026-09-03 |
 | [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Product and UX | Superseded | 2026-09-03 |
 | [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Architecture | Accepted | 2026-09-02 |
 | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Agent workflow | Accepted | 2026-09-02 |

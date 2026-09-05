@@ -11,6 +11,8 @@ type ProductSpotlightCardProps = {
   product: ProductCardData;
   /** Truthful eyebrow naming why this product leads, e.g. `Latest addition`. */
   eyebrow: string;
+  /** Rank 1 when this card leads a numbered ranking. */
+  rank?: number;
   onPress?: () => void;
 };
 
@@ -31,16 +33,20 @@ function spotlightAccessibilityLabel(
   eazyCaption: string,
   communityCaption: string,
   offerCaption: string,
+  rank?: number,
 ): string {
   return [
     `Open ${product.brand} ${product.name}`,
+    rank != null ? `Rank ${rank}` : null,
     eyebrow,
     `Eazy Score ${spokenScore100(product.eazyScore)}`,
     eazyCaption,
     `Community Score ${spokenScore100(product.communityScore)}`,
     communityCaption,
     offerCaption,
-  ].join('. ') + '.';
+  ]
+    .filter((part) => part != null)
+    .join('. ') + '.';
 }
 
 /**
@@ -52,6 +58,7 @@ function spotlightAccessibilityLabel(
 export function ProductSpotlightCard({
   product,
   eyebrow,
+  rank,
   onPress,
 }: ProductSpotlightCardProps) {
   const imageSource = product.imageUrl ? { uri: product.imageUrl } : undefined;
@@ -84,11 +91,21 @@ export function ProductSpotlightCard({
         eazyCaption,
         communityCaption,
         offerCaption,
+        rank,
       )}
       onPress={onPress}
       className="rounded-card border border-border bg-card p-6"
       style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }]}>
-      <AppText variant="label">{eyebrow}</AppText>
+      <View className="flex-row items-center gap-3">
+        {rank != null ? (
+          <AppText
+            testID={`feed-spotlight-rank-${product.id}`}
+            className="w-5 text-lg font-semibold text-secondary">
+            {rank}
+          </AppText>
+        ) : null}
+        <AppText variant="label">{eyebrow}</AppText>
+      </View>
 
       {/* Shadow + bg on outer wrapper (Android elevation); overflow-hidden only on the clip. */}
       <View className="mt-4 rounded-card bg-background" style={productImageShadow}>

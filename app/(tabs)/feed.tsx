@@ -84,7 +84,8 @@ export default function FeedScreen() {
                 const isLead = sectionIndex === 0;
                 const spotlight = isLead ? section.products[0] : undefined;
                 const rows = isLead ? section.products.slice(1) : section.products;
-                const rankOffset = isLead ? 1 : 0;
+                // A ranked lead consumes rank 1 on the spotlight; rows continue from 2.
+                const rankOffset = isLead && section.ranked ? 1 : 0;
 
                 return (
                   <View
@@ -105,6 +106,7 @@ export default function FeedScreen() {
                       <ProductSpotlightCard
                         product={spotlight}
                         eyebrow={section.leadLabel}
+                        rank={section.ranked ? 1 : undefined}
                         onPress={() => router.push(`/product/${spotlight.id}`)}
                       />
                     ) : null}

@@ -228,6 +228,9 @@ describe('connected Feed screen', () => {
     expect(within(newlyAdded).queryAllByTestId(/^feed-row-rank-/)).toHaveLength(
       0,
     );
+    expect(
+      within(newlyAdded).queryAllByTestId(/^feed-spotlight-rank-/),
+    ).toHaveLength(0);
 
     const bestEazy = rendered.getByTestId('feed-section-best-eazy-scores');
     expect(within(bestEazy).queryAllByTestId(/^feed-spotlight-/)).toHaveLength(0);
@@ -447,7 +450,57 @@ describe('connected Feed screen', () => {
     ).toBeTruthy();
     expect(rendered.getByText("Editor's pick")).toBeTruthy();
     expect(within(curated).queryAllByTestId(/^feed-row-rank-/)).toHaveLength(0);
+    expect(
+      within(curated).queryByTestId(`feed-spotlight-rank-${olderHigh.id}`),
+    ).toBeNull();
     expect(rendered.getByText('Newly Added')).toBeTruthy();
+    await rendered.cleanup();
+  });
+
+  it('numbers a ranked curated spotlight as 1 and continues rows at 2', async () => {
+    const olderHigh = card({
+      id: 'older-high',
+      name: 'Older High',
+      eazyScore: 91,
+      ratingCount: 0,
+    });
+    const newerLow = card({
+      id: 'newer-low',
+      name: 'Newer Low',
+      eazyScore: 74,
+      ratingCount: 0,
+    });
+    mockGetProducts.mockResolvedValue([olderHigh, newerLow]);
+    mockGetFeedCollections.mockResolvedValue([
+      curatedCollection({
+        slug: 'cover-story',
+        title: "Editor's Picks",
+        caption: 'Picked by Eazy Review',
+        leadLabel: "Editor's pick",
+        isRanked: true,
+        feedPosition: 50,
+        productIds: [olderHigh.id, newerLow.id],
+      }),
+    ]);
+    const rendered = await renderWithProviders(<FeedScreen />, {
+      queryClient: testClient(),
+    });
+
+    await waitFor(() =>
+      expect(rendered.getByText("Editor's Picks")).toBeTruthy(),
+    );
+    const curated = rendered.getByTestId('feed-section-collection:cover-story');
+    expect(
+      within(curated).getByTestId(`feed-spotlight-rank-${olderHigh.id}`).props
+        .children,
+    ).toBe(1);
+    expect(
+      within(curated).getByTestId(`feed-spotlight-${olderHigh.id}`).props
+        .accessibilityLabel,
+    ).toContain('Rank 1');
+    expect(
+      within(curated).getByTestId(`feed-row-rank-${newerLow.id}`).props.children,
+    ).toBe(2);
     await rendered.cleanup();
   });
 
