@@ -524,6 +524,34 @@ without restoring the old broad infrastructure read list. Regression coverage
 checks all four roles and an unrelated Cursor-settings neighbor. Project #4
 remains deferred with the remaining audit work.
 
+## Maintenance: Expo provider consolidation
+
+Status: **Done — human accepted in PR #56 on 2026-09-05.**
+
+User approved disabling only the global Codex curated Expo provider, retaining
+the official provider. Plugin registration confirms that state; fresh discovery
+in three contexts retains all baseline skill paths. Two curated-only recipes
+(Codex Run-button setup and NativeWind5/Tailwind4 setup) were explicitly excluded
+from future curated discovery; caches remain for rollback. No catalog-size or
+performance saving is claimed. [Receipt and scope](notes/expo-provider-consolidation.md).
+This is a host-local configuration change, not a configuration replayed by Git.
+Project #4 remains deferred.
+
+## Maintenance: Remaining agent audit cleanup
+
+Status: **Done — human accepted in PR #56 on 2026-09-05.**
+
+Quarantined the redundant Codex email skill copy and disabled five exact Codex
+skill paths (generic creator, three review aliases, older Supabase performance
+entry). Retained files/provider capabilities and other host configuration.
+Fresh app/Lab/home discovery loses only the approved email entry and four
+enabled aliases; the older Supabase entry was already absent from that catalog.
+[Receipt, rollback and remaining dispositions](notes/remaining-agent-audit.md).
+Otty wrapper tests and a real synthetic hook-to-pane observation pass with
+Auto Approve disabled; the enabled decision engine remains an explicit untested
+boundary. [Otty disposition](notes/otty-downstream-investigation.md).
+Project #4 remains deferred until audit delivery.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.
