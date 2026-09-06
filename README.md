@@ -26,11 +26,44 @@ The build journal documents the project; it is not a hosted app demo.
 
 ## Preview
 
-<img src="docs/evidence/task-21-real-feed-mvp/screenshots/web-05-feed-redesign-spotlight.png" alt="Mobile web Feed showing a Newly Added sneaker spotlight with Eazy Score and Community Score" width="280">
+Discover sneakers in Feed, search the catalog in Browse, and compare **Eazy
+Score** with **Community Score** on Product Detail.
 
-Actual mobile web preview against the local catalog, captured September 3, 2026.
-This image demonstrates the Feed layout; it does not establish native or
-physical-device behavior. [Preview evidence](docs/evidence/task-21-real-feed-mvp/RESULT.md).
+<p>
+  <img src="docs/evidence/repository-experience/screenshots/ios-feed-newly-added.png" alt="Feed: Newly Added spotlight with product image, Eazy Score and offer summary" width="240">
+  <img src="docs/evidence/repository-experience/screenshots/ios-browse.png" alt="Browse: searchable sneaker catalog with Eazy Score, Community Score and offer cards" width="240">
+  <img src="docs/evidence/repository-experience/screenshots/ios-product-detail.png" alt="Product Detail: editorial and community scores, decision summary and Edit my rating action" width="240">
+</p>
+
+<details>
+<summary>More screens: curated Feed, offers, score dimensions and accounts</summary>
+
+### Curated discovery and score detail
+
+Editor's Picks highlights curated products. Product Detail shows dated offers
+by size and compares the individual Eazy and Community scoring dimensions.
+
+<p>
+  <img src="docs/evidence/repository-experience/screenshots/ios-feed-editors-picks.png" alt="Feed: Editor's Picks collection followed by Best Eazy Scores" width="280">
+  <img src="docs/evidence/repository-experience/screenshots/ios-offers-score-comparison.png" alt="Product Detail: verified offers by size and a dimension-by-dimension score comparison" width="280">
+</p>
+
+### Account states
+
+Visitors can keep browsing or sign in, create an account, and start password
+recovery. The signed-in account links to Rated Products and account controls.
+
+<p>
+  <img src="docs/evidence/repository-experience/screenshots/ios-account-signed-out.png" alt="Signed-out Account: sign in, create account and forgot-password entry points with public browsing available" width="280">
+  <img src="docs/evidence/repository-experience/screenshots/ios-account-signed-in.png" alt="Signed-in Account: rated product count, Rated Products link, sign out and Delete Account control" width="280">
+</p>
+
+</details>
+
+Screenshots supplied by the maintainer on September 6, 2026, from an iPhone 15
+simulator labeled iOS 26.5. Images retain their original simulator frames and
+development overlays. Scores and offers are captured examples, not live quotes.
+[Capture provenance](docs/evidence/repository-experience/RESULT.md#maintainer-supplied-preview-gallery).
 
 ## Stack
 

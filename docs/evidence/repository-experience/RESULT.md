@@ -132,3 +132,27 @@ acceptance require the affected checks on the current ready PR head. Live
 draft/readiness test results are recorded in PR #58 after publication; local
 event modeling alone does not prove hosted event delivery. No board or hosted
 protection settings changed for this gate.
+
+## Maintainer-supplied preview gallery
+
+On 2026-09-06 the maintainer reviewed PR #58 and requested a fuller README
+preview, supplying seven screenshots. The README now shows Feed, Browse and
+Product Detail first, with expandable curated Feed, offers/score comparison,
+signed-out and signed-in Account screens. This revision request is not a
+record of final PR acceptance.
+
+The source windows identify Eazy-Review-iPhone-15 and iOS 26.5. All seven PNGs
+were copied byte-for-byte and hash-verified against the supplied files; no
+cropping, retouching or UI changes were made. They retain simulator chrome and
+development overlays. Their capture date, app revision and backend target were
+not independently established. Displayed offers/scores are point-in-time
+examples. These screenshots illustrate the UI; they do not independently prove
+physical-device behavior or completion of the actions shown on screen.
+
+- [Newly Added Feed](screenshots/ios-feed-newly-added.png)
+- [Browse](screenshots/ios-browse.png)
+- [Product Detail](screenshots/ios-product-detail.png)
+- [Editor's Picks](screenshots/ios-feed-editors-picks.png)
+- [Offers and score comparison](screenshots/ios-offers-score-comparison.png)
+- [Signed-out Account](screenshots/ios-account-signed-out.png)
+- [Signed-in Account](screenshots/ios-account-signed-in.png)
