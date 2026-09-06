@@ -417,8 +417,7 @@ mutation during implementation.
 
 ## Maintenance: Skills and agent infrastructure audit corrections
 
-Status: **Implemented — independent review and local validation passed;
-human acceptance pending.** User authorized implementation on 2026-09-05.
+Status: **Human accepted in PR #53 on 2026-09-05 — merge pending.** User authorized implementation on 2026-09-05.
 Branch: `codex/agent-infrastructure-audit-remediation`.
 
 Scope: implement P1–P8 from the
@@ -443,9 +442,8 @@ remain unchanged after generation; 34 decision records are current.
 Independent review found no actionable issues. Two fresh read-only contexts
 completed 25 decision scenarios with the intended routing and safeguards;
 these were simulations, not executed application or external workflows.
-User authorized commit, push, and draft PR delivery on 2026-09-05. Human
-acceptance remains pending; local validation does not establish PR readiness.
-Merge, deployment, and board actions are outside this delivery scope.
+User authorized commit, push, and draft PR delivery on 2026-09-05. The user subsequently authorized ready/merge of PR #53 after exact-head gates.
+Deployment is outside scope; Project #4 remains explicitly deferred.
 
 ## Maintenance: Agent infrastructure simplification
 
