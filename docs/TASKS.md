@@ -552,6 +552,25 @@ Auto Approve disabled; the enabled decision engine remains an explicit untested
 boundary. [Otty disposition](notes/otty-downstream-investigation.md).
 Project #4 remains deferred until audit delivery.
 
+## Maintenance: Optional Otty terminal adoption
+
+Status: **Done — human accepted in PR #57 on 2026-09-06.**
+
+User accepted staged implementation of optional visible command panes, scoped
+cross-harness terminal reading, and independent parallel checks. Native
+execution remains the default for quick work. No new skill, mandatory agent
+delegation, application dependency, or persistent IPC permission was adopted.
+[Canonical workflow](MCP_WORKFLOW.md#optional-otty-terminal-workflow) and
+[staged evidence](evidence/otty-adoption/RESULT.md).
+
+Otty 1.4.1 marker/readback, typecheck, deliberate nonzero exit and two concurrent
+checks passed. Cursor desktop matching readback is user-relayed evidence;
+noninteractive Cursor CLI Ask rejected the reads before execution. Enabled
+Auto Approve remains unverified and outside adoption. Temporary typing was
+restored off and owned test panes closed. No unattended agent-chain or speedup
+claim. Proposed Project #4 writes: none; reconciliation remains a separate
+follow-up after this delivery.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.

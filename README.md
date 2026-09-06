@@ -85,6 +85,9 @@ For Expo API, routing or configuration changes, consult the affected SDK 57 guid
 
 ## Quality Checks
 
+Otty is optional for visible command panes and scoped terminal readback across
+coding tools. See the [Otty workflow and setup limits](docs/MCP_WORKFLOW.md#optional-otty-terminal-workflow).
+
 Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Use npm `>=11.16.0 <12` (CI pins `11.17.0`). The repository rejects unsupported
