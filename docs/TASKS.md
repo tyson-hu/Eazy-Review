@@ -554,7 +554,7 @@ Project #4 remains deferred until audit delivery.
 
 ## Maintenance: Optional Otty terminal adoption
 
-Status: **Implemented and validated — draft PR delivery; merge pending.**
+Status: **Done — human accepted in PR #57 on 2026-09-06.**
 
 User accepted staged implementation of optional visible command panes, scoped
 cross-harness terminal reading, and independent parallel checks. Native
@@ -568,8 +568,8 @@ checks passed. Cursor desktop matching readback is user-relayed evidence;
 noninteractive Cursor CLI Ask rejected the reads before execution. Enabled
 Auto Approve remains unverified and outside adoption. Temporary typing was
 restored off and owned test panes closed. No unattended agent-chain or speedup
-claim. Commit/push/PR delivery remains separate. Proposed Project #4 writes:
-none; reconciliation remains deferred until this delivery is complete.
+claim. Proposed Project #4 writes: none; reconciliation remains a separate
+follow-up after this delivery.
 
 ## Revised Sequence
 
