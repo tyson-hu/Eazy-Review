@@ -4,8 +4,8 @@ Date: 2026-09-06.
 Baseline: `2bc6a200fb0e4d8505b809b39083091ab1d8269d`.
 Branch: `codex/repository-experience`.
 Status: Local implementation and verification complete;
-[draft PR #58](https://github.com/tyson-hu/Eazy-Review/pull/58) is open.
-No merge or human acceptance of the finished implementation recorded.
+[PR #58](https://github.com/tyson-hu/Eazy-Review/pull/58) is open.
+Human accepted the finished implementation on 2026-09-06. Merge remains pending.
 
 ## Scope
 

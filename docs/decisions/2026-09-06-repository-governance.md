@@ -4,7 +4,7 @@ date: 2026-09-06
 status: accepted
 area: tooling-ci
 tasks: []
-pr: null
+pr: 58
 tags: [ci, repository, security]
 supersedes: []
 ---
