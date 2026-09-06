@@ -449,7 +449,7 @@ Merge, deployment, and board actions are outside this delivery scope.
 
 ## Maintenance: Agent infrastructure simplification
 
-Status: **Candidate A implemented and locally verified — Cursor CLI retrieval probes passed.**
+Status: **Candidate A human accepted in PR #53 on 2026-09-05 — merge pending.**
 The user approved the concrete repository changes and local trials on 2026-09-05.
 Branch: `codex/agent-infrastructure-simplification-design`, based on
 `a78b74665a427585c4acd2603e91578dc0a67424`. The user authorized commit/push
@@ -481,7 +481,7 @@ runtime performance or broad reliability claim.
 Global duplicate quarantine and preview-driver substitution remain separate
 proposals. No application behavior, global configuration or external state is
 changed by this work. Candidate A delivery is authorized through draft PR #53;
-human acceptance and merge remain pending. The user explicitly deferred Project
+Candidate A human acceptance is recorded; merge remains pending. The user explicitly deferred Project
 #4 work until the remaining audit work is finished. Proposed Project #4 writes:
 **none for this delivery**. Task 22 remains Pending.
 

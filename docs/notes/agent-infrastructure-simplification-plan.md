@@ -250,3 +250,12 @@ Rewrite title/body around the combined final scope. No merge/readiness change.
 User explicitly defers Project #4 work until remaining audit work is finished;
 this supersedes routine board-sync timing for this delivery. No board writes.
 Global B/C remain pending and require their own scope.
+
+### 7 — Candidate A human accepted
+
+User accepted candidate A on 2026-09-05. Record acceptance in TASKS and PR #53;
+merge still requires its own action and exact-head checks/review resolution.
+Project #4 stays deferred under the user's explicit instruction. Recommend
+separate scoped follow-up branches/PRs after #53 merges; local global cleanup
+need not itself become a repository PR. No B/C implementation starts from this
+acceptance, and no new branch or merge is requested yet.
