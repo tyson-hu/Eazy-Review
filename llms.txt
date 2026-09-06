@@ -1,0 +1,52 @@
+# Eazy Review
+
+> Mobile-first sneaker discovery and reviews built with Expo, React Native,
+> TypeScript and Supabase. Public browsing; login to rate. Eazy Score,
+> Community Score and My Rating are distinct product concepts.
+
+This is a repository reading map in the llms.txt convention, not a new policy
+or an executable installer. Resolve relative links from the repository root
+at the same checkout/ref. Read AGENTS.md first and only the documents needed
+for the user's task. package.json and package-lock.json own dependency versions.
+Do not assume this file is automatically loaded by an agent or served by the app.
+
+Use the user's request and current Git/PR state. A skill, MCP registration or
+board status does not grant action authority. Keep secrets local. Production
+database access and agent-executed account deletion are forbidden. Review
+executable inputs before host execution; follow SECURITY for isolation when
+trust is not established. Publication, hosted changes and acceptance follow
+the canonical delivery/tool policies linked below.
+
+## Start here
+
+- [Agent entrypoint](AGENTS.md): Shared instructions and routing to affected contracts.
+- [Project README](README.md): Product overview, evidence and quick start.
+- [Host and agent setup](docs/HOST_SETUP.md): New workstation, agent discovery, service connections, verification and migration.
+- [Development guide](docs/DEVELOPMENT.md): Local backend, web/native builds, device networking and recovery setup.
+- [Package manifest](package.json): Dependencies, runtime/package-manager requirements and exact scripts.
+
+## Agent infrastructure and boundaries
+
+- [Agent workflow](docs/AGENT_WORKFLOW.md): Validation selection, delegation, review and failure handling.
+- [Security](docs/SECURITY.md): Install trust, secrets, environment boundaries and vulnerability reporting.
+- [External tools](docs/MCP_WORKFLOW.md): Optional local MCP setup, ego-browser, Otty and effect-based authorization.
+- [Documentation and delivery](docs/DOCUMENTATION_POLICY.md): Evidence, PR lifecycle, human acceptance and exact Project board approvals.
+- [Skill manifest](skills/manifest.json): Five project skills; canonical procedures are under skills/, generated discovery wrappers are committed.
+- [Infrastructure graph](config/agent-infrastructure.json): Document ownership and dependencies; not credentials or MCP connection configuration.
+
+## Product and implementation
+
+- [Task ledger](docs/TASKS.md): Canonical work status; inspect only relevant entries and verify live delivery state.
+- [MVP scope](docs/BLUEBOOK.md): Included and excluded product scope.
+- [UI design](docs/DESIGN.md): Canonical interface contract.
+- [User flows](docs/USER_FLOWS.md): Navigation and journey behavior.
+- [API contracts](docs/API_CONTRACTS.md): Frontend types, data access and auth boundaries.
+- [Data model](docs/DATA_MODEL.md): Database schema, RLS and grants.
+
+## Optional
+
+- [Decisions](docs/DECISIONS.md): Generated index of accepted decisions; search relevant records rather than loading the whole history.
+- [Dependency security](docs/DEPENDENCY_SECURITY.md): Known dependency-alert dispositions and revisit gates.
+- [Release checklist](docs/RELEASE_CHECKLIST.md): Release requirements; local setup is not release approval.
+- [Contributing](CONTRIBUTING.md): Maintainer-led contribution workflow.
+- [Support](SUPPORT.md): Questions, bugs and private security reporting routes.

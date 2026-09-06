@@ -1,4 +1,26 @@
-# Security Rules
+# Security Policy
+
+## Reporting a vulnerability
+
+Use [GitHub private vulnerability reporting](https://github.com/tyson-hu/Eazy-Review/security/advisories/new)
+for suspected vulnerabilities. Do not open a public issue or publish an exploit
+before coordinated disclosure. If the form is unavailable, email
+`me@tianzhe.me` with a brief description and a way to contact you privately.
+
+Include the affected commit or dependency version, the affected behavior,
+sanitized reproduction steps and the potential impact. Never include live
+credentials, complete recovery URLs, environment files or another person's
+private data. Use your own disposable local fixtures; do not test against
+production services or other people's accounts.
+
+The maintained development line is `master`; there is no supported production
+release or backport schedule. Reports are reviewed by the maintainer without
+a guaranteed response time. Acknowledgment, remediation and disclosure are
+coordinated privately. [Current dependency dispositions](DEPENDENCY_SECURITY.md)
+record known findings and their limits; an open alert is not automatically a
+confirmed exploitable application defect.
+
+## Working safely
 
 Canonical security rules for all agent and human work in this repo, regardless of which tool or model is running. `.cursor/rules/security.mdc` mirrors this file for Cursor's always-apply mechanism; this file is the home, the rule is the mirror.
 

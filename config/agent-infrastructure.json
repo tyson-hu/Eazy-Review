@@ -114,6 +114,12 @@
       "owner": "tool-adapter"
     },
     {
+      "path": ".github/ISSUE_TEMPLATE",
+      "kind": "directory",
+      "lifecycle": "evergreen",
+      "owner": "tool-adapter"
+    },
+    {
       "path": ".github/pull_request_template.md",
       "kind": "file",
       "lifecycle": "mirror",
@@ -132,6 +138,18 @@
       "owner": "tool-adapter"
     },
     {
+      "path": "CODE_OF_CONDUCT.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
       "path": "GEMINI.md",
       "kind": "file",
       "lifecycle": "mirror",
@@ -139,6 +157,12 @@
     },
     {
       "path": "README.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "SUPPORT.md",
       "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
@@ -181,10 +205,22 @@
       "owner": "generated-command"
     },
     {
+      "path": "docs/DEPENDENCY_SECURITY.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
       "path": "docs/DESIGN.md",
       "kind": "file",
       "lifecycle": "evergreen",
       "owner": "human-product"
+    },
+    {
+      "path": "docs/DEVELOPMENT.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
     },
     {
       "path": "docs/DOCUMENTATION_POLICY.md",
@@ -194,6 +230,12 @@
     },
     {
       "path": "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/HOST_SETUP.md",
       "kind": "file",
       "lifecycle": "evergreen",
       "owner": "parent-agent"
@@ -308,6 +350,12 @@
     },
     {
       "path": "docs/evidence/pr-24-review-correction",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/repository-experience",
       "kind": "directory",
       "lifecycle": "historical",
       "owner": "historical-record"
@@ -515,6 +563,12 @@
       "path": "docs/superpowers",
       "kind": "directory",
       "lifecycle": "status",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "llms.txt",
+      "kind": "file",
+      "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
@@ -815,6 +869,86 @@
       "document": "skills/pr-review-remediation/references/remediation-state.md",
       "dependsOn": "docs/AGENT_WORKFLOW.md",
       "reason": "PR terminal validation and repair rules consume the shared check contract."
+    },
+    {
+      "document": "README.md",
+      "dependsOn": "docs/DEVELOPMENT.md",
+      "reason": "Quick start and detailed development instructions must agree."
+    },
+    {
+      "document": "docs/DEVELOPMENT.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Development setup preserves canonical install and environment boundaries."
+    },
+    {
+      "document": "CONTRIBUTING.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "Contribution checks use the canonical validation and review workflow."
+    },
+    {
+      "document": "CONTRIBUTING.md",
+      "dependsOn": "docs/DOCUMENTATION_POLICY.md",
+      "reason": "PR guidance retains the canonical documentation and delivery requirements."
+    },
+    {
+      "document": "SUPPORT.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Support routes vulnerability reports to the canonical private reporting policy."
+    },
+    {
+      "document": ".github/ISSUE_TEMPLATE",
+      "dependsOn": "SUPPORT.md",
+      "reason": "Issue chooser and forms preserve the documented support routes."
+    },
+    {
+      "document": ".github/ISSUE_TEMPLATE",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Issue forms keep private vulnerability reports out of public issues."
+    },
+    {
+      "document": "docs/SECURITY.md",
+      "dependsOn": "docs/DEPENDENCY_SECURITY.md",
+      "reason": "The public security policy links current dependency dispositions."
+    },
+    {
+      "document": "docs/RELEASE_CHECKLIST.md",
+      "dependsOn": "docs/DEPENDENCY_SECURITY.md",
+      "reason": "Release review revisits known dependency risks against its graph."
+    },
+    {
+      "document": "README.md",
+      "dependsOn": "docs/HOST_SETUP.md",
+      "reason": "Onboarding entry links to the maintained host setup and migration procedure."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/DEVELOPMENT.md",
+      "reason": "Host bootstrap delegates app and device setup to its canonical guide."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/MCP_WORKFLOW.md",
+      "reason": "Connection instructions inherit user-local configuration and tool boundaries."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "Host checks and delegation preserve the canonical validation map."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Installation and migration preserve executable trust and private configuration."
+    },
+    {
+      "document": "llms.txt",
+      "dependsOn": "AGENTS.md",
+      "reason": "LLM navigation does not replace the canonical agent entrypoint."
+    },
+    {
+      "document": "llms.txt",
+      "dependsOn": "docs/HOST_SETUP.md",
+      "reason": "The compact reading map routes setup and migration to maintained instructions."
     }
   ],
   "staleTerms": {
@@ -832,6 +966,8 @@
       "docs/evidence/otty-adoption/**",
       "docs/evidence/pr-24-review-correction",
       "docs/evidence/pr-24-review-correction/**",
+      "docs/evidence/repository-experience",
+      "docs/evidence/repository-experience/**",
       "docs/evidence/s2-mock-catalog-retirement",
       "docs/evidence/s2-mock-catalog-retirement/**",
       "docs/evidence/task-10-baseline-ux",
@@ -1036,6 +1172,7 @@
     {
       "id": "tooling-and-ci",
       "changedPaths": [
+        ".github/dependabot.yml",
         ".env.example",
         ".github/workflows/**",
         ".gitignore",

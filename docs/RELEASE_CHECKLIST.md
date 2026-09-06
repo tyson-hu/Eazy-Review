@@ -71,6 +71,10 @@ Use this after the MVP flow exists. Do not treat it as permission to skip the ro
 
 ## Security
 
+- Reassess the [known dependency findings](DEPENDENCY_SECURITY.md) against
+  the release dependency graph. The unresolved Expo Router decoder finding
+  needs a compatible fix or explicitly accepted, validated mitigation before
+  release; the build-time uuid call-site assessment must still hold.
 - No Supabase service-role key in client code.
 - Environment variables are documented.
 - CI uses the package-manager version declared in `package.json`, and

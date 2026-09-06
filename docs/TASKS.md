@@ -571,6 +571,34 @@ restored off and owned test panes closed. No unattended agent-chain or speedup
 claim. Proposed Project #4 writes: none; reconciliation remains a separate
 follow-up after this delivery.
 
+## Maintenance: Repository experience and governance
+
+Status: Done — human accepted in [PR #58](https://github.com/tyson-hu/Eazy-Review/pull/58) on 2026-09-06.
+Branch: `codex/repository-experience`.
+
+Scope: improve README and developer onboarding, community contribution and
+reporting routes, dependency-alert dispositions, reviewed CI action pins,
+CodeQL and the approved hosted repository controls. The same PR includes a
+host/agent setup and migration guide plus an `llms.txt` reading map, requested
+on 2026-09-06. The approved CI audit adds draft gates for Database CI and
+CodeQL, retaining full Expo validation and deferring a docs-only classifier.
+Task 22 remains Pending;
+broader E2E or cross-feature test work is not selected.
+
+All 11 approved historical Project #4 writes are applied and verified against
+68 unique items. INF-13 was separately approved and created as In Review after PR #58 opened.
+Human acceptance is recorded above; merge remains a separate gate. Canonical setup,
+reporting and merge guidance live in DEVELOPMENT, SECURITY and AGENT_WORKFLOW;
+the [delivery evidence](evidence/repository-experience/RESULT.md) records actual
+checks and hosted state separately from this task's acceptance.
+
+Dependency review: [current dispositions](DEPENDENCY_SECURITY.md) document an
+unresolved compatible fix for the Expo Router decoder and the unaffected v4
+call observed in xcode's uuid usage. No dependency override or alert dismissal.
+Hosted settings, local validation, PR delivery and acceptance remain separately
+reported; acceptance covers the implemented repository improvements, not a
+clean-host installation or resolution of the documented dependency alerts.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.
