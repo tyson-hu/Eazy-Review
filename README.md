@@ -371,3 +371,8 @@ acceptance for this branch (2026-08-07) is recorded in
 ## Documentation Discipline
 
 Doc-update rules live in `docs/DOCUMENTATION_POLICY.md`; apply them before commit/PR handoff.
+
+Browser-based development, research and verification use ego-browser. See
+[tool policy](docs/MCP_WORKFLOW.md) and the
+[web preview procedure](docs/WEB_MOBILE_PREVIEW_SOP.md). Native and physical
+acceptance still require their respective environments.

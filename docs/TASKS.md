@@ -483,6 +483,35 @@ Candidate A human acceptance is recorded; merge remains pending. The user explic
 #4 work until the remaining audit work is finished. Proposed Project #4 writes:
 **none for this delivery**. Task 22 remains Pending.
 
+## Maintenance: Global duplicate skill cleanup (candidate B)
+
+Status: **Implemented and independently verified locally — human review pending.**
+
+User selected this follow-up after candidate A. Eight identical global skill
+installations (354 files) were quarantined outside discovery roots; unchanged
+copies remain under `~/.agents/skills`. Fresh Codex discovery in three working
+directories and Codex/Cursor retrieval probes preserve availability. Distinct
+plugin versions and the separate Claude vibe-usage copy remain unchanged.
+[Operation receipt and rollback](notes/global-skill-cleanup.md) record paths,
+proof and limits. This host-local operation is not reproduced by a Git merge.
+User authorized combined B/C commit, push and PR delivery; Project #4 remains
+deferred by user instruction.
+
+## Maintenance: SDLC browser driver (candidate C)
+
+Status: **Implemented and independently verified locally — human review pending.**
+
+The user selected ego-browser to replace Playwright throughout browser-based
+SDLC work. Project routing, tool policy and preview procedures now reflect that
+choice; native/physical gates remain separate. [Progress](notes/preview-driver-c.md)
+and [fixture results](evidence/preview-driver-c/RESULT.md) distinguish verified
+capture/interaction capabilities from the unproven automated-dialog criterion.
+The [reliability follow-up](evidence/ego-browser-reliability/RESULT.md) verified
+scrolled CDP capture, raw AX names and a local anonymous Expo journey; native
+JavaScript dialog automation remains blocked by runtime ownership stops.
+No full app acceptance, global tool uninstall or publication is implied. Project #4
+remains deferred by the user.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.

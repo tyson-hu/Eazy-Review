@@ -1,0 +1,10 @@
+- generic [ref=e1] [box=20,-659,353,1492]:
+  - heading "Preview driver capability fixture" [level=1] [ref=e2] [box=20,-659,353,83]
+  - text: Search products
+  - textbox "Search products" [ref=e3] [box=20,-517,196,27]: sneaker
+  - button "Apply query" [ref=e4] [box=20,-475,111,27]
+  - status [ref=e5] [box=20,-431,353,21]: Bottom reached
+  - button "Local dialog" [ref=e6] [box=20,-392,112,27]
+  - button "Emit fixture error" [ref=e7] [box=20,-351,149,27]
+  - generic [ref=e8] [box=20,-309,353,1100]: Scroll to the bottom control
+  - button "Bottom control" [active] [ref=e9] [box=20,806,132,27]

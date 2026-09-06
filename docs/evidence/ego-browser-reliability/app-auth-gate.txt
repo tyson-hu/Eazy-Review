@@ -1,0 +1,29 @@
+root
+  container
+    container
+    button "Back" [ref=1727, loc=css:button[aria-label="Back"]]
+      text ""
+    heading
+      text "Sign in"
+    container
+      container
+        text "Sign in"
+        text "Sign in to access your account and prepare for saved ratings."
+      container
+        container
+          text "EMAIL"
+          textbox "Email" [ref=1701, loc=css:input[placeholder="you@example.com"]]
+            text "you@example.com"
+            container
+        container
+          text "PASSWORD"
+          textbox "Password" [ref=1708, loc=css:input[placeholder="Password"]]
+            text "Password"
+            container
+        button [ref=1714, loc=unstable]
+          text "Sign in"
+        link [ref=1715, loc=href:/auth/forgot-password, url=http://localhost:18764/auth/forgot-password]
+          text "Forgot password?"
+        link [ref=1716, loc=href:/auth/sign-up?returnTo=%2Fproduct%2Fa1000000-0000-4000-8000-000000000001, url=http://localhost:18764/auth/sign-up?returnTo=%2Fproduct%2Fa1000000-0000-4000-8000-000000000001]
+          text "Create account"
+  container
