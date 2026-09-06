@@ -38,6 +38,14 @@ Actions, with minimal permissions and no application installation or build.
 Keep private vulnerability reporting available, with the canonical public
 reporting policy in docs/SECURITY.md.
 
+Defer Database CI and CodeQL jobs on draft PRs, explicitly triggering on
+`ready_for_review` so readiness runs them without a new commit. Preserve
+Database path filters and all master/scheduled behavior. Converting to draft
+triggers cancellation through the existing concurrency groups. Keep the full
+required Expo `validate` job on every PR update; do not path-filter or skip it.
+This reduces iteration time, not compute charges: standard hosted Actions
+runners are free for this public repository. A docs-only classifier is deferred.
+
 ## Consequences
 
 Routine changes are reviewable PRs with a stable required check. Database CI
@@ -46,6 +54,11 @@ a universal required check: skipped workflows may never report a result.
 CodeQL provides an additional signal and is not a substitute for runtime
 checks or human acceptance. No new CodeQL check is required before successful
 hosted runs establish its actual behavior and identity.
+
+A skipped draft analysis is deferred coverage, not a successful database or
+security test. Require the affected checks on the current ready PR head before
+acceptance/merge. These deterministic checks complement Codex review; their
+execution does not depend on an external reviewer finishing.
 
 Rulesets and reporting settings live on GitHub. Merging this document does
 not apply them; authorized changes require separate hosted readback. An

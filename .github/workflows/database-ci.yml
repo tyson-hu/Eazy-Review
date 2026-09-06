@@ -2,6 +2,7 @@ name: Database CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     paths:
       - ".github/workflows/database-ci.yml"
       - ".npmrc"
@@ -39,6 +40,8 @@ concurrency:
 
 jobs:
   database:
+    # Draft conversion cancels prior work; readiness runs the same head without a new commit.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

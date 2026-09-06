@@ -66,7 +66,14 @@ DOCUMENTATION_POLICY. Verify hosted rules before relying on their enforcement.
 
 Database CI remains path-filtered and must pass for affected changes; it is
 not a universal required check. CodeQL analyzes JavaScript/TypeScript and
-Actions on PRs to master, master pushes and a weekly schedule. It does not
+Actions on ready PRs to master, master pushes and a weekly schedule. Database
+CI and CodeQL defer their jobs while a PR is draft; skipped draft jobs mean
+deferred coverage, not passing analysis. Marking the PR ready triggers these
+workflows on the same head without another commit; converting back to draft
+cancels superseded work through their existing concurrency groups. Database
+path filters still apply. Expo's required `validate` keeps its full behavior
+on every PR update. Before acceptance/merge, verify the affected ready-PR
+checks on the current head. CodeQL does not
 replace application, database or human checks. Do not enable duplicate CodeQL
 default setup alongside the versioned workflow or require its check names
 before observing successful runs. External Actions are pinned to full SHAs;

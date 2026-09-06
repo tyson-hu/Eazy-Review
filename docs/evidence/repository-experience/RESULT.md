@@ -116,3 +116,19 @@ and the llms.txt convention. This is documentation validation, not evidence of
 an install, credential migration or live MCP connection on a clean second host.
 INF-13 already describes repository onboarding and remains In Review; no
 additional board writes are proposed for this extension.
+
+## Approved draft CI gate
+
+The cost/review audit found no automation duplicating Codex review: CodeQL,
+application and database checks provide complementary evidence. Standard
+Ubuntu Actions compute is free for this public repository. The approved first
+stage defers Database CI and CodeQL jobs while PRs are draft, explicitly handles
+readiness and draft-conversion events, and preserves full required Expo
+validation, Database path filters, master/schedule triggers and concurrency.
+A documentation-only classifier remains deferred.
+
+Skipped draft jobs mean deferred coverage, not passing analysis. Review and
+acceptance require the affected checks on the current ready PR head. Live
+draft/readiness test results are recorded in PR #58 after publication; local
+event modeling alone does not prove hosted event delivery. No board or hosted
+protection settings changed for this gate.

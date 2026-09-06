@@ -580,7 +580,9 @@ Scope: improve README and developer onboarding, community contribution and
 reporting routes, dependency-alert dispositions, reviewed CI action pins,
 CodeQL and the approved hosted repository controls. The same PR includes a
 host/agent setup and migration guide plus an `llms.txt` reading map, requested
-on 2026-09-06. Task 22 remains Pending;
+on 2026-09-06. The approved CI audit adds draft gates for Database CI and
+CodeQL, retaining full Expo validation and deferring a docs-only classifier.
+Task 22 remains Pending;
 broader E2E or cross-feature test work is not selected.
 
 All 11 approved historical Project #4 writes are applied and verified against
