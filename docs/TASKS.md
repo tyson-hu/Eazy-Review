@@ -561,7 +561,7 @@ cross-harness terminal reading, and independent parallel checks. Native
 execution remains the default for quick work. No new skill, mandatory agent
 delegation, application dependency, or persistent IPC permission was adopted.
 [Canonical workflow](MCP_WORKFLOW.md#optional-otty-terminal-workflow) and
-[staged evidence](notes/otty-adoption.md).
+[staged evidence](evidence/otty-adoption/RESULT.md).
 
 Otty 1.4.1 marker/readback, typecheck, deliberate nonzero exit and two concurrent
 checks passed. Cursor desktop matching readback is user-relayed evidence;

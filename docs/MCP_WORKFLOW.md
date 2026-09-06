@@ -77,7 +77,7 @@ off and verify both UI and saved state. Recheck behavior on other builds.
 Cursor desktop readback matched Codex in a user-relayed pilot. Noninteractive
 Cursor CLI Ask rejected those reads before execution; do not assume unattended
 cross-agent access works or loosen permissions to make it pass. Use a scoped
-interactive handoff when needed. [Adoption evidence and limits](notes/otty-adoption.md).
+interactive handoff when needed. [Adoption evidence and limits](evidence/otty-adoption/RESULT.md).
 
 ## MCP Tool Policy
 

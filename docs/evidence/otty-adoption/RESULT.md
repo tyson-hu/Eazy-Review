@@ -3,7 +3,7 @@
 Recorded 2026-09-06 against Otty 1.4.1 on macOS. Project command inputs matched
 merged base `69385d475502ac0c361a3279b712c798f389cd8c` (PR #56).
 This is a point-in-time receipt, not a setup script or proof for other builds.
-[MCP_WORKFLOW](../MCP_WORKFLOW.md#optional-otty-terminal-workflow) owns current
+[MCP_WORKFLOW](../../MCP_WORKFLOW.md#optional-otty-terminal-workflow) owns current
 routing and setup guidance. No application behavior or required dependency changed.
 
 ## Adopted scope

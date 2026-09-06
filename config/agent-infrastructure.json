@@ -295,6 +295,18 @@
       "owner": "parent-agent"
     },
     {
+      "path": "docs/evidence/otty-adoption",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/otty-adoption/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/pr-24-review-correction",
       "kind": "directory",
       "lifecycle": "historical",
@@ -816,6 +828,8 @@
       "docs/archive/**",
       "docs/decisions/archive",
       "docs/decisions/archive/**",
+      "docs/evidence/otty-adoption",
+      "docs/evidence/otty-adoption/**",
       "docs/evidence/pr-24-review-correction",
       "docs/evidence/pr-24-review-correction/**",
       "docs/evidence/s2-mock-catalog-retirement",
