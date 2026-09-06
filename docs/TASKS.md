@@ -526,7 +526,7 @@ remains deferred with the remaining audit work.
 
 ## Maintenance: Expo provider consolidation
 
-Status: **Implemented and independently verified locally — human review pending.**
+Status: **Done — human accepted in PR #56 on 2026-09-05.**
 
 User approved disabling only the global Codex curated Expo provider, retaining
 the official provider. Plugin registration confirms that state; fresh discovery
@@ -539,7 +539,7 @@ Project #4 remains deferred.
 
 ## Maintenance: Remaining agent audit cleanup
 
-Status: **Approved R1/R2 applied and independently verified locally.**
+Status: **Done — human accepted in PR #56 on 2026-09-05.**
 
 Quarantined the redundant Codex email skill copy and disabled five exact Codex
 skill paths (generic creator, three review aliases, older Supabase performance
