@@ -599,6 +599,29 @@ Hosted settings, local validation, PR delivery and acceptance remain separately
 reported; acceptance covers the implemented repository improvements, not a
 clean-host installation or resolution of the documented dependency alerts.
 
+## Maintenance: Project navigation and stable item IDs
+
+Status: Documentation Done — human accepted in chat on 2026-09-06. The
+separately approved hosted migration follows this PR's merge and is verified
+against the live board; this record does not claim that execution in advance.
+Branch: `codex/project4-navigation`.
+
+Scope: reorganize Project #4 into Open work, Product roadmap, Maintenance,
+Ideas, History and All items; migrate its existing 70 draft items to permanent
+ER IDs with original references retained in Alias; add Source links and rename
+Potential work / Gate or next move to Outcome / Next step. Preserve all
+statuses, lane values, planning estimates, complete bodies and evidence links.
+The [mirror policy](DOCUMENTATION_POLICY.md#github-project-4-mirror) owns the
+identity and lookup contract; the [decision](decisions/2026-09-06-project-navigation-and-stable-ids.md)
+records why identity is independent of task numbers and category.
+
+The exact board migration was approved in chat, including the 70 item updates,
+two new fields, two field renames, six saved views and README replacement.
+The approved execution plan coordinates repository-policy publication with
+the migration. This maintenance entry does not create another board item,
+select Task 22, renumber product tasks, or change their acceptance state.
+No new board-card creation or status transition is proposed.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.

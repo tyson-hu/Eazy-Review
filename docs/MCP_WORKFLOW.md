@@ -134,7 +134,14 @@ Approval, `ID` checks, and stop-on-error do not neutralize such text.
   README); `gh project field-list 4 --owner tyson-hu --format json` (field and
   option IDs); `gh project item-list 4 --owner tyson-hu --format json --limit
   <n>` with `<n>` above the returned `totalCount`, so the `ID` uniqueness
-  check below sees every item.
+  check below sees every active item. Identity lookup and new-ID allocation
+  also require archived items: paginate the GitHub GraphQL ProjectV2
+  `items(archivedStates: [ARCHIVED, NOT_ARCHIVED], first: 100, after: <cursor>)`
+  connection to `hasNextPage: false`, including `isArchived` and ID/Alias field
+  values, and reconcile its count with the complete inventory. Keep both
+  archived states on every page; the default connection excludes archived
+  items. Do not treat a filtered UI or active-only list as proof of global
+  uniqueness.
 - **REVERSIBLE WRITE** (agent-applied after the human has approved the PR
   body's `Project #4 moves:` line; only the writes on that approved line; state
   `ID/title: from → to`, or the field being set, before each call). One
@@ -142,8 +149,7 @@ Approval, `ID` checks, and stop-on-error do not neutralize such text.
   - Field change: `gh project item-edit --project-id <project> --id <item>
     --field-id <field> --single-select-option-id <option>` for Status, Lane,
     Priority, Benefit, Confidence, or Difficulty; the same command with
-    `--text "$(cat <value file>)"` for ID, Potential work, or Gate or next
-    move.
+    `--text "$(cat <value file>)"` for ID, Alias, Source, Outcome, or Next step.
   - Title or body: `gh project item-edit --id <draft issue ID> --title
     "$(cat <title file>)" --body "$(cat <body file>)"` (either flag alone is
     fine). The draft issue ID is the item's `content.id` (`DI_…`) in the
@@ -152,7 +158,8 @@ Approval, `ID` checks, and stop-on-error do not neutralize such text.
   - Create: `gh project item-create 4 --owner tyson-hu --title "$(cat <title
     file>)" --body "$(cat <body file>)" --format json` (creates a draft issue
     with title and body only and returns the item ID), then one `item-edit`
-    per field until ID, Lane, Status, and the planning fields are all set.
+    per field until ID, Alias (unless explicitly approved empty), Source, Lane,
+    Status, and the planning fields are all set.
   - Archive: `gh project item-archive 4 --owner tyson-hu --id <item>`.
   - README: first save the current README with `gh project view 4 --owner
     tyson-hu --format json | jq -r '.readme' > <README file>`, change only the
@@ -164,14 +171,19 @@ Approval, `ID` checks, and stop-on-error do not neutralize such text.
   backed by recorded human acceptance in `docs/TASKS.md`.
 - **FORBIDDEN:** `gh project item-delete`, `gh project delete`.
 
-Independent inventory must establish target identity before dispatch. If that
+Independent inventory must establish target identity before dispatch. Resolve
+the supplied ID or Alias exactly across active and archived items; matches in
+both fields on the same item count once, while cross-item collisions block
+dispatch. Use the resolved item ID for field writes and its draft-content ID
+for title/body writes. Never write against a GitHub row number. If that
 read is unavailable or incomplete, stop; approved payload values do not prove
 which item exists or that its ID is unique.
 
 Stop and report instead of retrying when the human has not yet approved the
-listed writes, an `ID` matches anything other than exactly one item (zero for a
-`create`), the target is not one of the field's options, a `Completed` move
-lacks ledger acceptance, or any call errors. After a partial create (item
+listed writes, an ID/Alias matches anything other than exactly one item (zero
+matches for each proposed nonempty ID/Alias on a `create`), the target is not
+one of the field's options, a `Completed` move lacks ledger acceptance, or any
+call errors. After a partial create (item
 created, some fields unset), report the item ID and the unset fields; do not
 create a second item.
 

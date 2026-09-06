@@ -31,6 +31,7 @@ the canonical delivery/tool policies linked below.
 - [Security](docs/SECURITY.md): Install trust, secrets, environment boundaries and vulnerability reporting.
 - [External tools](docs/MCP_WORKFLOW.md): Optional local MCP setup, ego-browser, Otty and effect-based authorization.
 - [Documentation and delivery](docs/DOCUMENTATION_POLICY.md): Evidence, PR lifecycle, human acceptance and exact Project board approvals.
+- [Project item lookup](docs/DOCUMENTATION_POLICY.md#github-project-4-mirror): Resolve a stable ER ID or original Alias, then read its Source and relevant ledger entry.
 - [Skill manifest](skills/manifest.json): Five project skills; canonical procedures are under skills/, generated discovery wrappers are committed.
 - [Infrastructure graph](config/agent-infrastructure.json): Document ownership and dependencies; not credentials or MCP connection configuration.
 
