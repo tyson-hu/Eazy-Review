@@ -77,7 +77,7 @@ additions.
 - `skills/skill-creator/SKILL.md`
 - `skills/pr-human-review/SKILL.md`
 - `AGENTS.md`
-- `docs/LOOP_ENGINEERING.md`
+- `docs/AGENT_WORKFLOW.md`
 - `docs/SECURITY.md`
 - `docs/MCP_WORKFLOW.md`
 - `docs/AGENT_WORKFLOW.md`

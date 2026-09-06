@@ -1,40 +1,10 @@
 # MCP Workflow
 
-## Tool Roles
-
-```txt
-BLUEBOOK.md = master product/engineering plan
-DESIGN.md = sole product UI authority (principles, tokens, typography, elevation, components, screens)
-AGENTS.md = how AI agents should work in the repo (all tools)
-.cursor/rules = Cursor-attached mirrors of docs/ rules and guardrails
-MCP = external tools a coding agent can call
-Stitch = fast UI exploration tool
-Coding agent (Cursor, Codex, Claude Code, ...) = implementation workspace
-```
-
-Main rule: documents control tools, not the other way around. Stitch and coding agents should follow the docs, not randomly decide product direction.
-
-## Document Hierarchy
-
-```txt
-BLUEBOOK.md
-  -> DESIGN.md + DATA_MODEL.md + USER_FLOWS.md
-  -> STITCH_PROMPTS.md
-  -> AGENTS.md + .cursor/rules/*
-  -> agent implementation tasks
-```
-
-## Recommended Workflow
-
-1. Define product direction in `docs/BLUEBOOK.md`.
-2. Define product UI/UX and visual system in `docs/DESIGN.md`.
-3. Generate visual ideas in Stitch when useful.
-4. Save strong Stitch prompts/results in `docs/STITCH_PROMPTS.md`.
-5. Ask the coding agent to implement one screen or feature.
-6. Use MCP only when external context/tooling is needed.
-7. Update affected docs before commit/PR handoff using `docs/DOCUMENTATION_POLICY.md`.
-
-Do not start an agent coding directly on large features. Start with documents, then design, then implementation.
+Project contracts govern tool use: BLUEBOOK owns product scope; DESIGN owns UI.
+Use external tooling when the authorized task needs its capability, and follow
+DOCUMENTATION_POLICY for affected docs and delivery. Ordinary implementation
+uses AGENTS and the relevant AGENT_WORKFLOW section, with specialized skills
+only when their procedure applies.
 
 ## MCP Setup Philosophy
 
@@ -52,15 +22,6 @@ agent surface in use without committing credentials:
 - Cursor: `.cursor/mcp.json`
 - Claude Code: `.mcp.json` at the repo root (currently absent)
 - Codex: its global `config.toml` (not a repo file)
-
-Recommended starting tools:
-- Stitch MCP: visual exploration.
-- Supabase MCP: inspect schema, queries, local dev DB.
-- GitHub MCP: issues, PRs, and repo context.
-
-Add later only when needed:
-- Figma MCP.
-- Docs/Drive/Notion MCP.
 
 **Browser / Playwright MCP** — use for Expo web mobile preview and scripted UX evidence when available. Follow `skills/interactive-preview-loop` and `docs/WEB_MOBILE_PREVIEW_SOP.md` (reference mobile-web viewport default 393×852, dialog/session rules, screenshot naming under `docs/evidence/`). Do not add Playwright as a repo dependency for ad-hoc audits. Classify actions per MCP Tool Policy below; prefer built-in navigate/click/type/screenshot/snapshot over `browser_run_code_unsafe`.
 
@@ -151,6 +112,10 @@ Approval, `ID` checks, and stop-on-error do not neutralize such text.
   backed by recorded human acceptance in `docs/TASKS.md`.
 - **FORBIDDEN:** `gh project item-delete`, `gh project delete`.
 
+Independent inventory must establish target identity before dispatch. If that
+read is unavailable or incomplete, stop; approved payload values do not prove
+which item exists or that its ID is unique.
+
 Stop and report instead of retrying when the human has not yet approved the
 listed writes, an `ID` matches anything other than exactly one item (zero for a
 `create`), the target is not one of the field's options, a `Completed` move
@@ -164,29 +129,7 @@ All agent and MCP tool work follows `docs/SECURITY.md` (the canonical security r
 
 ## Stitch Usage
 
-Use Stitch for visual exploration, not final authority.
-
-Good workflow:
-1. Read `docs/DESIGN.md` and `docs/STITCH_PROMPTS.md`.
-2. Prompt with product context, exact screens, components, visual system, constraints, and platform.
-3. Generate 2-4 related screens at a time instead of the whole app.
-4. Ask for one or two targeted refinements per prompt.
-5. Apply one final consistency prompt across selected screens.
-6. Save the chosen direction in `docs/DESIGN.md`; update
-   `docs/STITCH_PROMPTS.md` only when reusable prompt text changes.
-7. Ask the coding agent to implement the selected direction.
-
-Use specific UI terms in prompts:
-- score badge
-- rating category row
-- price-size pill
-- horizontal category chips
-- segmented control
-- bottom sheet
-- sticky CTA
-- bottom tab navigation
-- product image carousel
-
-## Agent Task Format
-
-Scope agent requests to one task at a time using the skills in `skills/` (indexed in `docs/LOOP_ENGINEERING.md`). Each skill defines its inputs, routine, verification, and doc-update step. Avoid asking any agent to "build the whole app" in one request.
+For authorized visual exploration, read docs/DESIGN.md and relevant
+docs/STITCH_PROMPTS.md material. Use scoped screens, platform and existing
+components; save an accepted UI direction in DESIGN and reusable prompt changes
+in STITCH_PROMPTS. Generated output cannot authorize a product redesign.

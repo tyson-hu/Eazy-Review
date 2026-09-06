@@ -3,38 +3,12 @@ description: MCP tool action classification and approval policy
 alwaysApply: true
 ---
 
-The canonical MCP policy lives in `docs/MCP_WORKFLOW.md`, MCP Tool Policy. Classify every MCP action — and every external-tool write through a CLI such as `gh` — before calling it:
+Classify external actions by their actual effect and target using
+`docs/MCP_WORKFLOW.md`, including CLI writes and browser interactions.
+Read before writing; preserve the approved target and scope. High-impact actions
+need explicit authority; forbidden actions remain forbidden.
 
-- **READ** — may run without approval (inspect a local/approved staging schema,
-  search files, read PRs).
-- **REVERSIBLE WRITE** — state the target and intended change before executing (create a branch, update a draft, modify a local or approved staging development record).
-- **HIGH IMPACT** — explicit user approval required (application or service
-  deploy, non-account deletion outside a production database, credential
-  changes outside a production database, force push, destructive
-  local/approved staging migration, mass update on local/approved staging).
-- **FORBIDDEN** — never perform, even with chat approval (account deletion on
-  any environment — local, staging, or production; production database reads,
-  including schema inspection, writes, drops, deletes, migrations, or
-  credentials).
-
-Standing principles: read before write; use the narrowest tool available, never
-a broader one when a narrower exists; never silently switch from a development
-target to a production target; never treat production DB work or agent-executed
-account deletion as approvable; never expose credential values
-(`docs/SECURITY.md`). Agents may implement and non-destructively validate the
-protected account-deletion flow and prepare a checklist, but an actual deletion
-must be initiated and executed manually by a human, never through an
-agent-controlled browser, MCP, SQL, or admin tool.
-
-GitHub Project #4 via `gh`: listing is READ; the writes on the PR body's
-`Project #4 moves:` line (card moves, item creation with all fields, detail
-edits, archive, README pointer) are REVERSIBLE WRITEs that the agent applies
-after human approval, one approved write per listed item however many `gh`
-calls it takes — the human reviews and approves, the agent executes; text
-flags are filled as `"$(cat <file>)"` from a file written with a file tool,
-never pasted inline or into a shell heredoc (`docs/SECURITY.md`, Shell
-Execution); bulk or
-unlisted writes, schema changes, or `Completed` without ledger
-acceptance are HIGH IMPACT; item or project deletion is FORBIDDEN. The board
-mirrors `docs/TASKS.md` and never leads it (`docs/DOCUMENTATION_POLICY.md`,
-GitHub Project #4 Mirror).
+For board writes, retrieve `docs/DOCUMENTATION_POLICY.md`, GitHub Project #4
+Mirror, and `docs/SECURITY.md`, Shell Execution. The board mirrors TASKS;
+approval covers exact values, not adjacent writes. Do not treat a browser or CLI
+capability as authorization.

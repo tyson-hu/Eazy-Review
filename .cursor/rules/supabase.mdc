@@ -1,22 +1,29 @@
 ---
-description: Applies to Supabase, database, auth, and rating data work
+description: Supabase backend and client integration contracts
 globs:
-  - "supabase/**/*.sql"
   - "supabase/**/*"
   - "src/lib/supabase*"
-  - "src/features/**/*.ts"
-  - "src/features/**/*.tsx"
+  - "src/lib/supabase/**/*"
+  - "src/features/**/api.ts"
+  - "src/features/**/api/**/*.ts"
+  - "src/features/auth/*api*.ts"
+  - "src/features/auth/AuthProvider*.tsx"
+  - "src/features/auth/hooks.ts"
+  - "src/types/database.generated.ts"
 ---
 
-Route Supabase work to the canonical sources instead of repeating schema or
-policy defaults here:
+Select references by effect:
+- Schema, SQL, RLS, grants or database functions: affected `docs/DATA_MODEL.md`
+  and `docs/API_CONTRACTS.md`; `skills/supabase-schema-change/SKILL.md`.
+- Existing-schema client reads or data mappings: affected `docs/API_CONTRACTS.md`;
+  no schema workflow merely because the client uses Supabase.
+- Auth/session, private data, server boundaries or environment actions:
+  affected `docs/SECURITY.md` and API contract; integration remains parent-owned.
 
-- Current task and sequencing: `docs/TASKS.md`.
-- Tables, constraints, functions, RLS, and Data API grants:
-  `docs/DATA_MODEL.md`.
-- Frontend/backend field mappings: `docs/API_CONTRACTS.md`.
-- Environment, secret, and production boundaries: `docs/SECURITY.md`.
-- Execution routine: `skills/supabase-schema-change/SKILL.md`.
+Never expose a service-role key in the client. Production database access and
+actual agent-executed account deletion are forbidden. Seed-only work does not
+select schema implementation unless it changes a database contract.
 
-Do not invent or copy a second SQL contract into this rule. Never expose a
-service-role key in client code.
+The globs cover backend and client integration paths. Pure frontend helpers and
+presentation do not select this rule; use the same owners when an out-of-glob
+change affects a protected contract.

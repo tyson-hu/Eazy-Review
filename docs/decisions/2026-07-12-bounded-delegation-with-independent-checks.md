@@ -1,7 +1,9 @@
 ---
 id: decision-bounded-delegation-with-independent-checks
 date: 2026-07-12
-status: accepted
+status: superseded
+updated: 2026-09-05
+superseded_by: decision-simplify-agent-infrastructure
 area: agent-workflow
 tasks: []
 pr: null
@@ -17,6 +19,9 @@ Delegation can isolate context and improve checking, but unconstrained write
 authority or self-acceptance makes scope and risk harder to control.
 
 ## Decision
+
+Historical decision. The replacement preserves its substantive boundaries and
+changes only the infrastructure ownership/continuation rules described there.
 
 The parent owns scope, decomposition, escalation, and acceptance. Write-enabled
 subagents receive one explicit task packet and file boundary. Meaningful work
@@ -39,6 +44,6 @@ boundaries mechanically with equivalent or stronger guarantees.
 ## Related
 
 - `docs/AGENT_WORKFLOW.md`
-- `docs/LOOP_ENGINEERING.md`
 - `.cursor/rules/orchestration.mdc`
 - `.cursor/agents/`
+- `docs/decisions/2026-09-05-simplify-agent-infrastructure.md`

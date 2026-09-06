@@ -154,6 +154,9 @@ Canonical security rules for all agent and human work in this repo, regardless o
   full matched value. Prose mentions of `service_role` are allowed. Wired into
   `npm run check` and Expo CI. Self-test alone: `npm run test:secrets`. Do not
   leave the deliberate token in committed files.
+
+### Session storage
+
 - Task 16 auth session storage threat model:
   - Access and refresh tokens are sensitive authentication material.
   - AsyncStorage is not encrypted at rest.
@@ -171,6 +174,9 @@ Canonical security rules for all agent and human work in this repo, regardless o
     without fragile chunking or custom encryption.
   - Never store service-role keys, passwords, or database credentials in
     client storage. Never log sessions, tokens, or full auth-user objects.
+
+### Password recovery
+
 - Task 18 password recovery:
   - Recovery uses Supabase Auth only
     (`resetPasswordForEmail` / `updateUser({ password })`). No custom recovery
@@ -199,6 +205,9 @@ Canonical security rules for all agent and human work in this repo, regardless o
     exposes only the safe request-new-link state.
   - Local session storage remains the Task 16 AsyncStorage strategy; Task 18
     does not redesign session persistence.
+
+### Protected account deletion
+
 - Task 19 protected account deletion:
   - The client supplies only current-password bytes. Email is fixed to the
     signed-in principal; the exact isolated reauthentication bearer is pinned

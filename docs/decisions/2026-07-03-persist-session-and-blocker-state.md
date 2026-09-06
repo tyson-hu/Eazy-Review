@@ -1,7 +1,9 @@
 ---
 id: decision-persist-session-and-blocker-state
 date: 2026-07-03
-status: accepted
+status: superseded
+updated: 2026-09-05
+superseded_by: decision-simplify-agent-infrastructure
 area: agent-workflow
 tasks: []
 pr: null
@@ -18,6 +20,9 @@ and the next action exist only in chat. Continuing in overloaded context also
 causes repeated attempts and forgotten corrections.
 
 ## Decision
+
+Historical decision. The replacement preserves its substantive boundaries and
+changes only the infrastructure ownership/continuation rules described there.
 
 At a session boundary, stop new work and write `docs/notes/handoff.md` through
 the session-handoff routine. When debugging reaches the stall threshold, write
@@ -39,7 +44,5 @@ the same reviewability and cross-tool portability.
 ## Related
 
 - `docs/AGENT_WORKFLOW.md`
-- `docs/LOOP_ENGINEERING.md`
 - `docs/notes/README.md`
-- `skills/session-handoff/SKILL.md`
-- `skills/blocker-note/SKILL.md`
+- `docs/decisions/2026-09-05-simplify-agent-infrastructure.md`

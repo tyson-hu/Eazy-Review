@@ -1,6 +1,6 @@
 ---
 name: supabase-schema-change
-description: "Use for schema, migration, RLS, grant, database function or trigger, rating-summary, or other database-backed contract changes; not seed-only data."
+description: "Plan or implement Eazy Review schema, RLS, grants, or database functions."
 ---
 
 Follow the canonical workflow in `skills/supabase-schema-change/SKILL.md`. Do not improvise a different routine.

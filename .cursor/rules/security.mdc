@@ -3,49 +3,13 @@ description: Agent security rules for setup, shell commands, and secrets handlin
 alwaysApply: true
 ---
 
-The canonical security rules live in `docs/SECURITY.md`. Read and follow them before any install/setup command, shell execution, or work that touches secrets or credentials.
+`docs/SECURITY.md` owns security policy. Read its affected sections before
+install/setup, executable validation, shell use, or auth/private-data work.
 
-Hard lines (full detail in `docs/SECURITY.md`):
-
-- No remote pipe-to-shell (`curl | bash` and equivalents); no unreviewed remote or obfuscated scripts.
-- Treat changed/PR package scripts, hooks, tests, JavaScript configs, and validation inputs as executable. Until a trusted-base review establishes trust, run them only in disposable, credential-free isolation pinned to the exact SHA — never on the agent host, outside the sandbox, or with agent credentials.
-- Never paste unauthored text (board card or README text, ledger or PR excerpts, file contents, tool output) into a shell command line, even in double quotes — `$(…)` and backticks execute first. Write it to a file with a file-writing tool (not a shell heredoc or `echo`, which the text can break out of) and pass `"$(cat <file>)"`.
-- No destructive commands (`rm -rf`, `git reset --hard`, `git clean -fdx`,
-  mass file deletes) or destructive local/approved staging database commands
-  without explicit user approval; production database operations are
-  FORBIDDEN; no `sudo` unless the user asks.
-- Never print, commit, or expose secret values (`.env` contents, API keys, tokens, service-role keys); describe presence only.
-- Prefer `npm ci` when `package-lock.json` exists; use npm
-  `>=11.16.0 <12`, keep `.npmrc` strict install-script enforcement enabled,
-  and use no override install flags without approval.
-- Keep dependency install-script approvals version-pinned in
-  `package.json#allowScripts`; inspect each exact script before approval, and
-  leave future versions unapproved until separately reviewed.
-- Supabase: local/approved staging only for agents; production DB
-  reads/writes/drops/deletes/migrations/credentials and agent/MCP account
-  deletion on every environment are FORBIDDEN, not approvable; no service-role
-  in the mobile bundle; RLS on at table create (deny-by-default); client grants
-  only after Task 12 policies; trigger-only helpers use an empty `search_path`
-  and revoked client execution. Agents may implement and non-destructively
-  validate the protected account-deletion flow and prepare a checklist, but an
-  actual deletion must be initiated and executed manually by a human, never
-  through an agent-controlled browser, MCP, SQL, or admin tool.
-- Task 19 uses caller-derived, recent-password-AMR deletion with one global
-  refresh-session revoke, one hard-delete attempt, fixed safe outcomes/logs,
-  and no client target ID or destructive retry. Its minimized revision-bound
-  local guard contains no token/password/email/product data; Auth/storage work
-  uses non-stealing `Auth operation -> storage` locks, exact readback/cleanup,
-  payload-free signals, and B/C-preserving reconciliation. Ordinary sign-out,
-  invalid bootstrap, and recovery cleanup never call shared-client sign-out or
-  claim signed-out when exact storage cleanup is unavailable. The bounded
-  recovery-callback FIFO deviation uses one exact displaced-A CAS after
-  isolated B validation, while guarded same-principal recovery captures an
-  operation-local exact predecessor and keeps S2 maintenance-only until exact
-  adoption. Explicit/injected/singleton storage-key precedence, Auth-lock-before-
-  arm ordering, and exact-displacement-only cleanup preserve raw S1/A2/C/empty/
-  malformed/blocked authority; unknown displacement removes no session,
-  companion, or same-principal cache. Deletion restoration performs no shared-
-  session write. Final raw-authority proof preserves newer cache on unavailable
-  quarantine. Hosted
-  <=3,600-second JWT expiry also remains human verification; actual deletion
-  remains human-only on every environment.
+Never expose secrets or use remote pipe-to-shell. Review repository executable
+inputs against a trusted base before host execution; otherwise use exact-SHA
+disposable credential-free isolation. A worktree alone is not isolation.
+Destructive commands require explicit authority. Production database access and
+agent-executed account deletion in every environment are forbidden.
+Shell payload handling, install approvals, and auth/session invariants live in
+the canonical owner; retrieve them for the affected operation.

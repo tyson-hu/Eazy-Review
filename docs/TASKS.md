@@ -429,9 +429,10 @@ effect-based preview classification, read-only skill-audit routing, and global
 supporting-skill precedence. The validation choice is recorded in
 [`docs/decisions/2026-09-05-proportional-agent-validation.md`](decisions/2026-09-05-proportional-agent-validation.md).
 
-D1/D2 remain deferred: no broad safety-mirror trimming, additional UI audit
-checklist, plugin installation/removal, alternate preview driver, model change,
-checker v2, or product implementation. Task 22 remains Pending. Proposed
+At the correction-packet checkpoint D1/D2 were deferred. The candidate A
+maintenance entry below subsequently implements D1 mirror thinning; D2 remains
+unselected. Global cleanup, alternate preview drivers, model changes, checker v2
+and product implementation remain outside these packets. Task 22 remains Pending. Proposed
 Project #4 writes: **none**; no existing board item is being changed.
 
 Validation: the canonical-skill registration regression failed on the old
@@ -445,6 +446,44 @@ these were simulations, not executed application or external workflows.
 User authorized commit, push, and draft PR delivery on 2026-09-05. Human
 acceptance remains pending; local validation does not establish PR readiness.
 Merge, deployment, and board actions are outside this delivery scope.
+
+## Maintenance: Agent infrastructure simplification
+
+Status: **Candidate A implemented and locally verified — Cursor CLI retrieval probes passed.**
+The user approved the concrete repository changes and local trials on 2026-09-05.
+Branch: `codex/agent-infrastructure-simplification-design`, based on
+`a78b74665a427585c4acd2603e91578dc0a67424`. The user authorized commit/push
+and updating existing draft PR #53 with candidate A after local verification.
+
+The [working plan](notes/agent-infrastructure-simplification-plan.md) records
+progress and resumption. The approved [candidate A](notes/agent-infrastructure-simplification-candidate.md)
+retires nine generic skills (14 → 5), deletes the separate loop router, shortens
+shared instructions and host adapters, and makes phase continuation, delegation
+and extra review conditional. The [PR protocol draft](notes/agent-infrastructure-simplification-pr-reference.md)
+is implemented as a conditional reference preserving trust, provenance,
+finding quality, budgets and same-head terminal requirements.
+
+[Evidence](notes/agent-infrastructure-simplification-evidence.md) separates the
+initial small repair pilot, larger application/boundary trials, independent
+review, structural proof and cross-host limitations. Historical evidence and
+canonical security/delivery boundaries remain preserved. The accepted
+[decision](decisions/2026-09-05-simplify-agent-infrastructure.md) records the
+changed instruction ownership and continuation rules.
+
+Four fresh baseline/candidate application trials pass after scoped repairs:
+Feed 32/32 and parent-corrected recovery 19/19, plus an additional ordering case.
+Integrated review and check:readonly pass. A shared missing-board-identity
+fixture failure prompted a canonical clarification; two fresh absence probes
+then correctly blocked without dispatch. After user login, four fresh baseline/candidate Cursor CLI retrieval probes
+passed; broader IDE behavior remains unverified. Source reduction is not a
+runtime performance or broad reliability claim.
+
+Global duplicate quarantine and preview-driver substitution remain separate
+proposals. No application behavior, global configuration or external state is
+changed by this work. Candidate A delivery is authorized through draft PR #53;
+human acceptance and merge remain pending. The user explicitly deferred Project
+#4 work until the remaining audit work is finished. Proposed Project #4 writes:
+**none for this delivery**. Task 22 remains Pending.
 
 ## Revised Sequence
 

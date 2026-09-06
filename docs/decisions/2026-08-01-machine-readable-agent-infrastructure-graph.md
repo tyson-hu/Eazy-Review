@@ -1,7 +1,9 @@
 ---
 id: decision-machine-readable-agent-infrastructure-graph
 date: 2026-08-01
-status: accepted
+status: superseded
+updated: 2026-09-05
+superseded_by: decision-simplify-agent-infrastructure
 area: agent-workflow
 tasks: []
 pr: null
@@ -20,6 +22,9 @@ and mutating validation to blur together and made ownership drift difficult to
 detect consistently.
 
 ## Decision
+
+Historical decision. The replacement preserves its substantive boundaries and
+changes only the infrastructure ownership/continuation rules described there.
 
 Keep the existing loop/skill system and add a lightweight graph above it.
 `config/agent-infrastructure.json` is the machine-readable source for document
@@ -62,4 +67,4 @@ project-specific code and equal reviewability.
 - `scripts/check-agent-infrastructure.cjs`
 - `docs/AGENT_WORKFLOW.md`
 - `docs/DOCUMENTATION_POLICY.md`
-- `docs/LOOP_ENGINEERING.md`
+- `docs/decisions/2026-09-05-simplify-agent-infrastructure.md`
