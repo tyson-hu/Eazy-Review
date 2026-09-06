@@ -1,0 +1,89 @@
+# Repository experience and governance — delivery evidence
+
+Date: 2026-09-06.
+Baseline: `2bc6a200fb0e4d8505b809b39083091ab1d8269d`.
+Branch: `codex/repository-experience`.
+Status: Local implementation and verification complete; publication pending.
+No PR, merge or human acceptance of the finished implementation recorded.
+
+## Scope
+
+README and development-guide separation, community documents and issue forms,
+dependency-alert dispositions, pinned Actions, CodeQL, and approved GitHub
+repository settings. No application code or dependency versions changed.
+Task 22's broader testing work remains unselected.
+
+## Project #4 reconciliation
+
+Applied the 11 exact writes approved in chat on 2026-09-06:
+
+- T21 Confidence changed from Contract to Accepted.
+- INF-04's body now reflects accepted, merged PR #48.
+- INF-05–INF-12 added as fully populated Completed Infrastructure draft items
+  for the accepted outcomes in merged PRs #53–57.
+- The board README snapshot now identifies the inspected master commit and
+  preserves Task 20's Conditional status and Task 22's unselected state.
+
+Read back all 68 items and verified unique IDs, every field on the eight new
+cards, the exact README replacement and preservation of all unapproved fields
+on the original 60 cards. No schema changes, issue conversions or item deletions.
+The new repository-experience initiative is not part of this historical packet.
+
+## Dependency findings
+
+The two medium alerts remain open. Static call-site and upstream package review
+found a potentially reachable decoder path without a compatible supported
+update and an unaffected uuid.v4 call in native project-generation tooling.
+[Detailed dispositions and revisit conditions](../../DEPENDENCY_SECURITY.md)
+preserve the limits. No overrides, vulnerability dismissal or native exploit
+claim was made.
+
+## Executable trust and workflow review
+
+Package/lock files, validation scripts, plugins and JavaScript configuration
+are unchanged against the merged baseline. Active Git hooks were absent.
+The existing check and generation commands were reviewed before host use.
+
+Pinned the current existing action refs to verified commits. Deno and Supabase
+use moving v2 branch refs rather than tags; both were resolved through the
+commit endpoint. CodeQL v4's annotated tag was dereferenced to its commit.
+Reviewed action manifests, inputs, runtime entry points and the Supabase
+composite steps, including its pinned nested Bun setup action. This records
+pin provenance and workflow integration review, not a full third-party code audit.
+
+CodeQL uses source analysis without app installation/build and checks the PR
+merge ref through ordinary checkout behavior. Expo and Database retain their
+exact-head checkout policy. No privileged pull_request_target trigger, deployment
+credential or production environment is used.
+
+## Hosted controls and verification
+
+Applied and read back the approved About description and build-journal URL,
+automatic deletion of merged branches, and private vulnerability reporting.
+Existing topics and security settings were preserved.
+
+The active `protect-master` ruleset targets only master with no bypass actors.
+It blocks deletion and force pushes, requires a PR and resolved review threads,
+and requires an up-to-date `validate` check from GitHub Actions. The approving
+review count is zero for this maintainer-led repository; recorded human
+acceptance remains a separate delivery requirement. Existing merge methods
+remain available. CodeQL and path-filtered Database CI are not universal
+required checks.
+
+Independent review identified and resolved two documentation issues: links to
+local-only plans in the published ledger and an early Supabase stop command in
+the setup sequence. Independent verification passed `npm run check:readonly`:
+110 tests, documentation graph, secret scanning, typecheck and lint. All seven
+GitHub YAML files parsed; 188 local Markdown links/images/heading fragments
+resolved across the reviewed documents. Whitespace checks passed.
+
+The README was rendered with GitHub's Markdown API in a curated local preview
+using lightweight local CSS. Desktop (1311 px) and mobile (393 px) layouts had
+no horizontal overflow and loaded the existing Feed image. The
+[mobile top screenshot](screenshots/readme-mobile-top.png) records that preview;
+it is documentation rendering evidence, not a new native app acceptance test.
+Live GitHub About and ruleset pages were also inspected.
+
+The versioned CodeQL workflow and community files require PR publication and
+merge before their default-branch surfaces can be verified. Local YAML parsing
+does not establish a successful hosted CodeQL or Database CI run.

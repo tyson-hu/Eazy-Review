@@ -54,6 +54,24 @@ environment allowed by the trust rule and report cache/permission limitations;
 never infer alignment from a blocked or partial check. Package scripts own exact
 command composition; keep this selection map synchronized when it changes.
 
+## Repository merge controls
+
+Repository merge controls are described in the
+[repository governance decision](decisions/2026-09-06-repository-governance.md).
+The `protect-master` ruleset requires PRs, an up-to-date branch, the GitHub
+Actions `validate` check and resolved conversations. It blocks force pushes
+and deletion without bypass actors. Zero required GitHub approval reviews
+supports the maintainer-led workflow; recorded human acceptance still follows
+DOCUMENTATION_POLICY. Verify hosted rules before relying on their enforcement.
+
+Database CI remains path-filtered and must pass for affected changes; it is
+not a universal required check. CodeQL analyzes JavaScript/TypeScript and
+Actions on PRs to master, master pushes and a weekly schedule. It does not
+replace application, database or human checks. Do not enable duplicate CodeQL
+default setup alongside the versioned workflow or require its check names
+before observing successful runs. External Actions are pinned to full SHAs;
+weekly grouped Dependabot PRs propose updates for review.
+
 ## Delegation and independent checking
 
 Delegate when isolation, independent judgment or parallel work is worth its

@@ -1,0 +1,27 @@
+name: Feature request
+description: Propose a focused improvement within the project scope.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [product scope](https://github.com/tyson-hu/Eazy-Review/blob/master/docs/BLUEBOOK.md) and existing issues first.
+        Discuss substantial features or design changes before implementing them. Do not include secrets or personal data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Which user journey or development task needs improvement, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe the smallest useful change and how we could verify it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and scope
+      description: Optional alternatives, existing work, and anything that should remain outside this proposal.

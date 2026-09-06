@@ -571,6 +571,29 @@ restored off and owned test panes closed. No unattended agent-chain or speedup
 claim. Proposed Project #4 writes: none; reconciliation remains a separate
 follow-up after this delivery.
 
+## Maintenance: Repository experience and governance
+
+Status: In Progress — locally complete and verified on 2026-09-06; publication pending.
+Branch: `codex/repository-experience`.
+
+Scope: improve README and developer onboarding, community contribution and
+reporting routes, dependency-alert dispositions, reviewed CI action pins,
+CodeQL and the approved hosted repository controls. Task 22 remains Pending;
+broader E2E or cross-feature test work is not selected.
+
+All 11 approved historical Project #4 writes are applied and verified against
+68 unique items. The new initiative's own board card is not covered by that
+historical packet and requires an exact-value proposal. Canonical setup,
+reporting and merge guidance live in DEVELOPMENT, SECURITY and AGENT_WORKFLOW;
+the [delivery evidence](evidence/repository-experience/RESULT.md) records actual
+checks and hosted state separately from this task's acceptance.
+
+Dependency review: [current dispositions](DEPENDENCY_SECURITY.md) document an
+unresolved compatible fix for the Expo Router decoder and the unaffected v4
+call observed in xcode's uuid usage. No dependency override or alert dismissal.
+Hosted settings, local validation, PR delivery and acceptance remain separately
+reported; implementation approval does not mark this initiative Done.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.

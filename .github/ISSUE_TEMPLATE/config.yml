@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Setup and support
+    url: https://github.com/tyson-hu/Eazy-Review/blob/master/SUPPORT.md
+    about: Find setup guidance and the appropriate contact route.
+  - name: Report a security vulnerability privately
+    url: https://github.com/tyson-hu/Eazy-Review/security/advisories/new
+    about: Keep vulnerabilities out of public issues.
