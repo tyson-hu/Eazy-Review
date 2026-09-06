@@ -514,7 +514,7 @@ remains deferred by the user.
 
 ## Maintenance: Cursor agent impact-report coverage
 
-Status: **Implemented and independently verified locally — human review pending.**
+Status: **Done — human accepted in PR #55 on 2026-09-05.**
 
 Follow-up to the late Codex review finding on PR #53
 ([discussion](https://github.com/tyson-hu/Eazy-Review/pull/53#discussion_r3942558683)).
