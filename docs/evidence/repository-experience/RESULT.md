@@ -3,8 +3,9 @@
 Date: 2026-09-06.
 Baseline: `2bc6a200fb0e4d8505b809b39083091ab1d8269d`.
 Branch: `codex/repository-experience`.
-Status: Local implementation and verification complete; publication pending.
-No PR, merge or human acceptance of the finished implementation recorded.
+Status: Local implementation and verification complete;
+[draft PR #58](https://github.com/tyson-hu/Eazy-Review/pull/58) is open.
+No merge or human acceptance of the finished implementation recorded.
 
 ## Scope
 
@@ -27,7 +28,9 @@ Applied the 11 exact writes approved in chat on 2026-09-06:
 Read back all 68 items and verified unique IDs, every field on the eight new
 cards, the exact README replacement and preservation of all unapproved fields
 on the original 60 cards. No schema changes, issue conversions or item deletions.
-The new repository-experience initiative is not part of this historical packet.
+The new repository-experience initiative was separately approved for publication.
+INF-13 was created as In Review after draft PR #58 opened. Readback verified
+all of its approved fields/body, 69 unique IDs and all 68 existing cards unchanged.
 
 ## Dependency findings
 
