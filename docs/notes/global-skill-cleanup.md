@@ -1,6 +1,6 @@
 # Global skill cleanup — candidate B
 
-Status: Implemented and independently verified locally; human review pending. User selected
+Status: Implemented, independently verified and human accepted in PR #54 on 2026-09-05. User selected
 this phase after accepting candidate A. Branch: `codex/global-skill-cleanup`,
 base `39a28a6bc1831305dcfbc82ced9c430f9e5bfc00` (merged PR #53).
 Project #4 remains deferred by the user. User authorized combined B/C PR delivery.

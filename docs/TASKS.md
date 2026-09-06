@@ -485,7 +485,7 @@ Candidate A human acceptance is recorded; merge remains pending. The user explic
 
 ## Maintenance: Global duplicate skill cleanup (candidate B)
 
-Status: **Implemented and independently verified locally — human review pending.**
+Status: **Done — human accepted in PR #54 on 2026-09-05.**
 
 User selected this follow-up after candidate A. Eight identical global skill
 installations (354 files) were quarantined outside discovery roots; unchanged
@@ -499,7 +499,7 @@ deferred by user instruction.
 
 ## Maintenance: SDLC browser driver (candidate C)
 
-Status: **Implemented and independently verified locally — human review pending.**
+Status: **Done — human accepted in PR #54 on 2026-09-05.**
 
 The user selected ego-browser to replace Playwright throughout browser-based
 SDLC work. Project routing, tool policy and preview procedures now reflect that

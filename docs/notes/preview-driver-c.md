@@ -64,3 +64,11 @@ closed successfully; fixture18763 and Expo18764 stopped, no listeners remain.
 Final follow-up review approved after aligning the failure-table dialog pointer.
 Structural, secret and whitespace checks pass; executable inputs unchanged.
 User authorized combined B/C commit, push and PR delivery.
+
+## Delivery acceptance
+
+User directed completion of PR #54 delivery on 2026-09-05. B/C accepted with
+the documented native-dialog limitation; no native/physical or automated-dialog
+proof is added by acceptance. PR #53's late Cursor agent impact-report finding
+is confirmed and remains unresolved for a separate corrective PR, as requested.
+Project #4 remains deferred.
