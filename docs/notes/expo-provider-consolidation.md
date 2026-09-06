@@ -147,8 +147,10 @@ by the probes. Host MCP startup behavior remains distinct from model actions.
 No install/uninstall, auth repair or Project #4 write was performed. Repository
 delivery contains records of these host-local changes, not a configuration replay.
 
-Final docs checks: agent infrastructure graph valid (86 documents,37 dependencies,
-17 tasks,92 active files); secret scan and git whitespace pass. No unrelated
+Final docs checks: a clean tracked-file snapshot reports a valid graph with
+86 documents, 37 dependencies, 17 tasks and 93 active files scanned. The local
+checkout reports 94 because it also contains local-only notes. Secret scan
+and git whitespace pass. No unrelated
 application checks were needed. Two provider registrations became one enabled
 provider; observed live skill-count delta is zero. Existing caches and separate
 Claude configuration remain unchanged.
