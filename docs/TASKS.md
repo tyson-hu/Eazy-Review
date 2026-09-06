@@ -512,6 +512,18 @@ JavaScript dialog automation remains blocked by runtime ownership stops.
 No full app acceptance, global tool uninstall or publication is implied. Project #4
 remains deferred by the user.
 
+## Maintenance: Cursor agent impact-report coverage
+
+Status: **Done — human accepted in PR #55 on 2026-09-05.**
+
+Follow-up to the late Codex review finding on PR #53
+([discussion](https://github.com/tyson-hu/Eazy-Review/pull/53#discussion_r3942558683)).
+A narrow `.cursor/agents/**` impact rule surfaces `docs/AGENT_WORKFLOW.md`
+when role definitions change, restoring alignment with DOCUMENTATION_POLICY
+without restoring the old broad infrastructure read list. Regression coverage
+checks all four roles and an unrelated Cursor-settings neighbor. Project #4
+remains deferred with the remaining audit work.
+
 ## Revised Sequence
 
 Work in order unless a task explicitly states that it is conditional.

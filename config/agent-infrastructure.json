@@ -931,6 +931,15 @@
       ]
     },
     {
+      "id": "cursor-agent-definitions",
+      "changedPaths": [
+        ".cursor/agents/**"
+      ],
+      "requiredDocuments": [
+        "docs/AGENT_WORKFLOW.md"
+      ]
+    },
+    {
       "id": "application-routes",
       "changedPaths": [
         "app/**"

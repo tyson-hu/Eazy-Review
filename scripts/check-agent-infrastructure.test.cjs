@@ -2289,6 +2289,26 @@ test('bundled product and release assets report their documentation contracts', 
   );
 });
 
+test('Cursor agent definitions require canonical delegation workflow review', () => {
+  const repositoryConfig = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'), 'utf8'),
+  );
+  for (const role of ['implementer', 'reviewer', 'verifier', 'debugger']) {
+    const report = reportImpactedDocuments(
+      repositoryConfig,
+      [`.cursor/agents/${role}.md`],
+      REPO_ROOT,
+    );
+    assert.ok(report.documents.includes('docs/AGENT_WORKFLOW.md'), role);
+  }
+  const unrelatedReport = reportImpactedDocuments(
+    repositoryConfig,
+    ['.cursor/settings.json'],
+    REPO_ROOT,
+  );
+  assert.equal(unrelatedReport.documents.includes('docs/AGENT_WORKFLOW.md'), false);
+});
+
 test('active build configuration paths trigger their documentation contracts', () => {
   const repositoryConfig = JSON.parse(
     fs.readFileSync(
