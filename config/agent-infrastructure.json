@@ -34,17 +34,17 @@
       "owner": "generated-command"
     },
     {
-      "path": ".claude/skills",
-      "kind": "directory",
-      "lifecycle": "generated",
-      "owner": "generated-command"
-    },
-    {
       "path": ".claude/settings.json",
       "kind": "file",
       "lifecycle": "status",
       "owner": "parent-agent",
       "staleScan": false
+    },
+    {
+      "path": ".claude/skills",
+      "kind": "directory",
+      "lifecycle": "generated",
+      "owner": "generated-command"
     },
     {
       "path": ".cursor/agents/debugger.md",
@@ -199,12 +199,6 @@
       "owner": "parent-agent"
     },
     {
-      "path": "docs/LOOP_ENGINEERING.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "parent-agent"
-    },
-    {
       "path": "docs/MCP_WORKFLOW.md",
       "kind": "file",
       "lifecycle": "evergreen",
@@ -313,8 +307,8 @@
       "owner": "historical-record"
     },
     {
-      "path": "docs/evidence/task-11-12-database-acceptance",
-      "kind": "directory",
+      "path": "docs/evidence/s2-mock-catalog-retirement/RESULT.md",
+      "kind": "file",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
@@ -337,8 +331,26 @@
       "owner": "historical-record"
     },
     {
+      "path": "docs/evidence/task-11-12-database-acceptance",
+      "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-11-12-database-acceptance/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/task-15-public-catalog",
       "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-15-public-catalog/RESULT.md",
+      "kind": "file",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
@@ -349,8 +361,20 @@
       "owner": "historical-record"
     },
     {
+      "path": "docs/evidence/task-16-auth-account/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/task-17-my-rating-persistence",
       "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-my-rating-persistence/RESULT.md",
+      "kind": "file",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
@@ -361,8 +385,20 @@
       "owner": "historical-record"
     },
     {
+      "path": "docs/evidence/task-17-product-detail-restoration/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/task-17-rating-slider-gesture",
       "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-17-rating-slider-gesture/RESULT.md",
+      "kind": "file",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
@@ -373,8 +409,26 @@
       "owner": "historical-record"
     },
     {
+      "path": "docs/evidence/task-18-password-recovery/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/task-19-protected-account-deletion",
       "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-19-protected-account-deletion/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-19-protected-account-deletion/VERIFICATION.md",
+      "kind": "file",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
@@ -385,8 +439,20 @@
       "owner": "historical-record"
     },
     {
+      "path": "docs/evidence/task-20-browse-scale-up-trigger/RESULT.md",
+      "kind": "file",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
       "path": "docs/evidence/task-21-real-feed-mvp",
       "kind": "directory",
+      "lifecycle": "historical",
+      "owner": "historical-record"
+    },
+    {
+      "path": "docs/evidence/task-21-real-feed-mvp/RESULT.md",
+      "kind": "file",
       "lifecycle": "historical",
       "owner": "historical-record"
     },
@@ -409,81 +475,15 @@
       "owner": "historical-record"
     },
     {
-      "path": "docs/evidence/s2-mock-catalog-retirement/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-11-12-database-acceptance/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-15-public-catalog/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-16-auth-account/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-17-my-rating-persistence/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-17-product-detail-restoration/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-17-rating-slider-gesture/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-18-password-recovery/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-19-protected-account-deletion/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-19-protected-account-deletion/VERIFICATION.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-20-browse-scale-up-trigger/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
-      "path": "docs/evidence/task-21-real-feed-mvp/RESULT.md",
-      "kind": "file",
-      "lifecycle": "historical",
-      "owner": "historical-record"
-    },
-    {
       "path": "docs/notes",
       "kind": "directory",
       "lifecycle": "status",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "docs/notes/README.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
@@ -506,30 +506,6 @@
       "owner": "parent-agent"
     },
     {
-      "path": "skills/blocker-note/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
-      "path": "skills/bugfix-debug-loop/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
-      "path": "skills/docs-sync-loop/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
-      "path": "skills/feature-slice-builder/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
       "path": "skills/interactive-preview-loop/SKILL.md",
       "kind": "file",
       "lifecycle": "evergreen",
@@ -543,25 +519,19 @@
       "staleScan": false
     },
     {
+      "path": "skills/pr-human-review/SKILL.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "canonical-skill"
+    },
+    {
       "path": "skills/pr-review-remediation/SKILL.md",
       "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
     },
     {
-      "path": "skills/product-data-modeling/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
-      "path": "skills/refactor-safety-loop/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
-      "path": "skills/session-handoff/SKILL.md",
+      "path": "skills/pr-review-remediation/references/remediation-state.md",
       "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
@@ -574,18 +544,6 @@
     },
     {
       "path": "skills/supabase-schema-change/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
-      "path": "skills/test-and-validation-loop/SKILL.md",
-      "kind": "file",
-      "lifecycle": "evergreen",
-      "owner": "canonical-skill"
-    },
-    {
-      "path": "skills/ui-screen-builder/SKILL.md",
       "kind": "file",
       "lifecycle": "evergreen",
       "owner": "canonical-skill"
@@ -613,7 +571,7 @@
       "relationship": "summary"
     },
     {
-      "source": "docs/AGENT_WORKFLOW.md",
+      "source": "docs/DOCUMENTATION_POLICY.md",
       "mirror": ".github/pull_request_template.md",
       "relationship": "template"
     },
@@ -672,19 +630,9 @@
       "reason": "Setup and local database instructions inherit security boundaries."
     },
     {
-      "document": "README.md",
-      "dependsOn": "docs/TASKS.md",
-      "reason": "Current status and implementation order live only in TASKS."
-    },
-    {
       "document": "AGENTS.md",
       "dependsOn": "docs/DOCUMENTATION_POLICY.md",
       "reason": "The compact guide routes documentation updates through the policy."
-    },
-    {
-      "document": "AGENTS.md",
-      "dependsOn": "docs/LOOP_ENGINEERING.md",
-      "reason": "Session routing selects a loop from the canonical index."
     },
     {
       "document": "AGENTS.md",
@@ -692,19 +640,9 @@
       "reason": "The compact guide inherits canonical security boundaries."
     },
     {
-      "document": "AGENTS.md",
-      "dependsOn": "docs/TASKS.md",
-      "reason": "The active task remains the status source."
-    },
-    {
       "document": "docs/AGENT_WORKFLOW.md",
       "dependsOn": "docs/SECURITY.md",
       "reason": "Delegation and validation cannot weaken security boundaries."
-    },
-    {
-      "document": "docs/AGENT_WORKFLOW.md",
-      "dependsOn": "docs/TASKS.md",
-      "reason": "Ownership and task routing use current task state."
     },
     {
       "document": "docs/API_CONTRACTS.md",
@@ -740,11 +678,6 @@
       "document": "docs/EVIDENCE_GITHUB_UPLOAD_SOP.md",
       "dependsOn": "docs/evidence/README.md",
       "reason": "Upload selection uses the evidence layout and status vocabulary."
-    },
-    {
-      "document": "docs/LOOP_ENGINEERING.md",
-      "dependsOn": "docs/AGENT_WORKFLOW.md",
-      "reason": "Loops reuse session, validation, and handoff contracts."
     },
     {
       "document": "docs/MCP_WORKFLOW.md",
@@ -822,49 +755,19 @@
       "reason": "Approved plans and specs must agree with the accepted ledger status."
     },
     {
-      "document": "skills/blocker-note/SKILL.md",
-      "dependsOn": "docs/LOOP_ENGINEERING.md",
-      "reason": "Blocker persistence implements the global retry stop."
-    },
-    {
-      "document": "skills/bugfix-debug-loop/SKILL.md",
-      "dependsOn": "docs/LOOP_ENGINEERING.md",
-      "reason": "Bug fixing inherits hypotheses, retry budgets, and stop conditions."
-    },
-    {
-      "document": "skills/bugfix-debug-loop/SKILL.md",
-      "dependsOn": "docs/USER_FLOWS.md",
-      "reason": "Regression scope is selected from documented flows."
-    },
-    {
-      "document": "skills/docs-sync-loop/SKILL.md",
-      "dependsOn": "docs/DOCUMENTATION_POLICY.md",
-      "reason": "Documentation sync applies the canonical update map."
-    },
-    {
-      "document": "skills/feature-slice-builder/SKILL.md",
-      "dependsOn": "docs/SECURITY.md",
-      "reason": "Connected feature modes preserve auth and environment boundaries."
-    },
-    {
-      "document": "skills/feature-slice-builder/SKILL.md",
-      "dependsOn": "docs/TASKS.md",
-      "reason": "The selected feature mode comes from the active task."
-    },
-    {
       "document": "skills/interactive-preview-loop/SKILL.md",
       "dependsOn": "docs/UX_SCREENSHOT_AUDIT_SOP.md",
       "reason": "The evidence loop delegates capture details to the SOP."
     },
     {
-      "document": "skills/pr-review-remediation/SKILL.md",
-      "dependsOn": "docs/AGENT_WORKFLOW.md",
-      "reason": "PR remediation preserves parent ownership, validation, and handoff boundaries."
+      "document": "skills/pr-human-review/SKILL.md",
+      "dependsOn": "docs/DOCUMENTATION_POLICY.md",
+      "reason": "Human acceptance and delivery states are owned by documentation policy."
     },
     {
       "document": "skills/pr-review-remediation/SKILL.md",
-      "dependsOn": "docs/LOOP_ENGINEERING.md",
-      "reason": "Review epochs inherit the global retry and stop rules."
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "PR remediation preserves parent ownership, validation, and handoff boundaries."
     },
     {
       "document": "skills/pr-review-remediation/SKILL.md",
@@ -882,9 +785,24 @@
       "reason": "Schema work preserves environment and authorization boundaries."
     },
     {
-      "document": "skills/test-and-validation-loop/SKILL.md",
+      "document": "skills/pr-review-remediation/SKILL.md",
+      "dependsOn": "skills/pr-review-remediation/references/remediation-state.md",
+      "reason": "The entrypoint selects the canonical epoch, evidence and terminal protocol."
+    },
+    {
+      "document": "skills/pr-review-remediation/references/remediation-state.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "PR executable trust and sensitive actions preserve canonical security."
+    },
+    {
+      "document": "docs/notes/README.md",
       "dependsOn": "docs/AGENT_WORKFLOW.md",
-      "reason": "Validation command ownership and handoff live in the workflow."
+      "reason": "Continuation templates implement workflow progress and repair boundaries."
+    },
+    {
+      "document": "skills/pr-review-remediation/references/remediation-state.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "PR terminal validation and repair rules consume the shared check contract."
     }
   ],
   "staleTerms": {
@@ -1009,14 +927,7 @@
         "skills/**"
       ],
       "requiredDocuments": [
-        "AGENTS.md",
-        "config/agent-infrastructure.json",
-        "docs/AGENT_WORKFLOW.md",
-        "docs/DOCUMENTATION_POLICY.md",
-        "docs/LOOP_ENGINEERING.md",
-        "docs/MCP_WORKFLOW.md",
-        "docs/SECURITY.md",
-        "docs/TASKS.md"
+        "config/agent-infrastructure.json"
       ]
     },
     {

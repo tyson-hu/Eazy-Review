@@ -1,27 +1,14 @@
-<!-- Write for a reader who was not in the session. Plain English, no filler.
-Full template rules: docs/AGENT_WORKFLOW.md -> PR Summary Template. -->
+<!-- Describe the final change for a reader outside the session. Scale detail to
+its complexity; keep validation and delivery evidence explicit.
+Delivery/board policy: docs/DOCUMENTATION_POLICY.md. -->
 
-## What changed
+## Change
 
-## Why
-
-## User-product effect
-
-<!-- What a user, the product, or a developer sees, does, or maintains differently. -->
-
-## Safety
-
-<!-- What could break, and why it will not (or what to watch). -->
+<!-- Concrete problem, resulting behavior and relevant risks or limitations. -->
 
 ## Validation
 
-<!-- Commands run with results, or each skipped command with the reason. -->
-
-## Files changed
-
-## Follow-ups
-
-<!-- Deferred work; each item must have a home in docs/TASKS.md. -->
+<!-- Checks and observed results; missing proof and reasons. -->
 
 Docs updated: <!-- list them, or write: No documentation update needed because ... -->
 

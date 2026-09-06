@@ -20,11 +20,17 @@ Do **not** treat web-only results as a full iOS acceptance substitute when the t
 
 ## MCP Tool Classification
 
-| Action | Level |
-| --- | --- |
-| `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_wait_for` | READ |
-| `browser_click`, `browser_type`, `browser_fill_form`, `browser_resize` | REVERSIBLE WRITE (state intended UI change before long destructive sequences) |
-| `browser_run_code_unsafe` | Prefer narrow built-ins first; use only when a single built-in cannot express the step; never for secrets or prod systems |
+Classify each action by its actual effect and target under
+`docs/MCP_WORKFLOW.md`. Navigation, reading, screenshots, snapshots, and
+resizing are read-only when they cause no external mutation. Clicking or
+typing may be a reversible write, high-impact action, or forbidden operation;
+the tool name does not establish authority. Account deletion remains
+human-only, production database access remains forbidden, and external
+submission requires its existing authorization.
+
+For `browser_run_code_unsafe`, prefer narrow built-ins first; use it only when
+a single built-in cannot express the step, never for secrets or production
+systems. The same effect and target classification applies.
 
 ## Boot Sequence
 
@@ -102,6 +108,10 @@ async (page) => {
 ```
 
 Web does **not** prove iOS soft-keyboard occlusion; mark keyboard criteria Partial unless the simulator SOP covers them.
+
+Partial describes this criterion's coverage only. Record the limitation and
+select the environment status solely from `docs/evidence/README.md`; do not
+add a Partial environment status.
 
 ## Navigation Integrity
 

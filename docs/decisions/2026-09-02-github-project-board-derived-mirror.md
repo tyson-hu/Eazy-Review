@@ -31,8 +31,7 @@ authorizes work.
 - The status mapping, item-identity convention, sync timing, and write
   ownership live once in `docs/DOCUMENTATION_POLICY.md` (GitHub Project #4
   Mirror). `gh project` call classification lives in `docs/MCP_WORKFLOW.md`.
-- Sync attaches to the existing documentation gate (Completion Sequence
-  step 9): after a ledger status changes, the agent lists the proposed board
+- Sync attaches to the existing documentation gate (before delivery handoff): after a ledger status changes, the agent lists the proposed board
   writes — status moves, item creation with every card field, detail updates —
   on the mandatory `Project #4 moves:` line of the PR body, or writes `none`.
 - The agent applies every board write; the human approves. Eazy Review is an
@@ -85,6 +84,6 @@ canonical.
 - `docs/DOCUMENTATION_POLICY.md`
 - `docs/MCP_WORKFLOW.md`
 - `docs/AGENT_WORKFLOW.md`
-- `docs/LOOP_ENGINEERING.md`
+- `docs/AGENT_WORKFLOW.md`
 - `docs/TASKS.md`
 - `.github/pull_request_template.md`

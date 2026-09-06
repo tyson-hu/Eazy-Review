@@ -1,7 +1,9 @@
 ---
 id: decision-agent-agnostic-security-source
 date: 2026-07-04
-status: accepted
+status: superseded
+updated: 2026-09-05
+superseded_by: decision-simplify-agent-infrastructure
 area: auth-security
 tasks: []
 pr: null
@@ -17,6 +19,9 @@ Security-sensitive instructions originally lived in a Cursor-specific rule,
 which made their visibility depend on the tool running the session.
 
 ## Decision
+
+Historical decision. The replacement preserves its substantive boundaries and
+changes only the infrastructure ownership/continuation rules described there.
 
 `docs/SECURITY.md` is the canonical security policy for every human and coding
 agent. Tool-specific security rules are thin mirrors or pointers. Agents that
@@ -41,3 +46,4 @@ needed.
 - `.cursor/rules/security.mdc`
 - `AGENTS.md`
 - `docs/DOCUMENTATION_POLICY.md`
+- `docs/decisions/2026-09-05-simplify-agent-infrastructure.md`

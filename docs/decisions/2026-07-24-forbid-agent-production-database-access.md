@@ -74,5 +74,5 @@ test process is explicitly reviewed and recorded in a superseding decision.
 - `docs/MCP_WORKFLOW.md`
 - `docs/SECURITY.md`
 - `docs/TASKS.md`
-- `skills/feature-slice-builder/SKILL.md`
+- `docs/API_CONTRACTS.md`
 - `.cursor/rules/mcp-policy.mdc`

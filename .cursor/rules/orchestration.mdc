@@ -3,17 +3,13 @@ description: Delegation and subagent orchestration policy
 alwaysApply: true
 ---
 
-The canonical delegation policy lives in `docs/AGENT_WORKFLOW.md`, Delegation And Subagent Policy. Read it before launching or defining any subagent.
+When delegating, use `docs/AGENT_WORKFLOW.md`, Delegation and independent
+checking, and Failed checks and progress. Supply the outcome, exact edit
+boundary, acceptance evidence and relevant constraints; host context inheritance
+does not grant authority.
 
-Operational reminders:
-
-- Do not delegate trivial edits; delegation overhead costs more than it saves.
-- Subagents start with a clean context and cannot see this conversation. Every delegation prompt must include the task spec, the exact file and doc paths to read (per the Context Map), and the matching skill when one exists; when none matches, say so and instruct the subagent to follow its own definition.
-- The parent agent owns scope, decomposition, escalation, and final acceptance. Subagents never accept their own work.
-- Tasks 16–19 are parent-owned, verified-strong implementations. The generic
-  implementer may receive only explicitly bounded non-sensitive leaf packets;
-  reviewer and verifier remain independent. Do not add or infer a
-  security-specific implementer role.
-- Never escalate model tiers automatically — state why the cheaper tier is insufficient first.
-- Subagents stop after two failed fix attempts and return a structured report to the parent (`docs/LOOP_ENGINEERING.md`, Subagent Escalation Boundary).
-- Active and conditionally available project subagents live in `.cursor/agents/`; role status, invocation boundaries, and the execution sequence live in `docs/AGENT_WORKFLOW.md`.
+The parent owns integration, scope and acceptance. Delegate only bounded
+non-sensitive implementation; integrated auth/security and schema remain with
+the parent. Children never accept themselves. Use configured host models and
+the capabilities in `.cursor/agents/`; debugger invocation is conditional and
+explicit, and verification is read-only.

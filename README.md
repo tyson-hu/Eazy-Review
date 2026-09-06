@@ -29,8 +29,8 @@ Score, and maintaining a personal My Rating.
   [Task 19 dashboard](docs/evidence/task-19-protected-account-deletion/RESULT.md)
   and [verification details](docs/evidence/task-19-protected-account-deletion/VERIFICATION.md).
 
-Feed remains a placeholder. Current task status and implementation order live
-in [`docs/TASKS.md`](docs/TASKS.md).
+Current task status and implementation order live in
+[`docs/TASKS.md`](docs/TASKS.md).
 
 ## Current Stack
 
@@ -67,8 +67,9 @@ in [`docs/TASKS.md`](docs/TASKS.md).
   research.
 - `docs/DOCUMENTATION_POLICY.md`: required doc-update rules for future changes.
 - `docs/SECURITY.md`: security rules for install, shell, and secrets handling (all agents and humans).
-- `docs/AGENT_WORKFLOW.md`: agent session flow, context map, definition of done, handoff and PR formats.
-- `docs/LOOP_ENGINEERING.md`: loop anatomy, stop conditions, retry policy, and the loop-to-skill index.
+- `AGENTS.md`: agent entrypoint and affected-contract routing.
+- `docs/AGENT_WORKFLOW.md`: validation, delegation, failure handling and completion.
+- `docs/notes/README.md`: continuation and blocker records.
 - `docs/USER_FLOWS.md`: core user journeys and route expectations.
 - `docs/DATA_MODEL.md`: Supabase schema, RLS, triggers, and rating summary logic.
 - `docs/API_CONTRACTS.md`: frontend types, API functions, and query keys.
@@ -80,11 +81,11 @@ in [`docs/TASKS.md`](docs/TASKS.md).
 - `docs/decisions/`: human-authored ADR-style records, recording rules, and the legacy archive.
 - `docs/RELEASE_CHECKLIST.md`: release-readiness checklist.
 
-Before writing Expo code, read the exact SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
+For Expo API, routing or configuration changes, consult the affected SDK 57 guidance at `https://docs.expo.dev/versions/v57.0.0/`.
 
 ## Quality Checks
 
-Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation Commands). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
+Validation commands and when to use each live in `docs/AGENT_WORKFLOW.md` (Validation). For CI or local web-bundle verification: `CI=1 npx expo export --platform web`.
 Decision records use `npm run decisions:build` and `npm run decisions:check`.
 Use npm `>=11.16.0 <12` (CI pins `11.17.0`). The repository rejects unsupported
 npm versions and fails dependency installs when a lifecycle script is not

@@ -1,60 +1,24 @@
 {
   "skills": [
     {
-      "name": "blocker-note",
-      "description": "Use when debugging stalls (2+ failures, 20-30 min no progress, or looping) — persist attempts, evidence, and ruled-out causes to docs/notes/blocker-<topic>.md, then stop."
-    },
-    {
-      "name": "bugfix-debug-loop",
-      "description": "Use when fixing a reported bug in existing behavior — reproduce first, minimal fix, max 2 hypotheses."
-    },
-    {
-      "name": "docs-sync-loop",
-      "description": "Use when docs have drifted from already-shipped code — apply the DOCUMENTATION_POLICY.md update map with pointers, not duplicates."
-    },
-    {
-      "name": "feature-slice-builder",
-      "description": "Use when implementing one user-visible feature from docs/TASKS.md that spans data and UI (connected-read, core-auth, connected-write, recovery, or protected deletion)."
-    },
-    {
       "name": "interactive-preview-loop",
-      "description": "Use when a task requires evidence-backed interactive verification of an Expo user journey in iOS Simulator or the project reference mobile-web viewport, or a screenshot-based UX audit with numbered captures and triaged findings — not for automated project checks, UI implementation, or bug fixing."
+      "description": "Capture Eazy Review simulator or mobile-web journey and UX evidence."
     },
     {
       "name": "pr-human-review",
-      "description": "Use when an implementation-complete pull request needs human acceptance — explain the change without line-by-line review, split product and behavior decisions from automated verification, and recommend whether it is ready."
+      "description": "Explain a finished Eazy Review PR for a human acceptance decision."
     },
     {
       "name": "pr-review-remediation",
-      "description": "Use when an existing Eazy Review PR has findings needing current-head triage, stale/already-fixed/root-cause classification, remediation planning, or authorized bounded remediation; this repository-local outer workflow may use GitHub comment/thread handlers only as inner capabilities."
-    },
-    {
-      "name": "product-data-modeling",
-      "description": "Use for frontend-only product/rating shape changes — types, scoped fixtures, and API contracts, with no SQL."
-    },
-    {
-      "name": "refactor-safety-loop",
-      "description": "Use when restructuring code with zero behavior change — declared non-goals, allowed-files list, before/after checks."
-    },
-    {
-      "name": "session-handoff",
-      "description": "Use at a session boundary (phase done, topic switch, overloaded context) — write docs/notes/handoff.md and recommend a fresh session."
+      "description": "Triage or fix existing Eazy Review PR findings against the current head."
     },
     {
       "name": "skill-creator",
-      "description": "Use when turning a repeated (3+) or human-directed reviewed workflow into a new SKILL.md, tuning a skill's trigger description, or iterating/maintaining existing skills."
+      "description": "Audit or change Eazy Review skills and their discovery metadata."
     },
     {
       "name": "supabase-schema-change",
-      "description": "Use for schema, migration, RLS, grant, database function or trigger, rating-summary, or other database-backed contract changes; not seed-only data."
-    },
-    {
-      "name": "test-and-validation-loop",
-      "description": "Use when running project checks for a finished change — narrowest command first, fix only caused-by-change failures, max 2 retries."
-    },
-    {
-      "name": "ui-screen-builder",
-      "description": "Use when building or redesigning one Expo / React Native screen's UI following docs/DESIGN.md."
+      "description": "Plan or implement Eazy Review schema, RLS, grants, or database functions."
     }
   ]
 }

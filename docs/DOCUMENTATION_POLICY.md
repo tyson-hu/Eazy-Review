@@ -129,7 +129,7 @@ Tooling, scripts, dependencies, quality checks, local setup, or developer workfl
 - `README.md`
 - `AGENTS.md`
 - `docs/TASKS.md`
-- `docs/AGENT_WORKFLOW.md` (Validation Commands) when a check, gate, or
+- `docs/AGENT_WORKFLOW.md` (Validation) when a check, gate, or
   generated-command changes
 - `docs/DOCUMENTATION_POLICY.md` when the documentation gate itself changes
 - `docs/SECURITY.md` when install, shell, dependency-approval, or secret rules change
@@ -140,12 +140,11 @@ Tooling, scripts, dependencies, quality checks, local setup, or developer workfl
 Agent behavior, Cursor rules, MCP setup, or AI workflow:
 - `AGENTS.md`
 - `.cursor/rules/*`
-- `.cursor/agents/*` (subagent definitions; keep aligned with the Delegation And Subagent Policy and its Roles And Rollout Status table in `docs/AGENT_WORKFLOW.md`)
+- `.cursor/agents/*` (subagent definitions; keep aligned with the Delegation and independent checking section in `docs/AGENT_WORKFLOW.md`)
 - `config/agent-infrastructure.json` when a registered document, mirror,
   dependency, generated command, stale-term rule, or impact rule changes
 - `docs/SECURITY.md` when security rules change (keep `.cursor/rules/security.mdc` mirrored)
 - `docs/AGENT_WORKFLOW.md`
-- `docs/LOOP_ENGINEERING.md`
 - `docs/MOBILE_SIMULATOR_SOP.md`, `docs/WEB_MOBILE_PREVIEW_SOP.md`, `docs/UX_SCREENSHOT_AUDIT_SOP.md`, `docs/EVIDENCE_GITHUB_UPLOAD_SOP.md`, `docs/evidence/README.md`, and `skills/interactive-preview-loop` when interactive preview, UX audit, or evidence upload procedure changes
 - `skills/*/SKILL.md` (canonical skill bodies) and the generated discovery
   wrappers in `.claude/skills/*` and `.agents/skills/*`. The two wrapper trees
@@ -164,7 +163,7 @@ Release readiness, QA criteria, security checks, or store-readiness work:
 Approved implementation plans and design specs under `docs/superpowers/plans/`
 and `docs/superpowers/specs/` are registered status documents (planning
 artifacts). Editing one requires `docs/TASKS.md` to still agree with it
-(`docs/LOOP_ENGINEERING.md`, Memory Rule).
+(the task contract in `docs/AGENT_WORKFLOW.md`).
 
 ## GitHub Project #4 Mirror
 
@@ -173,7 +172,7 @@ mirror of `docs/TASKS.md`. The ledger is authoritative and the board never
 leads it. Board inclusion or status authorizes nothing — not implementation,
 merge, deployment, hosted configuration, database changes, production access,
 or account deletion. The board is not a project-memory category
-(`docs/LOOP_ENGINEERING.md`, Memory Rule) and is not a checker or CI input.
+and is not a checker or CI input.
 
 Item identity is the board `ID` field: `T01`–`T29` for numbered tasks,
 `INF-nn` for unnumbered agent-infrastructure gates and follow-ups, packet codes
@@ -196,8 +195,7 @@ Status mapping (`docs/TASKS.md` wording → board `Status`):
 | Fold-only finding | `Fold Only` |
 | Explicitly deferred idea (Post–Task 12 Review Gate list; `docs/BLUEBOOK.md` non-MVP items) | `Candidate` |
 
-When: at Completion Sequence step 9 in `docs/AGENT_WORKFLOW.md`, after the
-ledger edit is written. If the change moved a `docs/TASKS.md` status that has a
+When: before delivery handoff, after the ledger edit is written. If the change moved a `docs/TASKS.md` status that has a
 board item, added a ledger item that needs one, or changed a fact a card
 restates (title, summary, gate, delivery PR), retired a ledger item whose card
 should leave the board, or changed a fact the board README states, list each
@@ -212,7 +210,7 @@ Benefit, Confidence, Difficulty, Gate or next move, body) with its value, the
 body in the format of the existing cards in its Lane; an `update` pairs each
 field with its new value; a README write quotes the changed lines. A field
 listed without a value is not approved. Before a PR exists, list the same writes
-under "What needs review" in the handoff. Propose `Completed` only when the
+in the local delivery handoff. Propose `Completed` only when the
 ledger already records human acceptance, which happens inside the PR being
 accepted (Acceptance And Merge below): the agent records acceptance in
 `docs/TASKS.md` in that PR, the human merges, and the agent applies `Completed`
@@ -226,8 +224,8 @@ acceptance or merge, or an explicit go-ahead in chat. Only after that approval
 does the agent apply the listed writes, one approved write per listed item — a
 `create` is `item-create` plus the field edits that fill the card, still one
 write — using the `gh project` classification, recipe, and stop conditions in
-`docs/MCP_WORKFLOW.md`, and a task is not reported complete until the board
-matches the ledger. Approval covers exactly the listed writes and values; more
+`docs/MCP_WORKFLOW.md`, and delivery closeout is not reported complete until the board
+matches the ledger. Local completion remains a distinct state. Approval covers exactly the listed writes and values; more
 items, other fields, different values, or schema changes need their own
 approval. The agent fills every field
 on cards it creates and keeps card details consistent with the ledger; humans
@@ -239,7 +237,8 @@ board.
 
 Every commit should keep documents and implementation synchronized as much as practical. If a task needs multiple commits, docs may be updated in the final commit of that task, but they must be current before pushing or opening/merging a PR.
 
-PR bodies use the PR summary template in `docs/AGENT_WORKFLOW.md`, and every task ends against the Definition Of Done there.
+PR bodies use `.github/pull_request_template.md`. Local completion and validation
+are defined in `docs/AGENT_WORKFLOW.md`; acceptance and delivery follow below.
 
 ### Acceptance And Merge
 

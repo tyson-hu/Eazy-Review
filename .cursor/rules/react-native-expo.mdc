@@ -1,24 +1,23 @@
 ---
-description: Applies to Expo, Expo Router, React Native, and NativeWind work
+description: Expo APIs, route entrypoints and framework configuration
 globs:
+  - "app/**/*.ts"
   - "app/**/*.tsx"
-  - "components/**/*.tsx"
-  - "src/**/*.ts"
-  - "src/**/*.tsx"
   - "app.json"
+  - "app.config.*"
   - "package.json"
   - "babel.config.*"
   - "metro.config.*"
   - "tailwind.config.*"
+  - "plugins/**/*"
 ---
 
-Before writing Expo code, read the exact Expo SDK 57 docs at `https://docs.expo.dev/versions/v57.0.0/`.
+For Expo APIs, routing or configuration, use installed versions in
+`package.json` and matching Expo documentation (SDK 57:
+https://docs.expo.dev/versions/v57.0.0/). Read only the affected API guidance.
+`docs/USER_FLOWS.md` and the active task own navigation; use Expo Router routes.
 
-Rules:
-- Use Expo Router file-based navigation.
-- The current tab set is Feed, Browse, and Account. Route or tab changes are
-  governed by `docs/USER_FLOWS.md` and the active task; this rule does not make
-  the present set permanent.
-- Do not assume older Expo or Expo Router behavior; use the installed SDK versions in `package.json`.
-
-Feature work follows the routine in `skills/feature-slice-builder/SKILL.md`.
+These globs attach to route entrypoints and framework configuration. A pure
+TypeScript helper or presentational component does not require an Expo-doc read.
+If a file outside these paths changes native/framework behavior, retrieve the
+same version-matched guidance based on that effect.

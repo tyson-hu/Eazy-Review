@@ -648,6 +648,45 @@ test('generated sources must be registered active canonical documents', (t) => {
   );
 });
 
+test('every canonical skill has an evergreen graph registration', () => {
+  const { skills } = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, 'skills', 'manifest.json'), 'utf8'),
+  );
+  const { documents } = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'),
+      'utf8',
+    ),
+  );
+  const missing = skills
+    .map(({ name }) => `skills/${name}/SKILL.md`)
+    .filter((skillPath) => !documents.some((document) => (
+      document.path === skillPath
+      && document.kind === 'file'
+      && document.lifecycle === 'evergreen'
+      && document.owner === 'canonical-skill'
+    )));
+
+  assert.deepEqual(missing, [], 'Canonical skills must participate in the document graph');
+});
+
+test('PR protocol changes reach their entrypoint without unrelated workflow fanout', () => {
+  const config = JSON.parse(fs.readFileSync(
+    path.join(REPO_ROOT, 'config', 'agent-infrastructure.json'), 'utf8',
+  ));
+  const protocol = 'skills/pr-review-remediation/references/remediation-state.md';
+  assert.ok(config.documents.some((document) => (
+    document.path === protocol && document.lifecycle === 'evergreen'
+      && document.owner === 'canonical-skill'
+  )), 'The extracted protocol must remain an active checked owner');
+  assert.ok(reportImpactedDocuments(config, ['docs/AGENT_WORKFLOW.md'], REPO_ROOT)
+    .documents.includes(protocol));
+  const report = reportImpactedDocuments(config, [protocol], REPO_ROOT);
+  assert.ok(report.documents.includes('skills/pr-review-remediation/SKILL.md'));
+  assert.ok(!report.documents.includes('docs/MCP_WORKFLOW.md'));
+  assert.ok(!report.documents.includes('docs/TASKS.md'));
+});
+
 test('GEMINI.md is registered as an AGENTS.md pointer and pointer content is validated', (t) => {
   const repositoryConfig = JSON.parse(
     fs.readFileSync(

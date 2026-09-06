@@ -123,6 +123,9 @@ Limits (must state in findings when relevant):
 ## What Simulator Does Not Prove Alone
 
 - Soft-keyboard + scroll-to-Submit unless you actually open the keyboard and scroll (hard to automate without extra tooling). Mark **Partial** and cross-check web scroll reachability.
+  Partial describes this criterion's coverage only. Record the limitation and
+  select the environment status solely from `docs/evidence/README.md`; do not
+  add a Partial environment status.
 - Cross-platform web header/`href` quirks — use the web SOP.
 - Physical device performance, notches, and input — record `not-tested` when skipped.
 
