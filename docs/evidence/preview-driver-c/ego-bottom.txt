@@ -1,0 +1,17 @@
+root
+  heading
+    text "Preview driver capability fixture"
+  text "Search products"
+  textbox [ref=1, loc=unstable]
+    text "sneaker"
+  button [ref=22, loc=unstable]
+    text "Apply query"
+  status
+    text "Result: sneaker"
+  button [ref=24, loc=unstable]
+    text "Local dialog"
+  button [ref=25, loc=unstable]
+    text "Emit fixture error"
+  text "Scroll to the bottom control"
+  button [ref=27, loc=unstable]
+    text "Bottom control"

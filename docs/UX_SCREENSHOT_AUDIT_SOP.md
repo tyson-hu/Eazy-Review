@@ -28,7 +28,7 @@ Baseline audit: **no product code edits**. Docs may update acceptance criteria a
 2. **Baseline capture** — complete the required step table before writing findings.
 3. **Findings report** — every finding cites a screenshot id or observed step.
 4. **Parent triage** — Accept / Reject / Defer each finding.
-5. **Fix packets** — only accepted items; eleven-field packets per `docs/AGENT_WORKFLOW.md`.
+5. **Fix packets** — only accepted items; scoped delegation per `docs/AGENT_WORKFLOW.md`.
 6. **Integrated re-audit** — recapture the journey; recheck every accepted P0–P2.
 7. **Readiness decision** — GO / CONDITIONAL GO / NO-GO recorded in `docs/TASKS.md`.
 
@@ -51,7 +51,7 @@ Commit evidence when it supports a PR or durable triage.
 1. Flow order — capture the journey in user order when possible.
 2. Dual environment — simulator primary for chrome/Alert; web for scripted interaction and full-page proof.
 3. One claim → one evidence id (or explicit “observed step” when a screenshot cannot prove it).
-4. State **limits** in the report (keyboard, physical device, deep-link stack artifacts, MCP dialog quirks).
+4. State **limits** in the report (keyboard, physical device, deep-link stack artifacts, ego-browser dialog or event-capture limits).
 5. Findings severity:
 
 | Level | Meaning | Gate handling |

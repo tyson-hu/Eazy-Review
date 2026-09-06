@@ -23,7 +23,18 @@ agent surface in use without committing credentials:
 - Claude Code: `.mcp.json` at the repo root (currently absent)
 - Codex: its global `config.toml` (not a repo file)
 
-**Browser / Playwright MCP** — use for Expo web mobile preview and scripted UX evidence when available. Follow `skills/interactive-preview-loop` and `docs/WEB_MOBILE_PREVIEW_SOP.md` (reference mobile-web viewport default 393×852, dialog/session rules, screenshot naming under `docs/evidence/`). Do not add Playwright as a repo dependency for ad-hoc audits. Classify actions per MCP Tool Policy below; prefer built-in navigate/click/type/screenshot/snapshot over `browser_run_code_unsafe`.
+**Browser / ego-browser** — use ego-browser for browser-based work throughout
+Eazy Review's SDLC: research, design inspection, implementation previews,
+debugging, UX evidence, and release verification. Load its installed skill for
+runtime operations and ownership/handoff rules. For app evidence, follow
+`skills/interactive-preview-loop` and `docs/WEB_MOBILE_PREVIEW_SOP.md`.
+Playwright is no longer the project browser driver; do not silently fall back
+when a capability is unavailable. Record the affected criterion as blocked or
+not-run and resolve the capability or obtain an explicit tooling decision.
+Native/simulator and physical-device requirements remain independent. Prefer
+semantic helpers; use bounded page JavaScript/CDP only for missing helper
+capabilities. The effect-based tool policy below applies equally to the CLI.
+No browser dependency installation or global tool removal is implied.
 
 Treat each MCP server as a capability boundary, especially if it can write to a database, repo, or external service.
 

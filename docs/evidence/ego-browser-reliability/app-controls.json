@@ -1,0 +1,12 @@
+[
+  {
+    "role": "button",
+    "name": "Back",
+    "ignored": false
+  },
+  {
+    "role": "button",
+    "name": "Sign in to rate",
+    "ignored": false
+  }
+]

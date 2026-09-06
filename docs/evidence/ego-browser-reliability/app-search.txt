@@ -1,0 +1,58 @@
+root
+  container
+    container
+      container
+      heading
+        text "Browse"
+      container
+        textbox "Search products" [ref=153, loc=css:input[placeholder="Search brand, name, or SKU"]]
+          text "Air Force"
+        button "Open Nike Nike Air Force 1 Low White" [ref=1441, loc=css:button[aria-label="Open Nike Nike Air Force 1 Low White"]]
+          container
+            container
+            image
+          text "NIKE"
+          text "Nike Air Force 1 Low White"
+          text "CW2288-111"
+          container
+            container
+              text "EAZY SCORE"
+              text "79 / 100"
+              text "Good"
+              text "Editorial assessment"
+            container
+              text "COMMUNITY SCORE"
+              text "—"
+              text "No ratings yet"
+          container
+            text "LOWEST VERIFIED OFFER"
+            container
+              container
+                text "$114.99"
+                text
+                text "USD"
+              container
+                text "DICK'S Sporting Goods"
+                text "·"
+                text
+                text "US 10"
+              container
+                text "Checked"
+                text "Aug 3, 2026"
+    tablist
+      tab "Feed tab" [ref=116, loc=css:a[aria-label="Feed tab"], url=http://localhost:18764/feed]
+        container
+          text ""
+          text ""
+        text "Feed"
+      tab "Browse tab" [ref=123, loc=css:a[aria-label="Browse tab"], url=http://localhost:18764/browse]
+        container
+          text ""
+          text ""
+        text "Browse"
+      tab "Account tab" [ref=130, loc=css:a[aria-label="Account tab"], url=http://localhost:18764/account]
+        container
+          text ""
+          text ""
+        text "Account"
+  container

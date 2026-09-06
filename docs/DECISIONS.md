@@ -30,6 +30,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Architecture | [Build the connected client foundation before screen integration](decisions/2026-07-30-sequence-connected-client-before-screen-integration.md) | Accepted | 13, 14, 15, 16, 17, 18, 19 | 2026-07-30 |
 | Tooling and CI | [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Accepted | 15 | 2026-08-07 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
+| Agent workflow | [Adopt ego-browser for browser-based SDLC work](decisions/2026-09-05-adopt-ego-browser-for-sdlc.md) | Accepted | — | 2026-09-05 |
 | Agent workflow | [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) | Accepted | — | 2026-09-05 |
 | Agent workflow | [Simplify agent instructions around canonical contracts](decisions/2026-09-05-simplify-agent-infrastructure.md) | Accepted | — | 2026-09-05 |
 | Agent workflow | [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) | Accepted | — | 2026-09-02 |
@@ -43,6 +44,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
+| [Adopt ego-browser for browser-based SDLC work](decisions/2026-09-05-adopt-ego-browser-for-sdlc.md) | Agent workflow | Accepted | 2026-09-05 |
 | [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) | Agent workflow | Accepted | 2026-09-05 |
 | [Simplify agent instructions around canonical contracts](decisions/2026-09-05-simplify-agent-infrastructure.md) | Agent workflow | Accepted | 2026-09-05 |
 | [Lay out Feed as a spotlight plus ranked rows, not a second Browse list](decisions/2026-09-03-feed-scoreboard-layout.md) | Product and UX | Accepted | 2026-09-05 |
@@ -52,7 +54,6 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Authentication and security | Superseded | 2026-09-05 |
 | [Persist session boundaries and stalled debugging in files](decisions/2026-07-03-persist-session-and-blocker-state.md) | Agent workflow | Superseded | 2026-09-05 |
 | [Use three client-side Feed sections with a min-two ranked threshold](decisions/2026-09-02-real-feed-mvp-sections.md) | Product and UX | Superseded | 2026-09-03 |
-| [Record numeric Browse Scale-Up trigger criteria](decisions/2026-09-02-browse-scale-up-trigger.md) | Architecture | Accepted | 2026-09-02 |
 
 ## Browse by area
 
@@ -93,6 +94,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Agent workflow
 
+- [Adopt ego-browser for browser-based SDLC work](decisions/2026-09-05-adopt-ego-browser-for-sdlc.md) — Accepted.
 - [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) — Accepted.
 - [Simplify agent instructions around canonical contracts](decisions/2026-09-05-simplify-agent-infrastructure.md) — Accepted.
 - [Treat GitHub Project #4 as a derived mirror of the task ledger](decisions/2026-09-02-github-project-board-derived-mirror.md) — Accepted.

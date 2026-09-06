@@ -42,6 +42,10 @@ Read only the affected contract sections:
 | External tools/actions | docs/MCP_WORKFLOW.md |
 | Prior decisions | Search docs/DECISIONS.md; open relevant current records |
 
+Use ego-browser for browser-based work throughout the SDLC; MCP_WORKFLOW owns
+tool policy and WEB_MOBILE_PREVIEW_SOP owns app web evidence. Native and physical
+proof remain separate.
+
 Ordinary implementation needs no skill. Load a project skill for its specialized
 procedure; global/provider skills supply relevant expertise without expanding
 scope or replacing project contracts. Match Expo API/configuration guidance to
