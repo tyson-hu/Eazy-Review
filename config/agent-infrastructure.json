@@ -235,6 +235,12 @@
       "owner": "parent-agent"
     },
     {
+      "path": "docs/HOST_SETUP.md",
+      "kind": "file",
+      "lifecycle": "evergreen",
+      "owner": "parent-agent"
+    },
+    {
       "path": "docs/MCP_WORKFLOW.md",
       "kind": "file",
       "lifecycle": "evergreen",
@@ -557,6 +563,12 @@
       "path": "docs/superpowers",
       "kind": "directory",
       "lifecycle": "status",
+      "owner": "parent-agent"
+    },
+    {
+      "path": "llms.txt",
+      "kind": "file",
+      "lifecycle": "evergreen",
       "owner": "parent-agent"
     },
     {
@@ -902,6 +914,41 @@
       "document": "docs/RELEASE_CHECKLIST.md",
       "dependsOn": "docs/DEPENDENCY_SECURITY.md",
       "reason": "Release review revisits known dependency risks against its graph."
+    },
+    {
+      "document": "README.md",
+      "dependsOn": "docs/HOST_SETUP.md",
+      "reason": "Onboarding entry links to the maintained host setup and migration procedure."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/DEVELOPMENT.md",
+      "reason": "Host bootstrap delegates app and device setup to its canonical guide."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/MCP_WORKFLOW.md",
+      "reason": "Connection instructions inherit user-local configuration and tool boundaries."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/AGENT_WORKFLOW.md",
+      "reason": "Host checks and delegation preserve the canonical validation map."
+    },
+    {
+      "document": "docs/HOST_SETUP.md",
+      "dependsOn": "docs/SECURITY.md",
+      "reason": "Installation and migration preserve executable trust and private configuration."
+    },
+    {
+      "document": "llms.txt",
+      "dependsOn": "AGENTS.md",
+      "reason": "LLM navigation does not replace the canonical agent entrypoint."
+    },
+    {
+      "document": "llms.txt",
+      "dependsOn": "docs/HOST_SETUP.md",
+      "reason": "The compact reading map routes setup and migration to maintained instructions."
     }
   ],
   "staleTerms": {

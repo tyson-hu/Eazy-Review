@@ -4,7 +4,7 @@ An independent engineering project: a mobile-first sneaker review app for discov
 products, comparing **Eazy Score** with **Community Score**, and keeping a personal
 **My Rating**.
 
-[Development guide](docs/DEVELOPMENT.md) · [Build journal](https://lab.tianzhe.me/) · [Project board](https://github.com/users/tyson-hu/projects/4)
+[Host & agent setup](docs/HOST_SETUP.md) · [Development guide](docs/DEVELOPMENT.md) · [LLM guide](llms.txt) · [Build journal](https://lab.tianzhe.me/) · [Project board](https://github.com/users/tyson-hu/projects/4)
 
 ## What exists
 
@@ -59,6 +59,17 @@ server-derived rating aggregates. [package.json](package.json) owns versions.
   [Database CI](.github/workflows/database-ci.yml).
 
 ## Run locally
+
+New workstation or moving an existing environment? Start with the
+[host and agent setup guide](docs/HOST_SETUP.md): prerequisites, Codex/Cursor/Claude
+entrypoints, project skills, optional service connections, verification and a
+migration checklist. Cloning restores the shared instructions and skills;
+accounts, credentials and host-local tools need your own setup.
+
+For a coding agent, explicitly provide [AGENTS.md](AGENTS.md) and the
+[llms.txt reading map](llms.txt). The map follows the [llms.txt convention](https://llmstxt.org/)
+and links to maintained contracts; it does not auto-install tools or replace
+the agent's instructions.
 
 Use Node.js 24 and npm `>=11.16.0 <12` (CI pins `11.17.0`), Docker Desktop
 and the Supabase CLI. Review the [install rules](docs/SECURITY.md#install-and-setup-scripts)

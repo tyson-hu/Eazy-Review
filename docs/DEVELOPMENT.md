@@ -1,6 +1,10 @@
 # Development guide
 
-[Back to Eazy Review](../README.md) · [Contributing](../CONTRIBUTING.md)
+[Back to Eazy Review](../README.md) · [Host & agent setup](HOST_SETUP.md) · [Contributing](../CONTRIBUTING.md)
+
+For a new machine, agent-client setup, service connections or migration, start
+with [Host and agent setup](HOST_SETUP.md). This guide owns the app's local
+backend and web/native development steps.
 
 ## Prerequisites and first run
 

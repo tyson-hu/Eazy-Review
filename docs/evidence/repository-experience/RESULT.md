@@ -90,3 +90,29 @@ Live GitHub About and ruleset pages were also inspected.
 The versioned CodeQL workflow and community files require PR publication and
 merge before their default-branch surfaces can be verified. Local YAML parsing
 does not establish a successful hosted CodeQL or Database CI run.
+
+## Host and agent onboarding extension
+
+The user requested reusable workstation/agent setup and migration guidance in
+the same draft PR. [Host setup](../../HOST_SETUP.md) now covers repository versus
+host state, runtime pins, client entrypoints, skill discovery, optional service
+connections, a bounded first-session prompt, verification and private migration.
+The root [llms.txt](../../../llms.txt) is a compact reading map, linked from the
+README; it does not replace AGENTS or provision tools. No host configuration,
+credentials, skills, MCP servers or package versions were changed.
+
+Independent review found no actionable issue. Independent documentation
+verification passed 59 infrastructure tests, 26 secret tests, graph validation,
+secret scan and whitespace checks. All 84 local links/fragments in README,
+DEVELOPMENT, HOST_SETUP and llms.txt resolve; all 21 referenced npm scripts
+exist, and runtime pins match package/CI. Executable inputs are unchanged
+against the trusted merged baseline.
+
+README and host-guide rendering were inspected through a curated local preview
+of GitHub Markdown API output, including a 393 px mobile viewport and a 1311 px
+desktop host-guide viewport; tables scroll within the document. Provider setup
+references were checked against official Codex, Expo and ego lite documentation,
+and the llms.txt convention. This is documentation validation, not evidence of
+an install, credential migration or live MCP connection on a clean second host.
+INF-13 already describes repository onboarding and remains In Review; no
+additional board writes are proposed for this extension.
