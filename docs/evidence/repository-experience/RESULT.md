@@ -136,12 +136,12 @@ protection settings changed for this gate.
 ## Maintainer-supplied preview gallery
 
 On 2026-09-06 the maintainer reviewed PR #58 and requested a fuller README
-preview, supplying seven screenshots. The README now shows Feed, Browse and
-Product Detail first, with expandable curated Feed, offers/score comparison,
+preview, supplying seven screenshots and then an eighth showing Edit rating.
+The README now shows Feed, Browse, Product Detail and Edit rating first, with expandable curated Feed, offers/score comparison,
 signed-out and signed-in Account screens. This revision request is not a
 record of final PR acceptance.
 
-The source windows identify Eazy-Review-iPhone-15 and iOS 26.5. All seven PNGs
+The source windows identify Eazy-Review-iPhone-15 and iOS 26.5. All eight PNGs
 were copied byte-for-byte and hash-verified against the supplied files; no
 cropping, retouching or UI changes were made. They retain simulator chrome and
 development overlays. Their capture date, app revision and backend target were
@@ -156,3 +156,5 @@ physical-device behavior or completion of the actions shown on screen.
 - [Offers and score comparison](screenshots/ios-offers-score-comparison.png)
 - [Signed-out Account](screenshots/ios-account-signed-out.png)
 - [Signed-in Account](screenshots/ios-account-signed-in.png)
+
+- [Edit rating](screenshots/ios-edit-rating.png)

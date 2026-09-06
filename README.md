@@ -27,12 +27,17 @@ The build journal documents the project; it is not a hosted app demo.
 ## Preview
 
 Discover sneakers in Feed, search the catalog in Browse, and compare **Eazy
-Score** with **Community Score** on Product Detail.
+Score** with **Community Score** on Product Detail. Edit the ten rating
+dimensions in half-steps to calculate **My Rating**, then save your changes.
 
 <p>
   <img src="docs/evidence/repository-experience/screenshots/ios-feed-newly-added.png" alt="Feed: Newly Added spotlight with product image, Eazy Score and offer summary" width="240">
   <img src="docs/evidence/repository-experience/screenshots/ios-browse.png" alt="Browse: searchable sneaker catalog with Eazy Score, Community Score and offer cards" width="240">
+</p>
+
+<p>
   <img src="docs/evidence/repository-experience/screenshots/ios-product-detail.png" alt="Product Detail: editorial and community scores, decision summary and Edit my rating action" width="240">
+  <img src="docs/evidence/repository-experience/screenshots/ios-edit-rating.png" alt="Edit rating: derived My Rating, category sliders with half-step controls and Save changes action" width="240">
 </p>
 
 <details>
