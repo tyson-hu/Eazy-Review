@@ -31,6 +31,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Tooling and CI | [Protect master with proportional repository controls](decisions/2026-09-06-repository-governance.md) | Accepted | — | 2026-09-06 |
 | Tooling and CI | [Use temporary Expo CNG plugin for Xcode 27 physical-device compatibility](decisions/2026-08-07-temporary-ios-device-build-cng-plugin.md) | Accepted | 15 | 2026-08-07 |
 | Tooling and CI | [Retain a minimal audit proof set in Git](decisions/2026-07-19-retain-minimal-audit-proof-in-git.md) | Accepted | 10 | 2026-07-19 |
+| Agent workflow | [Separate permanent project identity from navigation and task numbers](decisions/2026-09-06-project-navigation-and-stable-ids.md) | Accepted | — | 2026-09-06 |
 | Agent workflow | [Adopt ego-browser for browser-based SDLC work](decisions/2026-09-05-adopt-ego-browser-for-sdlc.md) | Accepted | — | 2026-09-05 |
 | Agent workflow | [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) | Accepted | — | 2026-09-05 |
 | Agent workflow | [Simplify agent instructions around canonical contracts](decisions/2026-09-05-simplify-agent-infrastructure.md) | Accepted | — | 2026-09-05 |
@@ -46,6 +47,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | Decision | Area | Status | Updated |
 | --- | --- | --- | --- |
 | [Protect master with proportional repository controls](decisions/2026-09-06-repository-governance.md) | Tooling and CI | Accepted | 2026-09-06 |
+| [Separate permanent project identity from navigation and task numbers](decisions/2026-09-06-project-navigation-and-stable-ids.md) | Agent workflow | Accepted | 2026-09-06 |
 | [Adopt ego-browser for browser-based SDLC work](decisions/2026-09-05-adopt-ego-browser-for-sdlc.md) | Agent workflow | Accepted | 2026-09-05 |
 | [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) | Agent workflow | Accepted | 2026-09-05 |
 | [Simplify agent instructions around canonical contracts](decisions/2026-09-05-simplify-agent-infrastructure.md) | Agent workflow | Accepted | 2026-09-05 |
@@ -54,7 +56,6 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 | [Layer a machine-readable document graph above existing loops](decisions/2026-08-01-machine-readable-agent-infrastructure-graph.md) | Agent workflow | Superseded | 2026-09-05 |
 | [Bound delegated writes and keep review independent](decisions/2026-07-12-bounded-delegation-with-independent-checks.md) | Agent workflow | Superseded | 2026-09-05 |
 | [Keep security rules agent-agnostic](decisions/2026-07-04-agent-agnostic-security-source.md) | Authentication and security | Superseded | 2026-09-05 |
-| [Persist session boundaries and stalled debugging in files](decisions/2026-07-03-persist-session-and-blocker-state.md) | Agent workflow | Superseded | 2026-09-05 |
 
 ## Browse by area
 
@@ -96,6 +97,7 @@ the template live in [`docs/decisions/README.md`](decisions/README.md).
 
 ### Agent workflow
 
+- [Separate permanent project identity from navigation and task numbers](decisions/2026-09-06-project-navigation-and-stable-ids.md) — Accepted.
 - [Adopt ego-browser for browser-based SDLC work](decisions/2026-09-05-adopt-ego-browser-for-sdlc.md) — Accepted.
 - [Select agent validation from the changed contract](decisions/2026-09-05-proportional-agent-validation.md) — Accepted.
 - [Simplify agent instructions around canonical contracts](decisions/2026-09-05-simplify-agent-infrastructure.md) — Accepted.

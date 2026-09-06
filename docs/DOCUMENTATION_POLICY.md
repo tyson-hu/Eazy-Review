@@ -174,11 +174,48 @@ merge, deployment, hosted configuration, database changes, production access,
 or account deletion. The board is not a project-memory category
 and is not a checker or CI input.
 
-Item identity is the board `ID` field: `T01`–`T29` for numbered tasks,
-`INF-nn` for unnumbered agent-infrastructure gates and follow-ups, packet codes
-(`S1`, `E1`, …) plus `O1`, `O2` for the staged-simplification initiative, and
-`F01`+ for Future Ideas. Lanes are Core Roadmap, Infrastructure,
-Simplification, and Future Ideas.
+Item identity is the board `ID` field: a permanent `ER-` number padded to at
+least three digits, such as `ER-022`. IDs do not encode lane, priority, status,
+task number or PR number and never change or get reused. Allocate the next
+unused number after the highest existing ER ID across active and archived
+items; check both ID and Alias values for collisions immediately before
+creation. GitHub row numbers are display positions, not item identities.
+
+`Alias` preserves the original reference: `T01`–`T29`, `INF-nn`, simplification
+packet codes (`S1`, `E1`, …), `O1`, `O2`, and `F01`+. The initial migration maps
+Tasks 1–29 to ER-001–ER-029; this is not a numbering formula for future tasks.
+Task headings, approved plans, PR numbers and historical evidence keep their
+original references. An item without a prior reference may have an empty
+Alias. Lanes remain Core Roadmap, Infrastructure, Simplification and Future
+Ideas; changing lanes does not change identity.
+
+Titles use `[ER-022] Broader Automated App Tests And CI`: the permanent ID
+followed by the work's outcome. `Outcome` summarizes the goal or delivered
+result; `Next step` records dependencies, triggers or the decision required.
+`Source` links to the relevant repository contract; immutable evidence and
+delivery links remain in the body. New bodies describe Goal/Scope, Acceptance
+and Evidence/Delivery as applicable, distinguishing missing evidence from
+accepted work. Priority, Benefit, Confidence and Difficulty remain planning
+signals. The migration renames Potential work to Outcome and Gate or next
+move to Next step without changing their values.
+
+For lookup, retrieve the full active and archived inventory and resolve an
+exact ID or Alias to one item, counting same-item matches once. Open Source
+and the relevant ledger or packet entry before using the card to guide work.
+Use both references when useful: `ER-022 (Task 22 / T22)`. In the UI, use
+All items for project-wide search, `id:ER-022` or `alias:T22` for exact lookup;
+keyword filtering is limited to the current view and can match several items.
+
+Saved views are navigation aids: Open work is the default and excludes
+Completed and Candidate items; Product roadmap shows unfinished Core Roadmap;
+Maintenance shows unfinished Infrastructure and Simplification; Ideas shows
+Future Ideas; History shows Completed; All items is unfiltered. Open work
+includes gated and deferred items, so appearing there does not mean selected.
+Use tables sorted by ID; group Open work, Maintenance and History by Lane.
+Daily views show Title, Status, Priority and Next step. Ideas shows Title,
+Outcome, Benefit and Difficulty; History shows Title, Alias and Source; All
+items exposes the full planning fields. The board remains a derived view,
+not a committed snapshot or CI input.
 
 Status mapping (`docs/TASKS.md` wording → board `Status`):
 
@@ -205,10 +242,11 @@ changed lines>`, otherwise write `none`, on the PR body's `Project #4 moves:`
 line (`.github/pull_request_template.md`). These five forms are the only writes
 the line can carry; anything else needs its own explicit approval. Every write
 states the value it will set, not just the field: a `create` names every field
-the card will carry (Title, ID, Lane, Status, Priority, Potential work,
-Benefit, Confidence, Difficulty, Gate or next move, body) with its value, the
-body in the format of the existing cards in its Lane; an `update` pairs each
-field with its new value; a README write quotes the changed lines. A field
+the card will carry (Title, ID, Alias, Source, Lane, Status, Priority, Outcome,
+Benefit, Confidence, Difficulty, Next step, body) with its value, including an
+explicit empty Alias when there is no prior reference. A new body follows the
+Lane's format and the content conventions above. An `update` pairs each field
+with its new value; a README write quotes the changed lines. A field
 listed without a value is not approved. Before a PR exists, list the same writes
 in the local delivery handoff. Propose `Completed` only when the
 ledger already records human acceptance, which happens inside the PR being
