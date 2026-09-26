@@ -27,7 +27,7 @@ name: Fresh Comfort scroll and single increment
       id: rate-dim-comfort
     direction: DOWN
     timeout: 15000
-    centerElement: true
+    centerElement: false
 - assertVisible:
     id: rate-dim-comfort-value
     text: ".*, not rated"
