@@ -2,10 +2,39 @@ appId: com.tysonhu.eazyreview.dev
 name: Fresh Comfort scroll and single increment
 ---
 - runFlow: open-rating.yaml
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: look
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: outfit
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: material
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: craftsmanship
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: maintenance
 - scrollUntilVisible:
     element:
       id: rate-dim-comfort
     direction: DOWN
     timeout: 15000
     centerElement: true
-- runFlow: comfort-micro.yaml
+- assertVisible:
+    id: rate-dim-comfort-value
+    text: ".*, not rated"
+- tapOn:
+    id: rate-dim-comfort-inc
+    retryTapIfNoChange: false
+- takeScreenshot: comfort-context-after-tap
+- assertVisible:
+    id: rate-dim-comfort-value
+    text: ".*, 0.5 of 10"
