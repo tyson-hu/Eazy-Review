@@ -102,13 +102,13 @@ Project validation: `npm run check:readonly`. No new CI trigger is installed.
 
 ## Bounded Comfort diagnosis
 
-The runner's `run --flow comfort-prepare` reaches the unrated Comfort screen
-through the same real-login helper. `--flow comfort-micro` retains that prepared
-screen and performs exactly one increment with a strict 0.5 assertion. These
-diagnostics intentionally do not claim complete-flow database verification.
-`--flow comfort-check` uses a fresh fixture, reproduces the five preceding
-unsaved half-step inputs from R2, then tests Comfort once; it ends before save.
-Use `fixture` before each comfort-check or full run.
+The runner's `run --flow comfort-check` clears app state, opens the current
+fixture product and logs in through the same real UI helper as the complete
+flow. It reproduces the five preceding unsaved half-step inputs from R2, then
+tests Comfort exactly once with a strict 0.5 assertion; it ends before save and
+does not claim complete-flow database verification. Use `fixture` before each
+comfort-check or full run. Standalone prepared-screen invocations were removed
+after review because their screen identity could outlive the fixture file.
 
 In the reproduced failure, extra centering moved an already fully visible
 Comfort row from y=594 to y=82, partly under the native header. Maestro reported

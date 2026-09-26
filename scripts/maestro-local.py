@@ -150,9 +150,7 @@ def run(args):
     summary = {'tested_commit': command(['git', 'rev-parse', 'HEAD']).strip(),
                'tracked_tree_dirty': bool(command(['git', 'status', '--porcelain', '--untracked-files=no']).strip()),
                'device': args.device, 'product_id': product,
-               'precondition': ('Prepared unrated screen; zero rating rows; app state retained'
-                                if flow == 'comfort-micro' else
-                                'Fresh synthetic account/product; zero rating rows; launchApp clears app state'),
+               'precondition': 'Fresh synthetic account/product; zero rating rows; launchApp clears app state',
                'flow': flow, 'result': 'running'}
     (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     env = environment('maestro')
@@ -214,7 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', help='Booted simulator UDID (required for run)')
     parser.add_argument('--maestro', default='maestro', help='Reviewed Maestro CLI executable')
     parser.add_argument('--flow', default='critical-flow',
-                        choices=('critical-flow', 'comfort-prepare', 'comfort-micro', 'comfort-check'),
+                        choices=('critical-flow', 'comfort-check'),
                         help='Bounded diagnostic flows do not claim full-flow DB verification')
     args = parser.parse_args()
     os.umask(0o077)
