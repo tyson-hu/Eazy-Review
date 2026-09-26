@@ -36,7 +36,6 @@ name: Local iOS critical rating journey
 - inputText:
     text: "${MAESTRO_TEST_PASSWORD}"
     label: Enter disposable local password
-- hideKeyboard
 - tapOn:
     id: sign-in-submit
 - extendedWaitUntil:

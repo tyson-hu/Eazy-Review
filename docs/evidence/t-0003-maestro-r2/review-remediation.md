@@ -29,6 +29,15 @@ the review comment. One bounded correction centers the whole dimension row
 and requires the unrated value to be visible before tapping. Strict 0.5
 postconditions remain; no timeouts, sleeps or product behavior changed.
 
+The next fresh run reached Save Password before the explicit sign-in-submit
+command: the hierarchy showed only the native prompt after Hide Keyboard
+completed, so the subsequent submit selector could not be found. The login
+form has no onSubmitEditing handler. Remove the generic Hide Keyboard command
+immediately before the explicit login button tap; that button is above the
+keyboard. This preserves the real UI authentication path and lets the next
+command handle the password prompt immediately. No application auth behavior
+or secure-input semantics changed. These failed reruns do not count as passes.
+
 The qualifying integrated baseline review is the GitHub Codex review on d9816a5.
 No additional full review was requested. Final checks, two fresh-fixture complete
 UI repeats and exact-head CI must be recorded before the remediation is COMPLETE.
