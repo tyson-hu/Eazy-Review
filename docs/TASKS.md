@@ -1573,6 +1573,13 @@ Implementation evidence (web preview, not human acceptance):
 
 Status: Pending.
 
+Bounded local increment (Hub T-0002, contract revision 1): extends the existing
+account-switch test into one AuthProvider + profile/My Rating/Rated Products
+A → B → anonymous scenario, including late A reads and private notes. See
+[the evidence record](evidence/t-0002-account-switch/RESULT.md) for coverage,
+version-bound results and limitations. This increment awaits human review;
+it does not complete Task 22 or select an E2E trigger.
+
 Depends on: Tasks 14–19, Task 21, and Task 20 only if its conditional trigger
 was met.
 
