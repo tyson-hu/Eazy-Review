@@ -16,12 +16,22 @@ the local database check. This trial ran on an uncommitted candidate and does
 not count toward the two committed formal repeats. Formal results pending.
 
 One subsequent run at `36ce4aae92d0f9778b2994e13f96a79235552f62` failed
-at the stricter My Rating `childOf` selector after save. iOS exposes the score
-without the expected card ancestry. The bounded selector fix adds only the
+at the stricter My Rating `childOf` selector after save. The card-ancestry
+selector did not match the native tree. The bounded selector fix adds only the
 invisible `my-rating-score` testID and asserts that identifier plus exact text.
 The two formal repeats restart after this fix. The helper also now records
 database-verification failure as failed, covered by an offline fault-injection
 test; this closes the independent review's nonblocking evidence finding.
+
+At `c13b294331f21164123c497bf32307d27ce60eab`, one complete run passed
+(149.774 seconds including suite overhead), then the next fresh-fixture run
+failed before login at product-card scrolling. The failure tree contained the
+exact enabled product node and the screenshot showed it; timed scrolling over
+the retained growing synthetic catalog was unreliable. A flow-only correction
+uses the existing Search products field with the fixture SKU, then waits for
+and taps the exact product testID. Formal consecutive repeats restart again
+on the commit containing this correction; the earlier isolated PASS is not
+counted toward that requirement.
 
 The dismissal wait ran at 10:53:24.994, saw Not Now at 10:53:29.116, located an
 enabled accessibility element, and the tap completed at 10:53:30.414.

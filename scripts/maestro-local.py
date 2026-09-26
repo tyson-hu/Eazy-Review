@@ -98,7 +98,7 @@ def fixture():
     request(state, '/rest/v1/products', {'id': product, 'brand': 'Local Test',
             'name': 'T0003 Local Sneaker', 'sku': 'T0003-' + product[:8], 'is_published': True})
     save_private(LOCAL / 'fixture.json', json.dumps({'TEST_EMAIL': email, 'TEST_PASSWORD': password,
-                 'PRODUCT_ID': product, 'USER_ID': user['id']}))
+                 'PRODUCT_ID': product, 'PRODUCT_SKU': 'T0003-' + product[:8], 'USER_ID': user['id']}))
     save_private(env_path, expected)
     print('Fresh disposable user/product created. Private fixture and local public-only Expo env saved.')
 

@@ -1,0 +1,12 @@
+appId: com.tysonhu.eazyreview.dev
+---
+- tapOn: "Browse tab"
+- tapOn: "Search products"
+- inputText: "${MAESTRO_PRODUCT_SKU}"
+- hideKeyboard
+- extendedWaitUntil:
+    visible:
+      id: "product-card-${MAESTRO_PRODUCT_ID}"
+    timeout: 15000
+- tapOn:
+    id: "product-card-${MAESTRO_PRODUCT_ID}"

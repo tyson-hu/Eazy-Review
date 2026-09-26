@@ -64,6 +64,9 @@ controls. Its expectations are score 5 after ten 0.5 values, then score
 Score assertions use the invisible `my-rating-score` identifier on My Rating.
 `run` additionally verifies all ten
 stored dimensions, methodology, composite and exactly one dedicated rating row.
+Browse uses its existing search field to filter by the fixture's unique SKU,
+then opens the exact product testID. This avoids scroll-position dependence as
+retained synthetic products accumulate. Each app restart resets that search.
 Each repeat uses the same fixture recipe with fresh synthetic identities and
 zero existing ratings, then `launchApp: clearState` proves the anonymous login
 gate again. `run` refuses a fixture with an existing rating; it does not depend
