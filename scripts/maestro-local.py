@@ -22,8 +22,10 @@ DIMENSIONS = ('look', 'outfit', 'material', 'craftsmanship', 'maintenance',
 
 
 def environment():
-    env = {key: value for key, value in os.environ.items()
-           if not any(part in key for part in ('TOKEN', 'SECRET', 'API_KEY', 'SUPABASE', 'MAESTRO_'))}
+    # OS/tool bootstrap only. Unknown variables fail closed, regardless of naming/case.
+    allowed = ('PATH', 'HOME', 'TMPDIR', 'TMP', 'TEMP', 'JAVA_HOME',
+               'DEVELOPER_DIR', 'LANG', 'LC_ALL', 'LC_CTYPE')
+    env = {key: os.environ[key] for key in allowed if key in os.environ}
     env.update(DO_NOT_TRACK='1', SUPABASE_AUTH_EXTERNAL_URL=API + '/auth/v1')
     return env
 

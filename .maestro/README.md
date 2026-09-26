@@ -57,6 +57,8 @@ seed data. It refuses linked projects, other API URLs, `.env`, or replacement of
 an unrelated `.env.local`. It never resets another stack or deletes accounts.
 Privileged HTTP requests disable proxies and reject redirects. The app receives
 only the local public anon key. Do not supply hosted credentials.
+External tools receive only allowlisted OS/tool bootstrap variables plus the
+explicit local test variables. Unrelated shell credentials are not inherited.
 
 The flow uses existing testIDs, the visible login gate, and all ten half-step
 controls. Its expectations are score 5 after ten 0.5 values, then score

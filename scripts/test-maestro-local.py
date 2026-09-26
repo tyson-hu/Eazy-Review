@@ -18,6 +18,19 @@ spec.loader.exec_module(helper)
 
 
 class LoopbackBoundary(unittest.TestCase):
+    def test_external_tools_do_not_inherit_unrelated_host_credentials(self):
+        shell = {'PATH': '/placeholder/bin', 'HOME': '/placeholder/home',
+                 'JAVA_HOME': '/placeholder/java', 'LANG': 'en_US.UTF-8',
+                 'DATABASE_URL': 'placeholder-only', 'PGPASSWORD': 'placeholder-only',
+                 'AWS_ACCESS_KEY_ID': 'placeholder-only',
+                 'npm_config_//registry.npmjs.org/:_authToken': 'placeholder-only',
+                 'FUTURE_PROVIDER_CREDENTIAL': 'placeholder-only'}
+        with patch.dict(os.environ, shell, clear=True):
+            actual = helper.environment()
+        self.assertEqual(set(actual), {'PATH', 'HOME', 'JAVA_HOME', 'LANG',
+                                       'DO_NOT_TRACK', 'SUPABASE_AUTH_EXTERNAL_URL'})
+        self.assertEqual(actual['SUPABASE_AUTH_EXTERNAL_URL'], helper.API + '/auth/v1')
+
     def test_proxy_environment_cannot_receive_privileged_request(self):
         observed = []
 
