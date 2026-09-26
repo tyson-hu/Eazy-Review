@@ -10,8 +10,9 @@ Exact tested code commit: `09839904db87278b2f01332168d59804ab030e05`.
 Accepted result commit: `ec9e83c119b510f2a77af6bc627aa4fc835590ae` (T-0002.R1);
 it changed this report only relative to the tested commit, with no change to
 tested code or executable inputs. That original result was local-only when
-accepted. The repository-delivery follow-up updates acceptance documentation;
-the test and its validation inputs remain unchanged.
+accepted. The repository-delivery follow-up records acceptance and the separately
+authorized SDK 57 patch alignment below. The regression test is unchanged;
+dependency changes require fresh validation on the updated PR head.
 Branch: `codex/t-0002-account-regression`; its pull request owns the current
 publication status, exact-head CI results and review conversation state.
 
@@ -27,6 +28,44 @@ Repository delivery keeps the original implementation and evidence together
 with this acceptance record. Refer to the branch's PR checks for hosted
 validation; do not infer those results from the local commands below.
 Project #4 moves: none; Task 22 retains its Pending status and existing gates.
+
+## Authorized CI prerequisite: SDK 57 patch alignment
+
+PR #62's first head `9602cac37de8a9d14ed541518623fc85e4678952` passed repository
+checks and 48 frontend suites / 559 tests in
+[Expo CI run 36206067432](https://github.com/tyson-hu/Eazy-Review/actions/runs/36206067432).
+Both CodeQL analyses passed in
+[run 36206067352](https://github.com/tyson-hu/Eazy-Review/actions/runs/36206067352).
+Required `validate` failed at Expo Doctor: eight existing SDK 57 patch versions
+needed alignment. Package manifests, lockfile and CI were identical to master;
+the failure was unrelated to the added regression assertions. Dependency-check
+and export steps were not reached in that failed run.
+
+After reviewing the concrete eight-package proposal, the user authorized:
+“允许最小补丁对齐并继续 CI”. This follow-up changes only those direct ranges
+and their necessary lockfile closure; no CI gate or install-script allowlist
+is weakened and no product/auth/API implementation is changed.
+
+| Direct package | Previous resolved | New range |
+| --- | --- | --- |
+| expo | 57.0.20 | ~57.0.25 |
+| expo-constants | 57.0.17 | ~57.0.19 |
+| expo-dev-client | 57.0.18 | ~57.0.19 |
+| expo-font | 57.0.3 | ~57.0.4 |
+| expo-linking | 57.0.9 | ~57.0.11 |
+| expo-router | 57.0.19 | ~57.0.23 |
+| expo-splash-screen | 57.0.8 | ~57.0.9 |
+| expo-symbols | 57.0.2 | ~57.0.3 |
+
+The minimized lockfile updates 27 packages (8 direct and 19 required transitive),
+without adding/removing package entries. `expo-modules-jsi` 57.1.1 is required
+by `expo-modules-core` 57.0.19; it is part of that required closure, not an SDK
+major upgrade. Compatible unrelated resolutions and the existing Radix layout
+were preserved; npm revalidated the minimized lockfile. Registry integrity and
+install lifecycle metadata were checked for all 27 changed packages; none has
+a preinstall/install/postinstall hook. The existing reviewed install-script
+allowlist is unchanged. Updated-head local and hosted checks are recorded in
+PR #62; the original local results below refer to the earlier dependency set.
 
 ## Boundary and existing coverage
 
@@ -72,7 +111,9 @@ A → B → anonymous, including late A reads` and reuses `sampleMyRating`,
 5. Emit sign-out; assert all A/B private entries removed, anonymous consumers
    have no private data, no new private API calls occur, and public cache remains.
 
-No product implementation, auth/API/cache logic, dependencies or CI changed.
+The original regression implementation changed no product/auth/API/cache logic,
+dependencies or CI. The later authorized dependency prerequisite is described
+separately above; the regression assertions are unchanged.
 This is a hook-consumer integration test, not a rendered screen journey or E2E.
 
 ## Execution and trust
@@ -129,8 +170,10 @@ Task 22 remains Pending. Its broader integrated-boundary acceptance and E2E
 trigger human gate remain open; this increment is not whole-task acceptance.
 Browser/native/physical, database, remote/CI, full Expo/Doctor and deployment
 checks were not_run in the original local implementation stage. Hosted CI for
-repository delivery is recorded separately by the PR checks. Browser/device,
-database and deployment checks remain outside this delivery's scope.
+repository delivery is recorded separately by the PR checks. The authorized
+lockfile update triggers the existing path-filtered Database CI on its
+disposable local runner; it does not authorize staging/production access.
+Browser/device and deployment checks remain outside this delivery's scope.
 Proposed Project #4 writes: none.
 The old ignored `docs/notes/handoff.md` describes Project #4 migration and is
 preserved alongside the four unrelated untracked planning documents.

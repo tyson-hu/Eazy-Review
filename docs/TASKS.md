@@ -1578,8 +1578,11 @@ account-switch test into one AuthProvider + profile/My Rating/Rated Products
 A → B → anonymous scenario, including late A reads and private notes. See
 [the evidence record](evidence/t-0002-account-switch/RESULT.md) for coverage,
 version-bound results and limitations. Human accepted this local increment on
-2026-09-25 (T-0002.D1, accepting T-0002.R1); subsequent PR/CI delivery preserves
-that boundary. This does not complete Task 22 or select an E2E trigger.
+2026-09-25 (T-0002.D1, accepting T-0002.R1); subsequent PR #62 preserves
+that boundary. The user separately authorized the eight SDK 57 patch alignments
+needed by Expo Doctor, with their required lockfile closure. See the evidence
+record for the initial CI failure and exact scope. This does not complete
+Task 22 or select an E2E trigger.
 
 Depends on: Tasks 14–19, Task 21, and Task 20 only if its conditional trigger
 was met.
