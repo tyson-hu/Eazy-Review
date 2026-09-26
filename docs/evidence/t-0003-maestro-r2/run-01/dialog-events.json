@@ -1,0 +1,14 @@
+[
+  "11:08:04.642 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Assert that \"Not Now\" is visible RUNNING",
+  "11:08:04.789 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Assert that \"Not Now\" is visible COMPLETED",
+  "11:08:04.790 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Tap on \"Not Now\" RUNNING",
+  "11:08:04.939 [ INFO] maestro.Maestro.tap-HgV9Ck0: Tapping on element:  UiElement(treeNode=TreeNode(attributes={accessibilityText=Not Now, title=, value=, text=, hintText=, resource-id=, bounds=[57,523][197,571], enabled=true, focused=false, selected=false, checked=false}, children=[], clickable=null, enabled=true, focused=false, checked=false, selected=false), bounds=Bounds(x=57, y=523, width=140, height=48))",
+  "11:08:05.901 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Tap on \"Not Now\" COMPLETED",
+  "11:08:05.902 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Assert that \"Save Password\\?\" is not visible RUNNING",
+  "11:08:06.614 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Assert that \"Save Password\\?\" is not visible COMPLETED",
+  "11:08:06.697 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Assert that id: rate-this-product is visible RUNNING",
+  "11:08:06.859 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Assert that id: rate-this-product is visible COMPLETED",
+  "11:08:06.859 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Tap on id: rate-this-product RUNNING",
+  "11:08:07.019 [ INFO] maestro.Maestro.tap-HgV9Ck0: Tapping on element:  UiElement(treeNode=TreeNode(attributes={accessibilityText=Rate this product, title=, value=, text=, hintText=, resource-id=rate-this-product, bounds=[14,787][388,829], enabled=true, focused=false, selected=false, checked=false}, children=[], clickable=null, enabled=true, focused=false, checked=false, selected=false), bounds=Bounds(x=14, y=787, width=374, height=42))",
+  "11:08:08.606 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Tap on id: rate-this-product COMPLETED"
+]

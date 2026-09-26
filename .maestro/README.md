@@ -2,8 +2,8 @@
 
 T-0003 revision 2 resumes the R1 candidate under the upstream REWORK decision.
 The flow dismisses the native Save Password dialog immediately after login,
-before any business assertion. Its initial diagnostic run passed the complete
-journey; committed repeatability evidence is recorded in
+before any business assertion. The complete journey passed twice consecutively
+at `26177bc7cff03eada926189fa0e2996d583142b9`; repeatability evidence is in
 [`the revision 2 result`](../docs/evidence/t-0003-maestro-r2/RESULT.md).
 The [R1 evidence](../docs/evidence/t-0003-maestro/RESULT.md) remains historical.
 
