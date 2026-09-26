@@ -38,6 +38,14 @@ keyboard. This preserves the real UI authentication path and lets the next
 command handle the password prompt immediately. No application auth behavior
 or secure-input semantics changed. These failed reruns do not count as passes.
 
+The same generic command also caused Browse to navigate before the explicit
+product tap: the failing hierarchy contained the exact fixture SKU and
+sign-in-to-rate on Product Detail, rather than the expected card. Remove its
+remaining use from the SKU-search helper. Navigation itself dismisses the
+keyboard. All business actions now use their explicit selectors; no generic
+keyboard-dismiss gesture remains in these flows. This is the second and final
+bounded correction of that directly observed side effect.
+
 The qualifying integrated baseline review is the GitHub Codex review on d9816a5.
 No additional full review was requested. Final checks, two fresh-fixture complete
 UI repeats and exact-head CI must be recorded before the remediation is COMPLETE.
