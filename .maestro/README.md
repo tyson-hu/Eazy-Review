@@ -57,8 +57,16 @@ seed data. It refuses linked projects, other API URLs, `.env`, or replacement of
 an unrelated `.env.local`. It never resets another stack or deletes accounts.
 Privileged HTTP requests disable proxies and reject redirects. The app receives
 only the local public anon key. Do not supply hosted credentials.
-External tools receive only allowlisted OS/tool bootstrap variables plus the
-explicit local test variables. Unrelated shell credentials are not inherited.
+External tools receive fresh per-tool allowlists. All allow PATH and locale;
+Supabase, xcrun and Maestro also allow HOME and temporary-directory paths.
+Only xcrun/Maestro receive DEVELOPER_DIR, and only Maestro receives JAVA_HOME.
+Git's local status/revision queries receive neither HOME nor tool runtime variables.
+Supabase gets DO_NOT_TRACK; only its start command gets the fixed loopback
+SUPABASE_AUTH_EXTERNAL_URL. Maestro gets fixed analytics/update settings and
+exactly four generated fixture values (email, password, product ID and SKU).
+Unknown tool names fail closed. Unrelated shell credentials, proxies and runtime
+injection variables are not inherited. Offline regressions inspect both actual
+subprocess call boundaries with placeholder credentials and a mocked Maestro.
 
 The flow uses existing testIDs, the visible login gate, and all ten half-step
 controls. Its expectations are score 5 after ten 0.5 values, then score

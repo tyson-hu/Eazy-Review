@@ -21,18 +21,31 @@ DIMENSIONS = ('look', 'outfit', 'material', 'craftsmanship', 'maintenance',
               'comfort', 'collection', 'value', 'resale_potential', 'acquisition_ease')
 
 
-def environment():
-    # OS/tool bootstrap only. Unknown variables fail closed, regardless of naming/case.
-    allowed = ('PATH', 'HOME', 'TMPDIR', 'TMP', 'TEMP', 'JAVA_HOME',
-               'DEVELOPER_DIR', 'LANG', 'LC_ALL', 'LC_CTYPE')
+def environment(tool):
+    # Fresh per-tool allowlists, never a copy of the developer shell environment.
+    locale = ('PATH', 'LANG', 'LC_ALL', 'LC_CTYPE')
+    runtime = locale + ('HOME', 'TMPDIR', 'TMP', 'TEMP')
+    allowed = {
+        'git': locale,  # Only local rev-parse/status; no credentials or global config.
+        'supabase': runtime,  # CLI config and local Docker discovery.
+        'xcrun': runtime + ('DEVELOPER_DIR',),  # Selected Xcode and simulator runtime.
+        'maestro': runtime + ('JAVA_HOME', 'DEVELOPER_DIR'),  # Java and iOS driver.
+    }[tool]
     env = {key: os.environ[key] for key in allowed if key in os.environ}
-    env.update(DO_NOT_TRACK='1', SUPABASE_AUTH_EXTERNAL_URL=API + '/auth/v1')
+    if tool == 'supabase':
+        env['DO_NOT_TRACK'] = '1'
+    elif tool == 'maestro':
+        env.update(MAESTRO_CLI_NO_ANALYTICS='1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED='true',
+                   MAESTRO_DISABLE_UPDATE_CHECK='true')
     return env
 
 
 def command(args):
     # Supabase stdout contains credentials; never log the raw output.
-    result = subprocess.run(args, cwd=ROOT, env=environment(), capture_output=True, text=True)
+    env = environment(args[0])
+    if args[:2] == ['supabase', 'start']:
+        env['SUPABASE_AUTH_EXTERNAL_URL'] = API + '/auth/v1'
+    result = subprocess.run(args, cwd=ROOT, env=env, capture_output=True, text=True)
     if result.returncode:
         raise RuntimeError(f'{args[0]} {args[1]} failed (exit {result.returncode}); inspect local service health.')
     return result.stdout
@@ -139,10 +152,9 @@ def run(args):
                'precondition': 'Fresh synthetic account/product; zero rating rows; launchApp clears app state',
                'result': 'running'}
     (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
-    env = environment()
-    env.update(MAESTRO_CLI_NO_ANALYTICS='1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED='true',
-               MAESTRO_DISABLE_UPDATE_CHECK='true')
-    env.update({'MAESTRO_' + key: value for key, value in data.items() if key != 'USER_ID'})
+    env = environment('maestro')
+    env.update({'MAESTRO_' + key: data[key]
+                for key in ('TEST_EMAIL', 'TEST_PASSWORD', 'PRODUCT_ID', 'PRODUCT_SKU')})
 
     def redact(text):
         for key in ('TEST_EMAIL', 'TEST_PASSWORD'):
