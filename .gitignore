@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Disposable local Maestro backend, credentials, and sanitized raw artifacts
+.maestro/.local/
+
 # Expo
 .expo/
 dist/

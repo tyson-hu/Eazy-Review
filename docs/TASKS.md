@@ -1584,6 +1584,15 @@ needed by Expo Doctor, with their required lockfile closure. See the evidence
 record for the initial CI failure and exact scope. This does not complete
 Task 22 or select an E2E trigger.
 
+Bounded increment (Hub T-0003, contract revision 1): Maestro 2.10.0 CLI and
+stdio MCP were exercised on the local iOS development build. The agent inspected
+the actual product screen and navigated through the login gate with assertions.
+The critical-flow candidate remains blocked: the native Save Password modal
+recurred after its one permitted repair, before a full save/restart/readback pass.
+See [the blocked evidence record](evidence/t-0003-maestro/RESULT.md) and
+[local reproduction instructions](../.maestro/README.md). Task 22 stays Pending;
+no new CI trigger, framework switch, or product behavior change was made.
+
 Depends on: Tasks 14–19, Task 21, and Task 20 only if its conditional trigger
 was met.
 

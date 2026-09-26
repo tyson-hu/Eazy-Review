@@ -1,0 +1,172 @@
+appId: com.tysonhu.eazyreview.dev
+name: Local iOS critical rating journey
+---
+- launchApp:
+    clearState: true
+- openLink: "exp+eazy-review://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8087"
+- extendedWaitUntil:
+    visible: "Browse tab"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- runFlow:
+    when:
+      visible:
+        id: xmark
+    commands:
+      - tapOn:
+          id: xmark
+- tapOn: "Browse tab"
+- scrollUntilVisible:
+    element:
+      id: "product-card-${MAESTRO_PRODUCT_ID}"
+    direction: DOWN
+    timeout: 15000
+    centerElement: true
+- tapOn:
+    id: "product-card-${MAESTRO_PRODUCT_ID}"
+- assertVisible:
+    id: sign-in-to-rate
+- tapOn:
+    id: sign-in-to-rate
+- assertVisible:
+    id: sign-in-email
+- tapOn:
+    id: sign-in-email
+- inputText:
+    text: "${MAESTRO_TEST_EMAIL}"
+    label: Enter disposable local email
+- tapOn:
+    id: sign-in-password
+- inputText:
+    text: "${MAESTRO_TEST_PASSWORD}"
+    label: Enter disposable local password
+- hideKeyboard
+- tapOn:
+    id: sign-in-submit
+- assertVisible:
+    id: rate-this-product
+- tapOn:
+    text: "Not Now"
+    optional: true
+- assertNotVisible: "Save Password?"
+- tapOn:
+    id: rate-this-product
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: look
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: outfit
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: material
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: craftsmanship
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: maintenance
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: comfort
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: collection
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: value
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: resalePotential
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: acquisitionEase
+- tapOn:
+    id: rate-submit
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "5"
+- takeScreenshot: first-save
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Browse tab"
+    timeout: 30000
+- tapOn: "Browse tab"
+- scrollUntilVisible:
+    element:
+      id: "product-card-${MAESTRO_PRODUCT_ID}"
+    direction: DOWN
+    timeout: 15000
+    centerElement: true
+- tapOn:
+    id: "product-card-${MAESTRO_PRODUCT_ID}"
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "5"
+- takeScreenshot: restart-readback
+- tapOn:
+    id: edit-my-rating
+- assertVisible:
+    id: rate-dim-look-value
+    text: ".*, 0.5 of 10"
+- tapOn:
+    id: rate-dim-look-inc
+    repeat: 2
+- assertVisible:
+    id: rate-dim-look-value
+    text: ".*, 1.5 of 10"
+- tapOn:
+    id: rate-submit
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "6"
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Browse tab"
+    timeout: 30000
+- tapOn: "Browse tab"
+- scrollUntilVisible:
+    element:
+      id: "product-card-${MAESTRO_PRODUCT_ID}"
+    direction: DOWN
+    timeout: 15000
+    centerElement: true
+- tapOn:
+    id: "product-card-${MAESTRO_PRODUCT_ID}"
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "6"
+- takeScreenshot: edited-restart-readback
+- tapOn:
+    id: edit-my-rating
+- assertVisible:
+    id: rate-dim-look-value
+    text: ".*, 1.5 of 10"
