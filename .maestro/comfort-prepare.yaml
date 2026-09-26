@@ -1,0 +1,14 @@
+appId: com.tysonhu.eazyreview.dev
+name: Prepare a fresh unrated Comfort screen through real UI login
+---
+- runFlow: open-rating.yaml
+- scrollUntilVisible:
+    element:
+      id: rate-dim-comfort
+    direction: DOWN
+    timeout: 15000
+    centerElement: true
+- assertVisible:
+    id: rate-dim-comfort-value
+    text: ".*, not rated"
+- takeScreenshot: comfort-before

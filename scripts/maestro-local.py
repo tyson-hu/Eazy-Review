@@ -134,6 +134,7 @@ def verify():
 
 
 def run(args):
+    flow = getattr(args, 'flow', 'critical-flow')
     state = status()
     devices = json.loads(command(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))
     if not any(d['udid'] == args.device and d['state'] == 'Booted'
@@ -150,7 +151,7 @@ def run(args):
                'tracked_tree_dirty': bool(command(['git', 'status', '--porcelain', '--untracked-files=no']).strip()),
                'device': args.device, 'product_id': product,
                'precondition': 'Fresh synthetic account/product; zero rating rows; launchApp clears app state',
-               'result': 'running'}
+               'flow': flow, 'result': 'running'}
     (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     env = environment('maestro')
     env.update({'MAESTRO_' + key: data[key]
@@ -163,7 +164,7 @@ def run(args):
 
     cmd = [args.maestro, '--udid', args.device, 'test', '--no-ansi', '--flatten-debug-output',
            '--debug-output', str(output), '--format', 'JUNIT', '--output', str(output / 'report.xml'),
-           '.maestro/critical-flow.yaml']
+           f'.maestro/{flow}.yaml']
     with (output / 'console.log').open('w') as log:
         process = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT, text=True)
@@ -191,6 +192,10 @@ def run(args):
         summary['result'] = 'failed'
         (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         raise RuntimeError(f'Maestro flow failed (exit {code}).')
+    if flow != 'critical-flow':
+        summary.update(result='pass', database_verification='not_run_micro_flow')
+        (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+        return
     try:
         verify()
     except Exception:
@@ -206,6 +211,9 @@ if __name__ == '__main__':
     parser.add_argument('action', choices=('start', 'fixture', 'run', 'verify', 'stop'))
     parser.add_argument('--device', help='Booted simulator UDID (required for run)')
     parser.add_argument('--maestro', default='maestro', help='Reviewed Maestro CLI executable')
+    parser.add_argument('--flow', default='critical-flow',
+                        choices=('critical-flow', 'comfort-prepare', 'comfort-micro'),
+                        help='Bounded diagnostic flows do not claim full-flow DB verification')
     args = parser.parse_args()
     os.umask(0o077)
     LOCAL.mkdir(parents=True, exist_ok=True)

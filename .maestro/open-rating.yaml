@@ -1,0 +1,50 @@
+appId: com.tysonhu.eazyreview.dev
+---
+- launchApp:
+    clearState: true
+- openLink: "exp+eazy-review://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8087"
+- extendedWaitUntil:
+    visible: "Browse tab"
+    timeout: 30000
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- runFlow:
+    when:
+      visible:
+        id: xmark
+    commands:
+      - tapOn:
+          id: xmark
+- runFlow: open-fixture-product.yaml
+- assertVisible:
+    id: sign-in-to-rate
+- tapOn:
+    id: sign-in-to-rate
+- assertVisible:
+    id: sign-in-email
+- tapOn:
+    id: sign-in-email
+- inputText:
+    text: "${MAESTRO_TEST_EMAIL}"
+    label: Enter disposable local email
+- tapOn:
+    id: sign-in-password
+- inputText:
+    text: "${MAESTRO_TEST_PASSWORD}"
+    label: Enter disposable local password
+- tapOn:
+    id: sign-in-submit
+- extendedWaitUntil:
+    visible: "Not Now"
+    timeout: 10000
+- tapOn:
+    text: "Not Now"
+- assertNotVisible: 'Save Password\?'
+- takeScreenshot: password-dialog-dismissed
+- assertVisible:
+    id: rate-this-product
+- tapOn:
+    id: rate-this-product
