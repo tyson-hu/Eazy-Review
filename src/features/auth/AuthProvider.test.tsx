@@ -5,12 +5,21 @@ import { act, waitFor } from '@testing-library/react-native';
 import { useEffect, type MutableRefObject } from 'react';
 import { Text } from 'react-native';
 
+import * as accountApi from '@/src/features/account/api';
+import { useMyProfileQuery } from '@/src/features/account/queries';
 import {
     AuthProvider,
     useAuth,
     type AuthContextValue,
 } from '@/src/features/auth/AuthProvider';
 import type { SignInResult, SignUpResult } from '@/src/features/auth/types';
+import * as ratingsApi from '@/src/features/ratings/api';
+import {
+  useUserRatedProductsQuery,
+  useUserRatingQuery,
+} from '@/src/features/ratings/queries';
+import { sampleMyRating, uniformDimensions } from '@/src/features/ratings/testFixtures';
+import type { RatedProductItem } from '@/src/features/ratings/types';
 import { createAppQueryClient } from '@/src/lib/query/client';
 import { accountKeys, catalogKeys, ratingKeys } from '@/src/lib/query/keys';
 import * as userScopedCache from '@/src/lib/query/userScopedCache';
@@ -21,6 +30,7 @@ import type {
 } from '@/src/lib/supabase/authStorage';
 import type { AppSupabaseClient } from '@/src/lib/supabase/createClient';
 import { renderWithProviders } from '@/src/test/renderWithProviders';
+import type { AccountProfile } from '@/src/types/account';
 
 jest.mock('@/src/features/auth/emailConfirmationRedirect', () => ({
   getEmailConfirmationRedirectTo: () => 'eazyreview://auth/sign-in',
@@ -643,48 +653,171 @@ describe('AuthProvider', () => {
     await rendered.cleanup();
   });
 
-  it('clears prior user cache when switching A → B', async () => {
+  it('isolates profile, ratings and private notes across A → B → anonymous, including late A reads', async () => {
     const mock = createMockAuthClient({
       initialUser: { id: 'user-a', email: 'a@example.com' },
     });
     const queryClient = createAppQueryClient({
       defaultOptions: { queries: { gcTime: Infinity } },
     });
-    queryClient.setQueryData(accountKeys.profile('user-a'), { id: 'user-a' });
-    queryClient.setQueryData(catalogKeys.product('p1'), { id: 'p1' });
-
-    const rendered = await renderWithProviders(
-      <AuthProvider client={mock.client} enableSession linking={null}>
-        <AuthProbe />
-      </AuthProvider>,
-      { queryClient },
-    );
-
-    await waitFor(() =>
-      expect(rendered.getByTestId('auth-probe').props.children).toContain(
-        'user-a',
-      ),
-    );
-
-    await act(async () => {
-      mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
-      await Promise.resolve();
+    const publicProduct = { id: 'p1', name: 'Shared public sneaker' };
+    queryClient.setQueryData(catalogKeys.product('p1'), publicProduct);
+    const aProfile: AccountProfile = {
+      id: 'user-a', displayName: 'Account A', username: 'account-a',
+      avatarUrl: null, joinedAt: '2026-08-01T00:00:00.000Z',
+    };
+    const bProfile: AccountProfile = {
+      ...aProfile, id: 'user-b', displayName: 'Account B', username: 'account-b',
+    };
+    const aRating = sampleMyRating({ privateNote: 'A private note' });
+    const bRating = sampleMyRating({
+      ...uniformDimensions(3), score100: 30, privateNote: 'B private note',
     });
+    const aRated: RatedProductItem[] = [{
+      productId: 'p1', brand: 'Fixture', name: 'Shared public sneaker',
+      sku: null, imageUrl: null, communityScore: null, ratingCount: 0,
+      myScore100: 80, myDimensions: uniformDimensions(8),
+      ratedAt: '2026-08-01T00:00:00.000Z',
+    }];
+    const bRated: RatedProductItem[] = [{
+      ...aRated[0]!, myScore100: 30, myDimensions: uniformDimensions(3),
+    }];
+    const observations: string[] = [];
+    function PrivateDataProbe() {
+      const { user } = useAuth();
+      const profile = useMyProfileQuery();
+      const rating = useUserRatingQuery('p1');
+      const ratedProducts = useUserRatedProductsQuery();
+      const snapshot = JSON.stringify({
+        principal: user?.id ?? null,
+        profile: profile.data ?? null,
+        rating: rating.data ?? null,
+        ratedProducts: ratedProducts.data ?? null,
+      });
+      useEffect(() => { observations.push(snapshot); }, [snapshot]);
+      return <Text testID="private-data">{snapshot}</Text>;
+    }
 
-    await waitFor(() =>
-      expect(rendered.getByTestId('auth-probe').props.children).toBe(
-        'signed-in|user-b|b@example.com|idle',
-      ),
-    );
-
-    expect(
-      queryClient.getQueryData(accountKeys.profile('user-a')),
-    ).toBeUndefined();
-    expect(queryClient.getQueryData(catalogKeys.product('p1'))).toEqual({
-      id: 'p1',
+    // Keep AuthProvider, query hooks, keys and cache removal real. Replace only
+    // transport APIs; no account, network, database or deletion is exercised.
+    const lateSignals: (AbortSignal | undefined)[] = [];
+    const releases: (() => void)[] = [];
+    let holdA = false;
+    function response<T>(userId: string, a: T, b: T, signal?: AbortSignal) {
+      expect(['user-a', 'user-b']).toContain(userId);
+      if (userId === 'user-a' && holdA) {
+        lateSignals.push(signal);
+        // Deliberately ignore cancellation at the transport boundary: a late
+        // successful response still must not repopulate A's removed query.
+        return new Promise<T>((resolve) => { releases.push(() => resolve(a)); });
+      }
+      return Promise.resolve(userId === 'user-a' ? a : b);
+    }
+    const profileSpy = jest.spyOn(accountApi, 'getMyProfile')
+      .mockImplementation((userId, options) =>
+        response(userId, aProfile, bProfile, options?.signal));
+    const ratingSpy = jest.spyOn(ratingsApi, 'getUserRating')
+      .mockImplementation((productId, userId, options) => {
+        expect(productId).toBe('p1');
+        return response(userId, aRating, bRating, options?.signal);
+      });
+    const ratedSpy = jest.spyOn(ratingsApi, 'getUserRatedProducts')
+      .mockImplementation((userId, options) =>
+        response(userId, aRated, bRated, options?.signal));
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockImplementation(() => {
+      throw new Error('unexpected network in account-switch integration');
     });
+    let rendered: Awaited<ReturnType<typeof renderWithProviders>> | undefined;
+    const privateKeys = (userId: string) => [
+      accountKeys.profile(userId), ratingKeys.mine(userId, 'p1'),
+      ratingKeys.ratedProducts(userId),
+    ];
+    try {
+      rendered = await renderWithProviders(
+        <AuthProvider client={mock.client} enableSession linking={null}>
+          <PrivateDataProbe />
+        </AuthProvider>,
+        { queryClient },
+      );
+      const expectSnapshot = (principal: string | null, profile: AccountProfile | null,
+        rating: typeof aRating | null, ratedProducts: RatedProductItem[] | null) => {
+        expect(rendered!.getByTestId('private-data').props.children).toBe(
+          JSON.stringify({ principal, profile, rating, ratedProducts }),
+        );
+      };
+      await waitFor(() => expectSnapshot('user-a', aProfile, aRating, aRated));
 
-    await rendered.cleanup();
+      holdA = true;
+      let pendingA: Promise<void>[] = [];
+      await act(async () => {
+        pendingA = privateKeys('user-a').map((queryKey) =>
+          queryClient.refetchQueries({ queryKey, exact: true }));
+      });
+      expect(releases).toHaveLength(3);
+      expect(lateSignals.every((signal) => signal?.aborted === false)).toBe(true);
+
+      await act(async () => {
+        mock.emit('SIGNED_IN', { id: 'user-b', email: 'b@example.com' });
+      });
+      await waitFor(() => expectSnapshot('user-b', bProfile, bRating, bRated));
+      expect(lateSignals.every((signal) => signal?.aborted === true)).toBe(true);
+      for (const key of privateKeys('user-a')) {
+        expect(queryClient.getQueryState(key)).toBeUndefined();
+      }
+
+      await act(async () => {
+        releases.forEach((release) => release());
+        await Promise.all(pendingA);
+      });
+      expectSnapshot('user-b', bProfile, bRating, bRated);
+      for (const key of privateKeys('user-a')) {
+        expect(queryClient.getQueryState(key)).toBeUndefined();
+      }
+      expect(queryClient.getQueryData(accountKeys.profile('user-b'))).toEqual(bProfile);
+      expect(queryClient.getQueryData(ratingKeys.mine('user-b', 'p1'))).toEqual(bRating);
+      expect(queryClient.getQueryData(ratingKeys.ratedProducts('user-b'))).toEqual(bRated);
+      expect(queryClient.getQueryData(catalogKeys.product('p1'))).toEqual(publicProduct);
+
+      const callsBeforeSignOut = [profileSpy, ratingSpy, ratedSpy]
+        .map((spy) => spy.mock.calls.length);
+      const signOutObservationStart = observations.length;
+      await act(async () => { mock.emit('SIGNED_OUT', null); });
+      await waitFor(() => expectSnapshot(null, null, null, null));
+      for (const key of [...privateKeys('user-a'), ...privateKeys('user-b')]) {
+        expect(queryClient.getQueryState(key)).toBeUndefined();
+      }
+      expect([profileSpy, ratingSpy, ratedSpy].map((spy) => spy.mock.calls.length))
+        .toEqual(callsBeforeSignOut);
+      expect(queryClient.getQueryData(catalogKeys.product('p1'))).toEqual(publicProduct);
+
+      // Check every committed consumer state, including B's loading interval,
+      // rather than only the final settled cache.
+      for (const snapshot of observations) {
+        const observed = JSON.parse(snapshot);
+        if (observed.principal === 'user-b') {
+          expect([null, bProfile]).toContainEqual(observed.profile);
+          expect([null, bRating]).toContainEqual(observed.rating);
+          expect([null, bRated]).toContainEqual(observed.ratedProducts);
+        }
+        if (observed.principal === null) {
+          expect(observed).toEqual({
+            principal: null, profile: null, rating: null, ratedProducts: null,
+          });
+        }
+      }
+      expect(observations.slice(signOutObservationStart)).toContain(
+        JSON.stringify({ principal: null, profile: null, rating: null, ratedProducts: null }),
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      releases.forEach((release) => release());
+      if (rendered) await rendered.cleanup();
+      else queryClient.clear();
+      profileSpy.mockRestore();
+      ratingSpy.mockRestore();
+      ratedSpy.mockRestore();
+      fetchSpy.mockRestore();
+    }
   });
 
   it('does not clear user-scoped cache on same-user token refresh', async () => {
