@@ -1,7 +1,10 @@
 # Local iOS Maestro smoke
 
-Revision 3 continues the bounded Comfort diagnosis after the remote P1 gate
-passed at f9568c5 (offline safety checks, Expo CI and code/security review).
+Revision 3 is ready for review: the remote P1 gate passed at f9568c5, and final
+7629441 passed the complete journey twice consecutively with fresh fixtures
+and database readback. [Revision 3 evidence](../docs/evidence/t-0003-maestro-r3/RESULT.md)
+records the diagnosis, review correction and precise validation boundaries.
+PR #63 remains Draft; there is no merge, deployment or human acceptance.
 The R2 candidate 66b02dd passed once then failed at Comfort on a fresh fixture;
 the historical two passes at 26177bc do not validate subsequent revisions.
 [Revision 2 evidence](../docs/evidence/t-0003-maestro-r2/RESULT.md) is preserved.

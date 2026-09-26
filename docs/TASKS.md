@@ -1593,7 +1593,13 @@ save/restart/readback/edit journey passed twice consecutively at committed
 `26177bc7cff03eada926189fa0e2996d583142b9` using fresh local fixtures.
 These passes are historical: the latest local candidate 66b02dd passed once,
 then failed at Comfort on a fresh fixture. T-0003.R2 is BLOCKED; PR 63 is Draft.
-Later local safety/flow fixes remain unpushed.
+Revision 3 pushed the per-tool environment allowlist and resolved the P1 after
+offline regression, CI and code/security review. Comfort's unnecessary extra
+centering reproduced a missed native tap; disabling only that centering passed
+the context micro-flow twice. Review then removed an unbound diagnostic entry.
+Final 7629441 passed the complete flow twice consecutively with fresh fixtures
+and database readback (126.059 s / 115.606 s). PR 63 remains Draft; no human
+acceptance, merge or deployment. See [revision 3 evidence](evidence/t-0003-maestro-r3/RESULT.md).
 One invisible score testID and public Browse SKU filtering make assertions exact.
 Versioned repeatability evidence and delivery boundaries are tracked in
 [the revision 2 evidence](evidence/t-0003-maestro-r2/RESULT.md).
