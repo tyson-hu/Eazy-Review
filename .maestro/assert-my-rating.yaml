@@ -6,4 +6,7 @@ appId: com.tysonhu.eazyreview.dev
     direction: DOWN
     timeout: 20000
     centerElement: true
-- assertVisible: "${EXPECTED_SCORE} / 100"
+- assertVisible:
+    text: "${EXPECTED_SCORE} / 100"
+    childOf:
+      id: product-detail-section-my-rating

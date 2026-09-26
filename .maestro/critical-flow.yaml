@@ -47,12 +47,15 @@ name: Local iOS critical rating journey
 - hideKeyboard
 - tapOn:
     id: sign-in-submit
-- assertVisible:
-    id: rate-this-product
+- extendedWaitUntil:
+    visible: "Not Now"
+    timeout: 10000
 - tapOn:
     text: "Not Now"
-    optional: true
-- assertNotVisible: "Save Password?"
+- assertNotVisible: 'Save Password\?'
+- takeScreenshot: password-dialog-dismissed
+- assertVisible:
+    id: rate-this-product
 - tapOn:
     id: rate-this-product
 - runFlow:

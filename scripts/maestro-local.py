@@ -119,14 +119,24 @@ def verify():
 
 
 def run(args):
-    status()
+    state = status()
     devices = json.loads(command(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))
     if not any(d['udid'] == args.device and d['state'] == 'Booted'
                for group in devices['devices'].values() for d in group):
         raise RuntimeError('The target must be an explicitly selected booted iOS Simulator.')
     data = json.loads((LOCAL / 'fixture.json').read_text())
+    product, user = str(uuid.UUID(data['PRODUCT_ID'])), str(uuid.UUID(data['USER_ID']))
+    rows = request(state, f'/rest/v1/user_ratings?product_id=eq.{product}&user_id=eq.{user}&select=id')
+    if rows:
+        raise RuntimeError('Fixture already has a rating; run fixture before each complete run.')
     output = LOCAL / ('run-' + time.strftime('%Y%m%d-%H%M%S'))
     output.mkdir(mode=0o700)
+    summary = {'tested_commit': command(['git', 'rev-parse', 'HEAD']).strip(),
+               'tracked_tree_dirty': bool(command(['git', 'status', '--porcelain', '--untracked-files=no']).strip()),
+               'device': args.device, 'product_id': product,
+               'precondition': 'Fresh synthetic account/product; zero rating rows; launchApp clears app state',
+               'result': 'running'}
+    (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     env = environment()
     env.update(MAESTRO_CLI_NO_ANALYTICS='1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED='true',
                MAESTRO_DISABLE_UPDATE_CHECK='true')
@@ -164,8 +174,12 @@ def run(args):
                         path.write_text(safe)
     print('Sanitized local artifacts:', output.relative_to(ROOT))
     if code:
+        summary['result'] = 'failed'
+        (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         raise RuntimeError(f'Maestro flow failed (exit {code}).')
     verify()
+    summary.update(result='pass', persisted_score=6, appearance=1.5, other_nine_dimensions=0.5)
+    (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
 
 
 if __name__ == '__main__':

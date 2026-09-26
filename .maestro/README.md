@@ -1,10 +1,11 @@
-# Local iOS Maestro candidate — blocked
+# Local iOS Maestro smoke
 
-T-0003 stopped after the permitted repair for the native Save Password modal
-failed on a later run. `critical-flow.yaml` is a reproducible failing candidate,
-**not an accepted or passing smoke test**. Do not resume it without the upstream
-decision recorded by Dispatch Hub. See
-[`RESULT.md`](../docs/evidence/t-0003-maestro/RESULT.md) for evidence and limits.
+T-0003 revision 2 resumes the R1 candidate under the upstream REWORK decision.
+The flow dismisses the native Save Password dialog immediately after login,
+before any business assertion. Its initial diagnostic run passed the complete
+journey; committed repeatability evidence is recorded in
+[`the revision 2 result`](../docs/evidence/t-0003-maestro-r2/RESULT.md).
+The [R1 evidence](../docs/evidence/t-0003-maestro/RESULT.md) remains historical.
 
 ## Reviewed tooling
 
@@ -25,19 +26,27 @@ agent used `inspect_screen` and `run` against an explicit simulator UDID. Inline
 `run` YAML required an `appId` header and `---`. No global MCP configuration,
 cloud service, or browser automation was used for native interactions.
 
-## Reproduction after a new upstream authorization
+## Fixed local preconditions and reproduction
 
 Use an isolated worktree with reviewed executable inputs and dependencies.
 Require Docker, local Supabase CLI, Xcode, a booted simulator, Java, and the
 reviewed Maestro binary. This candidate reserves project `eazy-review-t0003`,
 ports 55320–55329, and Metro port 8087; do not reuse those for unrelated data.
+The fixed device is iPhone 18 Pro / iOS 27.0,
+`B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0`, with development app
+`com.tysonhu.eazyreview.dev`. Reuse the installed R1 build when app inputs are
+unchanged. Password-manager/AutoFill settings were not changed: the tested
+environment presents Save Password and the flow requires visible `Not Now`
+within 10 seconds. Other prompt configurations are outside this fixture.
 
 ```sh
 python3 scripts/maestro-local.py start
 python3 scripts/maestro-local.py fixture
 npm run start:dev-client -- --localhost --port 8087
-# In a second terminal, after selecting an available simulator UDID:
+# Build only if the dedicated development app is absent or app inputs changed:
 EXPO_NO_DOTENV=1 EXPO_NO_TELEMETRY=1 CI=1 npm run ios -- --device <SIMULATOR_UDID> --no-bundler
+# In a second terminal, once Metro is ready; repeat BOTH commands for each run:
+python3 scripts/maestro-local.py fixture
 python3 scripts/maestro-local.py run --maestro <REVIEWED_MAESTRO_BINARY> --device <SIMULATOR_UDID>
 ```
 
@@ -49,10 +58,17 @@ Privileged HTTP requests disable proxies and reject redirects. The app receives
 only the local public anon key. Do not supply hosted credentials.
 
 The flow uses existing testIDs, the visible login gate, and all ten half-step
-controls. Its intended expectations are score 5 after ten 0.5 values, then score
+controls. Its expectations are score 5 after ten 0.5 values, then score
 6 after editing Appearance to 1.5, with app restarts before each readback.
-`run` would additionally verify the exact dedicated user's stored row after a
-passing flow. **These save/readback expectations have not been reached.**
+Score assertions are scoped to My Rating. `run` additionally verifies all ten
+stored dimensions, methodology, composite and exactly one dedicated rating row.
+Each repeat uses the same fixture recipe with fresh synthetic identities and
+zero existing ratings, then `launchApp: clearState` proves the anonymous login
+gate again. `run` refuses a fixture with an existing rating; it does not depend
+on a previous run's account/session/rating. No deletion or database reset occurs.
+`run-summary.json` records HEAD, tracked-tree cleanliness, simulator, product
+identity, precondition and result. Require a clean committed tree for formal
+repeatability evidence. Device password settings require no restoration.
 
 Maestro logs evaluated input values. The wrapper uses a private ignored
 `.maestro/.local/` directory and scrubs disposable credentials from text artifacts
