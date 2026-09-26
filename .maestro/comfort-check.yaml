@@ -1,0 +1,11 @@
+appId: com.tysonhu.eazyreview.dev
+name: Fresh Comfort scroll and single increment
+---
+- runFlow: open-rating.yaml
+- scrollUntilVisible:
+    element:
+      id: rate-dim-comfort
+    direction: DOWN
+    timeout: 15000
+    centerElement: true
+- runFlow: comfort-micro.yaml

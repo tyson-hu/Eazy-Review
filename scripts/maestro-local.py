@@ -212,7 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', help='Booted simulator UDID (required for run)')
     parser.add_argument('--maestro', default='maestro', help='Reviewed Maestro CLI executable')
     parser.add_argument('--flow', default='critical-flow',
-                        choices=('critical-flow', 'comfort-prepare', 'comfort-micro'),
+                        choices=('critical-flow', 'comfort-prepare', 'comfort-micro', 'comfort-check'),
                         help='Bounded diagnostic flows do not claim full-flow DB verification')
     args = parser.parse_args()
     os.umask(0o077)
