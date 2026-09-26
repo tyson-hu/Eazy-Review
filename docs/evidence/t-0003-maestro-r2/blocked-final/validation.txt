@@ -1,0 +1,14 @@
+Terminal documentation/evidence checks; executable inputs unchanged from tested 66b02dd.
+$ node scripts/check-agent-infrastructure.cjs
+exit=0
+check:agent-infra — valid (97 documents, 53 dependencies, 17 tasks, 106 active files scanned)
+
+
+$ node scripts/check-secrets.cjs
+exit=0
+check:secrets — clean (no high-risk secret patterns)
+
+
+$ git diff --check
+exit=0
+

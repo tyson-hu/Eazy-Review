@@ -1,0 +1,25 @@
+{
+  "tested_commit": "66b02dd59008537797e40c33ce4cfd621809d865",
+  "result": "blocked",
+  "consecutive_final_passes": false,
+  "password_settings_changed": false,
+  "input_sha256": {
+    ".maestro/critical-flow.yaml": "97f4ba15f9b32fbc654b5daa05661012d27ab2465b746cf38288c48fe6fc1e2f",
+    ".maestro/set-half-step.yaml": "f1e1e0da527d14c80c434ba9be9f6b1efdbd2f4204847bbf2c5f7ffb4f2a3691",
+    ".maestro/assert-my-rating.yaml": "f841d7fd5a82364257682e3b51f284e2fccba60b37eb897669b08d54897b4fa8",
+    ".maestro/open-fixture-product.yaml": "88d35c8696d0638404bedc25db3f9061c76649171bd5c3e94801b86a6b1460be",
+    "scripts/maestro-local.py": "a8f19162eff9c74c2a2e4c8198c2cd7699e954791491785d3f9eb1514197a96c",
+    "scripts/test-maestro-local.py": "a557813cda50040ba117084aa3513193cef59858371129b64e58d6508de5a7c4",
+    "app/product/[id]/index.tsx": "853249a60320bc6d08209a4aadbbf07a27bc979cd2f0b954e6bde2536cc8bea6"
+  },
+  "evidence_sha256": {
+    "comfort-hierarchy.json": "0a3109f3e96a72cc284b59b24f342ec42fdd0bcc68bfb458c21ffae2c2fcef04",
+    "rating-failure.png": "ed1eedda81c8f655f1687b43ae43b3a91acb74752dce15a6e258f3e4bef3972d",
+    "pass-report.xml": "7a0c7e9d45398db7c8563cbfb26b9106b2d03352fc3b5916818f2aee3d1c3dcb",
+    "fail-summary.json": "0f67d2c61948f3378c4db8b4f0b6682287c0a0885f63faeec59b97f0f30d4b15",
+    "pass-summary.json": "a5c8d5f7275c8201482851d57c81dceb18e0437f8eed9598f4e1cb025aff739a",
+    "comfort-events.json": "5382ce037fbd500f790f55c3741c9beab5df0fd862e5becd4b2406aae5f15bea",
+    "fail-report.xml": "313d612afb6e82de9ccc94a187e224b5dab74d76fbeb9d5634980ac2633a7b59",
+    "validation.txt": "adac22fee1037264e11ef96a36fc8fe0a0ba1324ca0002738874b8b5cb9e421c"
+  }
+}

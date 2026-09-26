@@ -1,133 +1,105 @@
-# T-0003 revision 2 — two consecutive complete Maestro passes
+# T-0003 revision 2 — BLOCKED after final repeatability failure
 
-Contract: `tyson-hu/dispatch-hub@0289644143eb2cf831b1d99abf7032588e915261`,
-STATE 11, T-0003 revision 2, decision T-0003.D1 (REWORK).
-Recovery started 2026-09-26 10:50:49 America/Chicago; technical budget 60 minutes.
-Project base `f71a1d90aaa7367359104fcaffa848afd6b30093`; resumed R1 result
-`71c690df65b9c59c84457e3d756ea1a9cb28973b` on `codex/t-0003-maestro`.
-Remote master still matches the base. R1 CLI/MCP feasibility is referenced,
-not rerun or claimed as new evidence. Its files and screenshots remain intact.
+Contract: tyson-hu/dispatch-hub@0289644143eb2cf831b1d99abf7032588e915261; STATE 11; T-0003 revision 2; D1 REWORK.
+Base: f71a1d90aaa7367359104fcaffa848afd6b30093.
+Resumed R1: 71c690df65b9c59c84457e3d756ea1a9cb28973b.
+Latest UI tested SHA: 66b02dd59008537797e40c33ce4cfd621809d865 (clean tracked tree).
+Technical recovery started 2026-09-26 15:50:49 UTC; stopped by 16:39:31 UTC, within 60 minutes.
+No further technical attempts are authorized by this report.
 
-## Result and exact tested version
+## Terminal result
 
-**Ready for upstream review; not human acceptance.** Complete core flow passed
-twice consecutively at `26177bc7cff03eada926189fa0e2996d583142b9`, with a clean
-tracked tree at both starts and no intervening code change. The later delivery
-commit adds only documentation/evidence; Hub R2 identifies its exact SHA.
+**BLOCKED. A2 is demonstrated; final A3 repeatability is not met.**
+The latest committed candidate passed once, then failed on the next independent
+fresh fixture at the strict Comfort 0.5 assertion. Maestro completed the exact
+increment tap, but its failure hierarchy still reports Comfort, not rated.
+The final screenshot shows the rating form scrolled near its lower dimensions;
+the hierarchy/visual mismatch and underlying interaction failure remain undiagnosed.
+This is a separate blocker from Save Password. Further repair plus two complete
+repeats could not safely fit the remaining budget, so execution stopped.
 
-| Formal run | Local capture ID | Suite seconds | UI / exact stored row |
+| Latest candidate | Run | Suite seconds | Result |
 | --- | --- | --- | --- |
-| 1 | run-20260926-110718 | 134.020 | PASS / PASS |
-| 2 | run-20260926-110950 | 135.220 | PASS / PASS |
+| 66b02dd | run-20260926-113438 | 111.872 | complete UI + exact local DB PASS |
+| 66b02dd | run-20260926-113657 | 66.325 | FAIL at Comfort; persistence not reached |
 
-Both independently started with the same fixture recipe: a newly created
-confirmed synthetic account, a newly published synthetic product, zero existing
-rating rows, app clearState and the anonymous login gate. No inherited rating
-or authenticated session is used. Distinct product IDs and exact input hashes
-are in [repeatability.json](repeatability.json). The runner refuses fixtures
-that already contain a rating. No account deletion or DB reset occurs.
+[Final evidence](blocked-final/manifest.json) binds both summaries, XML results,
+selected command events, failure hierarchy excerpt and inspected non-auth screenshot.
+Each run used the same fixture recipe with a fresh synthetic confirmed account,
+new synthetic product, zero rating rows and app clearState. No prior session or
+rating was inherited. Raw artifacts and credentials remain ignored locally.
 
-Both runs exercised anonymous Browse/search → Product Detail → Rate login gate
-→ real password login → Not Now → all ten dimensions at 0.5 → Save → My Rating 5
-→ app stop/launch → My Rating 5 → edit Appearance to 1.5 → Save → My Rating 6
-→ second stop/launch → My Rating 6 and edit-form Appearance 1.5. Each run then
-queried only its local user/product row and verified exactly one row, all ten
-dimensions, sneaker-10-v1 and composite 6.
+## Resolved password blocker and simulator conditions
 
-| Environment | Status |
-| --- | --- |
-| iOS Simulator, iPhone 18 Pro / iOS 27.0 | pass |
-| Mobile web | not-run |
-| Physical device | not-tested |
+The initial order-only diagnostic ran the dismissal wait at 10:53:24.994 CDT,
+saw Not Now at 10:53:29.116 and completed its text-selected tap at 10:53:30.414.
+The exact escaped Save Password absence assertion, subsequent business CTA and
+rating interactions passed. Classification: **dismissal succeeded**:
+the step executed, Maestro saw and located Not Now, the tap succeeded, and the
+app became interactive. This was not an unexecuted step, inaccessible system
+window or failed dismissal tap. See diagnostic-run.xml and historical run-01/
+and run-02/dialog-events.json.
 
-## Password diagnosis and bounded selector repairs
+Stage 1 succeeded within 15 minutes. Stage 2 was unnecessary and skipped.
+**No simulator password/AutoFill or host settings were changed.**
+Original and final conditions are the same; no restoration action is needed.
+Read-only observations (WebUI CookieAcceptPolicy only; Passwords domain absent)
+are not a complete settings audit. The observed native Save Password prompt was
+shown and dismissed; other password-manager/AutoFill configurations are untested.
 
-The initial order-only diagnostic run passed in 134.452 seconds, including
-all ten dimensions, save, restart/readback, edit, second restart/readback and
-the local database check. This trial ran on an uncommitted candidate and does
-not count toward the two committed formal repeats above.
+Fixed environment: iPhone 18 Pro, iOS 27.0, simulator
+B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0; Maestro 2.10.0; Java 21.0.2;
+Expo 57.0.25/RN 0.86.3 development app com.tysonhu.eazyreview.dev.
+R1 native binary reused with current Metro JavaScript on port 8087.
+Dedicated disposable Supabase eazy-review-t0003, API 127.0.0.1:55321.
+Task-owned Metro and Supabase stopped, simulator shut down; data volumes retained.
 
-One subsequent run at `36ce4aae92d0f9778b2994e13f96a79235552f62` failed
-at the stricter My Rating `childOf` selector after save. The card-ancestry
-selector did not match the native tree. The bounded selector fix adds only the
-invisible `my-rating-score` testID and asserts that identifier plus exact text.
-Formal repeats restarted after this fix. The helper also now records
-database-verification failure as failed, covered by an offline fault-injection
-test; this closes the independent review's nonblocking evidence finding.
+## Historical passes and review boundary
 
-At `c13b294331f21164123c497bf32307d27ce60eab`, one complete run passed
-(149.774 seconds including suite overhead), then the next fresh-fixture run
-failed before login at product-card scrolling. The failure tree contained the
-exact enabled product node and the screenshot showed it; timed scrolling over
-the retained growing synthetic catalog was unreliable. A flow-only correction
-uses the existing Search products field with the fixture SKU, then waits for
-and taps the exact product testID. Formal consecutive repeats restarted
-on the commit containing this correction; the earlier isolated PASS is not
-counted toward that requirement.
+The original two consecutive complete passes were real, at
+26177bc7cff03eada926189fa0e2996d583142b9:
+run-20260926-110718 (134.020 s) and run-20260926-110950 (135.220 s).
+They cover Browse/detail/login gate/password login/dismissal/all ten dimensions/
+Save/restart score 5/edit Appearance 1.5/Save/restart score 6/exact stored row.
+Their unchanged evidence is run-01/, run-02/, repeatability.json and screenshots/.
+**These are historical results, not evidence for the later candidate.**
 
-The dismissal wait ran at 10:53:24.994, saw Not Now at 10:53:29.116, located an
-enabled accessibility element, and the tap completed at 10:53:30.414.
-The exact escaped Save Password absence assertion, post-login CTA and rating
-controls passed. Classification: **dismissal succeeded**. This is neither
-an unexecuted close step nor an inaccessible system window nor a failed tap.
-Maestro selected by visible text; no authored coordinate selector was used.
+After those passes, d9816a5d34363788cf2630986a7376a8d92a6d32 added evidence/docs
+and was pushed to [PR 63](https://github.com/tyson-hu/Eazy-Review/pull/63).
+Existing Expo CI 36254832104 and CodeQL 36254832046 passed on that remote head.
+The GitHub code/security reviews completed there; a P1 host-environment
+inheritance finding remains unresolved on the remote PR.
+Its local allowlist fix and placeholder-only regression pass; actual earlier
+credential exposure is unknown, not established.
+See [review-remediation.md](review-remediation.md).
+Later local fixes and this terminal evidence have **not been pushed**.
+PR 63 is now **Draft**. Its draft-conversion CodeQL run 36256237017 was skipped;
+the earlier passes remain historical. Hosted CI does not validate those local commits.
+Remediation verdict: **BLOCKED — current-head UI validation failed**.
 
-Stage 1 succeeded before its 15-minute cap. Stage 2 was unnecessary and skipped.
-No simulator or host setting changed; restoration requires no action.
-Read-only simulator preference observation: com.apple.WebUI contains only
-CookieAcceptPolicy; com.apple.Passwords domain absent. These are not a complete
-AutoFill-settings audit. Actual observed condition: native Save Password shown
-and dismissed. No assertion is made about every password manager/provider.
+## Validation, scope and next decision
 
-## Reproduction and boundaries
+Independent verifier ran 3 offline helper tests and full check:readonly
+(110 structural/security tests, secret scan, typecheck and lint) successfully at
+547a326bd200afca57f9196469f0c88dcf604b78. Latest UI-tested 66b02dd only removes
+one generic hideKeyboard command and updates documentation; its UI result above
+is authoritative. Terminal documentation/secret/diff checks are recorded in
+blocked-final/validation.txt. No new full review was requested after the qualifying
+GitHub baseline review. R1 CLI/MCP feasibility was reused, not rerun or called a new PASS.
 
-See [the runbook](../../../.maestro/README.md) and
-[`scripts/maestro-local.py`](../../../scripts/maestro-local.py).
-Same R1 iPhone 18 Pro / iOS 27.0 simulator UDID, Maestro 2.10.0 / Java 21.0.2,
-Expo 57.0.25 development build, Metro 8087 and dedicated local Supabase
-eazy-review-t0003 / 127.0.0.1:55321. Each formal run must start with a fresh
-synthetic account/product, zero rating rows and app clearState. The R1 native
-binary was reused with Metro serving the tested JavaScript revision. Its only
-app change is one invisible score testID. Both formal runs used:
+The only app change is the invisible my-rating-score testID. No product behavior,
+secure-input semantics, auth/API/data contract, dependency, framework, CI/EAS/cloud
+gate or global settings changed. No sleeps, waitForAnimationToEnd additions or
+authored coordinate selectors were used. No staging/production/real user data,
+account deletion, paid cloud, merge, deployment, board writes or user acceptance.
+Task 22 remains Pending; Task 23 was not started.
 
-```sh
-python3 scripts/maestro-local.py fixture
-JAVA_HOME=/Users/tysonhu/Library/Java/JavaVirtualMachines/openjdk-21.0.2/Contents/Home python3 scripts/maestro-local.py run --maestro /tmp/t-0003-maestro/maestro/bin/maestro --device B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0
-```
+This smoke is intended to guard public browsing, login gating and rating persistence.
+Successful historical runs cover native UI plus real local Auth/API/database reads.
+Current repeatability remains blocked; Android, physical devices, hosted auth/email,
+production RLS, other password managers and release readiness are not proven.
 
-## Validation and proof set
-
-Independent integrated review approved the helper/flows; its one nonblocking
-DB-failure-summary finding was fixed and covered by an offline regression.
-Final read-only verification passed 2 offline tests, 59 infrastructure tests,
-26 secret-check tests and the repository secret scan on the exact tested SHA.
-The full `EXPO_NO_DOTENV=1 npm run check:readonly` passed at
-`c13b294331f21164123c497bf32307d27ce60eab`; unchanged TypeScript, lint, wrapper
-and decision inputs reuse that result. Affected graph/security checks were
-rerun at the final tested SHA. No check failure remains.
-
-Versioned proof: run-01/report.xml and run-02/report.xml; their summary.json and
-dialog-events.json; repeatability.json; diagnostic-run.xml; three selected
-screenshots (01 dismissed dialog, 02 restarted My Rating 5, 03 edited/restarted
-My Rating 6). Dialog excerpts establish that the close step ran, Not Now was
-visible and located, the tap completed, the modal disappeared and the business
-CTA was usable in both formal runs. The full successful flows prove subsequent
-interaction. Bounds in diagnostic output are Maestro-resolved geometry,
-not authored coordinate selectors. No sleep or waitForAnimationToEnd was added.
-All other raw captures/logs and private fixtures remain ignored local artifacts.
-
-Project PR/hosted CI are separate delivery observations recorded in Hub R2 and
-the PR checks on its exact head. No new CI/EAS/Cloud gate was added. The existing
-Database CI path filter is unaffected. Local validation is not hosted CI proof.
-
-Only one invisible app testID changed; no application behavior, dependency,
-auth/API/data contract, CI or cloud change.
-Staging, production, real users, physical devices, Android and web not exercised.
-No merge, deployment, human acceptance or Project #4 write; Task 22 stays Pending.
-Selected evidence contains only sanitized XML, summaries and decisive
-non-authentication screenshots; private fixtures and raw artifacts stay ignored.
-
-This smoke guards public browsing, the login gate and rating save/edit persistence.
-It covers real native UI, local Auth/API calls and stored local database values.
-It does not establish Android, physical-device, hosted auth/email, production
-RLS, third-party password-manager/AutoFill configurations or release readiness.
+Minimal alternative: a separately authorized bounded follow-up focused only on
+native rating-row scroll/tap reliability, preserving Maestro and the same local
+environment. It needs additional time, not paid services or broader data authority.
+One upstream question: approve that narrowly scoped follow-up budget?

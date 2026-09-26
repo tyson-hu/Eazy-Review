@@ -1,0 +1,48 @@
+[
+  {
+    "resource-id": "rate-dim-comfort",
+    "bounds": "[14,83][388,209]",
+    "enabled": "true",
+    "focused": "false",
+    "selected": "false",
+    "checked": "false"
+  },
+  {
+    "accessibilityText": "Comfort, not rated",
+    "resource-id": "rate-dim-comfort-value",
+    "bounds": "[339,83][388,108]",
+    "enabled": "true",
+    "focused": "false",
+    "selected": "false",
+    "checked": "false"
+  },
+  {
+    "accessibilityText": "Comfort score",
+    "value": "not rated",
+    "text": "not rated",
+    "resource-id": "rate-dim-comfort-slider",
+    "bounds": "[59,131][293,171]",
+    "enabled": "true",
+    "focused": "false",
+    "selected": "false",
+    "checked": "false"
+  },
+  {
+    "accessibilityText": "Decrease Comfort",
+    "resource-id": "rate-dim-comfort-dec",
+    "bounds": "[14,142][52,181]",
+    "enabled": "true",
+    "focused": "false",
+    "selected": "false",
+    "checked": "false"
+  },
+  {
+    "accessibilityText": "Increase Comfort",
+    "resource-id": "rate-dim-comfort-inc",
+    "bounds": "[300,142][339,181]",
+    "enabled": "true",
+    "focused": "false",
+    "selected": "false",
+    "checked": "false"
+  }
+]

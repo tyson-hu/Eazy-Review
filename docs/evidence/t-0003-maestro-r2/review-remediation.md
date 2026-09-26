@@ -51,3 +51,12 @@ No additional full review was requested. Final checks, two fresh-fixture complet
 UI repeats and exact-head CI must be recorded before the remediation is COMPLETE.
 The hosted thread is left for authorized upstream handling; no bot reply or
 thread-resolution write is inferred from the finding itself.
+
+## Terminal disposition
+
+BLOCKED — current-head UI validation failed. At 66b02dd, one full run passed
+(111.872 seconds); the next failed at Comfort (66.325 seconds).
+The native increment command completed but the strict half-step assertion failed.
+No further repair or UI retry was attempted. The allowlist fix is local only;
+PR 63 remains at d9816a5 and is Draft, with its P1 thread unresolved.
+No claim of COMPLETE, remote remediation, human acceptance or release readiness.
