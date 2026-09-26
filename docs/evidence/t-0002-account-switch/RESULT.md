@@ -1,14 +1,32 @@
 # T-0002 — account-switch regression increment
 
-Status: ready for human review; locally tested, independently statically reviewed.
+Status: bounded local increment human accepted on 2026-09-25; repository
+delivery proceeds through the normal PR and CI gates.
 Date: 2026-09-25 (America/Chicago).
 Contract: `tyson-hu/dispatch-hub@0f9bdd402d6014939a64a9d8a337c6078e62b8ef`,
-`work/T-0002/TASK.md`, revision 1; observed STATE revision 5, READY.
+`work/T-0002/TASK.md`, revision 1; original execution observed STATE revision 5, READY.
 Project base: `8b6899e0d61b89ad63009d4343f53a1c42cc261a` (local and remote master).
 Exact tested code commit: `09839904db87278b2f01332168d59804ab030e05`.
-The later evidence-only result commit is identified in Hub `T-0002.R1`;
-it changes this report only, with no change to tested code or executable inputs.
-Branch: `codex/t-0002-account-regression`; all project changes are local-only.
+Accepted result commit: `ec9e83c119b510f2a77af6bc627aa4fc835590ae` (T-0002.R1);
+it changed this report only relative to the tested commit, with no change to
+tested code or executable inputs. That original result was local-only when
+accepted. The repository-delivery follow-up updates acceptance documentation;
+the test and its validation inputs remain unchanged.
+Branch: `codex/t-0002-account-regression`; its pull request owns the current
+publication status, exact-head CI results and review conversation state.
+
+## Acceptance and repository delivery
+
+The user accepted T-0002.R1 on 2026-09-25. Hub decision T-0002.D1 records
+acceptance of this local client-regression increment and its stated limits.
+The subsequent user request authorizes persistence through the project's
+normal PR + CI flow. Acceptance does not cover all Task 22 work or establish
+CI, device, database, deployment or release results by itself.
+
+Repository delivery keeps the original implementation and evidence together
+with this acceptance record. Refer to the branch's PR checks for hosted
+validation; do not infer those results from the local commands below.
+Project #4 moves: none; Task 22 retains its Pending status and existing gates.
 
 ## Boundary and existing coverage
 
@@ -86,7 +104,8 @@ Commands run from the project root, with `CI=1 EXPO_NO_DOTENV=1`:
 - Independent static reviewer `/root/review_t0002`: no actionable findings
   on that commit's diff and relevant contracts. Read-only verifier
   `/root/verify_t0002` ran the two final commands, confirmed unchanged HEAD,
-  clean tracked tree and `git diff --check`. No human acceptance is implied.
+  clean tracked tree and `git diff --check`. Those agent checks alone do not
+  establish human acceptance; the later user decision is recorded above.
   Test/fixture repair rounds used: 0/1; no failed check or repair loop.
 
 Local raw logs: `.codex/reports/t-0002/baseline.log` and
@@ -103,14 +122,18 @@ profile, rating or private note in the next session.
 This evidence connects the real client auth transition and all three private
 query families, including late reads, in one repeatable synthetic scenario.
 It does not establish server/RLS isolation, screen rendering, real auth
-transport, rating mutations, devices, CI, human acceptance or release readiness.
+transport, rating mutations, devices, CI or release readiness. Human acceptance
+is limited to the bounded increment described above.
 
-Task 22 remains Pending. Its integrated-boundary acceptance and E2E trigger
-human gate remain open; this increment is not whole-task acceptance.
+Task 22 remains Pending. Its broader integrated-boundary acceptance and E2E
+trigger human gate remain open; this increment is not whole-task acceptance.
 Browser/native/physical, database, remote/CI, full Expo/Doctor and deployment
-checks: not_run (outside this increment). Proposed Project #4 writes: none.
+checks were not_run in the original local implementation stage. Hosted CI for
+repository delivery is recorded separately by the PR checks. Browser/device,
+database and deployment checks remain outside this delivery's scope.
+Proposed Project #4 writes: none.
 The old ignored `docs/notes/handoff.md` describes Project #4 migration and is
 preserved alongside the four unrelated untracked planning documents.
 
-Next action after evidence/report synchronization: user review of T-0002.R1;
-stop without selecting or starting another task.
+Repository delivery is limited to this accepted increment; do not select or
+start another task, expand Task 22, or imply a product release from this PR.
