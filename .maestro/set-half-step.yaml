@@ -2,10 +2,13 @@ appId: com.tysonhu.eazyreview.dev
 ---
 - scrollUntilVisible:
     element:
-      id: "rate-dim-${DIMENSION}-inc"
+      id: "rate-dim-${DIMENSION}"
     direction: DOWN
     timeout: 15000
     centerElement: true
+- assertVisible:
+    id: "rate-dim-${DIMENSION}-value"
+    text: ".*, not rated"
 - tapOn:
     id: "rate-dim-${DIMENSION}-inc"
 - assertVisible:
