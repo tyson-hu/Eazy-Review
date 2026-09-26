@@ -15,6 +15,14 @@ all ten dimensions, save, restart/readback, edit, second restart/readback and
 the local database check. This trial ran on an uncommitted candidate and does
 not count toward the two committed formal repeats. Formal results pending.
 
+One subsequent run at `36ce4aae92d0f9778b2994e13f96a79235552f62` failed
+at the stricter My Rating `childOf` selector after save. iOS exposes the score
+without the expected card ancestry. The bounded selector fix adds only the
+invisible `my-rating-score` testID and asserts that identifier plus exact text.
+The two formal repeats restart after this fix. The helper also now records
+database-verification failure as failed, covered by an offline fault-injection
+test; this closes the independent review's nonblocking evidence finding.
+
 The dismissal wait ran at 10:53:24.994, saw Not Now at 10:53:29.116, located an
 enabled accessibility element, and the tap completed at 10:53:30.414.
 The exact escaped Save Password absence assertion, post-login CTA and rating
@@ -38,7 +46,8 @@ eazy-review-t0003 / 127.0.0.1:55321. Each formal run must start with a fresh
 synthetic account/product, zero rating rows and app clearState. Full repeat
 commands and result SHA will be added after committed execution.
 
-No app source, testID, dependency, auth/API/data contract, CI or cloud change.
+Only one invisible app testID changed; no application behavior, dependency,
+auth/API/data contract, CI or cloud change.
 Staging, production, real users, physical devices, Android and web not exercised.
 No merge, deployment, human acceptance or Project #4 write; Task 22 stays Pending.
 Selected evidence will contain only sanitized XML, summaries and decisive

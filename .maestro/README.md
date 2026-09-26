@@ -34,8 +34,9 @@ reviewed Maestro binary. This candidate reserves project `eazy-review-t0003`,
 ports 55320–55329, and Metro port 8087; do not reuse those for unrelated data.
 The fixed device is iPhone 18 Pro / iOS 27.0,
 `B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0`, with development app
-`com.tysonhu.eazyreview.dev`. Reuse the installed R1 build when app inputs are
-unchanged. Password-manager/AutoFill settings were not changed: the tested
+`com.tysonhu.eazyreview.dev`. Reuse the installed R1 build when native inputs are
+unchanged; restart Metro after JavaScript changes. Password-manager/AutoFill
+settings were not changed: the tested
 environment presents Save Password and the flow requires visible `Not Now`
 within 10 seconds. Other prompt configurations are outside this fixture.
 
@@ -43,7 +44,7 @@ within 10 seconds. Other prompt configurations are outside this fixture.
 python3 scripts/maestro-local.py start
 python3 scripts/maestro-local.py fixture
 npm run start:dev-client -- --localhost --port 8087
-# Build only if the dedicated development app is absent or app inputs changed:
+# Build only if the dedicated development app is absent or native inputs changed:
 EXPO_NO_DOTENV=1 EXPO_NO_TELEMETRY=1 CI=1 npm run ios -- --device <SIMULATOR_UDID> --no-bundler
 # In a second terminal, once Metro is ready; repeat BOTH commands for each run:
 python3 scripts/maestro-local.py fixture
@@ -60,7 +61,8 @@ only the local public anon key. Do not supply hosted credentials.
 The flow uses existing testIDs, the visible login gate, and all ten half-step
 controls. Its expectations are score 5 after ten 0.5 values, then score
 6 after editing Appearance to 1.5, with app restarts before each readback.
-Score assertions are scoped to My Rating. `run` additionally verifies all ten
+Score assertions use the invisible `my-rating-score` identifier on My Rating.
+`run` additionally verifies all ten
 stored dimensions, methodology, composite and exactly one dedicated rating row.
 Each repeat uses the same fixture recipe with fresh synthetic identities and
 zero existing ratings, then `launchApp: clearState` proves the anonymous login

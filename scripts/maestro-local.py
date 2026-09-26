@@ -177,7 +177,12 @@ def run(args):
         summary['result'] = 'failed'
         (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         raise RuntimeError(f'Maestro flow failed (exit {code}).')
-    verify()
+    try:
+        verify()
+    except Exception:
+        summary.update(result='failed', failure_stage='database_verification')
+        (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+        raise
     summary.update(result='pass', persisted_score=6, appearance=1.5, other_nine_dimensions=0.5)
     (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
 

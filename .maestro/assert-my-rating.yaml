@@ -8,5 +8,4 @@ appId: com.tysonhu.eazyreview.dev
     centerElement: true
 - assertVisible:
     text: "${EXPECTED_SCORE} / 100"
-    childOf:
-      id: product-detail-section-my-rating
+    id: my-rating-score
