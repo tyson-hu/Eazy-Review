@@ -150,7 +150,9 @@ def run(args):
     summary = {'tested_commit': command(['git', 'rev-parse', 'HEAD']).strip(),
                'tracked_tree_dirty': bool(command(['git', 'status', '--porcelain', '--untracked-files=no']).strip()),
                'device': args.device, 'product_id': product,
-               'precondition': 'Fresh synthetic account/product; zero rating rows; launchApp clears app state',
+               'precondition': ('Prepared unrated screen; zero rating rows; app state retained'
+                                if flow == 'comfort-micro' else
+                                'Fresh synthetic account/product; zero rating rows; launchApp clears app state'),
                'flow': flow, 'result': 'running'}
     (output / 'run-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     env = environment('maestro')

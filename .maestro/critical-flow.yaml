@@ -22,10 +22,7 @@ name: Local iOS critical rating journey
     file: set-half-step.yaml
     env:
       DIMENSION: maintenance
-- runFlow:
-    file: set-half-step.yaml
-    env:
-      DIMENSION: comfort
+- runFlow: comfort-half-step.yaml
 - runFlow:
     file: set-half-step.yaml
     env:

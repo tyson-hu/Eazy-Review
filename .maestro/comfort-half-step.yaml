@@ -1,0 +1,18 @@
+appId: com.tysonhu.eazyreview.dev
+---
+- scrollUntilVisible:
+    element:
+      id: rate-dim-comfort
+    direction: DOWN
+    timeout: 15000
+    centerElement: false
+- assertVisible:
+    id: rate-dim-comfort-value
+    text: ".*, not rated"
+- tapOn:
+    id: rate-dim-comfort-inc
+    retryTapIfNoChange: false
+- takeScreenshot: comfort-context-after-tap
+- assertVisible:
+    id: rate-dim-comfort-value
+    text: ".*, 0.5 of 10"

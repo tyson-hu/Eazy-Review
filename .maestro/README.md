@@ -1,10 +1,10 @@
 # Local iOS Maestro smoke
 
-**BLOCKED:** Save Password dismissal is resolved, but the latest committed
-candidate 66b02dd passed once then failed at Comfort on a fresh fixture.
-The historical two passes at 26177bc do not validate subsequent revisions.
-[Revision 2 evidence](../docs/evidence/t-0003-maestro-r2/RESULT.md) records the
-terminal state. Further execution requires an upstream continuation decision.
+Revision 3 continues the bounded Comfort diagnosis after the remote P1 gate
+passed at f9568c5 (offline safety checks, Expo CI and code/security review).
+The R2 candidate 66b02dd passed once then failed at Comfort on a fresh fixture;
+the historical two passes at 26177bc do not validate subsequent revisions.
+[Revision 2 evidence](../docs/evidence/t-0003-maestro-r2/RESULT.md) is preserved.
 [R1 evidence](../docs/evidence/t-0003-maestro/RESULT.md) remains historical.
 
 ## Reviewed tooling
@@ -99,3 +99,22 @@ Supabase stack must remain untouched.
 
 Offline safety regression: `python3 scripts/test-maestro-local.py`.
 Project validation: `npm run check:readonly`. No new CI trigger is installed.
+
+## Bounded Comfort diagnosis
+
+The runner's `run --flow comfort-prepare` reaches the unrated Comfort screen
+through the same real-login helper. `--flow comfort-micro` retains that prepared
+screen and performs exactly one increment with a strict 0.5 assertion. These
+diagnostics intentionally do not claim complete-flow database verification.
+`--flow comfort-check` uses a fresh fixture, reproduces the five preceding
+unsaved half-step inputs from R2, then tests Comfort once; it ends before save.
+Use `fixture` before each comfort-check or full run.
+
+In the reproduced failure, extra centering moved an already fully visible
+Comfort row from y=594 to y=82, partly under the native header. Maestro reported
+an in-bounds tap at (319,160), but the value stayed unrated. The smallest tested
+change disables this extra centering for Comfort only, retaining the exact
+selector, one tap, strict half-step assertion and all product behavior.
+`comfort-half-step.yaml` is shared by the context micro-flow and critical flow;
+other dimensions retain their existing sequence. No retry or sleep was added.
+The native responder's internal reason is not instrumented or claimed.
