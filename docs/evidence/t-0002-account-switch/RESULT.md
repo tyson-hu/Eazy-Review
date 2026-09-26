@@ -1,10 +1,13 @@
 # T-0002 — account-switch regression increment
 
-Status: local implementation; final committed-input verification pending.
+Status: ready for human review; locally tested, independently statically reviewed.
 Date: 2026-09-25 (America/Chicago).
 Contract: `tyson-hu/dispatch-hub@0f9bdd402d6014939a64a9d8a337c6078e62b8ef`,
 `work/T-0002/TASK.md`, revision 1; observed STATE revision 5, READY.
 Project base: `8b6899e0d61b89ad63009d4343f53a1c42cc261a` (local and remote master).
+Exact tested code commit: `09839904db87278b2f01332168d59804ab030e05`.
+The later evidence-only result commit is identified in Hub `T-0002.R1`;
+it changes this report only, with no change to tested code or executable inputs.
 Branch: `codex/t-0002-account-regression`; all project changes are local-only.
 
 ## Boundary and existing coverage
@@ -72,11 +75,25 @@ Commands run from the project root, with `CI=1 EXPO_NO_DOTENV=1`:
 - Development working tree: same paths with pattern
   `'isolates profile, ratings and private notes|clears user-scoped cache on sign-out|removeUserScopedQueries|removePrincipalScopedQueries'`
   — pass, 6 tests / 2 suites, 56 skipped; not yet exact-commit evidence.
-- Final focused tests and `npm run check:readonly`: not_run on a committed
-  result yet. Independent review: pending. Test/fixture repair rounds used: 0/1.
+- Final focused command: `npm test -- --runInBand --runTestsByPath src/features/auth/AuthProvider.test.tsx src/lib/query/userScopedCache.test.ts --testNamePattern='isolates profile, ratings and private notes|clears user-scoped cache on sign-out|removeUserScopedQueries|removePrincipalScopedQueries'`
+  — pass, exit 0, 6 tests / 2 suites, 56 skipped by selection, on exact tested
+  commit `09839904db87278b2f01332168d59804ab030e05`; no warning.
+- `npm run check:readonly` — pass, exit 0, on the same exact commit: 110
+  infrastructure/self-tests (24 wrapper + 1 decision + 26 secret + 59 graph),
+  wrapper/index checks, repository secret scan, graph, typecheck and lint.
+  The secret scanner's negative-fixture diagnostic was expected; its self-test
+  and final repository scan passed. No real secret was reported.
+- Independent static reviewer `/root/review_t0002`: no actionable findings
+  on that commit's diff and relevant contracts. Read-only verifier
+  `/root/verify_t0002` ran the two final commands, confirmed unchanged HEAD,
+  clean tracked tree and `git diff --check`. No human acceptance is implied.
+  Test/fixture repair rounds used: 0/1; no failed check or repair loop.
 
 Local raw logs: `.codex/reports/t-0002/baseline.log` and
 `.codex/reports/t-0002/focused-development.log` (ignored, not published).
+Final verifier receipt: `.codex/reports/t-0002/final-verification.md`;
+static review receipt: `.codex/reports/t-0002/independent-review.md`.
+These two receipts preserve agent-reported observations, not raw stdout.
 No failed test or real isolation defect has been observed in these runs.
 
 ## Limits and reviewer-facing value
