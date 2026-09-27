@@ -1598,8 +1598,12 @@ offline regression, CI and code/security review. Comfort's unnecessary extra
 centering reproduced a missed native tap; disabling only that centering passed
 the context micro-flow twice. Review then removed an unbound diagnostic entry.
 Final 7629441 passed the complete flow twice consecutively with fresh fixtures
-and database readback (126.059 s / 115.606 s). PR 63 remains Draft; no human
-acceptance, merge or deployment. See [revision 3 evidence](evidence/t-0003-maestro-r3/RESULT.md).
+and database readback (126.059 s / 115.606 s). The user accepted this bounded
+increment on 2026-09-26 in Hub T-0003.D3, accepting T-0003.R3 and tested code
+762944111491c1730cbb98d9655e74c191eb5db0; the following 31af8ab changes only
+add documentation/evidence. T-0004 separately authorizes PR #63 delivery after
+final review and CI gates. This records acceptance, not merge or deployment;
+Task 22 remains Pending. See [revision 3 evidence](evidence/t-0003-maestro-r3/RESULT.md).
 One invisible score testID and public Browse SKU filtering make assertions exact.
 Versioned repeatability evidence and delivery boundaries are tracked in
 [the revision 2 evidence](evidence/t-0003-maestro-r2/RESULT.md).
