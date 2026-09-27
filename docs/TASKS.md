@@ -83,12 +83,18 @@
   section leads with `ProductSpotlightCard`, remaining products are
   `ProductRankRow`s, and a ranked lead shows rank 1 on the spotlight.
   Most Rated stays hidden until at least two products have
-  `ratingCount >= 1`. Task 22 stays Pending until a later session
-  selects it. Evidence:
+  `ratingCount >= 1`. Task 22's subsequent acceptance is recorded below.
+  Evidence:
   [`docs/evidence/task-21-real-feed-mvp/RESULT.md`](evidence/task-21-real-feed-mvp/RESULT.md).
   Proposed Project #4 writes after this ledger edit: `T21: In Progress →
   In Review` before merge; `T21: In Review → Completed` immediately
   after merge.
+- Task 22 is **Done — human accepted on 2026-09-26** following the accepted
+  T-0005 completion audit. PRs #62 and #63 delivered account-switch/private
+  cache isolation and the on-demand Maestro critical journey. The Task 22
+  entry below records evidence, historical tested SHAs and remaining limits.
+  This docs-only closure still requires human PR review and merge; it does
+  not start Task 23 or establish device, production or release readiness.
 - The app now defaults to Browse, uses the display name **Eazy Review**, forces
   light appearance, and does not advertise iPad support for the MVP.
 - Task 14 is accepted in PR #31. Task 15 physical iPhone LAN catalog loads,
@@ -637,7 +643,7 @@ Work in order unless a task explicitly states that it is conditional.
 | 19 | Protected Account Deletion | Done — human accepted on 2026-08-30 |
 | 20 | Browse Scale-Up | Conditional |
 | 21 | Real Feed MVP | Done — human accepted in PR #52 on 2026-09-05 |
-| 22 | Broader Automated App Tests And CI | Pending |
+| 22 | Broader Automated App Tests And CI | Done — human accepted on 2026-09-26 |
 | 23 | Reliability, Accessibility, And Device QA | Pending |
 | 24 | Privacy, Legal, And Store Disclosures | Pending |
 | 25 | EAS Environments And TestFlight Candidate | Pending |
@@ -1571,45 +1577,60 @@ Implementation evidence (web preview, not human acceptance):
 
 ## Task 22: Broader Automated App Tests And CI
 
-Status: Pending.
+Status: Done — human accepted on 2026-09-26.
 
-Bounded increment (Hub T-0002, contract revision 1): extends the existing
-account-switch test into one AuthProvider + profile/My Rating/Rated Products
-A → B → anonymous scenario, including late A reads and private notes. See
-[the evidence record](evidence/t-0002-account-switch/RESULT.md) for coverage,
-version-bound results and limitations. Human accepted this local increment on
-2026-09-25 (T-0002.D1, accepting T-0002.R1); subsequent PR #62 preserves
-that boundary. The user separately authorized the eight SDK 57 patch alignments
-needed by Expo Doctor, with their required lockfile closure. See the evidence
-record for the initial CI failure and exact scope. This does not complete
-Task 22 or select an E2E trigger.
+Acceptance authority: on 2026-09-26 the user stated, “接受 T-0005，并授权只做
+Task 22 的文档关闭。” T-0005.D1 accepts the completion audit's
+**CLOSE_CANDIDATE** conclusion: the core acceptance has sufficient evidence,
+with no material engineering gap requiring more tests or CI work. This closure
+records that accepted boundary; its PR still requires human review and merge.
+It does not claim that the closure PR has merged or authorize a Project #4 write.
 
-Bounded increment (Hub T-0003, contract revisions 1–2): Maestro 2.10.0 CLI and
-stdio MCP were exercised on the local iOS development build. The agent inspected
-the actual product screen and navigated through the login gate with assertions.
-R1 stopped at the native Save Password modal; revision 2's authorized ordering
-repair dismissed it without changing simulator password settings. The complete
-save/restart/readback/edit journey passed twice consecutively at committed
-`26177bc7cff03eada926189fa0e2996d583142b9` using fresh local fixtures.
-These passes are historical: the latest local candidate 66b02dd passed once,
-then failed at Comfort on a fresh fixture. T-0003.R2 is BLOCKED; PR 63 is Draft.
-Revision 3 pushed the per-tool environment allowlist and resolved the P1 after
-offline regression, CI and code/security review. Comfort's unnecessary extra
-centering reproduced a missed native tap; disabling only that centering passed
-the context micro-flow twice. Review then removed an unbound diagnostic entry.
-Final 7629441 passed the complete flow twice consecutively with fresh fixtures
-and database readback (126.059 s / 115.606 s). The user accepted this bounded
-increment on 2026-09-26 in Hub T-0003.D3, accepting T-0003.R3 and tested code
-762944111491c1730cbb98d9655e74c191eb5db0; the following 31af8ab changes only
-add documentation/evidence. T-0004 separately authorizes PR #63 delivery after
-final review and CI gates. This records acceptance, not merge or deployment;
-Task 22 remains Pending. See [revision 3 evidence](evidence/t-0003-maestro-r3/RESULT.md).
-One invisible score testID and public Browse SKU filtering make assertions exact.
-Versioned repeatability evidence and delivery boundaries are tracked in
-[the revision 2 evidence](evidence/t-0003-maestro-r2/RESULT.md).
-See also [the historical blocked record](evidence/t-0003-maestro/RESULT.md) and
-[local reproduction instructions](../.maestro/README.md). Task 22 stays Pending;
-no new CI trigger, framework switch, or product behavior change was made.
+Completion evidence:
+
+- **T-0002 / [PR #62](https://github.com/tyson-hu/Eazy-Review/pull/62):**
+  the AuthProvider + profile/My Rating/Rated Products scenario covers
+  A → B → anonymous, private notes and late A reads on one QueryClient.
+  The user accepted the bounded increment on 2026-09-25. PR #62 merged as
+  `f71a1d90aaa7367359104fcaffa848afd6b30093`, including the separately
+  authorized SDK 57 patch alignment. The [account-switch evidence](evidence/t-0002-account-switch/RESULT.md)
+  retains the original tested SHA, initial CI failure and synthetic-client limits.
+- **T-0003 / [PR #63](https://github.com/tyson-hu/Eazy-Review/pull/63):**
+  Maestro's small critical journey covers Browse → Detail → anonymous login
+  gate → login → ten-dimension rating/save → restart/readback → edit → second
+  restart/readback. Final tested code
+  `762944111491c1730cbb98d9655e74c191eb5db0` passed twice consecutively with
+  fresh synthetic fixtures and local database readback (126.059 s / 115.606 s).
+  The user accepted T-0003.R3 on 2026-09-26. [Revision 3 evidence](evidence/t-0003-maestro-r3/RESULT.md)
+  binds those runs to the fixed iPhone 18 Pro / iOS 27.0 Simulator and local
+  Auth/API/DB environment; they were not rerun at the merge SHA.
+- **T-0004 delivery:** PR #63 merged into master as
+  `6e286ab4de14b9eb9b6feff0b9c646235545f5f1`. Its changes after the final
+  E2E tested SHA are documentation/evidence only. [Master Expo CI](https://github.com/tyson-hu/Eazy-Review/actions/runs/36284009981)
+  passed (48 frontend suites / 559 tests, zero snapshots); [master CodeQL](https://github.com/tyson-hu/Eazy-Review/actions/runs/36284009994)
+  passed both analyses. These results do not turn historical Draft skips into passes.
+- **T-0005 accepted audit:** reviewed that master and found the integrated
+  regression boundary sufficient, including the focused catalog, auth, rating,
+  recovery and mocked deletion coverage. Coverage, redundancy and CI review
+  are complete to the extent needed for Task 22 acceptance. Exhaustive coverage
+  percentages, removal of every redundant test and CI performance optimization
+  were not completed; remaining housekeeping is not a Task 22 blocker.
+  [Database CI](https://github.com/tyson-hu/Eazy-Review/actions/runs/36207390321)
+  passed on historical SHA `f71a1d90aaa7367359104fcaffa848afd6b30093` with
+  disposable local Supabase. Its relevant inputs were unchanged at the audited
+  master; Database CI was **not_run** at that master, not a new master PASS.
+
+Historical observations remain intact: [R1](evidence/t-0003-maestro/RESULT.md)
+was blocked at Save Password; [R2](evidence/t-0003-maestro-r2/RESULT.md) was
+blocked after the later Comfort failure despite earlier passes. The R3 report's
+Draft, skipped CodeQL and pre-acceptance statements describe its observation
+time. This current closure records subsequent acceptance and delivery without
+rewriting those evidence files or attributing runs to a different SHA.
+
+Limits: Task 22 completion does not establish physical iPhone validation,
+Android validation, hosted auth/email, production RLS, deployment or release
+readiness. Those remain Task 23 and later-task responsibilities. Task 23 is
+**not started** by this closure; no new runtime validation is claimed here.
 
 Depends on: Tasks 14–19, Task 21, and Task 20 only if its conditional trigger
 was met.
@@ -1621,8 +1642,9 @@ parent owns integrated cache/account-switch acceptance.
 
 Parallel-safe with: None.
 
-Human gate: Human acceptance selects any deliberate E2E trigger and approves
-the integrated regression boundary before Task 23.
+Human gate: The user accepted the integrated regression boundary and on-demand
+Maestro smoke through T-0005.D1 on 2026-09-26. The docs-only closure PR requires
+human review and merge; selecting Task 23 remains a separate decision.
 
 Goal: close cross-feature verification gaps; connected tasks should already
 have added focused tests as they landed.
@@ -1638,14 +1660,16 @@ Deliverables:
   deliberate PR trigger rather than every minor change.
 - Broader database/application regression coverage beyond the focused suites
   that landed with Tasks 13–19.
-- Coverage review, redundant-test removal, test-suite cleanup, and CI
-  optimization across the existing Expo, frontend-test, and local-database
-  jobs.
+- Coverage, redundancy and CI review sufficient for the accepted regression
+  boundary. Remaining redundant-test cleanup, exhaustive coverage measurement
+  and CI performance optimization are housekeeping, not closure blockers (D6).
 
 Acceptance:
 
-- Existing frontend and local-database CI remain green, path-filtered, and
-  documented while broader regression coverage is added without duplication.
+- Expo CI runs for the normal PR/master validation path. Database CI is
+  path-triggered for relevant database inputs. Maestro critical smoke is
+  on-demand / deliberate, not run for every minor change. Passing evidence
+  retains the version and environment boundaries recorded above.
 - Focused tests from Tasks 15–19 remain green and missing cross-feature gaps
   are covered without broad snapshot duplication.
 - Account switching cannot expose the prior user’s profile or rating cache.
