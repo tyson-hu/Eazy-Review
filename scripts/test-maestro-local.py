@@ -1,0 +1,103 @@
+"""Credential-free, no-network regression check for the local fixture boundary."""
+
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+import unittest
+from unittest.mock import Mock, patch
+import urllib.request
+import urllib.response
+
+spec = importlib.util.spec_from_file_location('maestro_local', Path(__file__).with_name('maestro-local.py'))
+helper = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(helper)
+
+
+class LoopbackBoundary(unittest.TestCase):
+    shell = {'PATH': '/placeholder/bin', 'HOME': '/placeholder/home',
+             'JAVA_HOME': '/placeholder/java', 'DEVELOPER_DIR': '/placeholder/xcode',
+             'LANG': 'en_US.UTF-8', 'TMPDIR': '/placeholder/tmp',
+             **{key: 'placeholder-only' for key in (
+                 'DATABASE_URL', 'PGPASSWORD', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                 '_authToken', 'npm_config_//registry.npmjs.org/:_authToken',
+                 'GITHUB_TOKEN', 'SUPABASE_ACCESS_TOKEN', 'SUPABASE_SERVICE_ROLE_KEY',
+                 'SSH_AUTH_SOCK', 'FUTURE_PROVIDER_CREDENTIAL', 'NODE_OPTIONS',
+                 'JAVA_TOOL_OPTIONS', 'JAVA_OPTS', 'PYTHONPATH', 'BASH_ENV',
+                 'HTTP_PROXY', 'HTTPS_PROXY', 'MAESTRO_TEST_PASSWORD')}}
+
+    def test_external_tools_do_not_inherit_unrelated_host_credentials(self):
+        cases = [(['git', 'status'], {'PATH', 'LANG'}),
+                 (['xcrun', 'simctl'], {'PATH', 'LANG', 'HOME', 'TMPDIR', 'DEVELOPER_DIR'}),
+                 (['supabase', 'status'], {'PATH', 'LANG', 'HOME', 'TMPDIR', 'DO_NOT_TRACK'}),
+                 (['supabase', 'start'], {'PATH', 'LANG', 'HOME', 'TMPDIR', 'DO_NOT_TRACK',
+                                          'SUPABASE_AUTH_EXTERNAL_URL'})]
+        for args, expected in cases:
+            with self.subTest(tool=args), patch.dict(os.environ, self.shell, clear=True), \
+                    patch.object(helper.subprocess, 'run', return_value=SimpleNamespace(
+                        returncode=0, stdout='placeholder')) as child:
+                helper.command(args)
+            self.assertEqual(set(child.call_args.kwargs['env']), expected)
+        with self.assertRaises(KeyError):
+            helper.environment('unreviewed-tool')
+
+    def test_proxy_environment_cannot_receive_privileged_request(self):
+        observed = []
+
+        def no_network(handler, request):
+            observed.append(request)
+            response = urllib.response.addinfourl(io.BytesIO(b'{}'), {}, request.full_url, 200)
+            response.msg = 'OK'
+            return response
+
+        with patch.dict(os.environ, {'http_proxy': 'http://proxy.invalid:8888', 'no_proxy': ''}, clear=True), \
+                patch.object(urllib.request.HTTPHandler, 'http_open', no_network), \
+                patch('socket.create_connection', side_effect=AssertionError('Network forbidden')):
+            self.assertEqual(helper.request({'SERVICE_ROLE_KEY': 'placeholder-only'}, '/probe'), {})
+        self.assertEqual(len(observed), 1)
+        self.assertEqual(observed[0].host, '127.0.0.1:55321')
+        self.assertEqual(observed[0].full_url, 'http://127.0.0.1:55321/probe')
+
+    def test_ui_pass_with_database_failure_is_recorded_as_failed(self):
+        device = 'test-simulator'
+        devices = {'devices': {'test-runtime': [{'udid': device, 'state': 'Booted'}]}}
+        fixture = {'PRODUCT_ID': '00000000-0000-4000-8000-000000000001',
+                   'USER_ID': '00000000-0000-4000-8000-000000000002',
+                   'TEST_EMAIL': 'placeholder@example.test', 'TEST_PASSWORD': 'fixture-password',
+                   'PRODUCT_SKU': 'T0003-placeholder', 'EXTRA_CREDENTIAL': 'not-for-maestro'}
+        process = Mock(stdout=iter(()))
+        process.wait.return_value = 0
+        process.poll.return_value = 0
+        with TemporaryDirectory() as directory:
+            local = Path(directory)
+            (local / 'fixture.json').write_text(json.dumps(fixture))
+            with patch.dict(os.environ, self.shell, clear=True), \
+                    patch.object(helper, 'LOCAL', local), \
+                    patch.object(helper, 'status', return_value={}), \
+                    patch.object(helper, 'request', return_value=[]), \
+                    patch.object(helper, 'command', side_effect=[json.dumps(devices), 'test-commit', '']), \
+                    patch.object(helper.subprocess, 'Popen', return_value=process) as child, \
+                    patch.object(helper, 'verify', side_effect=RuntimeError('Stored score mismatch')), \
+                    patch('socket.create_connection', side_effect=AssertionError('Network forbidden')), \
+                    patch('builtins.print'):
+                # The runner prints a relative local artifact path; keep that root local too.
+                with patch.object(helper, 'ROOT', local):
+                    with self.assertRaisesRegex(RuntimeError, 'Stored score mismatch'):
+                        helper.run(SimpleNamespace(device=device, maestro='unused-placeholder'))
+            actual = child.call_args.kwargs['env']
+            self.assertEqual(set(actual), {
+                'PATH', 'LANG', 'HOME', 'TMPDIR', 'JAVA_HOME', 'DEVELOPER_DIR',
+                'MAESTRO_CLI_NO_ANALYTICS', 'MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED',
+                'MAESTRO_DISABLE_UPDATE_CHECK', 'MAESTRO_TEST_EMAIL', 'MAESTRO_TEST_PASSWORD',
+                'MAESTRO_PRODUCT_ID', 'MAESTRO_PRODUCT_SKU'})
+            self.assertEqual(actual['MAESTRO_TEST_PASSWORD'], fixture['TEST_PASSWORD'])
+            summary = json.loads(next(local.glob('run-*/run-summary.json')).read_text())
+            self.assertEqual(summary['result'], 'failed')
+            self.assertEqual(summary['failure_stage'], 'database_verification')
+
+
+if __name__ == '__main__':
+    unittest.main()

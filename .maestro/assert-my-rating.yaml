@@ -1,0 +1,11 @@
+appId: com.tysonhu.eazyreview.dev
+---
+- scrollUntilVisible:
+    element:
+      id: product-detail-section-my-rating
+    direction: DOWN
+    timeout: 20000
+    centerElement: true
+- assertVisible:
+    text: "${EXPECTED_SCORE} / 100"
+    id: my-rating-score

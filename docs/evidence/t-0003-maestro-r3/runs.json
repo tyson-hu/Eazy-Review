@@ -1,0 +1,153 @@
+{
+  "runs": [
+    {
+      "run_id": "run-20260926-181808",
+      "tested_commit": "d712d477796be80f5e6e5ab432708ae34f3bbdb8",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "8602db1c-5619-4e83-b633-0841a3489d7f",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "comfort-prepare",
+      "result": "pass",
+      "database_verification": "not_run_micro_flow",
+      "seconds": 48.066
+    },
+    {
+      "run_id": "run-20260926-181948",
+      "tested_commit": "d712d477796be80f5e6e5ab432708ae34f3bbdb8",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "8602db1c-5619-4e83-b633-0841a3489d7f",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "comfort-micro",
+      "result": "pass",
+      "database_verification": "not_run_micro_flow",
+      "seconds": 2.729,
+      "precondition_clarification": "Historical diagnostic retained the prepared screen; clearState ran only in comfort-prepare. This standalone mode was removed after P2 review."
+    },
+    {
+      "run_id": "run-20260926-182110",
+      "tested_commit": "cbce92e756cc3296f03ffb7731735bf094edc218",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "07f59d9e-2fb3-4f70-9ce5-b85ab03f8739",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "comfort-check",
+      "result": "pass",
+      "database_verification": "not_run_micro_flow",
+      "seconds": 41.126
+    },
+    {
+      "run_id": "run-20260926-182300",
+      "tested_commit": "99a3631ad77167db3c407a0d812d517970b92c41",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "5bca2059-2e90-477b-acab-1a978cf4ff3f",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "comfort-check",
+      "result": "failed",
+      "seconds": 67.67
+    },
+    {
+      "run_id": "run-20260926-182506",
+      "tested_commit": "1efa5b30f11a3b4ff1f068560105aff1fb6120ae",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "4d0b48d2-4120-4f89-b936-b2f27d6b1dec",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "comfort-check",
+      "result": "pass",
+      "database_verification": "not_run_micro_flow",
+      "seconds": 46.167
+    },
+    {
+      "run_id": "run-20260926-182704",
+      "tested_commit": "5c01cf8c2a3f30bc1893a781b97e3f76e124982e",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "398f69a7-a076-4aac-851d-9a3919213497",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "comfort-check",
+      "result": "pass",
+      "database_verification": "not_run_micro_flow",
+      "seconds": 45.852
+    },
+    {
+      "run_id": "run-20260926-182818",
+      "tested_commit": "5c01cf8c2a3f30bc1893a781b97e3f76e124982e",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "1df8f721-0012-425e-a034-396a5ee51e41",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "comfort-check",
+      "result": "pass",
+      "database_verification": "not_run_micro_flow",
+      "seconds": 46.121
+    },
+    {
+      "run_id": "run-20260926-182942",
+      "tested_commit": "5c01cf8c2a3f30bc1893a781b97e3f76e124982e",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "d5b0cd63-8835-4cc6-97ca-a0f129239ae5",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "critical-flow",
+      "result": "pass",
+      "persisted_score": 6,
+      "appearance": 1.5,
+      "other_nine_dimensions": 0.5,
+      "seconds": 113.261
+    },
+    {
+      "run_id": "run-20260926-183145",
+      "tested_commit": "5c01cf8c2a3f30bc1893a781b97e3f76e124982e",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "de90157f-c4aa-4171-b668-926d6ca359ed",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "critical-flow",
+      "result": "pass",
+      "persisted_score": 6,
+      "appearance": 1.5,
+      "other_nine_dimensions": 0.5,
+      "seconds": 116.755
+    },
+    {
+      "run_id": "run-20260926-183515",
+      "tested_commit": "762944111491c1730cbb98d9655e74c191eb5db0",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "ad04b271-3fe6-45cd-a5f9-1665c648d292",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "critical-flow",
+      "result": "pass",
+      "persisted_score": 6,
+      "appearance": 1.5,
+      "other_nine_dimensions": 0.5,
+      "seconds": 126.059
+    },
+    {
+      "run_id": "run-20260926-183731",
+      "tested_commit": "762944111491c1730cbb98d9655e74c191eb5db0",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "8a72137f-84b6-401c-9fa3-80f7a0357ec0",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "flow": "critical-flow",
+      "result": "pass",
+      "persisted_score": 6,
+      "appearance": 1.5,
+      "other_nine_dimensions": 0.5,
+      "seconds": 115.606
+    }
+  ],
+  "flow_sha256": {
+    ".maestro/assert-my-rating.yaml": "f841d7fd5a82364257682e3b51f284e2fccba60b37eb897669b08d54897b4fa8",
+    ".maestro/comfort-check.yaml": "7507f450fe914ca7cf9dfabc130de442e51024039717347a01eca89c307af721",
+    ".maestro/comfort-half-step.yaml": "83b17e9b1d07885dfb54adba4331f9688b4ef86a39868b1bb970bd148b49f563",
+    ".maestro/critical-flow.yaml": "50ad37fc41e5d3c46ca9734975fa32c81090abe025256aaa56e8868b7f011aa8",
+    ".maestro/open-fixture-product.yaml": "88d35c8696d0638404bedc25db3f9061c76649171bd5c3e94801b86a6b1460be",
+    ".maestro/open-rating.yaml": "dfb99970e658938013b9bbc21d953f36214d866510e5d7cbad0a806dc726780a",
+    ".maestro/set-half-step.yaml": "f1e1e0da527d14c80c434ba9be9f6b1efdbd2f4204847bbf2c5f7ffb4f2a3691"
+  }
+}

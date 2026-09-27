@@ -1,0 +1,78 @@
+[
+  {
+    "status": "COMPLETED",
+    "timestamp": 1790440668109,
+    "duration": 3435,
+    "sequenceNumber": 68,
+    "evaluatedCommand": {
+      "scrollUntilVisible": {
+        "selector": {
+          "idRegex": "rate-dim-comfort",
+          "optional": false
+        },
+        "direction": "DOWN",
+        "scrollDuration": "601",
+        "visibilityPercentage": 100,
+        "timeout": "15000",
+        "centerElement": true,
+        "originalSpeedValue": "40",
+        "optional": false,
+        "visibilityPercentageNormalized": 1.0
+      }
+    }
+  },
+  {
+    "status": "COMPLETED",
+    "timestamp": 1790440671544,
+    "duration": 232,
+    "sequenceNumber": 69,
+    "evaluatedCommand": {
+      "assertConditionCommand": {
+        "condition": {
+          "visible": {
+            "textRegex": ".*, not rated",
+            "idRegex": "rate-dim-comfort-value",
+            "optional": false
+          }
+        },
+        "optional": false
+      }
+    }
+  },
+  {
+    "status": "COMPLETED",
+    "timestamp": 1790440671776,
+    "duration": 1586,
+    "sequenceNumber": 70,
+    "evaluatedCommand": {
+      "tapOnElement": {
+        "selector": {
+          "idRegex": "rate-dim-comfort-inc",
+          "optional": false
+        },
+        "retryIfNoChange": false,
+        "waitUntilVisible": false,
+        "longPress": false,
+        "optional": false
+      }
+    }
+  },
+  {
+    "status": "FAILED",
+    "timestamp": 1790440673362,
+    "duration": 17610,
+    "sequenceNumber": 71,
+    "evaluatedCommand": {
+      "assertConditionCommand": {
+        "condition": {
+          "visible": {
+            "textRegex": ".*, 0.5 of 10",
+            "idRegex": "rate-dim-comfort-value",
+            "optional": false
+          }
+        },
+        "optional": false
+      }
+    }
+  }
+]

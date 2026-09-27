@@ -1,0 +1,25 @@
+appId: com.tysonhu.eazyreview.dev
+name: Fresh Comfort scroll and single increment
+---
+- runFlow: open-rating.yaml
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: look
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: outfit
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: material
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: craftsmanship
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: maintenance
+- runFlow: comfort-half-step.yaml

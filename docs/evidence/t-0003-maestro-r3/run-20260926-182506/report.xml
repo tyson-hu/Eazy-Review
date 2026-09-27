@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="iPhone 18 Pro - iOS 27.0 - B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0" tests="1" failures="0" time="46.187" timestamp="2026-09-26T18:25:14">
+    <testcase id="Fresh Comfort scroll and single increment" name="Fresh Comfort scroll and single increment" classname="Fresh Comfort scroll and single increment" file=".maestro/comfort-check.yaml" time="46.167" timestamp="2026-09-26T18:25:14" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

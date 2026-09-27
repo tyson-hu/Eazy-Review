@@ -1,0 +1,12 @@
+{
+  "base_commit": "f71a1d90aaa7367359104fcaffa848afd6b30093",
+  "runtime_tested_commit": null,
+  "runtime_state": "Uncommitted candidate on base; native app source unchanged. No exact committed-head full-flow pass.",
+  "flow_files": {
+    ".maestro/assert-my-rating.yaml": "91360ced0812d54dc07e8f90475f368276a6b22eca50a2e150ed5367b14cb335",
+    ".maestro/critical-flow.yaml": "b39c29c17c6cbf9b635db852e990bb560b9bb4c5286bd98878887e3d385cc905",
+    ".maestro/set-half-step.yaml": "56c17fe2bbd5e3752635503994cd976f47982f38a9dab2f343d978c3a9d91c1f"
+  },
+  "last_run": ".maestro/.local/run-20260926-101558",
+  "later_helper_change": "Disabled HTTP proxy inheritance after independent review; only offline test, no further UI rerun."
+}

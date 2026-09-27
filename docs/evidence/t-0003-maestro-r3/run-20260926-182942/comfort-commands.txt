@@ -1,0 +1,24 @@
+18:30:33.761 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Scrolling DOWN until id: rate-dim-comfort is visible with speed 40, visibility percentage 100%, timeout 15000 ms, with centering disabled RUNNING
+18:30:34.018 [ INFO] maestro.orchestra.Orchestra.scrollUntilVisible: Scrolling try count: 0, DeviceWidth: 402, DeviceWidth: 874
+18:30:34.018 [ INFO] maestro.orchestra.Orchestra.scrollUntilVisible: Element bounds: Bounds(x=14, y=610, width=374, height=125)
+18:30:34.018 [ INFO] maestro.orchestra.Orchestra.scrollUntilVisible: Visibility Percent: 1.0
+18:30:34.018 [ INFO] maestro.orchestra.Orchestra.scrollUntilVisible: Command centerElement: ScrollUntilVisibleCommand(selector=ElementSelector(textRegex=null, idRegex=rate-dim-comfort, size=null, below=null, above=null, leftOf=null, rightOf=null, containsChild=null, containsDescendants=null, traits=null, index=null, enabled=null, optional=false, selected=null, checked=null, focused=null, childOf=null, css=null), direction=DOWN, scrollDuration=601, visibilityPercentage=100, timeout=15000, waitToSettleTimeoutMs=null, centerElement=false, originalSpeedValue=40, label=null, optional=false).centerElement
+18:30:34.018 [ INFO] maestro.orchestra.Orchestra.scrollUntilVisible: visibilityPercentageNormalized: 1.0
+18:30:34.018 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Scrolling DOWN until id: rate-dim-comfort is visible with speed 40, visibility percentage 100%, timeout 15000 ms, with centering disabled COMPLETED
+18:30:34.018 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Assert that ".*, not rated", id: rate-dim-comfort-value is visible RUNNING
+18:30:34.258 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Assert that ".*, not rated", id: rate-dim-comfort-value is visible COMPLETED
+18:30:34.258 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Tap on id: rate-dim-comfort-inc RUNNING
+18:30:34.525 [ INFO] maestro.Maestro.tap-HgV9Ck0: Tapping on element:  UiElement(treeNode=TreeNode(attributes={accessibilityText=Increase Comfort, title=, value=, text=, hintText=, resource-id=rate-dim-comfort-inc, bounds=[300,669][339,707], enabled=true, focused=false, selected=false, checked=false}, children=[], clickable=null, enabled=true, focused=false, checked=false, selected=false), bounds=Bounds(x=300, y=669, width=39, height=38))
+18:30:34.690 [ INFO] maestro.Maestro.tap-HgV9Ck0: Tap aimed via trusted pre-wait hierarchy (null settle, no recent scroll)
+18:30:34.690 [ INFO] maestro.Maestro.screenshotBasedTap-ogj28Uc: Try tapping at (319, 688) using hierarchy based logic for wait
+18:30:34.690 [TRACE] maestro.utils.ScreenshotUtils.takeScreenshot: Taking screenshot to byte array
+18:30:34.690 [TRACE] maestro.utils.ScreenshotUtils.takeScreenshot: Taking screenshot to output sink
+18:30:35.313 [ INFO] maestro.Maestro.screenshotBasedTap-ogj28Uc: Something have changed in the UI judging by view hierarchy. Proceed.
+18:30:35.313 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Tap on id: rate-dim-comfort-inc COMPLETED
+18:30:35.313 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Take screenshot comfort-context-after-tap RUNNING
+18:30:35.314 [ INFO] maestro.Maestro.takeScreenshot: Taking screenshot
+18:30:35.314 [TRACE] maestro.utils.ScreenshotUtils.takeScreenshot: Taking screenshot to output sink
+18:30:35.394 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Take screenshot comfort-context-after-tap COMPLETED
+18:30:35.394 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Assert that ".*, 0.5 of 10", id: rate-dim-comfort-value is visible RUNNING
+18:30:35.646 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Assert that ".*, 0.5 of 10", id: rate-dim-comfort-value is visible COMPLETED
+18:30:35.646 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandFinished: Run comfort-half-step.yaml COMPLETED

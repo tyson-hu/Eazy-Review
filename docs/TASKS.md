@@ -1584,6 +1584,33 @@ needed by Expo Doctor, with their required lockfile closure. See the evidence
 record for the initial CI failure and exact scope. This does not complete
 Task 22 or select an E2E trigger.
 
+Bounded increment (Hub T-0003, contract revisions 1–2): Maestro 2.10.0 CLI and
+stdio MCP were exercised on the local iOS development build. The agent inspected
+the actual product screen and navigated through the login gate with assertions.
+R1 stopped at the native Save Password modal; revision 2's authorized ordering
+repair dismissed it without changing simulator password settings. The complete
+save/restart/readback/edit journey passed twice consecutively at committed
+`26177bc7cff03eada926189fa0e2996d583142b9` using fresh local fixtures.
+These passes are historical: the latest local candidate 66b02dd passed once,
+then failed at Comfort on a fresh fixture. T-0003.R2 is BLOCKED; PR 63 is Draft.
+Revision 3 pushed the per-tool environment allowlist and resolved the P1 after
+offline regression, CI and code/security review. Comfort's unnecessary extra
+centering reproduced a missed native tap; disabling only that centering passed
+the context micro-flow twice. Review then removed an unbound diagnostic entry.
+Final 7629441 passed the complete flow twice consecutively with fresh fixtures
+and database readback (126.059 s / 115.606 s). The user accepted this bounded
+increment on 2026-09-26 in Hub T-0003.D3, accepting T-0003.R3 and tested code
+762944111491c1730cbb98d9655e74c191eb5db0; the following 31af8ab changes only
+add documentation/evidence. T-0004 separately authorizes PR #63 delivery after
+final review and CI gates. This records acceptance, not merge or deployment;
+Task 22 remains Pending. See [revision 3 evidence](evidence/t-0003-maestro-r3/RESULT.md).
+One invisible score testID and public Browse SKU filtering make assertions exact.
+Versioned repeatability evidence and delivery boundaries are tracked in
+[the revision 2 evidence](evidence/t-0003-maestro-r2/RESULT.md).
+See also [the historical blocked record](evidence/t-0003-maestro/RESULT.md) and
+[local reproduction instructions](../.maestro/README.md). Task 22 stays Pending;
+no new CI trigger, framework switch, or product behavior change was made.
+
 Depends on: Tasks 14–19, Task 21, and Task 20 only if its conditional trigger
 was met.
 

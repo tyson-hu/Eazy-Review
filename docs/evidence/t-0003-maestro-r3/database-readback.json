@@ -1,0 +1,49 @@
+{
+  "tested_commit": "762944111491c1730cbb98d9655e74c191eb5db0",
+  "environment": "http://127.0.0.1:55321",
+  "distinct_synthetic_users": 2,
+  "distinct_synthetic_products": 2,
+  "result": "pass",
+  "runs": [
+    {
+      "run_id": "run-20260926-183515",
+      "product_id": "ad04b271-3fe6-45cd-a5f9-1665c648d292",
+      "rating_rows": 1,
+      "user_fingerprint_sha256": "40ada0155bf7639a9d5c27fcf18d656c0e09145db77b863644297e8eb3763034",
+      "score": 6,
+      "methodology": "sneaker-10-v1",
+      "dimensions": {
+        "look": 1.5,
+        "outfit": 0.5,
+        "material": 0.5,
+        "craftsmanship": 0.5,
+        "maintenance": 0.5,
+        "comfort": 0.5,
+        "collection": 0.5,
+        "value": 0.5,
+        "resale_potential": 0.5,
+        "acquisition_ease": 0.5
+      }
+    },
+    {
+      "run_id": "run-20260926-183731",
+      "product_id": "8a72137f-84b6-401c-9fa3-80f7a0357ec0",
+      "rating_rows": 1,
+      "user_fingerprint_sha256": "75c9722a5705c2fcab64aab8e991fc347b3a81ef51ae0f81cd79d8b6ccf31365",
+      "score": 6,
+      "methodology": "sneaker-10-v1",
+      "dimensions": {
+        "look": 1.5,
+        "outfit": 0.5,
+        "material": 0.5,
+        "craftsmanship": 0.5,
+        "maintenance": 0.5,
+        "comfort": 0.5,
+        "collection": 0.5,
+        "value": 0.5,
+        "resale_potential": 0.5,
+        "acquisition_ease": 0.5
+      }
+    }
+  ]
+}

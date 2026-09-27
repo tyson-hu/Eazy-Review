@@ -1,0 +1,100 @@
+appId: com.tysonhu.eazyreview.dev
+name: Local iOS critical rating journey
+---
+- runFlow: open-rating.yaml
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: look
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: outfit
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: material
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: craftsmanship
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: maintenance
+- runFlow: comfort-half-step.yaml
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: collection
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: value
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: resalePotential
+- runFlow:
+    file: set-half-step.yaml
+    env:
+      DIMENSION: acquisitionEase
+- tapOn:
+    id: rate-submit
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "5"
+- takeScreenshot: first-save
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Browse tab"
+    timeout: 30000
+- runFlow: open-fixture-product.yaml
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "5"
+- takeScreenshot: restart-readback
+- tapOn:
+    id: edit-my-rating
+- assertVisible:
+    id: rate-dim-look-value
+    text: ".*, 0.5 of 10"
+- tapOn:
+    id: rate-dim-look-inc
+    repeat: 2
+- assertVisible:
+    id: rate-dim-look-value
+    text: ".*, 1.5 of 10"
+- tapOn:
+    id: rate-submit
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "6"
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Browse tab"
+    timeout: 30000
+- runFlow: open-fixture-product.yaml
+- assertVisible:
+    id: edit-my-rating
+- runFlow:
+    file: assert-my-rating.yaml
+    env:
+      EXPECTED_SCORE: "6"
+- takeScreenshot: edited-restart-readback
+- tapOn:
+    id: edit-my-rating
+- assertVisible:
+    id: rate-dim-look-value
+    text: ".*, 1.5 of 10"

@@ -1,0 +1,42 @@
+{
+  "tested_commit": "26177bc7cff03eada926189fa0e2996d583142b9",
+  "runs": [
+    {
+      "tested_commit": "26177bc7cff03eada926189fa0e2996d583142b9",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "9de2d2a9-9e4a-47cd-aa21-b76f35809542",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "result": "pass",
+      "persisted_score": 6,
+      "appearance": 1.5,
+      "other_nine_dimensions": 0.5,
+      "run": "run-20260926-110718",
+      "duration_seconds": 134.02,
+      "timestamp_local": "2026-09-26T11:07:26"
+    },
+    {
+      "tested_commit": "26177bc7cff03eada926189fa0e2996d583142b9",
+      "tracked_tree_dirty": false,
+      "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+      "product_id": "f25416d5-485b-4b87-b910-83c3395a3f8a",
+      "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+      "result": "pass",
+      "persisted_score": 6,
+      "appearance": 1.5,
+      "other_nine_dimensions": 0.5,
+      "run": "run-20260926-110950",
+      "duration_seconds": 135.22,
+      "timestamp_local": "2026-09-26T11:09:58"
+    }
+  ],
+  "sha256": {
+    ".maestro/open-fixture-product.yaml": "2b8a09144d28d93e42beea76d3760e6ca915cb9f9c6d59558f97b3babdc5e3a2",
+    ".maestro/critical-flow.yaml": "f65d4da2e041f62063d406662554b319e601eae25980ec9839f446bafed7b975",
+    ".maestro/assert-my-rating.yaml": "f841d7fd5a82364257682e3b51f284e2fccba60b37eb897669b08d54897b4fa8",
+    ".maestro/set-half-step.yaml": "56c17fe2bbd5e3752635503994cd976f47982f38a9dab2f343d978c3a9d91c1f",
+    "scripts/maestro-local.py": "46893e55356864ec60a43442fadcd05696ef331270d2e9de391f355e22028cb3",
+    "scripts/test-maestro-local.py": "f8ad711014f079b95c961573810b440ccd87ea589655eb346f6f629682782c7e",
+    "app/product/[id]/index.tsx": "853249a60320bc6d08209a4aadbbf07a27bc979cd2f0b954e6bde2536cc8bea6"
+  }
+}

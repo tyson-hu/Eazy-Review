@@ -564,7 +564,7 @@ export default function ProductDetailScreen() {
           </>
         ) : hasMyRating && myRating ? (
           <View className="mt-3 gap-3">
-            <AppText className="text-xl font-semibold text-primary">
+            <AppText testID="my-rating-score" className="text-xl font-semibold text-primary">
               {myRating.score100} / 100
             </AppText>
             <AppText variant="body">{getScoreLabel(myRating.score100)}</AppText>

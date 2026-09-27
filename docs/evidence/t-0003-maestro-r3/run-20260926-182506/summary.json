@@ -1,0 +1,12 @@
+{
+  "run_id": "run-20260926-182506",
+  "tested_commit": "1efa5b30f11a3b4ff1f068560105aff1fb6120ae",
+  "tracked_tree_dirty": false,
+  "device": "B5343C0A-1D6E-4FA5-9C7D-B201CD0B38D0",
+  "product_id": "4d0b48d2-4120-4f89-b936-b2f27d6b1dec",
+  "precondition": "Fresh synthetic account/product; zero rating rows; launchApp clears app state",
+  "flow": "comfort-check",
+  "result": "pass",
+  "database_verification": "not_run_micro_flow",
+  "seconds": 46.167
+}

@@ -1,0 +1,32 @@
+Phase 1 tested commit: f9568c5a1f37b3c1c94486f46f611a6358dd1f04
+Phase 2 initial tested commit: 5c01cf8c2a3f30bc1893a781b97e3f76e124982e
+Phase 2 final tested commit: 762944111491c1730cbb98d9655e74c191eb5db0
+Trusted project base: f71a1d90aaa7367359104fcaffa848afd6b30093
+
+On all three tested commits:
+  python3 scripts/test-maestro-local.py: PASS, 3 tests, no network or external Maestro.
+    subprocess.run and mocked Popen reject unrelated placeholder credentials.
+    HTTP proxy cannot receive privileged local request.
+    UI PASS plus database mismatch is recorded as failed.
+  npm run check:readonly: PASS (wrappers, decisions, secrets, graph, typecheck, lint).
+    Executed with fresh PATH/HOME plus fixed EXPO_NO_DOTENV, EXPO_NO_TELEMETRY, CI.
+  git diff --check: PASS.
+
+Exact-head hosted CI:
+  f9568c5: Expo validate SUCCESS, run 36278536680.
+  5c01cf8: Expo validate SUCCESS, run 36279486058.
+  7629441: Expo validate SUCCESS, run 36279910939.
+  CodeQL jobs SKIPPED because PR #63 remains Draft.
+  Local Python/native test results are not GitHub CI results.
+
+Primary checkout has four unrelated untracked planning notes; none were modified.
+Recovered task checkout has only its own node_modules symlink and Python cache
+as untracked runtime artifacts. Formal runs record tracked_tree_dirty=false.
+Installed direct dependency versions match package-lock.json; native inputs
+unchanged from R2. No npm installation, native rebuild, dependency upgrade,
+framework change, new workflow or simulator password-setting change occurred.
+
+P2 fixture attribution repair at 7629441:
+  Standalone comfort-micro/comfort-prepare options and their YAML files removed.
+  run --flow comfort-micro: rejected with exit 2 before any subprocess/setup.
+  Only bound critical-flow/comfort-check operations remain.
