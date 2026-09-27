@@ -90,7 +90,9 @@ dependencies and parallel-safety live only in `docs/TASKS.md`.
 **Tasks 20–23.** Browse scale-up remains conditional on measured need; Feed
 must become useful or be removed. Connected work adds focused tests as it
 lands, while Task 22 closes cross-feature gaps, adds a deliberately triggered
-E2E smoke, and optimizes the already-present CI lanes. Task 23 owns release
+E2E smoke, and reviews coverage, redundancy and the existing CI lanes.
+Remaining test cleanup and CI performance optimization are housekeeping
+outside Task 22 acceptance. Task 23 owns release
 reliability, ordinary device QA, and non-extreme accessibility smoke. Full
 VoiceOver and maximum Dynamic Type hardening are post-launch (Task 27).
 
